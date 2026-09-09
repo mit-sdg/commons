@@ -44,7 +44,7 @@ export function LateDayControls({
   const extend = (value: string, amount: number) =>
     new Date(new Date(value).getTime() + amount * unitHours * 3600000);
   const newDue = extend(dueAt, days);
-  const newClose = closeAt ? extend(closeAt, days) : null;
+  const fixedClose = closeAt ? new Date(closeAt) : null;
 
   async function apply() {
     if (!session || days <= 0) return;
@@ -130,7 +130,7 @@ export function LateDayControls({
             </div>
             <ConfirmAction
               title={`Change to ${count(days, "late day")}?`}
-              description={`The effective due date will be ${dueTime(newDue)}${newClose ? ` and submissions will close ${dueTime(newClose)}` : ""}.`}
+              description={`The effective due date will be ${dueTime(newDue)}${fixedClose ? `. Submissions still close ${dueTime(fixedClose)}; late days do not extend that boundary` : ""}.`}
               confirmLabel="Change late days"
               onConfirm={change}
               trigger={
@@ -169,7 +169,7 @@ export function LateDayControls({
           </div>
           <ConfirmAction
             title={`Apply ${count(days, "late day")}?`}
-            description={`This spends ${count(days, "late day")} and moves the effective due date to ${dueTime(newDue)}${newClose ? ` and the submission close to ${dueTime(newClose)}` : ""}.`}
+            description={`This spends ${count(days, "late day")} and moves the effective due date to ${dueTime(newDue)}${fixedClose ? `. Submissions still close ${dueTime(fixedClose)}; late days do not extend that boundary` : ""}.`}
             confirmLabel="Apply late days"
             onConfirm={apply}
             trigger={

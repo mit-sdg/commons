@@ -91,7 +91,7 @@ function StaffDashboardPageContent() {
         >
           <div className="flex items-center gap-2 mb-1">
             <FileText className="size-4 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">Gradebook</p>
+            <p className="text-xs text-muted-foreground">Assessments</p>
           </div>
           <p className="text-3xl font-semibold">{counts.gradeItems}</p>
           <p className="text-xs text-muted-foreground mt-1">items</p>
@@ -162,7 +162,7 @@ function StaffDashboardPageContent() {
               href="/staff/gradebook"
               className="flex items-center gap-2 text-sm hover:text-primary"
             >
-              <FileText className="size-4" /> Open gradebook
+              <FileText className="size-4" /> Open assessments
             </Link>
             <Link
               href="/staff/late-days"

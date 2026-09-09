@@ -47,6 +47,25 @@ for (const [floor, make] of floors) {
       expect(other.submission).not.toBe(second.submission);
     });
 
+    test("concurrent attempts reserve distinct numbers across concept instances", async () => {
+      const db = await testDb();
+      const writers = [new MongoSubmittingConcept(db), new MongoSubmittingConcept(db)];
+      const results = await Promise.all(
+        Array.from({ length: 20 }, (_, i) =>
+          writers[i % 2]!.submit({
+            assignment: "hw1",
+            submitter: "maya",
+            artifact: `work-${i}`,
+            at: T0,
+          }),
+        ),
+      );
+      expect(new Set(results.map((r) => r.submission)).size).toBe(20);
+      const attempts = await writers[0]!._getAttempts({ assignment: "hw1", submitter: "maya" });
+      expect(attempts.map((a) => a.number)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
+      expect(new Set(attempts.flatMap((a) => a.artifacts)).size).toBe(20);
+    });
+
     test("_getLatest answers the highest-numbered submitted attempt or no row", async () => {
       const c = await make();
       expect(await c._getLatest({ assignment: "hw1", submitter: "maya" })).toEqual([]);

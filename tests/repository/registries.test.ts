@@ -147,6 +147,7 @@ describe("application-owned design integration", () => {
       "Assigning.Sections is Rostering.Section",
       "Banking.Item is Assigning.Assignment",
       "Grading.Item is Assigning.Assignment",
+      "Itemizing.Basis is StandardSetting.Edition",
       "Itemizing.Item is Assigning.Assignment",
       "Submitting.Assignment is Assigning.Assignment",
       "Grading.Criterion is Itemizing.Criterion",

@@ -1,242 +1,130 @@
-import { afterAll, describe, expect, test } from "vite-plus/test";
-import * as refusalErrors from "../../src/concepts/grading/errors.ts";
-import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { afterAll, expect, test } from "vite-plus/test";
+import { testDb, stopTestDb } from "../../src/concepts/testing.ts";
 import { MongoGradingConcept } from "../../src/concepts/grading/grading.mongo.ts";
-
-const floors: [string, () => Promise<MongoGradingConcept>][] = [
-  ["on MongoDB", async () => new MongoGradingConcept(await testDb())],
-];
-
+import {
+  GradeConflict,
+  GradeIncomplete,
+  InvalidJudgments,
+} from "../../src/concepts/grading/errors.ts";
 afterAll(stopTestDb);
-
-const refusal = caughtError;
-
-const T0 = new Date("2026-03-01T00:00:00Z");
-const T1 = new Date("2026-03-02T00:00:00Z");
-const T2 = new Date("2026-03-03T00:00:00Z");
-
-const draft = (c: MongoGradingConcept, learner: string, score = 42) =>
+const at = new Date("2026-09-09T00:00:00Z");
+const actor = { grader: "elena", at };
+const start = (c: MongoGradingConcept, evidence = "attempt-1") =>
   c.record({
-    learner,
-    item: "essay",
-    evidence: "sub-1",
-    grader: "okafor",
-    score,
-    outOf: 50,
-    feedback: "solid",
-    at: T0,
+    learner: "maya",
+    item: "paper",
+    evidence,
+    criteria: [{ criterion: "argument" }, { criterion: "evidence" }],
+    ...actor,
   });
-
-for (const [floor, make] of floors) {
-  describe(`Grading ${floor}`, () => {
-    test("record creates a draft and later updates the same grade", async () => {
-      const c = await make();
-      const { grade } = await draft(c, "ana", 42);
-      const again = await draft(c, "ana", 45);
-      expect(again.grade).toBe(grade);
-      expect(await c._getGrade({ learner: "ana", item: "essay" })).toEqual([
-        { grade, score: 45, outOf: 50, status: "DRAFT", feedback: "solid" },
-      ]);
-      expect(await c._getGradesForLearner({ learner: "ana" })).toEqual([
-        {
-          item: "essay",
-          grade,
-          score: 45,
-          outOf: 50,
-          status: "DRAFT",
-          feedback: "solid",
-        },
-      ]);
-    });
-
-    test("record refuses an out-of-range score", async () => {
-      const c = await make();
-      expect(await refusal(() => draft(c, "ana", 60))).toBeInstanceOf(
-        refusalErrors.ScoreOutOfRange,
-      );
-    });
-
-    test("release, retract, and re-record keep the grade's identity", async () => {
-      const c = await make();
-      const { grade } = await draft(c, "ana", 42);
-      expect(await c.release({ learner: "ana", item: "essay", at: T1 })).toEqual({ grade });
-      expect(await refusal(() => draft(c, "ana", 45))).toBeInstanceOf(
-        refusalErrors.GradeAlreadyReleased,
-      );
-
-      expect(await c.retract({ learner: "ana", item: "essay", at: T2 })).toEqual({ grade });
-      const redone = await draft(c, "ana", 44);
-      expect(redone.grade).toBe(grade);
-      expect((await c._getGrade({ learner: "ana", item: "essay" }))[0]?.status).toBe("DRAFT");
-      expect((await c._getGrade({ learner: "ana", item: "essay" }))[0]?.score).toBe(44);
-    });
-
-    test("release and retract refuse when no grade stands in the wanted group", async () => {
-      const c = await make();
-      expect(
-        await refusal(() => c.release({ learner: "ana", item: "essay", at: T1 })),
-      ).toBeInstanceOf(refusalErrors.GradeDraftNotFound);
-      expect(
-        await refusal(() => c.retract({ learner: "ana", item: "essay", at: T1 })),
-      ).toBeInstanceOf(refusalErrors.GradeReleasedNotFound);
-      await draft(c, "ana");
-      expect(
-        await refusal(() => c.retract({ learner: "ana", item: "essay", at: T1 })),
-      ).toBeInstanceOf(refusalErrors.GradeReleasedNotFound);
-      await c.release({ learner: "ana", item: "essay", at: T1 });
-      expect(
-        await refusal(() => c.release({ learner: "ana", item: "essay", at: T1 })),
-      ).toBeInstanceOf(refusalErrors.GradeDraftNotFound);
-    });
-
-    test("releaseItem returns every draft it releases", async () => {
-      const c = await make();
-      const ana = await draft(c, "ana");
-      const ben = await draft(c, "ben");
-      await c.release({ learner: "ana", item: "essay", at: T0 });
-      await c.record({
-        learner: "cai",
-        item: "quiz",
-        evidence: "sub-9",
-        grader: "okafor",
-        score: 5,
-        outOf: 10,
-        feedback: "",
-        at: T0,
-      });
-
-      const { released } = await c.releaseItem({ item: "essay", at: T1 });
-      expect(released).toEqual([{ learner: "ben", grade: ben.grade }]);
-      expect((await c._getGrade({ learner: "ben", item: "essay" }))[0]?.status).toBe("RELEASED");
-      expect((await c._getGrade({ learner: "ana", item: "essay" }))[0]?.grade).toBe(ana.grade);
-      expect((await c._getGrade({ learner: "cai", item: "quiz" }))[0]?.status).toBe("DRAFT");
-
-      expect(await c.releaseItem({ item: "essay", at: T2 })).toEqual({ released: [] });
-    });
-
-    test("an excused grade refuses recording and retraction", async () => {
-      const c = await make();
-      await draft(c, "ben");
-      const { grade } = await c.excuse({
-        learner: "ben",
-        item: "essay",
-        grader: "okafor",
-        feedback: "medical",
-        at: T1,
-      });
-      expect(await c._getGrade({ learner: "ben", item: "essay" })).toEqual([
-        { grade, score: 42, outOf: 50, status: "EXCUSED", feedback: "medical" },
-      ]);
-      expect(await refusal(() => draft(c, "ben"))).toBeInstanceOf(refusalErrors.LearnerExcused);
-      expect(
-        await refusal(() =>
-          c.scoreCriterion({
-            learner: "ben",
-            item: "essay",
-            criterion: "clarity",
-            points: 4,
-            outOf: 5,
-            feedback: "",
-          }),
-        ),
-      ).toBeInstanceOf(refusalErrors.LearnerExcused);
-      expect(
-        await refusal(() => c.retract({ learner: "ben", item: "essay", at: T2 })),
-      ).toBeInstanceOf(refusalErrors.GradeReleasedNotFound);
-    });
-
-    test("excuse refuses when the learner has no grade for the item", async () => {
-      const c = await make();
-      expect(
-        await refusal(() =>
-          c.excuse({ learner: "ben", item: "essay", grader: "okafor", feedback: "", at: T1 }),
-        ),
-      ).toBeInstanceOf(refusalErrors.GradeNotFound);
-    });
-
-    test("scoreCriterion creates or updates a draft criterion score and refuses otherwise", async () => {
-      const c = await make();
-      expect(
-        await refusal(() =>
-          c.scoreCriterion({
-            learner: "ana",
-            item: "essay",
-            criterion: "crit-1",
-            points: 10,
-            outOf: 20,
-            feedback: "",
-          }),
-        ),
-      ).toBeInstanceOf(refusalErrors.GradeNotFound);
-
-      await draft(c, "ana");
-      expect(
-        await refusal(() =>
-          c.scoreCriterion({
-            learner: "ana",
-            item: "essay",
-            criterion: "crit-1",
-            points: 25,
-            outOf: 20,
-            feedback: "",
-          }),
-        ),
-      ).toBeInstanceOf(refusalErrors.ScoreOutOfRange);
-
-      const first = await c.scoreCriterion({
-        learner: "ana",
-        item: "essay",
-        criterion: "crit-1",
-        points: 10,
-        outOf: 20,
-        feedback: "ok",
-      });
-      const second = await c.scoreCriterion({
-        learner: "ana",
-        item: "essay",
-        criterion: "crit-1",
-        points: 15,
-        outOf: 20,
-        feedback: "better",
-      });
-      expect(second.criterionScore).toBe(first.criterionScore);
-      expect(await c._getCriterionScores({ learner: "ana", item: "essay" })).toEqual([
-        { criterion: "crit-1", points: 15, feedback: "better" },
-      ]);
-
-      await c.release({ learner: "ana", item: "essay", at: T1 });
-      expect(
-        await refusal(() =>
-          c.scoreCriterion({
-            learner: "ana",
-            item: "essay",
-            criterion: "crit-1",
-            points: 12,
-            outOf: 20,
-            feedback: "",
-          }),
-        ),
-      ).toBeInstanceOf(refusalErrors.GradeAlreadyReleased);
-    });
-
-    test("clearCriterionScores removes every matching score and succeeds when none remain", async () => {
-      const c = await make();
-      await draft(c, "ana");
-      await c.scoreCriterion({
-        learner: "ana",
-        item: "essay",
-        criterion: "crit-1",
-        points: 10,
-        outOf: 20,
-        feedback: "",
-      });
-      expect(await c.clearCriterionScores({ criterion: "crit-1" })).toEqual({
-        criterion: "crit-1",
-      });
-      expect(await c._getCriterionScores({ learner: "ana", item: "essay" })).toEqual([]);
-      expect(await c.clearCriterionScores({ criterion: "crit-1" })).toEqual({
-        criterion: "crit-1",
-      });
-    });
+const judgments = [
+  { criterion: "argument", rating: "COMPETENT", feedback: "Connected reasoning." },
+  { criterion: "evidence", rating: "NOT_ASSESSED", feedback: "Outside this review." },
+];
+test("distinct attempts remain separate; corrections preserve immutable releases", async () => {
+  const c = new MongoGradingConcept(await testDb());
+  let g = await start(c);
+  g = await c.save({ ...g, ...actor, judgments, feedback: "First" });
+  g = await c.release({ ...g, ...actor });
+  await expect(c.save({ ...g, ...actor, judgments, feedback: "No" })).rejects.toBeInstanceOf(
+    GradeConflict,
+  );
+  g = await c.retract({ ...g, ...actor });
+  g = await c.save({
+    ...g,
+    ...actor,
+    judgments: [{ ...judgments[0], rating: "EMERGENT" }, judgments[1]],
+    feedback: "Corrected",
   });
-}
+  g = await c.release({ ...g, ...actor });
+  const row = (await c._getGrade(g))[0]!;
+  expect(row.history).toHaveLength(2);
+  expect(row.history[0].judgments[0].rating).toBe("COMPETENT");
+  expect(row.judgments[0].rating).toBe("EMERGENT");
+  await start(c, "attempt-2");
+  expect(await c._getGradesForLearner({ learner: "maya" })).toHaveLength(2);
+});
+test("concurrent start is idempotent and concurrent edits cannot lose a write", async () => {
+  const c = new MongoGradingConcept(await testDb());
+  const starts = await Promise.all(Array.from({ length: 8 }, () => start(c)));
+  expect(new Set(starts.map((g) => g.grade)).size).toBe(1);
+  const results = await Promise.allSettled([
+    c.save({ ...starts[0], ...actor, judgments, feedback: "A" }),
+    c.save({ ...starts[0], ...actor, judgments, feedback: "B" }),
+  ]);
+  expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+  expect((await c._getGrade(starts[0]))[0]?.version).toBe(2);
+});
+test("release races cannot publish a half-edited assessment", async () => {
+  const c = new MongoGradingConcept(await testDb());
+  let g = await start(c);
+  g = await c.save({ ...g, ...actor, judgments, feedback: "Original" });
+  const outcomes = await Promise.allSettled([
+    c.release({ ...g, ...actor }),
+    c.save({ ...g, ...actor, judgments: [], feedback: "Incomplete" }),
+  ]);
+  expect(outcomes.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+  const row = (await c._getGrade(g))[0]!;
+  if (row.status === "RELEASED") {
+    expect(row.judgments).toHaveLength(2);
+    expect(row.history[0].feedback).toBe("Original");
+  } else {
+    expect(row.status).toBe("DRAFT");
+    expect(row.history).toEqual([]);
+  }
+});
+test("release requires complete dispositions and rejects foreign or duplicate judgments", async () => {
+  const c = new MongoGradingConcept(await testDb());
+  const g = await start(c);
+  await expect(c.release({ ...g, ...actor })).rejects.toBeInstanceOf(GradeIncomplete);
+  for (const bad of [
+    [{ ...judgments[0], criterion: "other" }],
+    [judgments[0], judgments[0]],
+    [{ ...judgments[0], rating: "100" }],
+  ])
+    await expect(c.save({ ...g, ...actor, judgments: bad, feedback: "" })).rejects.toBeInstanceOf(
+      InvalidJudgments,
+    );
+  const blank = await start(c, "");
+  await expect(c.release({ ...blank, ...actor })).rejects.toBeInstanceOf(GradeIncomplete);
+});
+test("excusal has a correction path and bulk release reports incomplete drafts", async () => {
+  const c = new MongoGradingConcept(await testDb());
+  let g = await start(c);
+  g = await c.save({ ...g, ...actor, judgments, feedback: "" });
+  g = await c.excuse({ ...g, ...actor, feedback: "Excused" });
+  expect((await c._getGrade(g))[0]?.judgments).toEqual([]);
+  g = await c.restoreExcused({ ...g, ...actor });
+  await start(c, "attempt-2");
+  const result = await c.releaseItem({ item: "paper", ...actor });
+  expect(result.released).toHaveLength(1);
+  expect(result.skipped).toHaveLength(1);
+  expect((await c._getGrade(g))[0]?.history.map((h) => h.status)).toEqual(["EXCUSED", "RELEASED"]);
+});
+
+test("bulk release preserves confirmed outcomes and distinguishes uncertain writes", async () => {
+  for (const committedBeforeFault of [false, true]) {
+    const c = new MongoGradingConcept(await testDb());
+    const drafts: { grade: string; version: number }[] = [];
+    for (const evidence of ["first", "uncertain", "last"]) {
+      const g = await start(c, evidence);
+      drafts.push(await c.save({ ...g, ...actor, judgments, feedback: evidence }));
+    }
+    const release = c.release.bind(c);
+    c.release = async (input) => {
+      if (input.grade === drafts[1]!.grade) {
+        if (committedBeforeFault) await release(input);
+        throw new Error("Injected persistence failure or lost acknowledgement");
+      }
+      return release(input);
+    };
+    const result = await c.releaseItem({ item: "paper", ...actor });
+    expect(result.released.map((r) => r.grade)).toEqual([drafts[0]!.grade, drafts[2]!.grade]);
+    expect(result.skipped).toEqual([]);
+    expect(result.unconfirmed).toEqual([{ grade: drafts[1]!.grade, reason: "OUTCOME_UNKNOWN" }]);
+    c.release = release;
+    const retry = await c.releaseItem({ item: "paper", ...actor });
+    expect(retry.released).toHaveLength(committedBeforeFault ? 0 : 1);
+    for (const g of drafts) expect((await c._getGrade(g))[0]!.history).toHaveLength(1);
+  }
+});

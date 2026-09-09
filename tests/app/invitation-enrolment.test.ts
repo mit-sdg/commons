@@ -425,23 +425,55 @@ for (const [floor, makeFloor] of floorCases) {
       const item = await post(
         edge,
         "/grades/configure-item",
-        { item: assignment, label: "Homework 1", maxPoints: 10 },
+        { item: assignment, label: "Homework 1" },
         admin.cookie,
       );
       expect(item.status).toBe(200);
+      const standard = await post(
+        edge,
+        "/grades/define-standard",
+        {
+          name: "Reasoning",
+          description: "Explain a claim",
+          deficient: "Absent",
+          emergent: "Partial",
+          competent: "Connected",
+          expert: "Thorough",
+          referenceUrl: "",
+        },
+        admin.cookie,
+      );
+      const criterion = await post(
+        edge,
+        "/grades/add-criterion",
+        { item: assignment, basis: standard.body.edition, position: 0 },
+        admin.cookie,
+      );
       const recorded = await post(
         edge,
         "/grades/record",
-        { item: assignment, learner: tara.user, score: 9, feedback: "Good" },
+        { item: assignment, learner: tara.user, evidence: submitted.body.submission },
         admin.cookie,
       );
       expect(recorded.status).toBe(200);
-      const released = await post(
+      const saved = await post(
         edge,
-        "/grades/release",
-        { item: assignment, learner: tara.user },
+        "/grades/save",
+        {
+          ...recorded.body,
+          feedback: "Good",
+          judgments: [
+            {
+              criterion: criterion.body.criterion,
+              rating: "COMPETENT",
+              feedback: "Good reasoning",
+            },
+          ],
+        },
         admin.cookie,
       );
+      expect(saved.status).toBe(200);
+      const released = await post(edge, "/grades/release", saved.body, admin.cookie);
       expect(released.status).toBe(200);
       const granted = await post(
         edge,
@@ -527,7 +559,11 @@ for (const [floor, makeFloor] of floorCases) {
       const myGrades = await post(edge, "/grades/for-me", {}, tara.cookie);
       expect(myGrades.status).toBe(200);
       expect(myGrades.body.grades).toEqual([
-        expect.objectContaining({ item: assignment, score: 9 }),
+        expect.objectContaining({
+          item: assignment,
+          status: "RELEASED",
+          judgments: [expect.objectContaining({ rating: "COMPETENT" })],
+        }),
       ]);
       const myLateDays = await post(edge, "/late-days/list", {}, tara.cookie);
       expect(myLateDays.status).toBe(200);

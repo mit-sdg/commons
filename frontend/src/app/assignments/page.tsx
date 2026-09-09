@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@/hooks/use-query";
 import { api } from "@/lib/api";
+import { assignmentTypeLabel } from "@/lib/assignment-types";
 import { useAuth } from "@/lib/auth";
 
 import {
@@ -20,14 +21,6 @@ import {
   loadSubmissionLatest,
 } from "@/lib/lms";
 import { cn } from "@/lib/utils";
-
-const KIND_LABELS: Record<string, string> = {
-  HOMEWORK: "Homework",
-  PROJECT: "Project",
-  READING: "Reading",
-  RECITATION: "Recitation",
-  ADMIN: "Admin",
-};
 
 type FilterKey = "all" | "upcoming" | "submitted" | "overdue" | "graded";
 
@@ -145,7 +138,9 @@ export default function AssignmentsPage() {
       const q = search.toLowerCase();
       if (
         !detail.title?.toLowerCase().includes(q) &&
-        !detail.kind?.toLowerCase().includes(q)
+        !assignmentTypeLabel(detail.kind ?? "")
+          .toLowerCase()
+          .includes(q)
       )
         return false;
     }
@@ -225,7 +220,7 @@ export default function AssignmentsPage() {
           title={search ? `No assignments match “${search}”` : "No assignments"}
           description={
             search
-              ? "Try another title or kind, or clear the search."
+              ? "Try another title or type, or clear the search."
               : filter !== "all"
                 ? `No ${filter} assignments to show.`
                 : "No assignments yet."
@@ -254,9 +249,7 @@ export default function AssignmentsPage() {
                   <div className="flex items-center gap-2">
                     <p className="font-medium truncate">{title}</p>
                     {detail?.kind && (
-                      <Fact.Kind>
-                        {KIND_LABELS[detail.kind] ?? detail.kind}
-                      </Fact.Kind>
+                      <Fact.Kind>{assignmentTypeLabel(detail.kind)}</Fact.Kind>
                     )}
                   </div>
                   <Facts className="mt-1 text-xs text-muted-foreground">
@@ -270,7 +263,7 @@ export default function AssignmentsPage() {
                       <span>
                         <span className="text-muted-foreground">Grade</span>{" "}
                         <span className="font-medium text-foreground tabular-nums">
-                          {grade.score}/{grade.maxPoints}
+                          Assessment available
                         </span>
                       </span>
                     )}

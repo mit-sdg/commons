@@ -16,13 +16,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@/hooks/use-query";
 import type { Input as ApiInput } from "@/lib/api";
 import { api, publicErrorMessage } from "@/lib/api";
+import { ASSIGNMENT_TYPES } from "@/lib/assignment-types";
 import { useAuth } from "@/lib/auth";
 import { useCourse } from "@/lib/course";
 import { fromZonedInput, toZonedInput } from "@/lib/format";
 import { loadSections } from "@/lib/lms";
+import { CreationSkills } from "./grade-setup";
 
 interface AssignmentFormProps {
-  onSaved: () => void;
+  onSaved: (assignment: string) => void;
   existing?: {
     assignment: string;
     title: string;
@@ -44,13 +46,15 @@ export function AssignmentForm({
   existing,
   onCancel,
 }: AssignmentFormProps) {
-  const { session } = useAuth();
+  const { session, permissions } = useAuth();
   const { timezone } = useCourse();
   const [title, setTitle] = useState(existing?.title ?? "");
   const [instructions, setInstructions] = useState(
     existing?.instructions ?? "",
   );
-  const [kind, setKind] = useState(existing?.kind ?? "HOMEWORK");
+  const [kind, setKind] = useState(
+    existing?.kind === "RECITATION" ? "PREP" : (existing?.kind ?? "EXERCISE"),
+  );
   const [availableAt, setAvailableAt] = useState(() =>
     existing?.availableAt
       ? toZonedInput(existing.availableAt, timezone)
@@ -73,6 +77,8 @@ export function AssignmentForm({
   const [targets, setTargets] = useState<string[]>(
     () => existing?.targets?.map(String) ?? [],
   );
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [showClose, setShowClose] = useState(Boolean(existing?.closeAt));
   const [loading, setLoading] = useState(false);
   const { data: sectionsData, loading: sectionsLoading } = useQuery(
     () => loadSections(),
@@ -103,91 +109,139 @@ export function AssignmentForm({
   async function save() {
     if (!session || !scheduleValid) return;
     setLoading(true);
+    try {
+      const rawPayload = {
+        session,
+        title: title.trim(),
+        instructions: instructions.trim(),
+        kind,
+        availableAt: fromZonedInput(availableAt, timezone),
+        dueAt: fromZonedInput(dueAt, timezone),
+        closeAt: closeAt ? fromZonedInput(closeAt, timezone) : undefined,
+        acceptsSubmissions,
+        audience,
+        targets: audience === "TARGETS" ? targets : [],
+      };
 
-    const rawPayload = {
-      session,
-      title: title.trim(),
-      instructions: instructions.trim(),
-      kind,
-      availableAt: fromZonedInput(availableAt, timezone),
-      dueAt: fromZonedInput(dueAt, timezone),
-      closeAt: closeAt ? fromZonedInput(closeAt, timezone) : undefined,
-      acceptsSubmissions,
-      audience,
-      targets: audience === "TARGETS" ? targets : [],
-    };
+      const existingGradeItem = existing
+        ? await api.grades.item({ item: existing.assignment })
+        : null;
+      const result = existing
+        ? await api.assignments.revise({
+            title: rawPayload.title,
+            instructions: rawPayload.instructions,
+            kind: rawPayload.kind,
+            availableAt: rawPayload.availableAt,
+            dueAt: rawPayload.dueAt,
+            closeAt: rawPayload.closeAt,
+            acceptsSubmissions: rawPayload.acceptsSubmissions,
+            audience: rawPayload.audience,
+            targets: rawPayload.targets,
+            assignment: existing.assignment,
+          })
+        : await api.assignments["create-draft"](rawPayload);
 
-    const existingGradeItem = existing
-      ? await api.grades.item({ item: existing.assignment })
-      : null;
-    const result = existing
-      ? await api.assignments.revise({
-          title: rawPayload.title,
-          instructions: rawPayload.instructions,
-          kind: rawPayload.kind,
-          availableAt: rawPayload.availableAt,
-          dueAt: rawPayload.dueAt,
-          closeAt: rawPayload.closeAt,
-          acceptsSubmissions: rawPayload.acceptsSubmissions,
-          audience: rawPayload.audience,
-          targets: rawPayload.targets,
-          assignment: existing.assignment,
-        })
-      : await api.assignments["create-draft"](rawPayload);
-
-    setLoading(false);
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      if (
-        existing &&
-        existingGradeItem &&
-        !("error" in existingGradeItem) &&
-        existingGradeItem.label === existing.title &&
-        existing.title !== rawPayload.title
-      ) {
-        await api.grades["configure-item"]({
-          item: existing.assignment,
-          label: rawPayload.title,
-          maxPoints: existingGradeItem.maxPoints,
-        });
+      if ("error" in result) {
+        setLoading(false);
+        toast.error(publicErrorMessage(result.error));
+      } else {
+        if (
+          existing &&
+          existingGradeItem &&
+          !("error" in existingGradeItem) &&
+          existingGradeItem.label === existing.title &&
+          existing.title !== rawPayload.title
+        ) {
+          try {
+            const renamed = await api.grades["configure-item"]({
+              item: existing.assignment,
+              label: rawPayload.title,
+            });
+            if ("error" in renamed) throw new Error(renamed.error);
+          } catch {
+            toast.warning(
+              "Assignment saved, but its assessment label could not be updated. Review the label before retrying.",
+            );
+          }
+        }
+        toast.success(existing ? "Assignment updated" : "Assignment created");
+        const savedAssignment =
+          existing?.assignment ??
+          ("assignment" in result ? result.assignment : "");
+        if (!existing && acceptsSubmissions) {
+          for (const [position, basis] of selectedSkills.entries()) {
+            try {
+              const added = await api.grades["add-criterion"]({
+                item: savedAssignment,
+                basis,
+                position,
+              });
+              if ("error" in added)
+                throw new Error(publicErrorMessage(added.error));
+            } catch {
+              toast.error(
+                "Draft saved, but some skills could not be added. Review its skills before publishing.",
+              );
+              break;
+            }
+          }
+        }
+        onSaved(savedAssignment);
       }
-      toast.success(existing ? "Assignment updated" : "Assignment created");
-      onSaved();
+    } catch {
+      toast.error(
+        "Could not save the assignment. Check your connection and try again.",
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="asgn-title">Title</Label>
         <Input
           id="asgn-title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Homework 3"
+          placeholder="e.g. Prep for concept modeling"
+          disabled={loading}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="asgn-instructions">Instructions</Label>
+        <Textarea
+          id="asgn-instructions"
+          value={instructions}
+          onChange={(e) => setInstructions(e.target.value)}
+          rows={10}
+          className="min-h-56"
+          placeholder="Assignment instructions (Markdown supported)..."
           disabled={loading}
         />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="asgn-kind">Kind</Label>
+          <Label htmlFor="asgn-kind">Assignment type</Label>
           <Select value={kind} onValueChange={setKind} disabled={loading}>
-            <SelectTrigger id="asgn-kind">
+            <SelectTrigger id="asgn-kind" className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="HOMEWORK">Homework</SelectItem>
-              <SelectItem value="PROJECT">Project</SelectItem>
-              <SelectItem value="READING">Reading</SelectItem>
-              <SelectItem value="RECITATION">Recitation</SelectItem>
-              <SelectItem value="ADMIN">Admin</SelectItem>
+              {Object.entries(ASSIGNMENT_TYPES).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="asgn-audience">Audience</Label>
+          <Label htmlFor="asgn-audience">Assign to</Label>
           <Select
             value={audience}
             onValueChange={(value) => {
@@ -196,12 +250,12 @@ export function AssignmentForm({
             }}
             disabled={loading}
           >
-            <SelectTrigger id="asgn-audience">
+            <SelectTrigger id="asgn-audience" className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="EVERYONE">Everyone</SelectItem>
-              <SelectItem value="TARGETS">Specific targets</SelectItem>
+              <SelectItem value="EVERYONE">All students</SelectItem>
+              <SelectItem value="TARGETS">Selected sections</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -259,68 +313,93 @@ export function AssignmentForm({
         </fieldset>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="space-y-2">
-          <Label htmlFor="asgn-available">Available at ({timezone})</Label>
-          <Input
-            id="asgn-available"
-            type="datetime-local"
-            value={availableAt}
-            onChange={(e) => setAvailableAt(e.target.value)}
-            disabled={loading}
-            aria-invalid={Boolean(availableError)}
-            aria-describedby={
-              availableError ? "asgn-available-error" : undefined
-            }
-          />
-          {availableError ? (
-            <p id="asgn-available-error" className="text-xs text-destructive">
-              {availableError}
-            </p>
-          ) : null}
+      {!existing && acceptsSubmissions && permissions.can("grade") && (
+        <CreationSkills
+          selected={selectedSkills}
+          onChange={setSelectedSkills}
+          disabled={loading}
+        />
+      )}
+      <section className="space-y-4 border-t pt-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-medium">Schedule</h2>
+          <p className="text-sm text-muted-foreground">Times in {timezone}</p>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="asgn-due">Due at ({timezone})</Label>
-          <Input
-            id="asgn-due"
-            type="datetime-local"
-            value={dueAt}
-            onChange={(e) => setDueAt(e.target.value)}
-            disabled={loading}
-            aria-invalid={Boolean(availableError || dueError)}
-            aria-describedby={
-              availableError || dueError ? "asgn-due-error" : undefined
-            }
-          />
-          {availableError || dueError ? (
-            <p id="asgn-due-error" className="text-xs text-destructive">
-              {availableError || dueError}
-            </p>
-          ) : null}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="asgn-available">Available from</Label>
+            <Input
+              id="asgn-available"
+              type="datetime-local"
+              value={availableAt}
+              onChange={(e) => setAvailableAt(e.target.value)}
+              disabled={loading}
+              aria-invalid={Boolean(availableError)}
+              aria-describedby={
+                availableError ? "asgn-available-error" : undefined
+              }
+            />
+            {availableError ? (
+              <p id="asgn-available-error" className="text-xs text-destructive">
+                {availableError}
+              </p>
+            ) : null}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="asgn-due">Due date</Label>
+            <Input
+              id="asgn-due"
+              type="datetime-local"
+              value={dueAt}
+              onChange={(e) => setDueAt(e.target.value)}
+              disabled={loading}
+              aria-invalid={Boolean(availableError || dueError)}
+              aria-describedby={
+                availableError || dueError ? "asgn-due-error" : undefined
+              }
+            />
+            {availableError || dueError ? (
+              <p id="asgn-due-error" className="text-xs text-destructive">
+                {availableError || dueError}
+              </p>
+            ) : null}
+          </div>
+          {showClose && (
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="asgn-close">
+                Closes{" "}
+                <span className="text-muted-foreground font-normal">
+                  (optional)
+                </span>
+              </Label>
+              <Input
+                id="asgn-close"
+                type="datetime-local"
+                value={closeAt}
+                onChange={(e) => setCloseAt(e.target.value)}
+                disabled={loading}
+                aria-invalid={Boolean(dueError)}
+                aria-describedby={dueError ? "asgn-close-error" : undefined}
+              />
+              {dueError ? (
+                <p id="asgn-close-error" className="text-xs text-destructive">
+                  {dueError}
+                </p>
+              ) : null}
+            </div>
+          )}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="asgn-close">
-            Close at ({timezone}){" "}
-            <span className="text-muted-foreground font-normal">
-              (optional)
-            </span>
-          </Label>
-          <Input
-            id="asgn-close"
-            type="datetime-local"
-            value={closeAt}
-            onChange={(e) => setCloseAt(e.target.value)}
-            disabled={loading}
-            aria-invalid={Boolean(dueError)}
-            aria-describedby={dueError ? "asgn-close-error" : undefined}
-          />
-          {dueError ? (
-            <p id="asgn-close-error" className="text-xs text-destructive">
-              {dueError}
-            </p>
-          ) : null}
-        </div>
-      </div>
+        {!showClose && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowClose(true)}
+          >
+            Add closing date
+          </Button>
+        )}
+      </section>
 
       <div className="flex items-center gap-2">
         <input
@@ -336,18 +415,6 @@ export function AssignmentForm({
         </Label>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="asgn-instructions">Instructions</Label>
-        <Textarea
-          id="asgn-instructions"
-          value={instructions}
-          onChange={(e) => setInstructions(e.target.value)}
-          rows={6}
-          placeholder="Assignment instructions (Markdown supported)..."
-          disabled={loading}
-        />
-      </div>
-
       <div className="flex gap-2">
         <Button
           onClick={save}
@@ -358,7 +425,7 @@ export function AssignmentForm({
             (audience === "TARGETS" && targets.length === 0)
           }
         >
-          {existing ? "Save Changes" : "Create Draft"}
+          {loading ? "Saving…" : existing ? "Save changes" : "Create draft"}
         </Button>
         {onCancel && (
           <Button variant="ghost" onClick={onCancel} disabled={loading}>

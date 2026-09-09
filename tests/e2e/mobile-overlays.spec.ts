@@ -191,9 +191,7 @@ test("notification lists shrink to the available space while their footer stays 
   await expect(popup).toBeHidden();
 });
 
-test("participant actions are opaque on mobile and the join projector remains full-screen", async ({
-  page,
-}, testInfo) => {
+async function openRelay(page: Page) {
   const { cookie } = await authenticate(page);
   const { relay } = await call<{ relay: string }>(page, cookie, "/live/relays/plan", {
     title: "Workshop questions",
@@ -211,8 +209,15 @@ test("participant actions are opaque on mobile and the join projector remains fu
   const standing = await call<{ run: { token: string } }>(page, cookie, "/live/relays/run", {
     run,
   });
+  return { run, token: standing.run.token };
+}
+
+test("participant actions are opaque on mobile and translucent on desktop", async ({
+  page,
+}, testInfo) => {
+  const { token } = await openRelay(page);
   await page.setViewportSize({ width: 390, height: 700 });
-  await page.goto(`/q/${standing.run.token}`);
+  await page.goto(`/q/${token}`);
   const handIn = page.getByRole("button", { name: "Hand in", exact: true });
   await expect(handIn).toBeInViewport({ ratio: 1 });
   const bar = page.locator(".fixed").filter({ has: handIn });
@@ -224,6 +229,11 @@ test("participant actions are opaque on mobile and the join projector remains fu
   });
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(bar).not.toHaveCSS("backdrop-filter", "none");
+});
+
+test("the join projector remains full-screen", async ({ page }, testInfo) => {
+  const { run } = await openRelay(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto(`/staff/live/run/${run}/project`);
   await page.getByRole("button", { name: "Expand join code", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Workshop questions", exact: true });

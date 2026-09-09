@@ -1,5 +1,6 @@
 import { activeUser } from "../access/session.ts";
 import {
+  compute,
   each,
   former,
   is,
@@ -14,12 +15,14 @@ import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   isActiveStudent,
   isNotActiveStudent,
+  mayGrade,
+  mayNotGrade,
   mayManageCourse,
   mayNotManageCourse,
 } from "../access/policy.ts";
-import { concepts } from "../../concepts.ts";
+import { concepts, computations as c } from "../../concepts.ts";
 
-const { Assigning, Notifying, Posting, Rostering, Submitting } = concepts;
+const { Assigning, Grading, Notifying, Posting, Rostering, Submitting } = concepts;
 /** Which assignments belong to this learner? */
 export const theAssignmentsOf = former(
   "the assignments of (student)",
@@ -334,36 +337,53 @@ export const ForMe = endpoint("/assignments/for-me", ({ session, user }) =>
   ),
 );
 
-export const GetAssignment = endpoint("/assignments/get", ({ session, assignment, user, detail }) =>
-  receive({ session, assignment }).then(
+export const mayReadLearnerAssignment = view(
+  "(user) may read learner assignment (assignment)",
+  ({ user, assignment }, _outputs, { status }) => [
     where(
-      activeUser({ session }).is({ user }),
       isActiveStudent({ user }),
       Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: true }),
       Assigning._getAssignments({}).is({ assignment, status: "PUBLISHED" }),
-      theAssignment({ assignment }).is({ detail }),
-    )
-      .then(respond({ assignment: detail }))
-      .named("found"),
+    ),
     where(
-      activeUser({ session }).is({ user }),
       isActiveStudent({ user }),
-      Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: false }),
-    )
-      .then(respond({ assignment: null }))
-      .named("not-assigned"),
-    where(
-      activeUser({ session }).is({ user }),
-      isActiveStudent({ user }),
-      Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: true }),
-      no(Assigning._getAssignments({}).is({ assignment, status: "PUBLISHED" })),
-    )
-      .then(respond({ assignment: null }))
-      .named("not-published"),
-    where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
-      .then(respond({ error: "FORBIDDEN" }))
-      .named("forbidden"),
-  ),
+      Assigning._getAssignments({}).is({ assignment, status: "ARCHIVED" }),
+      Grading._getGradesForLearner({ learner: user }).is({ item: assignment, status }),
+      is.among(status, ["RELEASED", "EXCUSED"]),
+    ),
+  ],
+).holds();
+
+export const mayReadStaffAssignment = view(
+  "(user) may read staff assignment details",
+  ({ user }, _outputs, _bindings) => [where(mayManageCourse({ user })), where(mayGrade({ user }))],
+).holds();
+
+export const GetAssignment = endpoint(
+  "/assignments/get",
+  ({ session, assignment, user, detail, section, at, canSubmit }) =>
+    receive({ session, assignment }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayReadLearnerAssignment({ user, assignment }),
+        theAssignment({ assignment }).is({ detail }),
+        Rostering._getSeatByUser({ user }).is({ section }),
+        now(at),
+        compute(c.submissionAllowed, { detail, section, at }, canSubmit),
+      )
+        .then(respond({ assignment: detail, canSubmit }))
+        .named("found"),
+      where(
+        activeUser({ session }).is({ user }),
+        isActiveStudent({ user }),
+        no(mayReadLearnerAssignment({ user, assignment })),
+      )
+        .then(respond({ assignment: null, canSubmit: false }))
+        .named("unavailable"),
+      where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
 );
 
 export const StaffSummary = endpoint(
@@ -372,19 +392,23 @@ export const StaffSummary = endpoint(
     receive({ session, assignment }).then(
       where(
         activeUser({ session }).is({ user }),
-        mayManageCourse({ user }),
+        mayReadStaffAssignment({ user }),
         theAssignment({ assignment }).is({ detail }),
       )
         .then(respond({ summary: detail }))
         .named("found"),
       where(
         activeUser({ session }).is({ user }),
-        mayManageCourse({ user }),
+        mayReadStaffAssignment({ user }),
         no(theAssignment({ assignment })),
       )
         .then(respond({ summary: null }))
         .named("missing"),
-      where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
+      where(
+        activeUser({ session }).is({ user }),
+        mayNotManageCourse({ user }),
+        mayNotGrade({ user }),
+      )
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -429,11 +453,28 @@ export const ClearDueOverride = endpoint(
     ),
 );
 
+export const maySubmitAssignment = view(
+  "(user) may submit assignment (assignment) at (at)",
+  ({ user, assignment, at }, _outputs, { detail, section, allowed }) =>
+    where(
+      isActiveStudent({ user }),
+      Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: true }),
+      Assigning._getDetail({ assignment }).is({ detail }),
+      Rostering._getSeatByUser({ user }).is({ section }),
+      compute(c.submissionAllowed, { detail, section, at }, allowed),
+      is.among(allowed, [true]),
+    ),
+).holds();
+
 export const Submit = endpoint(
   "/assignments/submit",
   ({ session, assignment, content, user, at, post, submission }) =>
     receive({ session, assignment, content }).then(
-      where(now(at), activeUser({ session }).is({ user }), isActiveStudent({ user }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        maySubmitAssignment({ user, assignment, at }),
+      )
         .then(Posting.create({ author: user, content, at }).responds({ post }))
         .then(
           Submitting.submit({ assignment, submitter: user, artifact: post, at }).responds({
@@ -442,9 +483,13 @@ export const Submit = endpoint(
         )
         .then(respond({ submission }))
         .named("success"),
-      where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        no(maySubmitAssignment({ user, assignment, at })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("unavailable"),
     ),
 );
 

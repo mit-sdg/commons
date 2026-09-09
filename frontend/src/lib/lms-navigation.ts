@@ -14,7 +14,7 @@ import type { Capability } from "@/lib/models";
 
 const STUDENT_NAV = [
   { href: "/assignments", label: "Assignments", icon: BookOpen },
-  { href: "/grades", label: "Grades", icon: GraduationCap },
+  { href: "/grades", label: "Assessments", icon: GraduationCap },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/notes", label: "Notes", icon: StickyNote },
 ];
@@ -49,8 +49,14 @@ const STAFF_NAV: {
   },
   {
     href: "/staff/gradebook",
-    label: "Gradebook",
+    label: "Assessments",
     icon: FileText,
+    needs: ["grade"],
+  },
+  {
+    href: "/staff/skills",
+    label: "Skills & rubrics",
+    icon: GraduationCap,
     needs: ["grade"],
   },
   {
@@ -99,4 +105,40 @@ export function lmsAccess(seat: unknown, isStaff: boolean) {
     hasRosterSeat: typeof seat === "string" && seat.length > 0,
     isStaff,
   };
+}
+
+/** Keep infrequent tools in their owning section, retaining capability checks. */
+export function coursePrimaryNavigation(
+  isStaff: boolean,
+  can: (capability: Capability) => boolean,
+) {
+  const all = lmsNavigation(isStaff, can);
+  if (!isStaff) return all;
+  const primary = all.filter(
+    (item) =>
+      !["/staff/skills", "/staff/late-days", "/staff/class"].includes(
+        item.href,
+      ),
+  );
+  if (!can("course:manage") && can("student-records"))
+    primary.splice(1, 0, {
+      href: "/staff/late-days",
+      label: "Roster",
+      icon: Users,
+    });
+  return primary;
+}
+export function courseSectionNavigation(
+  pathname: string,
+  can: (capability: Capability) => boolean,
+) {
+  const paths =
+    pathname.startsWith("/staff/gradebook") ||
+    pathname.startsWith("/staff/skills")
+      ? ["/staff/gradebook", "/staff/skills"]
+      : pathname.startsWith("/staff/roster") ||
+          pathname.startsWith("/staff/late-days")
+        ? ["/staff/roster", "/staff/late-days"]
+        : [];
+  return lmsNavigation(true, can).filter((item) => paths.includes(item.href));
 }

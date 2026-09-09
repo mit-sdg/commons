@@ -4,33 +4,18 @@ import { BookOpen, Plus } from "lucide-react";
 import { useState } from "react";
 import { Fact, Facts } from "@/components/facts";
 import { Link } from "@/components/link";
-import { AssignmentForm } from "@/components/lms/assignment-form";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useQuery } from "@/hooks/use-query";
+import { assignmentTypeLabel } from "@/lib/assignment-types";
 import { useAuth } from "@/lib/auth";
 import { loadSections, loadStaffAssignments } from "@/lib/lms";
 
-const KIND_LABELS: Record<string, string> = {
-  HOMEWORK: "Homework",
-  PROJECT: "Project",
-  READING: "Reading",
-  RECITATION: "Recitation",
-  ADMIN: "Admin",
-};
-
 function StaffAssignmentsPageContent() {
   const { session } = useAuth();
-  const [showCreate, setShowCreate] = useState(false);
   const [filter, setFilter] = useState<string>("all");
 
   const {
@@ -78,11 +63,12 @@ function StaffAssignmentsPageContent() {
     <PageContainer>
       <PageHeader
         eyebrow="Staff"
-        title="Assignment Manager"
-        description="Create, edit, publish, and archive assignments."
+        title="Assignments"
         actions={
-          <Button onClick={() => setShowCreate(true)}>
-            <Plus className="size-4 mr-1" /> New Assignment
+          <Button asChild>
+            <Link href="/staff/assignments/new">
+              <Plus className="size-4 mr-1" /> New assignment
+            </Link>
           </Button>
         }
       />
@@ -91,6 +77,7 @@ function StaffAssignmentsPageContent() {
         {filters.map((f) => (
           <Button
             key={f.key}
+            aria-pressed={filter === f.key}
             size="sm"
             variant={filter === f.key ? "default" : "outline"}
             onClick={() => setFilter(f.key)}
@@ -107,12 +94,25 @@ function StaffAssignmentsPageContent() {
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={BookOpen}
-          title="No assignments"
-          description="Create your first assignment to get started."
+          title={
+            assignments.length === 0
+              ? "No assignments yet"
+              : `No ${filter.toLowerCase()} assignments`
+          }
           action={
-            <Button size="sm" onClick={() => setShowCreate(true)}>
-              <Plus className="size-4 mr-1" /> Create Assignment
-            </Button>
+            assignments.length === 0 ? (
+              <Button asChild size="sm">
+                <Link href="/staff/assignments/new">Create assignment</Link>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFilter("all")}
+              >
+                Show all assignments
+              </Button>
+            )
           }
         />
       ) : (
@@ -126,13 +126,13 @@ function StaffAssignmentsPageContent() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="font-medium">{a.title}</p>
-                  <Fact.Kind>{KIND_LABELS[a.kind] ?? a.kind}</Fact.Kind>
+                  <Fact.Kind>{assignmentTypeLabel(a.kind)}</Fact.Kind>
                 </div>
                 <Facts className="text-xs text-muted-foreground mt-1">
                   <Fact.Due verb="Due" at={a.dueAt} />
                   <Fact.Where preposition="for">
                     {a.audience === "EVERYONE"
-                      ? "Everyone"
+                      ? "All students"
                       : a.targets
                           .map(
                             (target) =>
@@ -147,21 +147,6 @@ function StaffAssignmentsPageContent() {
           ))}
         </div>
       )}
-
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] sm:max-w-2xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create Assignment</DialogTitle>
-          </DialogHeader>
-          <AssignmentForm
-            onSaved={() => {
-              setShowCreate(false);
-              refetch();
-            }}
-            onCancel={() => setShowCreate(false)}
-          />
-        </DialogContent>
-      </Dialog>
     </PageContainer>
   );
 }

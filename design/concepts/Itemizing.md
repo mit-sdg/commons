@@ -2,129 +2,118 @@
 
 ## Purpose
 
-Describe how an item is assessed with a label, a maximum score, and optional
-ordered criteria.
+Describe an item's assessment structure as ordered criteria referring to stable
+external bases, preserving each criterion's meaning after it leaves the active list.
 
 ## Principle
 
-Professor Lee configures the midterm as a grade item worth 100 points. She adds
-Argument, worth 60, and Style, worth 40, in that order. A later `ensureItem`
-request finds the existing item and leaves it unchanged. Adding a criterion to
-an item that has not been configured is refused. Archiving the midterm removes
-it from the active items.
+Elena configures the paper and adds Argumentation edition one as its first basis.
+She moves it later in the list. Adding the same basis twice is refused. She removes
+that criterion from future use and adds edition two. The original criterion still
+answers which basis it used. Archiving the item hides it from active item lists;
+adding a criterion to an archived or unknown item is refused. Ensuring an existing
+item does not overwrite its chosen label or reactivate it.
 
 ## Types
 
 ```types
 external Item
-  An application-owned identity used in the item role.
+  The application-owned thing whose assessment structure is described.
+external Basis
+  An opaque external standard interpreted by the application.
 ```
 
 ## State
 
 ```state
 a set of GradeItems with
-  an item     Item
-  a label     String
-  a maxPoints Number
+  an item Item
+  a label String
 
-an Active   set of GradeItems
+a Active set of GradeItems
 an Archived set of GradeItems
 
 a set of Criteria with
-  an item     Item
-  a name      String
-  a maxPoints Number
-  a position  Number
+  an item Item
+  a basis Basis
+  a position Number
 
-Rule: at most one grade item is active for an item at a time.
-Rule: criteria belong to the item and stand in position order.
-Rule: whether a maximum is workable is a calculation over the input alone: a maximum is workable when it is at least zero.
-Rule: configuring updates the label and maximum of an existing active item.
-Rule: ensureItem returns an existing active item unchanged or creates one.
-Rule: removing a criterion removes only Itemizing's record of it.
+a Selected set of Criteria
+
+Rule: each item has at most one grade item; configuration can reactivate it.
+Rule: a criterion's item and basis never change; removing it only removes it from Selected.
+Rule: selected criteria of one item have distinct bases and nonnegative integer positions.
 ```
 
 ## Actions
 
 ```actions
-configureItem(item: Item, label: String, maxPoints: Number) : return (gradeItem: GradeItem)
-  where maxPoints is a workable maximum and a gradeItem with item is in active
+configureItem(item: Item, label: String) : return (gradeItem: GradeItem)
+  where true
   then
-    set gradeItem's label to label and maxPoints to maxPoints
+    create or reactivate the item's grade item, set its label, preserve criteria, and return gradeItem
     return gradeItem
-  where maxPoints is a workable maximum and no gradeItem with item is in active
-  then
-    add a new gradeItem with item, label, and maxPoints
-    add gradeItem to active
-    return gradeItem
-  where maxPoints is not a workable maximum
-  then
-    refuse SCORE_OUT_OF_RANGE "The maximum must be at least zero."
 
-ensureItem(item: Item, label: String, maxPoints: Number) : return (gradeItem: GradeItem)
-  where a gradeItem with item is in active
+ensureItem(item: Item, label: String) : return (gradeItem: GradeItem)
+  where true
   then
-    return gradeItem
-  where no gradeItem with item is in active
-  then
-    add a new gradeItem with item, label, and maxPoints
-    add gradeItem to active
     return gradeItem
 
 archiveItem(item: Item) : return (gradeItem: GradeItem)
-  where a gradeItem with item is in active
+  where the item has an active grade item
   then
-    remove gradeItem from active
-    add gradeItem to archived
+    move it to Archived and return gradeItem
     return gradeItem
-  where no gradeItem with item is in active
+  where the item has no active grade item
   then
-    refuse GRADE_ITEM_NOT_FOUND "There is no active grade item for this."
+    refuse GRADE_ITEM_NOT_FOUND "There is no active item."
 
-addCriterion(item: Item, name: String, maxPoints: Number, position: Number) : return (criterion: Criterion)
-  where a gradeItem with item is in active
+addCriterion(item: Item, basis: Basis, position: Number) : return (criterion: Criterion)
+  where the item is active, basis is not selected, and position is a nonnegative integer
   then
-    add a new criterion with item, name, maxPoints, and position
+    create a criterion with item, basis, and position, add it to Selected, and return criterion
     return criterion
-  where no gradeItem with item is in active
+  where the item is not active
   then
-    refuse GRADE_ITEM_NOT_FOUND "There is no active grade item for this."
+    refuse GRADE_ITEM_NOT_FOUND "There is no active item."
+  where the basis is already selected or the position is invalid
+  then
+    refuse INVALID_CRITERION "Select a distinct basis and a nonnegative integer position."
 
-reviseCriterion(criterion: Criterion, name: String, maxPoints: Number, position: Number) : return (criterion: Criterion)
-  where criterion in criteria
+reviseCriterion(criterion: Criterion, position: Number) : return (criterion: Criterion)
+  where criterion is selected for an active item and position is a nonnegative integer
   then
-    set criterion's name, maxPoints, and position from the inputs
+    change only its position and return criterion
     return criterion
-  where criterion not in criteria
+  where criterion is not selected for an active item
   then
-    refuse CRITERION_NOT_FOUND "There is no such criterion."
+    refuse CRITERION_NOT_FOUND "There is no active criterion."
+  where position is invalid
+  then
+    refuse INVALID_CRITERION "Use a nonnegative integer position."
+
 removeCriterion(criterion: Criterion) : return (criterion: Criterion)
-  where criterion in criteria
+  where criterion is selected for an active item
   then
-    delete criterion
+    remove criterion from Selected without deleting its identity or basis and return criterion
     return criterion
-  where criterion not in criteria
+  where criterion is not selected for an active item
   then
-    refuse CRITERION_NOT_FOUND "There is no such criterion."
+    refuse CRITERION_NOT_FOUND "There is no active criterion."
 ```
 
 ## Queries
 
 ```queries
-_getItem (item: String) : optional (item: String, label: String, maxPoints: Number, status: String)
-  answers the active GradeItem for the Item
-  answers no row when none exists
+_getSelection (item: String) : optional (criteria: Json)
+  answers one complete ordered selection of criterion identities for an active item
 
-_getItems () : many (item: String, label: String, maxPoints: Number)
-  answers all active grade items in creation order
-  answers no rows when none match
-
-_getCriteria (item: String) : many (criterion: String, name: String, maxPoints: Number, position: Number)
-  answers the item's criteria in position order
-  answers no rows when none match
-
-_getCriterion (criterion: String) : optional (item: String, name: String, maxPoints: Number)
-  answers the Criterion and its owning Item
-  answers no row when the Criterion does not exist
+_getItem (item: String) : optional (item: String, label: String, status: String)
+  answers the item's label and active or archived status, including for historical readers
+_getItems () : many (item: String, label: String)
+  answers active items in label order
+_getCriteria (item: String) : many (criterion: String, basis: String, position: Number)
+  answers selected criteria in position order
+_getCriterion (criterion: String) : optional (item: String, basis: String, position: Number, active: Bool)
+  answers the immutable basis even when the criterion is no longer selected
 ```

@@ -375,9 +375,9 @@
         "title": "Homework 1",
         "instructions": "Problems 1-5.",
         "kind": "HOMEWORK",
-        "availableAt": "2026-07-14T01:05:13.783Z",
-        "dueAt": "2026-07-20T01:05:13.783Z",
-        "closeAt": "2026-07-27T01:05:13.783Z",
+        "availableAt": "2020-01-01T00:00:00.000Z",
+        "dueAt": "2090-01-01T00:00:00.000Z",
+        "closeAt": "2090-02-01T00:00:00.000Z",
         "acceptsSubmissions": true,
         "audience": "EVERYONE",
         "targets": []
@@ -396,9 +396,9 @@
         "title": "Sneaky",
         "instructions": "x",
         "kind": "HOMEWORK",
-        "availableAt": "2026-07-14T01:05:13.783Z",
-        "dueAt": "2026-07-20T01:05:13.783Z",
-        "closeAt": "2026-07-27T01:05:13.783Z",
+        "availableAt": "2020-01-01T00:00:00.000Z",
+        "dueAt": "2090-01-01T00:00:00.000Z",
+        "closeAt": "2090-02-01T00:00:00.000Z",
         "acceptsSubmissions": true,
         "audience": "EVERYONE",
         "targets": []
@@ -417,8 +417,8 @@
         "title": "No close",
         "instructions": "x",
         "kind": "HOMEWORK",
-        "availableAt": "2026-07-14T01:05:13.783Z",
-        "dueAt": "2026-07-20T01:05:13.783Z",
+        "availableAt": "2020-01-01T00:00:00.000Z",
+        "dueAt": "2090-01-01T00:00:00.000Z",
         "acceptsSubmissions": true,
         "audience": "EVERYONE",
         "targets": []
@@ -437,9 +437,9 @@
         "title": "Empty targets",
         "instructions": "x",
         "kind": "HOMEWORK",
-        "availableAt": "2026-07-14T01:05:13.783Z",
-        "dueAt": "2026-07-20T01:05:13.783Z",
-        "closeAt": "2026-07-27T01:05:13.783Z",
+        "availableAt": "2020-01-01T00:00:00.000Z",
+        "dueAt": "2090-01-01T00:00:00.000Z",
+        "closeAt": "2090-02-01T00:00:00.000Z",
         "acceptsSubmissions": true,
         "audience": "TARGETS",
         "targets": []
@@ -483,9 +483,9 @@
         "title": "Homework 1 (rev)",
         "instructions": "Problems 1-6.",
         "kind": "HOMEWORK",
-        "availableAt": "2026-07-14T01:05:13.783Z",
-        "dueAt": "2026-07-20T01:05:13.783Z",
-        "closeAt": "2026-07-27T01:05:13.783Z",
+        "availableAt": "2020-01-01T00:00:00.000Z",
+        "dueAt": "2090-01-01T00:00:00.000Z",
+        "closeAt": "2090-02-01T00:00:00.000Z",
         "acceptsSubmissions": true,
         "audience": "EVERYONE",
         "targets": []
@@ -505,9 +505,9 @@
         "title": "X",
         "instructions": "x",
         "kind": "HOMEWORK",
-        "availableAt": "2026-07-14T01:05:13.783Z",
-        "dueAt": "2026-07-20T01:05:13.783Z",
-        "closeAt": "2026-07-27T01:05:13.783Z",
+        "availableAt": "2020-01-01T00:00:00.000Z",
+        "dueAt": "2090-01-01T00:00:00.000Z",
+        "closeAt": "2090-02-01T00:00:00.000Z",
         "acceptsSubmissions": true,
         "audience": "EVERYONE",
         "targets": []
@@ -553,8 +553,7 @@
       "response": [
         {
           "item": "uuid#17",
-          "label": "Homework 1 (rev)",
-          "maxPoints": 100,
+          "label": "Homework 1",
           "status": "ACTIVE"
         }
       ]
@@ -643,7 +642,8 @@
           "status": "PUBLISHED",
           "createdAt": "<date>",
           "updatedAt": "<date>"
-        }
+        },
+        "canSubmit": true
       }
     },
     {
@@ -656,9 +656,9 @@
         "title": "Homework 2",
         "instructions": "Section A only.",
         "kind": "PROJECT",
-        "availableAt": "2026-07-14T01:05:13.783Z",
-        "dueAt": "2026-07-23T01:05:13.783Z",
-        "closeAt": "2026-08-02T01:05:13.783Z",
+        "availableAt": "2020-01-01T00:00:00.000Z",
+        "dueAt": "2090-01-01T00:00:00.000Z",
+        "closeAt": "2090-02-01T00:00:00.000Z",
         "acceptsSubmissions": false,
         "audience": "TARGETS",
         "targets": ["$secA.section._id"]
@@ -720,9 +720,9 @@
         "title": "Homework 2",
         "instructions": "Sections A and B.",
         "kind": "PROJECT",
-        "availableAt": "2026-07-14T01:05:13.783Z",
-        "dueAt": "2026-07-23T01:05:13.783Z",
-        "closeAt": "2026-08-02T01:05:13.783Z",
+        "availableAt": "2020-01-01T00:00:00.000Z",
+        "dueAt": "2090-01-01T00:00:00.000Z",
+        "closeAt": "2090-02-01T00:00:00.000Z",
         "acceptsSubmissions": false,
         "audience": "TARGETS",
         "targets": ["$secA.section._id", "$secB.section._id"]
@@ -875,7 +875,7 @@
         "session": "$loginAdmin.session",
         "assignment": "$createHw1.assignment",
         "assignee": "$regAlice.user",
-        "dueAt": "2026-08-03T01:05:13.783Z"
+        "dueAt": "2090-01-01T00:00:00.000Z"
       },
       "response": {
         "release": "uuid#19"
@@ -915,7 +915,7 @@
         "session": "$loginAdmin.session",
         "assignment": "$createHw1.assignment",
         "assignee": "$regAdmin.user",
-        "dueAt": "2026-08-03T01:05:13.783Z"
+        "dueAt": "2090-01-01T00:00:00.000Z"
       },
       "response": {
         "error": "RELEASE_NOT_FOUND"
@@ -1152,7 +1152,7 @@
         "content": "Better late."
       },
       "response": {
-        "submission": "uuid#33"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -1165,15 +1165,15 @@
         "title": "Homework 4 (draft)",
         "instructions": "Unpublished.",
         "kind": "HOMEWORK",
-        "availableAt": "2026-07-14T01:05:13.783Z",
-        "dueAt": "2026-07-20T01:05:13.783Z",
-        "closeAt": "2026-07-27T01:05:13.783Z",
+        "availableAt": "2020-01-01T00:00:00.000Z",
+        "dueAt": "2090-01-01T00:00:00.000Z",
+        "closeAt": "2090-02-01T00:00:00.000Z",
         "acceptsSubmissions": true,
         "audience": "EVERYONE",
         "targets": []
       },
       "response": {
-        "assignment": "uuid#34"
+        "assignment": "uuid#33"
       }
     },
     {
@@ -1187,7 +1187,7 @@
         "content": "Submitting to a draft."
       },
       "response": {
-        "submission": "uuid#35"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -1201,7 +1201,7 @@
         "content": "Into the void."
       },
       "response": {
-        "submission": "uuid#36"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -1215,7 +1215,7 @@
         "content": "Staff work."
       },
       "response": {
-        "error": "FORBIDDEN"
+        "error": "NOT_FOUND"
       }
     },
     {

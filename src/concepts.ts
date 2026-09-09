@@ -1,3 +1,4 @@
+import { submissionAllowed } from "./computations/assessment-eligibility.ts";
 import { ownsTaskScope } from "./computations/task-scopes.ts";
 import { validPostControlSelection } from "./computations/post-controls.ts";
 import {
@@ -55,6 +56,7 @@ import { conversing } from "./concepts/conversing/registry.ts";
 import { drafting } from "./concepts/drafting/registry.ts";
 import { flagging } from "./concepts/flagging/registry.ts";
 import { formatting } from "./concepts/formatting/registry.ts";
+import { standardSetting } from "./concepts/standardSetting/registry.ts";
 import { grading } from "./concepts/grading/registry.ts";
 import { grouping } from "./concepts/grouping/registry.ts";
 import { guiding } from "./concepts/guiding/registry.ts";
@@ -246,6 +248,7 @@ const registrations = {
   Flagging: flagging,
   Formatting: formatting,
   Grading: grading,
+  StandardSetting: standardSetting,
   Grouping: grouping,
   Guiding: guiding,
   Insisting: insisting,
@@ -286,6 +289,7 @@ const registrations = {
 };
 
 export const learningConcepts = conceptSet(registrations, {
+  submissionAllowed,
   validPostControlSelection,
   validProfileSelection,
   validFeedOrder,

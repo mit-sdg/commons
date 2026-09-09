@@ -464,7 +464,23 @@ describe("HTTP authorization and privacy", () => {
   });
 
   test("submission artifacts are visible only to their student and graders", async () => {
-    const assignment = "private-assignment";
+    const created = await call(
+      "/assignments/create-draft",
+      {
+        title: "Private assignment",
+        instructions: "Submit work",
+        kind: "HOMEWORK",
+        availableAt: "2020-01-01T00:00:00Z",
+        dueAt: "2090-01-01T00:00:00Z",
+        closeAt: "2090-02-01T00:00:00Z",
+        acceptsSubmissions: true,
+        audience: "EVERYONE",
+        targets: [],
+      },
+      admin.cookie,
+    );
+    const assignment = created.body.assignment as string;
+    await call("/assignments/publish", { assignment }, admin.cookie);
     await call(
       "/assignments/submit",
       { assignment, content: "PRIVATE FINAL ANSWER: 42" },

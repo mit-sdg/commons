@@ -2,13 +2,13 @@ import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
 import spec from "@design/concepts/Itemizing.md" with { type: "text" };
 import { MongoItemizingConcept } from "./itemizing.mongo.ts";
-import { CriterionNotFound, GradeItemNotFound, ScoreOutOfRange } from "./errors.ts";
+import { CriterionNotFound, GradeItemNotFound, InvalidCriterion } from "./errors.ts";
 
 export const itemizing = registerConcept({
   class: MongoItemizingConcept,
   spec,
   refusals: {
-    SCORE_OUT_OF_RANGE: ScoreOutOfRange,
+    INVALID_CRITERION: InvalidCriterion,
     GRADE_ITEM_NOT_FOUND: GradeItemNotFound,
     CRITERION_NOT_FOUND: CriterionNotFound,
   },
