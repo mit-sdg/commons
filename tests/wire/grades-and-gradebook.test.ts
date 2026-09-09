@@ -206,3 +206,56 @@ test("submission policy refuses unknown, early, closed, nonaccepting and narrowe
   if ("error" in list) throw new Error(String(list.error));
   expect(list.submissions).toHaveLength(1);
 });
+
+test("draft criteria are staff-only, survive publication, and are retained when a draft is revised", async () => {
+  const { app, call, staff, maya, standard } = await setup();
+  const fields = {
+    title: "Draft preparation",
+    instructions: "Read before class",
+    kind: "PREP",
+    availableAt: "2020-01-01T00:00:00Z",
+    dueAt: "2090-01-01T00:00:00Z",
+    closeAt: "2090-02-01T00:00:00Z",
+    acceptsSubmissions: true,
+    audience: "EVERYONE" as const,
+    targets: [],
+  };
+  const draft = await call("/assignments/create-draft", { session: staff.session, ...fields });
+  if ("error" in draft) throw new Error(String(draft.error));
+  const criterion = await call("/grades/add-criterion", {
+    session: staff.session,
+    item: draft.assignment,
+    basis: standard.edition,
+    position: 0,
+  });
+  expect(criterion).toHaveProperty("criterion");
+  expect(await call("/grades/item", { session: maya.session, item: draft.assignment })).toEqual({
+    error: "NOT_FOUND",
+  });
+  await call("/assignments/revise", {
+    session: staff.session,
+    assignment: draft.assignment,
+    ...fields,
+    title: "Revised prep",
+  });
+  const before = await call("/grades/item", { session: staff.session, item: draft.assignment });
+  if ("error" in before) throw new Error(String(before.error));
+  expect(before.criteria).toHaveLength(1);
+  await call("/assignments/publish", { session: staff.session, assignment: draft.assignment });
+  const after = await call("/grades/item", { session: maya.session, item: draft.assignment });
+  if ("error" in after) throw new Error(String(after.error));
+  expect(after.criteria).toEqual(before.criteria);
+  const nonAccepting = await call("/assignments/create-draft", {
+    session: staff.session,
+    ...fields,
+    acceptsSubmissions: false,
+  });
+  if ("error" in nonAccepting) throw new Error(String(nonAccepting.error));
+  expect(await app.concepts.Itemizing._getItem({ item: nonAccepting.assignment })).toEqual([]);
+  await call("/assignments/revise", {
+    session: staff.session,
+    assignment: nonAccepting.assignment,
+    ...fields,
+  });
+  expect(await app.concepts.Itemizing._getItem({ item: nonAccepting.assignment })).toHaveLength(1);
+});

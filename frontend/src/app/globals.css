@@ -284,6 +284,9 @@
   .prose-task h6 {
     @apply mt-3 text-xs;
   }
+  .prose-task > :first-child {
+    margin-top: 0;
+  }
   .prose-task a {
     @apply font-medium text-primary underline decoration-primary/30 underline-offset-2 hover:decoration-primary;
   }

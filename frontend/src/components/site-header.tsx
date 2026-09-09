@@ -3,6 +3,7 @@
 import {
   Bell,
   Bookmark,
+  ChevronDown,
   GraduationCap,
   LayoutGrid,
   ListChecks,
@@ -35,7 +36,12 @@ import { UserAvatar } from "@/components/user-avatar";
 import { useAuth } from "@/lib/auth";
 import { useCourse } from "@/lib/course";
 import { loadRosterMe } from "@/lib/lms";
-import { lmsAccess, lmsNavigation } from "@/lib/lms-navigation";
+import {
+  coursePrimaryNavigation,
+  courseSectionNavigation,
+  lmsAccess,
+  lmsNavigation,
+} from "@/lib/lms-navigation";
 import { cn } from "@/lib/utils";
 
 const DISCUSSION_NAV = [
@@ -89,6 +95,7 @@ export function SiteHeader() {
   const effectiveIsStaff =
     permissions.isStaff || (accessIsCurrent && resolvedLmsAccess.isStaff);
   const courseNav = lmsNavigation(effectiveIsStaff, permissions.can);
+  const primaryNav = coursePrimaryNavigation(effectiveIsStaff, permissions.can);
   const courseHome = effectiveIsStaff ? "/staff" : "/assignments";
   const isCourseArea = COURSE_PATHS.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`),
@@ -296,32 +303,86 @@ export function SiteHeader() {
           className="hidden border-t border-border/70 bg-muted/30 lg:block"
         >
           <div className="mx-auto flex max-w-6xl items-center gap-1 overflow-x-auto px-4 py-2 sm:px-6">
-            <span className="mr-2 flex shrink-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <span
+              className="mr-2 flex shrink-0 items-center gap-1.5 px-2 text-xs font-medium text-muted-foreground"
+              title={course.title || undefined}
+            >
               <GraduationCap className="size-4" />
-              {course.code ? (
-                <span className="flex items-baseline gap-x-3">
-                  <span>{course.code}</span>
-                  <span>{course.title}</span>
-                  <span>{course.term}</span>
-                </span>
-              ) : (
-                "Course"
-              )}
+              {course.code || "Course"}
             </span>
-            {courseNav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={isActive(item.href) ? "page" : undefined}
-                className={cn(
-                  "flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-background hover:text-foreground",
-                  isActive(item.href) &&
-                    "bg-background text-foreground shadow-xs",
-                )}
-              >
-                <item.icon className="size-4" /> {item.label}
-              </Link>
-            ))}
+            {primaryNav.map((item) => {
+              const related = effectiveIsStaff
+                ? courseSectionNavigation(item.href, permissions.can).filter(
+                    (link) => link.href !== item.href,
+                  )
+                : [];
+              const active =
+                isActive(item.href) ||
+                related.some((link) => isActive(link.href));
+              return (
+                <div
+                  key={item.href}
+                  className={cn(
+                    "flex shrink-0 items-center rounded-md",
+                    active && "bg-background text-foreground shadow-xs",
+                  )}
+                >
+                  <Link
+                    href={item.href}
+                    aria-current={isActive(item.href) ? "page" : undefined}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-background hover:text-foreground",
+                      active && "text-foreground",
+                      related.length > 0 && "pr-1.5",
+                    )}
+                  >
+                    <item.icon className="size-4" />
+                    {item.label}
+                  </Link>
+                  {related.length > 0 && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-7 px-0"
+                          aria-label={`${item.label} menu`}
+                        >
+                          <ChevronDown className="size-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        {related.map((link) => (
+                          <DropdownMenuItem key={link.href} asChild>
+                            <Link href={link.href}>
+                              <link.icon className="size-4" />
+                              {link.label}
+                            </Link>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              );
+            })}
+            {courseNav
+              .filter((item) => item.href === "/staff/class")
+              .map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                  className={cn(
+                    "ml-auto flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-background hover:text-foreground",
+                    isActive(item.href) &&
+                      "bg-background text-foreground shadow-xs",
+                  )}
+                >
+                  <item.icon className="size-4" />
+                  {item.label}
+                </Link>
+              ))}
           </div>
         </nav>
       ) : null}

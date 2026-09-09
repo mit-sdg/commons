@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Fact, Facts } from "@/components/facts";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -65,9 +66,10 @@ export function GradeInput({
     return <ErrorState message={query.error} onRetry={query.refetch} />;
   return (
     <div className={className}>
-      <p className="mb-3 text-sm font-medium">
-        {learnerLabel ?? "Learner"} · {itemLabel ?? "Assignment"}
-      </p>
+      <Facts className="mb-3 text-sm">
+        <span className="font-medium">{learnerLabel ?? "Learner"}</span>
+        <Fact.Where>{itemLabel ?? "Assignment"}</Fact.Where>
+      </Facts>
       {assessment ? (
         <AssessmentEditor
           key={`${assessment.grade}-${assessment.version}`}
@@ -192,10 +194,11 @@ function AssessmentEditor({
     );
   return (
     <div className="space-y-4 rounded-lg border border-border p-4">
-      <p className="text-sm text-muted-foreground">
-        Draft · visible only to staff
-        {a.attempt ? ` · Attempt ${a.attempt}` : " · Assignment excusal"}
-      </p>
+      <Facts className="text-sm">
+        <Fact.Status status="DRAFT" />
+        <span className="text-muted-foreground">Visible only to staff</span>
+        <span>{a.attempt ? `Attempt ${a.attempt}` : "Assignment excusal"}</span>
+      </Facts>
       {a.evidence && a.criteria.length === 0 && (
         <p role="alert" className="text-sm">
           No criteria were selected when this assessment started. Configure
@@ -229,28 +232,35 @@ function AssessmentEditor({
                   </option>
                 ))}
               </select>
-              {j?.rating && (
+              {j?.rating && levelDescription(c, j.rating).trim() && (
                 <p className="text-sm text-muted-foreground">
                   {levelDescription(c, j.rating)}
                 </p>
               )}
-              <Label htmlFor={`${a.grade}-${c.criterion}-feedback`}>
-                Feedback on {c.name}
-              </Label>
-              <Textarea
-                id={`${a.grade}-${c.criterion}-feedback`}
-                maxLength={20000}
-                disabled={busy}
-                value={j?.feedback ?? ""}
-                onChange={(e) =>
-                  update(c.criterion, "feedback", e.target.value)
-                }
-              />
+              <details open={j?.feedback ? true : undefined}>
+                <summary className="cursor-pointer text-sm text-muted-foreground">
+                  Skill feedback (optional)
+                </summary>
+                <div className="mt-2 space-y-2">
+                  <Label htmlFor={`${a.grade}-${c.criterion}-feedback`}>
+                    Feedback on {c.name}
+                  </Label>
+                  <Textarea
+                    id={`${a.grade}-${c.criterion}-feedback`}
+                    maxLength={20000}
+                    disabled={busy}
+                    value={j?.feedback ?? ""}
+                    onChange={(e) =>
+                      update(c.criterion, "feedback", e.target.value)
+                    }
+                  />
+                </div>
+              </details>
             </fieldset>
           );
         })}
       <Label htmlFor={`feedback-${a.grade}`}>
-        {a.evidence ? "Overall feedback" : "Excusal explanation"}
+        {a.evidence ? "Overall feedback (optional)" : "Excusal explanation"}
       </Label>
       <Textarea
         id={`feedback-${a.grade}`}

@@ -1311,11 +1311,11 @@ Defined in [StandardSetting](../design/concepts/StandardSetting.md), line 1.
 #### Actions
 
 - `define(name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String) : return (standard: Standard, edition: Edition)`
-  - Refuses `INVALID_STANDARD`: Supply all descriptions and a safe optional reference link.
+  - Refuses `INVALID_STANDARD`: Supply a skill name and a safe optional reference link.
 - `revise(standard: Standard, expectedEdition: Edition, name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String) : return (standard: Standard, edition: Edition)`
   - Refuses `STANDARD_NOT_FOUND`: There is no such standard.
   - Refuses `STANDARD_CONFLICT`: This standard changed. Reload before issuing an edition.
-  - Refuses `INVALID_STANDARD`: Supply all descriptions and a safe optional reference link.
+  - Refuses `INVALID_STANDARD`: Supply a skill name and a safe optional reference link.
 
 #### Queries
 
@@ -8398,10 +8398,21 @@ then
   RequestBoundary.respond (counts: former "the staff dashboard counts ()", dashboard: former "the staff dashboard ()", requestId)
 ```
 
+### Course.gradeItems.DraftAcceptingAssignmentGetsGradeItem
+
+Authored path: `Course.gradeItems.DraftAcceptingAssignmentGetsGradeItem`.
+- Covered by [Assignment grade items](../design/compositions/course/grade-items.md), line 4.
+
+```reaction
+when Assigning.createDraft (acceptsSubmissions: true, title, assignment)
+then
+  Itemizing.ensureItem (item: assignment, label: title)
+```
+
 ### Course.gradeItems.PublishedAcceptingAssignmentGetsGradeItem
 
 Authored path: `Course.gradeItems.PublishedAcceptingAssignmentGetsGradeItem`.
-- Covered by [Assignment grade items](../design/compositions/course/grade-items.md), line 4.
+- Covered by [Assignment grade items](../design/compositions/course/grade-items.md), line 8.
 
 ```reaction
 when Assigning.publish (acceptsSubmissions: true, assignment)
@@ -8414,10 +8425,10 @@ then
 ### Course.gradeItems.RevisedAcceptingAssignmentEnsuresGradeItem
 
 Authored path: `Course.gradeItems.RevisedAcceptingAssignmentEnsuresGradeItem`.
-- Covered by [Assignment grade items](../design/compositions/course/grade-items.md), line 8.
+- Covered by [Assignment grade items](../design/compositions/course/grade-items.md), line 12.
 
 ```reaction
-when Assigning.revise (title, acceptsSubmissions: true, assignment, status: "PUBLISHED")
+when Assigning.revise (title, acceptsSubmissions: true, assignment)
 then
   Itemizing.ensureItem (item: assignment, label: title)
 ```

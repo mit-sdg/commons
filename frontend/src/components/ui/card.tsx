@@ -2,12 +2,18 @@ import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
+function Card({
+  className,
+  density,
+  ...props
+}: React.ComponentProps<"div"> & { density?: "compact" }) {
   return (
     <div
       data-slot="card"
       className={cn(
         "flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm",
+        density === "compact" &&
+          "gap-3 py-4 [&>[data-slot=card-header]]:grid-rows-none [&>[data-slot=card-header]]:px-4 [&>[data-slot=card-header]]:pb-0 [&>[data-slot=card-content]]:px-4",
         className,
       )}
       {...props}

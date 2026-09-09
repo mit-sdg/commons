@@ -1,6 +1,8 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ConfirmAction } from "@/components/confirm-action";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,13 +50,10 @@ export function StandardManager({ onChanged }: { onChanged?: () => void }) {
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Rubrics</h2>
-          <p className="text-sm text-muted-foreground">
-            Shared expectations for the skills assessed in your course.
-          </p>
+          <h2 className="text-lg font-semibold">Course skills</h2>
         </div>
         <Button variant="outline" onClick={() => setEditing(null)}>
-          Define rubric
+          New skill
         </Button>
       </div>
       {editing !== undefined && (
@@ -73,8 +72,8 @@ export function StandardManager({ onChanged }: { onChanged?: () => void }) {
         <LoadingState label="Loading rubrics..." />
       ) : query.data?.standards.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          Define a rubric with descriptions for all four levels, then select it
-          on an assignment.
+          Add a skill, optionally link to its rubric, then select it on an
+          assignment.
         </p>
       ) : (
         query.data?.standards.map((r) => (
@@ -82,13 +81,15 @@ export function StandardManager({ onChanged }: { onChanged?: () => void }) {
             key={r.standard}
             className="space-y-2 rounded-lg border border-border p-4"
           >
-            <div className="flex flex-wrap justify-between gap-3">
-              <h3 className="font-medium">{r.name}</h3>
-              <Button size="sm" variant="ghost" onClick={() => setEditing(r)}>
-                Issue revised edition
-              </Button>
-            </div>
-            <RubricDescription rubric={r} />
+            <RubricDescription
+              rubric={r}
+              title={r.name}
+              action={
+                <Button size="sm" variant="ghost" onClick={() => setEditing(r)}>
+                  Revise rubric
+                </Button>
+              }
+            />
           </div>
         ))
       )}
@@ -127,7 +128,7 @@ function StandardForm({
           result.error === "CONFLICT"
             ? "This rubric changed. Reload before issuing another edition."
             : result.error === "INVALID_REQUEST"
-              ? "Supply all rubric descriptions and a safe HTTP or HTTPS reference link."
+              ? "Supply a skill name and, if provided, a valid HTTP or HTTPS reference link."
               : publicErrorMessage(result.error),
         );
       else {
@@ -149,42 +150,59 @@ function StandardForm({
       }}
     >
       <h3 className="font-medium">
-        {existing ? `Revise ${existing.name}` : "Define rubric"}
+        {existing ? `Revise ${existing.name}` : "New skill"}
       </h3>
       <p className="text-sm text-muted-foreground">
         {existing
           ? "This creates a new edition. Existing assignments and assessments keep the edition they selected."
-          : "Describe observable performance at each level. These descriptions will appear beside student assessments."}
+          : "Link to your full rubric. Descriptions in Commons are optional."}
       </p>
-      {fields.map(([key, label]) => (
-        <div className="space-y-2" key={key}>
-          <Label htmlFor={`standard-${key}`}>{label}</Label>
-          {key === "name" || key === "referenceUrl" ? (
-            <Input
-              id={`standard-${key}`}
-              type={key === "referenceUrl" ? "url" : "text"}
-              maxLength={key === "referenceUrl" ? 2048 : 10000}
-              required={key !== "referenceUrl"}
-              value={values[key]}
-              disabled={busy}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, [key]: e.target.value }))
-              }
-            />
-          ) : (
-            <Textarea
-              id={`standard-${key}`}
-              required
-              maxLength={10000}
-              value={values[key]}
-              disabled={busy}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, [key]: e.target.value }))
-              }
-            />
-          )}
-        </div>
-      ))}
+      {([true, false] as const).map((basic) => {
+        const inputs = fields
+          .filter(
+            ([key]) => basic === (key === "name" || key === "referenceUrl"),
+          )
+          .map(([key, label]) => (
+            <div className="space-y-2" key={key}>
+              <Label htmlFor={`standard-${key}`}>{label}</Label>
+              {basic ? (
+                <Input
+                  id={`standard-${key}`}
+                  type={key === "referenceUrl" ? "url" : "text"}
+                  required={key === "name"}
+                  maxLength={key === "referenceUrl" ? 2048 : 10000}
+                  value={values[key]}
+                  disabled={busy}
+                  onChange={(e) =>
+                    setValues((v) => ({ ...v, [key]: e.target.value }))
+                  }
+                />
+              ) : (
+                <Textarea
+                  id={`standard-${key}`}
+                  maxLength={10000}
+                  value={values[key]}
+                  disabled={busy}
+                  onChange={(e) =>
+                    setValues((v) => ({ ...v, [key]: e.target.value }))
+                  }
+                />
+              )}
+            </div>
+          ));
+        return basic ? (
+          <div key="basic" className="space-y-4">
+            {inputs}
+          </div>
+        ) : (
+          <details key="descriptions">
+            <summary className="cursor-pointer text-sm">
+              Descriptions (optional)
+            </summary>
+            <div className="mt-3 space-y-3">{inputs}</div>
+          </details>
+        );
+      })}
       <div className="flex gap-2">
         <Button disabled={busy} type="submit">
           Save edition
@@ -201,7 +219,101 @@ function StandardForm({
     </form>
   );
 }
-export function GradeSetup({ item }: { item: string }) {
+export function CreationSkills({
+  selected,
+  onChange,
+  disabled = false,
+}: {
+  selected: string[];
+  onChange: (value: string[]) => void;
+  disabled?: boolean;
+}) {
+  const { session } = useAuth();
+  const query = useQuery(
+    session ? async () => unwrap(await api.grades.standards({})) : null,
+    [session],
+  );
+  const [search, setSearch] = useState("");
+  return (
+    <section className="space-y-3 border-t pt-6">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="font-medium">Skills assessed</h2>
+        <Link
+          href="/staff/skills"
+          target="_blank"
+          className="text-xs text-muted-foreground underline"
+        >
+          Manage skills & rubrics
+        </Link>
+      </div>
+      {query.error ? (
+        <ErrorState message={query.error} onRetry={query.refetch} />
+      ) : query.loading ? (
+        <LoadingState label="Loading skills…" />
+      ) : (
+        <>
+          <Input
+            aria-label="Search skills"
+            placeholder="Find a skill…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <div className="max-h-64 overflow-y-auto divide-y rounded-lg border">
+            {query.data?.standards
+              .filter((r) =>
+                r.name.toLowerCase().includes(search.toLowerCase()),
+              )
+              .map((r) => (
+                <label
+                  key={r.edition}
+                  className="flex cursor-pointer items-center gap-3 p-3 text-sm hover:bg-muted/40"
+                >
+                  <input
+                    type="checkbox"
+                    disabled={disabled}
+                    checked={selected.includes(r.edition)}
+                    onChange={(e) =>
+                      onChange(
+                        e.target.checked
+                          ? [...selected, r.edition]
+                          : selected.filter((v) => v !== r.edition),
+                      )
+                    }
+                  />
+                  <span>{r.name}</span>
+                </label>
+              ))}
+            {query.data?.standards.length === 0 && (
+              <p className="p-3 text-sm text-muted-foreground">
+                No course skills yet.
+              </p>
+            )}
+            {Boolean(query.data?.standards.length) &&
+              !query.data?.standards.some((r) =>
+                r.name.toLowerCase().includes(search.toLowerCase()),
+              ) && (
+                <p className="p-3 text-sm text-muted-foreground">
+                  No matching skills.
+                </p>
+              )}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+export function GradeSetup({
+  item,
+  title,
+  published = false,
+  readOnly = false,
+}: {
+  item: string;
+  title: string;
+  published?: boolean;
+  readOnly?: boolean;
+}) {
   const { session } = useAuth();
   const query = useQuery(
     session ? async () => unwrap(await api.grades.item({ item })) : null,
@@ -211,110 +323,190 @@ export function GradeSetup({ item }: { item: string }) {
     session ? async () => unwrap(await api.grades.standards({})) : null,
     [session, item],
   );
+  const [editing, setEditing] = useState(false);
   const [basis, setBasis] = useState("");
   const [busy, setBusy] = useState(false);
-  async function add() {
-    if (!basis) return;
+  const [pending, setPending] = useState<{
+    type: "add" | "remove";
+    value: string;
+  } | null>(null);
+  async function change(action: { type: "add" | "remove"; value: string }) {
     setBusy(true);
     try {
-      const r = await api.grades["add-criterion"]({
-        item,
-        basis,
-        position: query.data?.criteria.length ?? 0,
-      });
-      if ("error" in r) toast.error(publicErrorMessage(r.error));
-      else {
-        query.refetch();
-        setBasis("");
+      const r =
+        action.type === "add"
+          ? await api.grades["add-criterion"]({
+              item,
+              basis: action.value,
+              position:
+                Math.max(
+                  -1,
+                  ...(query.data?.criteria ?? []).map((c) => c.position),
+                ) + 1,
+            })
+          : await api.grades["remove-criterion"]({ criterion: action.value });
+      if ("error" in r) {
+        toast.error(publicErrorMessage(r.error));
+        return;
       }
+      await query.refetch();
+      setBasis("");
+    } catch {
+      toast.error("Could not update skills. Try again.");
     } finally {
       setBusy(false);
     }
   }
-  async function remove(criterion: string) {
+  function request(action: { type: "add" | "remove"; value: string }) {
+    if (published) setPending(action);
+    else void change(action);
+  }
+  async function prepare() {
     setBusy(true);
     try {
-      const r = await api.grades["remove-criterion"]({ criterion });
+      const r = await api.grades["configure-item"]({ item, label: title });
       if ("error" in r) toast.error(publicErrorMessage(r.error));
-      else query.refetch();
+      else {
+        await query.refetch();
+        setEditing(true);
+      }
+    } catch {
+      toast.error("Could not prepare assessment setup.");
     } finally {
       setBusy(false);
     }
   }
   if (query.loading && !query.data)
-    return <LoadingState label="Loading assessment setup..." />;
-  if (query.error)
-    return (
-      <p className="text-sm text-muted-foreground">
-        Publish an assignment that accepts submissions to configure its
-        assessment criteria.
-      </p>
-    );
-  const selected = query.data?.criteria ?? [];
+    return <LoadingState label="Loading skills…" />;
   return (
-    <div className="space-y-5">
-      <p className="text-sm text-muted-foreground">
-        Select the skills assessed by this assignment. Each new assessment keeps
-        the rubric editions selected when it starts.
-      </p>
-      {selected.map((c) => (
-        <div
-          key={c.criterion}
-          className="space-y-2 rounded-md border border-border p-4"
-        >
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="font-medium">{c.name}</h3>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={busy}
-              onClick={() => remove(c.criterion)}
-            >
-              Remove from future assessments
-            </Button>
-          </div>
-          <RubricDescription rubric={c} />
-        </div>
-      ))}
-      {selected.length === 0 && (
-        <p className="text-sm">No skills selected yet.</p>
-      )}
-      <div className="flex flex-wrap gap-2">
-        <Label htmlFor={`rubric-select-${item}`} className="sr-only">
-          Select a rubric
-        </Label>
-        <select
-          id={`rubric-select-${item}`}
-          className="h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm"
-          value={basis}
-          disabled={busy}
-          onChange={(e) => setBasis(e.target.value)}
-        >
-          <option value="">Select a rubric…</option>
-          {standards.data?.standards
-            .filter((r) => !selected.some((c) => c.standard === r.standard))
-            .map((r) => (
-              <option key={r.edition} value={r.edition}>
-                {r.name} · edition {r.number}
-              </option>
-            ))}
-        </select>
-        <Button disabled={!basis || busy} onClick={add}>
-          Add skill
-        </Button>
+    <section className="space-y-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="font-medium">Skills assessed</h2>
+        {!readOnly && (
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={busy}
+            onClick={() => setEditing(!editing)}
+          >
+            {editing ? "Done" : "Edit skills"}
+          </Button>
+        )}
       </div>
-      <p className="text-xs text-muted-foreground">
-        To adopt a revised edition, remove the old selection and add the new
-        one. Existing assessments retain their original criteria.
-      </p>
-      <details className="border-t border-border pt-4">
-        <summary className="cursor-pointer text-sm font-medium">
-          Manage course rubrics
-        </summary>
-        <div className="mt-4">
-          <StandardManager onChanged={standards.refetch} />
+      {query.error ? (
+        <div className="space-y-2">
+          <ErrorState message={query.error} onRetry={query.refetch} />
+          {!readOnly && !published && (
+            <Button variant="outline" disabled={busy} onClick={prepare}>
+              Set up skills
+            </Button>
+          )}
         </div>
-      </details>
-    </div>
+      ) : (
+        <>
+          <div className="divide-y rounded-lg border">
+            {(query.data?.criteria ?? []).map((c) => (
+              <div key={c.criterion} className="space-y-2 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium">{c.name}</span>
+                  {editing && !readOnly && (
+                    <Button
+                      aria-label={`Remove ${c.name}`}
+                      size="sm"
+                      variant="ghost"
+                      disabled={busy}
+                      onClick={() =>
+                        request({ type: "remove", value: c.criterion })
+                      }
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
+                <RubricDescription rubric={c} showEdition={false} />
+                {standards.data?.standards.some(
+                  (r) => r.standard === c.standard && r.edition !== c.basis,
+                ) && (
+                  <p className="text-xs text-muted-foreground">
+                    A newer rubric is available in{" "}
+                    <Link className="underline" href="/staff/skills">
+                      Skills & rubrics
+                    </Link>
+                    .
+                    {editing
+                      ? " Remove this selection and add the skill again to adopt it for future assessments."
+                      : ""}
+                  </p>
+                )}
+              </div>
+            ))}
+            {query.data?.criteria.length === 0 && (
+              <p className="p-3 text-sm text-muted-foreground">
+                No skills selected.
+              </p>
+            )}
+          </div>
+          {editing && !readOnly && (
+            <div className="space-y-3">
+              {standards.error ? (
+                <ErrorState
+                  message={standards.error}
+                  onRetry={standards.refetch}
+                />
+              ) : (
+                <div className="flex gap-2">
+                  <select
+                    aria-label="Add a skill"
+                    className="h-9 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm"
+                    value={basis}
+                    disabled={busy || standards.loading}
+                    onChange={(e) => setBasis(e.target.value)}
+                  >
+                    <option value="">Select a skill…</option>
+                    {standards.data?.standards
+                      .filter(
+                        (r) =>
+                          !query.data?.criteria.some(
+                            (c) => c.standard === r.standard,
+                          ),
+                      )
+                      .map((r) => (
+                        <option key={r.edition} value={r.edition}>
+                          {r.name}
+                        </option>
+                      ))}
+                  </select>
+                  <Button
+                    size="sm"
+                    disabled={!basis || busy}
+                    onClick={() => request({ type: "add", value: basis })}
+                  >
+                    Add skill
+                  </Button>
+                </div>
+              )}
+              <Link
+                className="text-xs text-muted-foreground underline"
+                href="/staff/skills"
+              >
+                Manage skills & rubrics
+              </Link>
+            </div>
+          )}
+        </>
+      )}
+      <ConfirmAction
+        open={pending !== null}
+        onOpenChange={(open) => {
+          if (!open) setPending(null);
+        }}
+        title="Change skills on a published assignment?"
+        description="Students may already be working toward these expectations. Existing assessments keep their original skills and rubric editions. Assessments started after this change use the updated selection, including for work already submitted."
+        confirmLabel="Change skills"
+        onConfirm={async () => {
+          if (pending) await change(pending);
+        }}
+      />
+    </section>
   );
 }

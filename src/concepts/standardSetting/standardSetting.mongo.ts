@@ -31,11 +31,11 @@ export class MongoStandardSettingConcept {
     for (const field of fields) {
       if (
         typeof content[field] !== "string" ||
-        !content[field].trim() ||
+        (field === "name" && !content[field].trim()) ||
         content[field].length > 10000
       ) {
         throw new InvalidStandard(
-          "Supply a name, description, and all four level descriptions (at most 10,000 characters each).",
+          "Supply a skill name; optional descriptions may contain at most 10,000 characters each.",
         );
       }
     }

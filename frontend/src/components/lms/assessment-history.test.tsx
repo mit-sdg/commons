@@ -117,7 +117,7 @@ describe("assessment presentation", () => {
         }}
       />,
     );
-    expect(unassessed).toContain("This skill was not assessed on this work");
+    expect(unassessed).toContain("Not assessed");
     expect(unassessed).not.toContain("Awaiting assessment");
   });
   test("renders descriptions as text and omits unsafe reference links", () => {
@@ -145,4 +145,52 @@ test("release preview shows every retained release that the learner will see aft
   );
   expect(preview.match(/Earlier release/g)?.length).toBe(2);
   expect(released.match(/Earlier release/g)?.length).toBe(1);
+});
+
+test("empty descriptions and feedback leave only levels, without empty disclosures", () => {
+  const minimal = {
+    ...rubric,
+    description: "",
+    deficient: "",
+    emergent: "",
+    competent: "",
+    expert: "",
+  };
+  const html = renderToStaticMarkup(
+    <AssessmentCard
+      assessment={{
+        ...assessment,
+        criteria: [minimal],
+        judgments: [
+          { criterion: "criterion", rating: "COMPETENT", feedback: " " },
+        ],
+        feedback: "",
+        history: [],
+      }}
+    />,
+  );
+  expect(html).toContain("Competent");
+  expect(html.match(/<details/g)?.length).toBe(1); // Provenance only.
+  expect(renderToStaticMarkup(<RubricDescription rubric={minimal} />)).toBe("");
+});
+test("overall and individual feedback can coexist in closed disclosures", () => {
+  const html = renderToStaticMarkup(
+    <AssessmentCard assessment={{ ...assessment, history: [] }} />,
+  );
+  expect(html).toContain("Good connection");
+  expect(html).toContain("Overall feedback");
+  expect(html).not.toContain('open=""');
+});
+
+test("skill grouping names the assignment without repeating the section skill", () => {
+  const html = renderToStaticMarkup(
+    <AssessmentCard
+      assessment={{ ...assessment, history: [] }}
+      skill="skill"
+    />,
+  );
+  expect(html).toContain("Essay");
+  expect(html).toContain("Competent");
+  expect(html).not.toContain("Reasoning");
+  expect(html).not.toContain("Feedback available");
 });

@@ -37,14 +37,34 @@ test("two editors cannot both issue from the same edition", async () => {
   expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
   expect((await c._getStandards())[0]?.number).toBe(2);
 });
-test("incomplete descriptions and executable or credentialed links are refused", async () => {
+test("empty names and executable or credentialed links are refused", async () => {
   const c = new MongoStandardSettingConcept(await testDb());
   for (const change of [
-    { competent: " " },
+    { name: " " },
     { referenceUrl: "javascript:alert(1)" },
     { referenceUrl: "https://user:pass@example.org" },
     { referenceUrl: "/relative" },
   ])
     await expect(c.define({ ...content, ...change })).rejects.toBeInstanceOf(InvalidStandard);
   expect(await c._getStandards()).toEqual([]);
+});
+
+test("level descriptions can be omitted and later editions preserve the original", async () => {
+  const c = new MongoStandardSettingConcept(await testDb());
+  const minimal = {
+    ...content,
+    description: "",
+    deficient: "",
+    emergent: "",
+    competent: "",
+    expert: "",
+  };
+  const first = await c.define(minimal);
+  const next = await c.revise({
+    ...content,
+    standard: first.standard,
+    expectedEdition: first.edition,
+  });
+  expect((await c._getEdition({ edition: first.edition }))[0]?.competent).toBe("");
+  expect((await c._getEdition({ edition: next.edition }))[0]?.competent).toBe(content.competent);
 });

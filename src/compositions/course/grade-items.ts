@@ -3,6 +3,12 @@ import { concepts } from "../../concepts.ts";
 
 const { Assigning, Itemizing } = concepts;
 
+export const DraftAcceptingAssignmentGetsGradeItem = reaction(({ assignment, title }) =>
+  when(Assigning.createDraft({ title, acceptsSubmissions: true }).responds({ assignment })).then(
+    Itemizing.ensureItem({ item: assignment, label: title }),
+  ),
+);
+
 export const PublishedAcceptingAssignmentGetsGradeItem = reaction(({ assignment, title }) =>
   when(Assigning.publish({}).responds({ assignment, acceptsSubmissions: true }))
     .where(Assigning._getAssignments({}).is({ assignment, title }))
@@ -13,7 +19,6 @@ export const RevisedAcceptingAssignmentEnsuresGradeItem = reaction(({ assignment
   when(
     Assigning.revise({ title }).responds({
       assignment,
-      status: "PUBLISHED",
       acceptsSubmissions: true,
     }),
   ).then(Itemizing.ensureItem({ item: assignment, label: title })),

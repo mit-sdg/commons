@@ -1,27 +1,28 @@
 "use client";
 
-import { ArrowLeft, Clock, GraduationCap, Send } from "lucide-react";
+import { ArrowLeft, GraduationCap, Send } from "lucide-react";
 import { use, useState } from "react";
 import { toast } from "sonner";
 import { Fact, Facts } from "@/components/facts";
 import { RenderedMarkdown } from "@/components/forum/rendered-markdown";
 import { Link } from "@/components/link";
+import { AssessmentHistory } from "@/components/lms/assessment-history";
 import {
-  AssessmentHistory,
-  RubricDescription,
-} from "@/components/lms/assessment-history";
+  AssignmentDates,
+  AssignmentInstructions,
+  AssignmentSkills,
+} from "@/components/lms/assignment-reading";
 import { LateDayControls } from "@/components/lms/late-day-controls";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { PageContainer } from "@/components/page";
 import { ErrorState, LoadingState } from "@/components/states";
-import { TaskMarkdown } from "@/components/tasks/task-markdown";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
+import { assignmentTypeLabel } from "@/lib/assignment-types";
 import { useAuth } from "@/lib/auth";
-import { dateTime } from "@/lib/format";
 import {
   loadAssignmentDetail,
   loadAssignments,
@@ -32,14 +33,6 @@ import {
   loadSubmissionLatest,
 } from "@/lib/lms";
 import { cn } from "@/lib/utils";
-
-const KIND_LABELS: Record<string, string> = {
-  HOMEWORK: "Homework",
-  PROJECT: "Project",
-  READING: "Reading",
-  RECITATION: "Recitation",
-  ADMIN: "Admin",
-};
 
 export default function AssignmentDetailPage({
   params,
@@ -227,7 +220,7 @@ export default function AssignmentDetailPage({
             {detail.title}
           </h1>
           <Facts className="text-muted-foreground text-sm">
-            <Fact.Kind>{KIND_LABELS[detail.kind] ?? detail.kind}</Fact.Kind>
+            <Fact.Kind>{assignmentTypeLabel(detail.kind)}</Fact.Kind>
             <Fact.Status status={detail.status} />
           </Facts>
         </div>
@@ -239,21 +232,18 @@ export default function AssignmentDetailPage({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
-        <div className="space-y-6">
+        <div className="space-y-4">
           {detail.instructions && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Instructions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <TaskMarkdown content={detail.instructions} />
-              </CardContent>
-            </Card>
+            <AssignmentInstructions instructions={detail.instructions} />
+          )}
+
+          {gradeItemData && !("error" in gradeItemData) && (
+            <AssignmentSkills criteria={gradeItemData.criteria} />
           )}
 
           {canSubmit && (
-            <Card>
-              <CardHeader className="pb-3">
+            <Card density="compact">
+              <CardHeader>
                 <CardTitle className="text-base">
                   {latest
                     ? `Resubmit (Attempt #${latest.number + 1})`
@@ -290,8 +280,8 @@ export default function AssignmentDetailPage({
           )}
 
           {attempts.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
+            <Card density="compact">
+              <CardHeader>
                 <CardTitle className="text-base">Submission attempts</CardTitle>
               </CardHeader>
               <CardContent>
@@ -348,51 +338,15 @@ export default function AssignmentDetailPage({
               toggle={false}
             />
           </section>
-          {gradeItemData &&
-            !("error" in gradeItemData) &&
-            gradeItemData.criteria.length > 0 && (
-              <section className="space-y-4">
-                <h2 className="text-lg font-semibold">Assignment rubrics</h2>
-                {gradeItemData.criteria.map((c) => (
-                  <div
-                    key={c.criterion}
-                    className="rounded-md border border-border p-4"
-                  >
-                    <h3 className="mb-2 font-medium">{c.name}</h3>
-                    <RubricDescription rubric={c} />
-                  </div>
-                ))}
-              </section>
-            )}
         </div>
 
         <aside className="space-y-5">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Clock className="size-4" /> Dates
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div>
-                <p className="text-muted-foreground">Available</p>
-                <Fact.Due at={detail.availableAt} />
-              </div>
-              <div>
-                <p className="text-muted-foreground">Due</p>
-                <Fact.Due
-                  at={due}
-                  className={cn(isOverdue && "text-destructive")}
-                />
-              </div>
-              {effectiveClose && (
-                <div>
-                  <p className="text-muted-foreground">Closes</p>
-                  <Fact.Due at={effectiveClose} />
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <AssignmentDates
+            availableAt={detail.availableAt}
+            dueAt={due}
+            closeAt={effectiveClose}
+            overdue={isOverdue}
+          />
 
           {detail.status === "PUBLISHED" && (
             <LateDayControls
@@ -404,28 +358,6 @@ export default function AssignmentDetailPage({
               unitHours={unitHours}
               onUpdate={handleUpdate}
             />
-          )}
-
-          {latest && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Your Status</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-1 text-sm">
-                <p>
-                  <span className="text-muted-foreground">Latest:</span> Attempt
-                  #{latest.number}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Status:</span>{" "}
-                  <StatusBadge status={latest.status} />
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Submitted:</span>{" "}
-                  {dateTime(latest.submittedAt)}
-                </p>
-              </CardContent>
-            </Card>
           )}
         </aside>
       </div>

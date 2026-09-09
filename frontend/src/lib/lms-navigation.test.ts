@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { lmsAccess, lmsNavigation } from "./lms-navigation";
+import {
+  coursePrimaryNavigation,
+  courseSectionNavigation,
+  lmsAccess,
+  lmsNavigation,
+} from "./lms-navigation";
 
 describe("Commons navigation", () => {
   test("staff links stay on staff-authorized routes", () => {
@@ -44,4 +49,26 @@ describe("Commons navigation", () => {
       isStaff: false,
     });
   });
+});
+
+test("grouped navigation keeps late-day staff and graders on authorized destinations", () => {
+  const records = (c: string) => c === "student-records";
+  expect(
+    coursePrimaryNavigation(true, records).some(
+      (i) => i.href === "/staff/late-days",
+    ),
+  ).toBe(true);
+  expect(
+    courseSectionNavigation("/staff/late-days", records).map((i) => i.href),
+  ).toEqual(["/staff/late-days"]);
+  expect(
+    courseSectionNavigation("/staff/skills", (c) => c === "grade").map(
+      (i) => i.href,
+    ),
+  ).toEqual(["/staff/gradebook", "/staff/skills"]);
+  expect(
+    coursePrimaryNavigation(true, () => true).some(
+      (i) => i.href === "/staff/skills" || i.href === "/staff/class",
+    ),
+  ).toBe(false);
 });

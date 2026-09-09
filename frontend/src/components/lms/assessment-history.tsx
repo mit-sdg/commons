@@ -1,7 +1,10 @@
 "use client";
 
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useState } from "react";
+import { Fact, Facts } from "@/components/facts";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,20 +47,18 @@ export function levelDescription(
         COMPETENT: rubric.competent,
         EXPERT: rubric.expert,
       } as Record<string, string>
-    )[level] ?? "This skill was not assessed on this work."
+    )[level] ?? ""
   );
-}
-function when(at: string | null) {
-  return at
-    ? new Date(at).toLocaleString(undefined, {
-        dateStyle: "medium",
-        timeStyle: "short",
-      })
-    : "Not released";
 }
 export function RubricDescription({
   rubric,
+  showEdition = true,
+  title,
+  action,
 }: {
+  showEdition?: boolean;
+  title?: string;
+  action?: ReactNode;
   rubric: Pick<
     Rubric,
     | "name"
@@ -70,37 +71,79 @@ export function RubricDescription({
     | "referenceUrl"
   >;
 }) {
-  return (
-    <details className="text-sm">
-      <summary className="cursor-pointer text-muted-foreground">
-        View rubric · edition {rubric.number}
-      </summary>
-      <div className="mt-3 space-y-3 border-l-2 border-border pl-4">
+  const levels = LEVELS.filter((l) => levelDescription(rubric, l).trim());
+  const reference = /^https?:\/\//i.test(rubric.referenceUrl)
+    ? rubric.referenceUrl
+    : null;
+  const hasText = rubric.description.trim() || levels.length > 0;
+  const body = (
+    <div className="mt-3 space-y-3 text-sm">
+      {rubric.description.trim() && (
         <p className="whitespace-pre-wrap">{rubric.description}</p>
-        <dl className="space-y-3">
-          {LEVELS.filter((l) => l !== "NOT_ASSESSED").map((l) => (
-            <div key={l}>
-              <dt className="font-medium">{levelLabel(l)}</dt>
-              <dd className="text-muted-foreground whitespace-pre-wrap">
-                {levelDescription(rubric, l)}
-              </dd>
-            </div>
-          ))}
-        </dl>
-        {/^https?:\/\//i.test(rubric.referenceUrl) && (
-          <a
-            className="underline underline-offset-4"
-            href={rubric.referenceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Further guidance (external page)
-          </a>
+      )}
+      <dl className="space-y-2">
+        {levels.map((l) => (
+          <div key={l}>
+            <dt className="font-medium">{levelLabel(l)}</dt>
+            <dd className="text-muted-foreground whitespace-pre-wrap">
+              {levelDescription(rubric, l)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      {showEdition && (
+        <p className="text-xs text-muted-foreground">Edition {rubric.number}</p>
+      )}
+    </div>
+  );
+  const external = reference && (
+    <a
+      className="shrink-0 text-sm text-muted-foreground underline underline-offset-4"
+      href={reference}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Full rubric ↗
+    </a>
+  );
+  if (title)
+    return (
+      <div className="flex flex-wrap items-start gap-3">
+        {hasText ? (
+          <details className="group min-w-0 flex-1">
+            <summary className="flex cursor-pointer list-none items-center gap-2 py-1 text-sm font-medium [&::-webkit-details-marker]:hidden">
+              <ChevronRight className="size-3.5 shrink-0 transition-transform group-open:rotate-90" />
+              {title}
+            </summary>
+            {body}
+          </details>
+        ) : (
+          <span className="min-w-0 flex-1 py-1 text-sm font-medium">
+            {title}
+          </span>
         )}
+        <div className="flex items-center gap-3">
+          {external}
+          {action}
+        </div>
       </div>
-    </details>
+    );
+  if (!hasText && !reference) return null;
+  return (
+    <div className="space-y-2 text-sm">
+      {external}
+      {hasText && (
+        <details>
+          <summary className="cursor-pointer text-muted-foreground">
+            Details
+          </summary>
+          {body}
+        </details>
+      )}
+    </div>
   );
 }
+
 export function AssessmentCard({
   assessment: a,
   staff = false,
@@ -114,70 +157,116 @@ export function AssessmentCard({
 }) {
   const criteria = a.criteria.filter((c) => !skill || c.standard === skill);
   return (
-    <Card id={`assessment-${a.grade}`}>
-      <CardHeader className="pb-3">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div>
-            <CardTitle className="text-base">
+    <Card density="compact" id={`assessment-${a.grade}`}>
+      <CardHeader>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <Facts as="div">
+            <CardTitle className="text-sm">
               <Link
                 className="hover:underline"
-                href={`${staff ? "/staff" : ""}/assignments/${a.item}${a.evidence ? `#attempt-${a.evidence}` : ""}`}
+                href={`${staff ? "/staff" : ""}/assignments/${a.item}`}
               >
                 {a.label ?? "Assignment"}
               </Link>
             </CardTitle>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {a.attempt ? `Attempt ${a.attempt}` : "Assignment excusal"}
-            </p>
-          </div>
-          <StatusBadge status={a.status} />
+            {a.attempt && (
+              <Link
+                className="text-xs text-muted-foreground hover:underline"
+                href={`${staff ? "/staff" : ""}/assignments/${a.item}${a.evidence ? `#attempt-${a.evidence}` : ""}`}
+              >
+                Attempt {a.attempt}
+              </Link>
+            )}
+          </Facts>
+          <Facts as="div" className="text-xs">
+            {skill && a.status !== "EXCUSED" && (
+              <span className="rounded-md bg-muted px-2 py-1 font-medium">
+                {a.judgments.find((j) => j.criterion === criteria[0]?.criterion)
+                  ? levelLabel(
+                      a.judgments.find(
+                        (j) => j.criterion === criteria[0]?.criterion,
+                      )!.rating,
+                    )
+                  : "Awaiting assessment"}
+              </span>
+            )}
+            {(staff || a.status !== "RELEASED") && (
+              <StatusBadge status={a.status} />
+            )}
+            {!staff && a.status === "RELEASED" && a.history.length > 1 && (
+              <span className="rounded-md bg-muted px-2 py-1">Corrected</span>
+            )}
+          </Facts>
         </div>
-        <p className="text-xs text-muted-foreground">
-          {a.submittedAt && <>Submitted {when(a.submittedAt)} · </>}
-          {preview
-            ? "Release preview"
-            : a.releasedAt
-              ? `Released ${when(a.releasedAt)}`
-              : "Draft — visible only to staff"}
-        </p>
+        <details className="text-xs text-muted-foreground">
+          <summary className="cursor-pointer">
+            {preview ? (
+              "Release preview"
+            ) : a.releasedAt ? (
+              <Fact.When verb="Released" at={a.releasedAt} />
+            ) : (
+              "Draft, visible only to staff"
+            )}
+          </summary>
+          <Facts as="div" className="mt-2">
+            <Fact.When verb="Submitted" at={a.submittedAt} form="absolute" />
+            <Fact.When verb="Released" at={a.releasedAt} form="absolute" />
+          </Facts>
+        </details>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent>
         {a.status === "EXCUSED" ? (
           <p className="text-sm">Excused. No competency judgment was made.</p>
         ) : (
           criteria.map((c) => {
             const j = a.judgments.find((j) => j.criterion === c.criterion);
-            return (
-              <section
+            const description = j ? levelDescription(c, j.rating).trim() : "";
+            const feedback = j?.feedback.trim() ?? "";
+            const row = (
+              <>
+                <span className="min-w-0 flex-1 font-medium">{c.name}</span>
+                <span className="shrink-0 rounded-md bg-muted px-2 py-1 text-xs font-medium">
+                  {j ? levelLabel(j.rating) : "Awaiting assessment"}
+                </span>
+              </>
+            );
+            return description || feedback ? (
+              <details
                 key={c.criterion}
-                className="space-y-2 border-t border-border pt-3"
+                className="group border-t border-border"
               >
-                <div className="flex flex-wrap justify-between gap-2">
-                  <h3 className="font-medium">{c.name}</h3>
-                  <span className="rounded-md bg-muted px-2 py-1 text-sm font-medium">
-                    {j ? levelLabel(j.rating) : "Awaiting assessment"}
-                  </span>
+                <summary className="flex cursor-pointer list-none items-center gap-2 py-2 text-sm [&::-webkit-details-marker]:hidden">
+                  <ChevronRight className="size-3.5 shrink-0 transition-transform group-open:rotate-90" />
+                  {skill ? <span>Details</span> : row}
+                </summary>
+                <div className="space-y-2 pb-3 pl-5 text-sm">
+                  {description && (
+                    <p className="text-muted-foreground whitespace-pre-wrap">
+                      {description}
+                    </p>
+                  )}
+                  {feedback && (
+                    <p className="whitespace-pre-wrap">{feedback}</p>
+                  )}
                 </div>
-                {j && (
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {levelDescription(c, j.rating)}
-                  </p>
-                )}
-                {j?.feedback && (
-                  <p className="text-sm whitespace-pre-wrap">{j.feedback}</p>
-                )}
-                <RubricDescription rubric={c} />
-              </section>
+              </details>
+            ) : skill ? null : (
+              <div
+                key={c.criterion}
+                className="flex items-center gap-2 border-t border-border py-2 pl-5 text-sm"
+              >
+                {row}
+              </div>
             );
           })
         )}
-        {a.feedback && (
-          <div className="border-t border-border pt-3">
-            <p className="mb-1 text-xs font-medium text-muted-foreground">
+        {a.feedback.trim() && (
+          <details className="border-t border-border pt-2 text-sm">
+            <summary className="cursor-pointer font-medium">
               Overall feedback
-            </p>
-            <p className="text-sm whitespace-pre-wrap">{a.feedback}</p>
-          </div>
+            </summary>
+            <p className="mt-2 whitespace-pre-wrap">{a.feedback}</p>
+          </details>
         )}
         {a.history.length > (a.status === "DRAFT" || preview ? 0 : 1) && (
           <details className="border-t border-border pt-3 text-sm">
@@ -192,12 +281,18 @@ export function AssessmentCard({
                   key={h.revision}
                   className="mt-3 space-y-2 rounded-md border border-border p-3"
                 >
-                  <p className="text-xs text-muted-foreground">
-                    Earlier release {when(h.releasedAt)} ·{" "}
-                    {h.status === "EXCUSED"
-                      ? "Excused"
-                      : "Superseded assessment"}
-                  </p>
+                  <Facts as="div" className="text-xs text-muted-foreground">
+                    <Fact.When
+                      verb="Earlier release"
+                      at={h.releasedAt}
+                      form="absolute"
+                    />
+                    <span>
+                      {h.status === "EXCUSED"
+                        ? "Excused"
+                        : "Superseded assessment"}
+                    </span>
+                  </Facts>
                   {h.judgments
                     .filter((j) =>
                       criteria.some((c) => c.criterion === j.criterion),
@@ -283,9 +378,6 @@ export function AssessmentHistory({
             <section className="space-y-4" key={id}>
               <div>
                 <h2 className="text-lg font-semibold">{rubric.name}</h2>
-                <p className="text-sm text-muted-foreground">
-                  Each entry describes this skill on a particular piece of work.
-                </p>
               </div>
               {sorted
                 .filter((a) => a.criteria.some((c) => c.standard === id))

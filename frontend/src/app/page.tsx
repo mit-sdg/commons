@@ -151,7 +151,7 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
             <Link href="/staff/assignments">Assignments</Link>
           </Button>
           <Button asChild size="sm" variant="outline">
-            <Link href="/staff/gradebook">Assessment book</Link>
+            <Link href="/staff/gradebook">Assessments</Link>
           </Button>
           <Button asChild size="sm" variant="outline">
             <Link href="/staff/calendar">Calendar</Link>
