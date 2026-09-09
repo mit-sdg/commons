@@ -50,6 +50,48 @@ async function fixture() {
   return { db, instances, people, author, reader, moderator, privateThread, shared, invoke };
 }
 const missing = { ok: false, error: { kind: "domain", value: "NOT_FOUND" } };
+test("tag names are shared while private tag applications follow the discussion audience", async () => {
+  const f = await fixture();
+  const { post } = f.privateThread;
+  const name = "Shared vocabulary";
+  const created = await f.invoke("/tags/create", { session: f.reader.session, name });
+  expect(created).toMatchObject({ ok: true });
+  if (!created.ok) throw new Error("Tag creation failed");
+  const { tag } = created.value as { tag: string };
+
+  const catalog = { ok: true, value: { tags: [{ tag, name }] } };
+  expect(await f.invoke("/tags/list", { session: f.author.session })).toEqual(catalog);
+  expect(
+    await f.invoke("/tags/add", { session: f.author.session, target: post, tag }),
+  ).toMatchObject(missing);
+  expect(await f.invoke("/tags/list", { session: f.author.session })).toEqual(catalog);
+  expect(
+    await f.invoke("/tags/add", { session: f.reader.session, target: post, tag }),
+  ).toMatchObject({ ok: true });
+
+  for (const actor of [f.reader, f.author, f.moderator]) {
+    const admitted = actor === f.reader;
+    expect(await f.invoke("/tags/list", { session: actor.session })).toEqual(catalog);
+    for (const [path, input] of [
+      ["/tags/targets", { tag }],
+      ["/tags/targetsByName", { name }],
+    ] as const) {
+      expect(await f.invoke(path, { session: actor.session, ...input })).toEqual({
+        ok: true,
+        value: { targets: admitted ? [{ target: post }] : [] },
+      });
+    }
+    expect(
+      await f.invoke("/tags/forTarget", { session: actor.session, target: post }),
+    ).toMatchObject(admitted ? catalog : missing);
+  }
+
+  expect(
+    await f.invoke("/tags/remove", { session: f.reader.session, target: post, tag }),
+  ).toMatchObject({ ok: true });
+  expect(await f.invoke("/tags/list", { session: f.author.session })).toEqual(catalog);
+});
+
 test("production target routes hide private posts from authors and moderators outside the audience", async () => {
   const f = await fixture();
   const { post, conversation } = f.privateThread;
