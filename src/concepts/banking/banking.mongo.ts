@@ -42,6 +42,19 @@ export class MongoBankingConcept {
   private readonly uses: Collection<UseDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 
+  // One instance serves the supported single-process Mongo floor. Keep each
+  // balance check and its write together, including changes and cancellations.
+  private writing: Promise<void> = Promise.resolve();
+
+  #write<Result>(action: () => Promise<Result>): Promise<Result> {
+    const result = this.writing.then(action);
+    this.writing = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return result;
+  }
+
   constructor(db: Db) {
     this.terms = db.collection<{ _id: string } & Terms>("banking.terms");
     this.grants = db.collection<GrantDoc>("banking.grants");
@@ -108,8 +121,8 @@ export class MongoBankingConcept {
     reason: string;
     at: Date;
   }) {
-    if (!(days > 0)) {
-      throw new LateDaysMustBePositive("A grant must be for a positive number of days.");
+    if (!Number.isFinite(days) || !(days > 0)) {
+      throw new LateDaysMustBePositive("A grant must be for a finite positive number of days.");
     }
     const grant = crypto.randomUUID();
     const seq = await this.#nextSeq("grants");
@@ -128,58 +141,64 @@ export class MongoBankingConcept {
     days: number;
     at: Date;
   }) {
-    if (!(days > 0)) {
-      throw new LateDaysMustBePositive("Late days must be a positive number.");
-    }
-    if (days > (await this.#terms()).perItemLimit) {
-      throw new LateDaysExceedMax("That is more late days than any one item may absorb.");
-    }
-    if ((await this.#appliedUse(learner, item)) !== null) {
-      throw new LateUseAlreadyExists("Late days already stand applied to this item.");
-    }
-    if (days > (await this.#balance(learner))) {
-      throw new InsufficientBalance("The learner's balance is short of the days requested.");
-    }
-    const use = crypto.randomUUID();
-    const seq = await this.#nextSeq("uses");
-    await this.uses.insertOne({
-      _id: use,
-      learner,
-      item,
-      days,
-      status: "APPLIED",
-      appliedAt: at,
-      seq,
+    return this.#write(async () => {
+      if (!Number.isFinite(days) || !(days > 0)) {
+        throw new LateDaysMustBePositive("Late days must be a finite positive number.");
+      }
+      if (days > (await this.#terms()).perItemLimit) {
+        throw new LateDaysExceedMax("That is more late days than any one item may absorb.");
+      }
+      if ((await this.#appliedUse(learner, item)) !== null) {
+        throw new LateUseAlreadyExists("Late days already stand applied to this item.");
+      }
+      if (days > (await this.#balance(learner))) {
+        throw new InsufficientBalance("The learner's balance is short of the days requested.");
+      }
+      const use = crypto.randomUUID();
+      const seq = await this.#nextSeq("uses");
+      await this.uses.insertOne({
+        _id: use,
+        learner,
+        item,
+        days,
+        status: "APPLIED",
+        appliedAt: at,
+        seq,
+      });
+      return { use };
     });
-    return { use };
   }
 
   async change({ learner, item, days }: { learner: string; item: string; days: number }) {
-    const applied = await this.#appliedUse(learner, item);
-    if (applied === null) {
-      throw new LateUseNotFound("No late days stand applied to this item.");
-    }
-    if (days < 0) {
-      throw new LateDaysNegative("Late days cannot be negative.");
-    }
-    if (days > (await this.#terms()).perItemLimit) {
-      throw new LateDaysExceedMax("That is more late days than any one item may absorb.");
-    }
-    const increase = days - applied.days;
-    if (increase > (await this.#balance(learner))) {
-      throw new InsufficientBalance("The learner's balance is short of the increase requested.");
-    }
-    await this.uses.updateOne({ _id: applied._id }, { $set: { days } });
-    return { use: applied._id };
+    return this.#write(async () => {
+      const applied = await this.#appliedUse(learner, item);
+      if (applied === null) {
+        throw new LateUseNotFound("No late days stand applied to this item.");
+      }
+      if (!Number.isFinite(days) || days < 0) {
+        throw new LateDaysNegative("Late days must be a finite non-negative number.");
+      }
+      if (days > (await this.#terms()).perItemLimit) {
+        throw new LateDaysExceedMax("That is more late days than any one item may absorb.");
+      }
+      const increase = days - applied.days;
+      if (increase > (await this.#balance(learner))) {
+        throw new InsufficientBalance("The learner's balance is short of the increase requested.");
+      }
+      await this.uses.updateOne({ _id: applied._id }, { $set: { days } });
+      return { use: applied._id };
+    });
   }
 
   async cancel({ learner, item }: { learner: string; item: string }) {
-    const applied = await this.#appliedUse(learner, item);
-    if (applied === null) {
-      throw new LateUseNotFound("No late days stand applied to this item.");
-    }
-    await this.uses.updateOne({ _id: applied._id }, { $set: { status: "CANCELED" } });
-    return { use: applied._id };
+    return this.#write(async () => {
+      const applied = await this.#appliedUse(learner, item);
+      if (applied === null) {
+        throw new LateUseNotFound("No late days stand applied to this item.");
+      }
+      await this.uses.updateOne({ _id: applied._id }, { $set: { status: "CANCELED" } });
+      return { use: applied._id };
+    });
   }
 
   async _getTerms() {
