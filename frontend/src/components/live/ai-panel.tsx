@@ -516,7 +516,7 @@ export function useDrafting({
     ),
     bar:
       shown.length === 0 ? null : (
-        <div className="sticky bottom-4 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 bg-background/95 px-4 py-3 backdrop-blur">
+        <div className="sticky bottom-4 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 bg-background px-4 py-3 lg:bg-background/95 lg:backdrop-blur">
           <span className="mr-1 font-medium text-sm">
             {shown.length} {shown.length === 1 ? "proposal" : "proposals"}
           </span>
