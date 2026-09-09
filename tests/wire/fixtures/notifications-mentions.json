@@ -662,22 +662,6 @@
             "link": "uuid#37",
             "createdAt": "<date>",
             "read": false
-          },
-          {
-            "notification": "uuid#40",
-            "kind": "followed_reply",
-            "subject": "uuid#34",
-            "link": "uuid#34",
-            "createdAt": "<date>",
-            "read": false
-          },
-          {
-            "notification": "uuid#41",
-            "kind": "followed_reply",
-            "subject": "uuid#24",
-            "link": "uuid#24",
-            "createdAt": "<date>",
-            "read": false
           }
         ]
       }
@@ -693,8 +677,8 @@
         "content": "for @u2_iris"
       },
       "response": {
-        "post": "uuid#42",
-        "node": "uuid#43"
+        "post": "uuid#40",
+        "node": "uuid#41"
       }
     },
     {
@@ -708,15 +692,15 @@
       "response": {
         "notifications": [
           {
-            "notification": "uuid#44",
+            "notification": "uuid#42",
             "kind": "mention",
-            "subject": "uuid#42",
-            "link": "uuid#42",
+            "subject": "uuid#40",
+            "link": "uuid#40",
             "createdAt": "<date>",
             "read": false
           },
           {
-            "notification": "uuid#45",
+            "notification": "uuid#43",
             "kind": "followed_reply",
             "subject": "uuid#26",
             "link": "uuid#26",
@@ -745,8 +729,8 @@
         "content": "note to self @u2_mara"
       },
       "response": {
-        "post": "uuid#46",
-        "node": "uuid#47"
+        "post": "uuid#44",
+        "node": "uuid#45"
       }
     },
     {
@@ -760,8 +744,8 @@
         "content": "hi @u2_ghost"
       },
       "response": {
-        "post": "uuid#48",
-        "node": "uuid#49"
+        "post": "uuid#46",
+        "node": "uuid#47"
       }
     },
     {
@@ -775,8 +759,8 @@
         "content": "@u2_noah @u2_noah twice"
       },
       "response": {
-        "post": "uuid#50",
-        "node": "uuid#51"
+        "post": "uuid#48",
+        "node": "uuid#49"
       }
     },
     {
@@ -790,18 +774,10 @@
       "response": {
         "notifications": [
           {
-            "notification": "uuid#52",
+            "notification": "uuid#50",
             "kind": "mention",
-            "subject": "uuid#50",
-            "link": "uuid#50",
-            "createdAt": "<date>",
-            "read": false
-          },
-          {
-            "notification": "uuid#53",
-            "kind": "followed_reply",
-            "subject": "uuid#46",
-            "link": "uuid#46",
+            "subject": "uuid#48",
+            "link": "uuid#48",
             "createdAt": "<date>",
             "read": false
           },
@@ -810,22 +786,6 @@
             "kind": "mention",
             "subject": "uuid#37",
             "link": "uuid#37",
-            "createdAt": "<date>",
-            "read": false
-          },
-          {
-            "notification": "uuid#40",
-            "kind": "followed_reply",
-            "subject": "uuid#34",
-            "link": "uuid#34",
-            "createdAt": "<date>",
-            "read": false
-          },
-          {
-            "notification": "uuid#41",
-            "kind": "followed_reply",
-            "subject": "uuid#24",
-            "link": "uuid#24",
             "createdAt": "<date>",
             "read": false
           }
@@ -871,7 +831,7 @@
       "response": {
         "notifications": [
           {
-            "notification": "uuid#54",
+            "notification": "uuid#51",
             "kind": "accepted",
             "subject": "uuid#16",
             "link": "uuid#16",
@@ -879,18 +839,10 @@
             "read": false
           },
           {
-            "notification": "uuid#52",
+            "notification": "uuid#50",
             "kind": "mention",
-            "subject": "uuid#50",
-            "link": "uuid#50",
-            "createdAt": "<date>",
-            "read": false
-          },
-          {
-            "notification": "uuid#53",
-            "kind": "followed_reply",
-            "subject": "uuid#46",
-            "link": "uuid#46",
+            "subject": "uuid#48",
+            "link": "uuid#48",
             "createdAt": "<date>",
             "read": false
           },
@@ -899,22 +851,6 @@
             "kind": "mention",
             "subject": "uuid#37",
             "link": "uuid#37",
-            "createdAt": "<date>",
-            "read": false
-          },
-          {
-            "notification": "uuid#40",
-            "kind": "followed_reply",
-            "subject": "uuid#34",
-            "link": "uuid#34",
-            "createdAt": "<date>",
-            "read": false
-          },
-          {
-            "notification": "uuid#41",
-            "kind": "followed_reply",
-            "subject": "uuid#24",
-            "link": "uuid#24",
             "createdAt": "<date>",
             "read": false
           }
@@ -1007,7 +943,7 @@
         "notification": "$inboxNoah3.notifications.0.notification"
       },
       "response": {
-        "notification": "uuid#54"
+        "notification": "uuid#51"
       }
     },
     {
@@ -1205,9 +1141,6 @@
             "user": "uuid#4"
           },
           {
-            "user": "uuid#7"
-          },
-          {
             "user": "uuid#10"
           }
         ]
@@ -1276,15 +1209,7 @@
       "response": {
         "notifications": [
           {
-            "notification": "uuid#55",
-            "kind": "reply",
-            "subject": "uuid#50",
-            "link": "uuid#50",
-            "createdAt": "<date>",
-            "read": true
-          },
-          {
-            "notification": "uuid#56",
+            "notification": "uuid#52",
             "kind": "reply",
             "subject": "uuid#48",
             "link": "uuid#48",
@@ -1292,15 +1217,23 @@
             "read": true
           },
           {
-            "notification": "uuid#57",
+            "notification": "uuid#53",
             "kind": "reply",
-            "subject": "uuid#42",
-            "link": "uuid#42",
+            "subject": "uuid#46",
+            "link": "uuid#46",
             "createdAt": "<date>",
             "read": true
           },
           {
-            "notification": "uuid#58",
+            "notification": "uuid#54",
+            "kind": "reply",
+            "subject": "uuid#40",
+            "link": "uuid#40",
+            "createdAt": "<date>",
+            "read": true
+          },
+          {
+            "notification": "uuid#55",
             "kind": "reply",
             "subject": "uuid#37",
             "link": "uuid#37",

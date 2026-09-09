@@ -29,7 +29,7 @@ Forum.subscriptions.Unsubscribe at /subscriptions/unsubscribe
 [Purge clears conversation subscriptions](reaction:Forum.subscriptions.PurgeClearsConversationSubscriptions) when the root placement is still present and has no children.
 
 [Starting follows the conversation](reaction:Forum.subscriptions.StartingFollowsConversation)
-after its audience is established. [Replying follows the conversation](reaction:Forum.subscriptions.ReplyingFollowsConversation)
-after a readable reply is placed. Each uses the ordinary subscribe action only
-when the participant is not already following. Reading and receiving notices do
-not follow: deliberate unfollowing persists until that person participates again.
+after its audience is established, using the ordinary subscribe action only
+when the author is not already following. Replying, reading, and receiving notices
+do not change following. An unfollowed conversation stays unfollowed until the
+person explicitly follows it again.

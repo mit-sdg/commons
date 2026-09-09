@@ -34,7 +34,7 @@ async function fixture() {
 }
 
 for (const kind of ["people", "staff", "group"]) {
-  test(`${kind} participants follow later main-composer replies, respecting unfollow and access loss`, async () => {
+  test(`${kind} replies preserve explicit following choices and respect access loss`, async () => {
     const {
       instances,
       app,
@@ -69,8 +69,15 @@ for (const kind of ["people", "staff", "group"]) {
     await call("/threads/reply", b.session, { parent: root.node, content: "B answers" });
     expect(await instances.Subscribing._getSubscribers({ target: root.conversation })).toEqual([
       { user: a.user },
-      { user: b.user },
     ]);
+    const beforeFollowing = await call("/threads/reply", a.session, {
+      parent: root.node,
+      content: "Before B follows",
+    });
+    expect(await instances.Notifying._getInbox({ recipient: b.user })).not.toContainEqual(
+      expect.objectContaining({ subject: beforeFollowing.post }),
+    );
+    await call("/subscriptions/subscribe", b.session, { target: root.conversation });
     const followup = await call("/threads/reply", a.session, {
       parent: root.node,
       content: "A follows up",
@@ -98,7 +105,8 @@ for (const kind of ["people", "staff", "group"]) {
     await call("/threads/reply", b.session, { parent: root.node, content: "B participates again" });
     expect(
       await instances.Subscribing._isSubscribed({ user: b.user, target: root.conversation }),
-    ).toEqual({ subscribed: true });
+    ).toEqual({ subscribed: false });
+    await call("/subscriptions/subscribe", b.session, { target: root.conversation });
     if (kind === "group") await instances.Grouping.leave({ group, member: b.user, at: new Date() });
     else await instances.Archiving.trash({ item: b.user, by: a.user, at: new Date() });
     const denied = await call("/threads/reply", a.session, {
@@ -132,6 +140,7 @@ test("trash, restore and purge retain authorized context and nested replies with
     parent: root.node,
     content: "SECRET intermediate",
   });
+  await call("/subscriptions/subscribe", b.session, { target: root.conversation });
   const leaf = await call("/threads/reply", a.session, {
     parent: middle.node,
     content: "Surviving reply",

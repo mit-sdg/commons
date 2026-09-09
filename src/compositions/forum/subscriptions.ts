@@ -1,4 +1,4 @@
-import { conversationReader, postReader } from "./audience-policy.ts";
+import { conversationReader } from "./audience-policy.ts";
 import { activeUser } from "../access/session.ts";
 import {
   each,
@@ -159,15 +159,4 @@ export const StartingFollowsConversation = reaction(({ resource, user, item, at 
       Subscribing._isSubscribed({ user, target: resource }).is({ subscribed: false }),
     )
     .then(Subscribing.subscribe({ user, target: resource, at })),
-);
-
-export const ReplyingFollowsConversation = reaction(({ item, node, user, conversation, at }) =>
-  when(Conversing.reply({ item, at }).responds({ node }))
-    .where(
-      Posting._getPost({ post: item }).is({ author: user }),
-      Conversing._getConversation({ node }).is({ conversation }),
-      postReader({ user, post: item }),
-      Subscribing._isSubscribed({ user, target: conversation }).is({ subscribed: false }),
-    )
-    .then(Subscribing.subscribe({ user, target: conversation, at })),
 );

@@ -14689,22 +14689,6 @@ then
   Subscribing.clearTarget (target: conversation)
 ```
 
-### Forum.subscriptions.ReplyingFollowsConversation
-
-Authored path: `Forum.subscriptions.ReplyingFollowsConversation`.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 32.
-
-```reaction
-when Conversing.reply (at, item, node)
-where
-  Posting._getPost (post: item) has (author: user)
-  Conversing._getConversation (node) has (conversation)
-  view "(user) may read forum post (post)" with (post: item, user)
-  Subscribing._isSubscribed (target: conversation, user) has (subscribed: false)
-then
-  Subscribing.subscribe (at, target: conversation, user)
-```
-
 ### Forum.subscriptions.StartingFollowsConversation
 
 Authored path: `Forum.subscriptions.StartingFollowsConversation`.

@@ -4351,7 +4351,7 @@ export type CommonsWire = {
       "node": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["reply"]>>, ["node"]>>;
       "post": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["reply"]>[0], ["item"]>>;
     };
-    error: { error: AppWideError | "ALREADY_SUBMITTED" | "ALREADY_SUBSCRIBED" | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_IN_CONVERSATION" | "ITEM_ALREADY_REGISTERED" | "MAIL_RECIPIENT_INVALID" | "NOT_FOUND" | "NO_PARTICIPANT" | "PARENT_NODE_NOT_FOUND" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_IN_CONVERSATION" | "ITEM_ALREADY_REGISTERED" | "MAIL_RECIPIENT_INVALID" | "NOT_FOUND" | "PARENT_NODE_NOT_FOUND" };
   };
   "/threads/summaries": {
     input: {
