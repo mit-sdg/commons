@@ -1,3 +1,4 @@
+import { forumMailEligibility } from "../email/forum-policy.ts";
 import { createEdge } from "../edge.ts";
 import type { MailConfiguration } from "../email/configuration.ts";
 import { startMailWorker } from "../email/worker.ts";
@@ -75,7 +76,15 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
   }
 
   const mailWorker =
-    mail === undefined ? undefined : startMailWorker(edge.application.concepts.Mailing, mail);
+    mail === undefined
+      ? undefined
+      : startMailWorker(
+          edge.application.concepts.Mailing,
+          mail,
+          undefined,
+          2_000,
+          forumMailEligibility(edge.application),
+        );
   // Without a reasoner the worker still runs, failing every ask at once.
   const reasonerWorker = startReasonerWorker(edge.application.concepts.Reasoning, reasoner);
   const participantWorker =

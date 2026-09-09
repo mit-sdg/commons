@@ -187,6 +187,11 @@ describe("consolidated reaction groups", () => {
 
   test("reply purge preserves conversation state and root purge clears it", async () => {
     const app = assembleCommons(mongoImplementations(await testDb()));
+    const { user: viewer } = await app.concepts.Authenticating.register({
+      username: "viewer",
+      password: "password123",
+      email: "viewer@example.edu",
+    });
     const at = new Date("2026-07-20T12:00:00.000Z");
     const { post: root } = await app.concepts.Posting.create({
       author: "author",
@@ -194,6 +199,10 @@ describe("consolidated reaction groups", () => {
       at,
     });
     const { conversation, node } = await app.concepts.Conversing.start({ item: root, at });
+    await app.concepts.Accessing.establish({
+      resource: conversation,
+      holders: [`account:${viewer}`],
+    });
     const { post: reply } = await app.concepts.Posting.create({
       author: "reader",
       content: "Reply",
@@ -212,7 +221,7 @@ describe("consolidated reaction groups", () => {
       locked: true,
     });
 
-    expect(await app.form(theHomeFeedByCreation({}))).toHaveLength(1);
+    expect(await app.form(theHomeFeedByCreation({ reader: viewer }))).toHaveLength(1);
     await app.concepts.Trashing.trash({ item: root, by: "moderator", at });
     await app.concepts.Trashing.purge({ item: root });
     expect(
@@ -221,9 +230,9 @@ describe("consolidated reaction groups", () => {
     expect(await app.concepts.Locking._isLocked({ target: conversation })).toEqual({
       locked: false,
     });
-    expect(await app.form(theHomeFeedByCreation({}))).toEqual([]);
-    expect(await app.form(theThread({ conversation }))).toEqual([]);
-    expect(await app.form(theThreadContext({ conversation }))).toEqual([]);
+    expect(await app.form(theHomeFeedByCreation({ reader: viewer }))).toEqual([]);
+    expect(await app.form(theThread({ conversation, reader: viewer }))).toEqual([]);
+    expect(await app.form(theThreadContext({ conversation, reader: viewer }))).toEqual([]);
   });
 
   test("purging a resolved answer clears both resolution roles", async () => {

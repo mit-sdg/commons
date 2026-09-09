@@ -77,6 +77,10 @@ repository root and rewrites `/api/*` to the edge. The unlinked `/setup` page
 uses the generated `/setup/register-admin` endpoint like every other browser
 surface.
 
+Account changes reset cached presentation and local drafts. The initial session
+check finishes before form inputs appear, including on public entry pages, so
+session initialization cannot erase a draft entered under a provisional identity.
+
 ## Running
 
 Start the frontend with the rest of Commons from the repository root as

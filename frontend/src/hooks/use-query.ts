@@ -6,28 +6,40 @@ import { CommonsError, isApiError, publicErrorMessage } from "@/lib/api";
 export interface QueryState<T> {
   data: T | null;
   error: string | null;
-  /** The boundary's category behind `error`, when the request was refused. */
   refused: string | null;
   loading: boolean;
   refetch: () => void;
+}
+
+interface QueryResult<T> {
+  scope: ReadonlyArray<unknown>;
+  data: T | null;
+  error: string | null;
+  refused: string | null;
+  loading: boolean;
+}
+
+function sameScope(
+  left: ReadonlyArray<unknown>,
+  right: ReadonlyArray<unknown>,
+) {
+  return (
+    left.length === right.length &&
+    left.every((value, index) => Object.is(value, right[index]))
+  );
 }
 
 export function useQuery<T>(
   loader: (() => Promise<T | { error: string }>) | null,
   deps: ReadonlyArray<unknown>,
 ): QueryState<T> {
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [refused, setRefused] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(loader !== null);
+  const enabled = loader !== null;
+  const [result, setResult] = useState<QueryResult<T> | null>(null);
   const [nonce, setNonce] = useState(0);
   const reqId = useRef(0);
   const inFlight = useRef(false);
   const queued = useRef(false);
 
-  // Polling callers may ask again before a slow request returns. Coalesce
-  // those ticks into one follow-up instead of starting a newer request that
-  // makes the useful response in flight look stale forever.
   const refetch = useCallback(() => {
     if (inFlight.current) {
       queued.current = true;
@@ -36,55 +48,83 @@ export function useQuery<T>(
     setNonce((n) => n + 1);
   }, []);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: callers provide the dependency list that controls loader refreshes; nonce intentionally forces refetch.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: callers declare the query scope; nonce requests a refresh within it.
   useEffect(() => {
-    if (!loader) return;
     const id = ++reqId.current;
-    inFlight.current = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching hook, loading/error set before async call
-    setLoading(true);
-    setError(null);
-    setRefused(null);
-    loader()
-      .then((result) => {
+    queued.current = false;
+    inFlight.current = loader !== null;
+    if (!loader) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- disabling a query discards its retained presentation.
+      setResult(null);
+      return;
+    }
+    const scope = [...deps];
+    setResult((previous) => ({
+      scope,
+      data: previous && sameScope(previous.scope, scope) ? previous.data : null,
+      error: null,
+      refused: null,
+      loading: true,
+    }));
+    Promise.resolve()
+      .then(loader)
+      .then((value) => {
         if (id !== reqId.current) return;
-        if (isApiError(result)) {
-          setError(publicErrorMessage(result.error));
-          setRefused(result.error);
-        } else {
-          setData(result as T);
-        }
-      })
-      .catch((e: unknown) => {
-        if (id !== reqId.current) return;
-        setError(
-          e instanceof CommonsError
-            ? e.message
-            : publicErrorMessage("INTERNAL_ERROR"),
+        setResult(
+          isApiError(value)
+            ? {
+                scope,
+                data: null,
+                error: publicErrorMessage(value.error),
+                refused: value.error,
+                loading: false,
+              }
+            : {
+                scope,
+                data: value as T,
+                error: null,
+                refused: null,
+                loading: false,
+              },
         );
-        setRefused(e instanceof CommonsError ? e.code : null);
+      })
+      .catch((error: unknown) => {
+        if (id !== reqId.current) return;
+        setResult({
+          scope,
+          data: null,
+          error:
+            error instanceof CommonsError
+              ? error.message
+              : publicErrorMessage("INTERNAL_ERROR"),
+          refused: error instanceof CommonsError ? error.code : null,
+          loading: false,
+        });
       })
       .finally(() => {
         if (id !== reqId.current) return;
         inFlight.current = false;
-        setLoading(false);
         if (queued.current) {
           queued.current = false;
           setNonce((n) => n + 1);
         }
       });
+    return () => {
+      if (id !== reqId.current) return;
+      reqId.current += 1;
+      inFlight.current = false;
+      queued.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...deps, nonce]);
+  }, [...deps, enabled, nonce]);
 
-  const effectiveLoading = loader ? loading : false;
-  const effectiveData = loader ? data : (null as T | null);
-  const effectiveError = loader ? error : null;
-
+  const current =
+    enabled && result && sameScope(result.scope, deps) ? result : null;
   return {
-    data: effectiveData,
-    error: effectiveError,
-    refused: loader ? refused : null,
-    loading: effectiveLoading,
+    data: current?.data ?? null,
+    error: current?.error ?? null,
+    refused: current?.refused ?? null,
+    loading: enabled && (current?.loading ?? true),
     refetch,
   };
 }

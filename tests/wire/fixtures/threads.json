@@ -17,6 +17,31 @@
       }
     },
     {
+      "id": "regAliceSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regAlice.user",
+        "email": "alice@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#2",
+          "email": "alice@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#1"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#1",
+        "section": null
+      }
+    },
+    {
       "id": "loginAlice",
       "phase": "setup",
       "kind": "send",
@@ -26,8 +51,8 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#3",
         "expiresAt": "<date>",
-        "session": "uuid#2",
         "user": "uuid#1"
       }
     },
@@ -62,7 +87,32 @@
         "email": "bob@example.com"
       },
       "response": {
-        "user": "uuid#3"
+        "user": "uuid#4"
+      }
+    },
+    {
+      "id": "regBobSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regBob.user",
+        "email": "bob@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#5",
+          "email": "bob@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#4"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#4",
+        "section": null
       }
     },
     {
@@ -75,9 +125,9 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#6",
         "expiresAt": "<date>",
-        "session": "uuid#4",
-        "user": "uuid#3"
+        "user": "uuid#4"
       }
     },
     {
@@ -87,12 +137,13 @@
       "target": "/threads/create",
       "body": {
         "session": "$loginAlice.session",
-        "content": "Hello forum"
+        "content": "Hello forum",
+        "holders": ["standing:everyone"]
       },
       "response": {
-        "post": "uuid#5",
-        "conversation": "uuid#6",
-        "node": "uuid#7"
+        "post": "uuid#7",
+        "conversation": "uuid#8",
+        "node": "uuid#9"
       }
     },
     {
@@ -106,8 +157,8 @@
         "content": "Hi alice!"
       },
       "response": {
-        "post": "uuid#8",
-        "node": "uuid#9"
+        "post": "uuid#10",
+        "node": "uuid#11"
       }
     },
     {
@@ -121,8 +172,8 @@
         "content": "Nested reply"
       },
       "response": {
-        "post": "uuid#10",
-        "node": "uuid#11"
+        "post": "uuid#12",
+        "node": "uuid#13"
       }
     },
     {
@@ -131,13 +182,14 @@
       "kind": "send",
       "target": "/threads/get",
       "body": {
-        "conversation": "$create1.conversation"
+        "conversation": "$create1.conversation",
+        "session": "$loginAlice.session"
       },
       "response": {
         "thread": [
           {
-            "node": "uuid#7",
-            "item": "uuid#5",
+            "node": "uuid#9",
+            "item": "uuid#7",
             "parent": null,
             "depth": 0,
             "post": {
@@ -149,12 +201,12 @@
             "rendered": "<p>Hello forum</p>\n"
           },
           {
-            "node": "uuid#9",
-            "item": "uuid#8",
-            "parent": "uuid#7",
+            "node": "uuid#11",
+            "item": "uuid#10",
+            "parent": "uuid#9",
             "depth": 1,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "Hi alice!",
               "createdAt": "<date>",
               "editedAt": null
@@ -162,9 +214,9 @@
             "rendered": "<p>Hi alice!</p>\n"
           },
           {
-            "node": "uuid#11",
-            "item": "uuid#10",
-            "parent": "uuid#9",
+            "node": "uuid#13",
+            "item": "uuid#12",
+            "parent": "uuid#11",
             "depth": 2,
             "post": {
               "author": "uuid#1",
@@ -177,14 +229,43 @@
         ],
         "context": [
           {
-            "item": "uuid#5",
+            "item": "uuid#7",
+            "root": "uuid#9",
+            "structure": [
+              {
+                "node": "uuid#9",
+                "item": "uuid#7",
+                "parent": null,
+                "depth": 0
+              },
+              {
+                "node": "uuid#11",
+                "item": "uuid#10",
+                "parent": "uuid#9",
+                "depth": 1
+              },
+              {
+                "node": "uuid#13",
+                "item": "uuid#12",
+                "parent": "uuid#11",
+                "depth": 2
+              }
+            ],
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
             "category": null,
             "tags": [],
             "locked": false,
             "acceptedAnswer": null,
             "replyCount": 2,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#1", "uuid#3"]
+            "participants": ["uuid#1", "uuid#4"]
           }
         ]
       }
@@ -195,10 +276,11 @@
       "kind": "send",
       "target": "/threads/forItem",
       "body": {
-        "item": "$reply1.post"
+        "item": "$reply1.post",
+        "session": "$loginAlice.session"
       },
       "response": {
-        "conversation": "uuid#6"
+        "conversation": "uuid#8"
       }
     },
     {
@@ -207,7 +289,8 @@
       "kind": "send",
       "target": "/threads/forItem",
       "body": {
-        "item": "00000000-0000-7000-8000-00000000dead"
+        "item": "00000000-0000-7000-8000-00000000dead",
+        "session": "$loginAlice.session"
       },
       "response": {
         "conversation": null
@@ -220,12 +303,13 @@
       "target": "/threads/create",
       "body": {
         "session": "$loginBob.session",
-        "content": "Second topic"
+        "content": "Second topic",
+        "holders": ["standing:everyone"]
       },
       "response": {
-        "post": "uuid#12",
-        "conversation": "uuid#13",
-        "node": "uuid#14"
+        "post": "uuid#14",
+        "conversation": "uuid#15",
+        "node": "uuid#16"
       }
     },
     {
@@ -239,8 +323,8 @@
         "content": "Bump"
       },
       "response": {
-        "post": "uuid#15",
-        "node": "uuid#16"
+        "post": "uuid#17",
+        "node": "uuid#18"
       }
     },
     {
@@ -248,33 +332,53 @@
       "phase": "assert",
       "kind": "send",
       "target": "/threads/latest",
-      "body": {},
+      "body": {
+        "session": "$loginAlice.session"
+      },
       "response": {
         "conversations": [
           {
-            "conversation": "uuid#13",
-            "root": "uuid#14",
-            "item": "uuid#12",
+            "conversation": "uuid#15",
+            "root": "uuid#16",
+            "item": "uuid#14",
             "createdAt": "<date>",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
+            "staffQuestion": false,
             "category": null,
             "tags": [],
             "locked": false,
             "resolved": false,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "Second topic",
               "createdAt": "<date>",
               "editedAt": null
             },
             "replyCount": 0,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#3"]
+            "participants": ["uuid#4"]
           },
           {
-            "conversation": "uuid#6",
-            "root": "uuid#7",
-            "item": "uuid#5",
+            "conversation": "uuid#8",
+            "root": "uuid#9",
+            "item": "uuid#7",
             "createdAt": "<date>",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
+            "staffQuestion": false,
             "category": null,
             "tags": [],
             "locked": false,
@@ -287,7 +391,7 @@
             },
             "replyCount": 3,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#1", "uuid#3"]
+            "participants": ["uuid#1", "uuid#4"]
           }
         ]
       }
@@ -297,14 +401,25 @@
       "phase": "assert",
       "kind": "send",
       "target": "/threads/activity",
-      "body": {},
+      "body": {
+        "session": "$loginAlice.session"
+      },
       "response": {
         "conversations": [
           {
-            "conversation": "uuid#6",
-            "root": "uuid#7",
-            "item": "uuid#5",
+            "conversation": "uuid#8",
+            "root": "uuid#9",
+            "item": "uuid#7",
             "createdAt": "<date>",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
+            "staffQuestion": false,
             "category": null,
             "tags": [],
             "locked": false,
@@ -317,26 +432,35 @@
             },
             "replyCount": 3,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#1", "uuid#3"]
+            "participants": ["uuid#1", "uuid#4"]
           },
           {
-            "conversation": "uuid#13",
-            "root": "uuid#14",
-            "item": "uuid#12",
+            "conversation": "uuid#15",
+            "root": "uuid#16",
+            "item": "uuid#14",
             "createdAt": "<date>",
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
+            "staffQuestion": false,
             "category": null,
             "tags": [],
             "locked": false,
             "resolved": false,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "Second topic",
               "createdAt": "<date>",
               "editedAt": null
             },
             "replyCount": 0,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#3"]
+            "participants": ["uuid#4"]
           }
         ]
       }
@@ -351,7 +475,7 @@
         "by": "$meAlice.user"
       },
       "response": {
-        "item": "uuid#10"
+        "item": "uuid#12"
       }
     },
     {
@@ -360,13 +484,14 @@
       "kind": "send",
       "target": "/threads/get",
       "body": {
-        "conversation": "$create1.conversation"
+        "conversation": "$create1.conversation",
+        "session": "$loginAlice.session"
       },
       "response": {
         "thread": [
           {
-            "node": "uuid#7",
-            "item": "uuid#5",
+            "node": "uuid#9",
+            "item": "uuid#7",
             "parent": null,
             "depth": 0,
             "post": {
@@ -378,12 +503,12 @@
             "rendered": "<p>Hello forum</p>\n"
           },
           {
-            "node": "uuid#9",
-            "item": "uuid#8",
-            "parent": "uuid#7",
+            "node": "uuid#11",
+            "item": "uuid#10",
+            "parent": "uuid#9",
             "depth": 1,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "Hi alice!",
               "createdAt": "<date>",
               "editedAt": null
@@ -391,12 +516,12 @@
             "rendered": "<p>Hi alice!</p>\n"
           },
           {
-            "node": "uuid#16",
-            "item": "uuid#15",
-            "parent": "uuid#7",
+            "node": "uuid#18",
+            "item": "uuid#17",
+            "parent": "uuid#9",
             "depth": 1,
             "post": {
-              "author": "uuid#3",
+              "author": "uuid#4",
               "content": "Bump",
               "createdAt": "<date>",
               "editedAt": null
@@ -406,14 +531,49 @@
         ],
         "context": [
           {
-            "item": "uuid#5",
+            "item": "uuid#7",
+            "root": "uuid#9",
+            "structure": [
+              {
+                "node": "uuid#9",
+                "item": "uuid#7",
+                "parent": null,
+                "depth": 0
+              },
+              {
+                "node": "uuid#11",
+                "item": "uuid#10",
+                "parent": "uuid#9",
+                "depth": 1
+              },
+              {
+                "node": "uuid#13",
+                "item": "uuid#12",
+                "parent": "uuid#11",
+                "depth": 2
+              },
+              {
+                "node": "uuid#18",
+                "item": "uuid#17",
+                "parent": "uuid#9",
+                "depth": 1
+              }
+            ],
+            "audience": [
+              {
+                "holder": "standing:everyone",
+                "kind": "standing",
+                "identity": "everyone",
+                "label": "Everyone"
+              }
+            ],
             "category": null,
             "tags": [],
             "locked": false,
             "acceptedAnswer": null,
             "replyCount": 2,
             "lastActivityAt": "<date>",
-            "participants": ["uuid#1", "uuid#3"]
+            "participants": ["uuid#1", "uuid#4"]
           }
         ]
       }
@@ -424,7 +584,8 @@
       "kind": "send",
       "target": "/threads/forItem",
       "body": {
-        "item": "$reply2.post"
+        "item": "$reply2.post",
+        "session": "$loginAlice.session"
       },
       "response": {
         "conversation": null
@@ -439,7 +600,7 @@
         "target": "$create1.conversation"
       },
       "response": {
-        "target": "uuid#6"
+        "target": "uuid#8"
       }
     },
     {
@@ -467,7 +628,7 @@
         "content": "Into the void"
       },
       "response": {
-        "error": "PARENT_NODE_NOT_FOUND"
+        "error": "NOT_FOUND"
       }
     }
   ]

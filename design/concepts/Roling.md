@@ -106,6 +106,9 @@ requireCapability(user: User, context: Context, capability: String) : return (al
 ## Queries
 
 ```queries
+_capableUsers (users: Seq, context: Context, capabilities: Seq) : one (capable: Seq)
+  answers the supplied users holding at least one requested capability in context, including the administer wildcard; no requested capabilities answers an empty selection
+
 _hasCapability (user: String, context: String, capability: String) : one (allowed: Boolean)
   answers whether the Role assigned to the User in the Context contains the capability
 

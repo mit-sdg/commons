@@ -2,8 +2,9 @@ import type { Output } from "./api";
 
 type ArrayElement<T> = T extends readonly (infer E)[] ? E : never;
 
-export type ConversationSummary = ArrayElement<
-  Output<"/threads/latest">["conversations"]
+export type FeedEntry = ArrayElement<Output<"/threads/index">["conversations"]>;
+export type ConversationPreview = ArrayElement<
+  Output<"/threads/summaries">["conversations"]
 >;
 
 export type ThreadNode = ArrayElement<Output<"/threads/get">["thread"]>;

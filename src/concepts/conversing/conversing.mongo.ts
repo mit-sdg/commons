@@ -100,6 +100,14 @@ export class MongoConversingConcept {
     return { node };
   }
 
+  async _exists({ conversation }: { conversation: string }) {
+    return {
+      exists:
+        (await this.conversations.findOne({ _id: conversation }, { projection: { _id: 1 } })) !==
+        null,
+    };
+  }
+
   async _getThread({ conversation }: { conversation: string }) {
     const docs = await this.nodes.find({ conversation }).sort({ createdAt: 1, seq: 1 }).toArray();
     return docs.map((doc) => ({
@@ -173,27 +181,32 @@ export class MongoConversingConcept {
   async #conversationRows(): Promise<(ConversationRow & { seqOf: number; lastSeq: number })[]> {
     const conversations = await this.conversations.find({}).toArray();
     const nodes = await this.nodes.find({}).toArray();
-    return conversations.map((doc) => {
-      let lastActivityAt = doc.createdAt;
-      let lastSeq = doc.seq;
-      let item = "";
-      for (const nodeDoc of nodes) {
-        if (nodeDoc.conversation !== doc._id) continue;
-        if (nodeDoc.createdAt.getTime() > lastActivityAt.getTime()) {
-          lastActivityAt = nodeDoc.createdAt;
-        }
-        if (nodeDoc.seq > lastSeq) lastSeq = nodeDoc.seq;
-        if (nodeDoc.parent === null) item = nodeDoc.item;
-      }
-      return {
-        conversation: doc._id,
-        root: doc.root,
-        item,
-        createdAt: doc.createdAt,
-        lastActivityAt,
-        seqOf: doc.seq,
-        lastSeq,
-      };
-    });
+    const rows = new Map(
+      conversations.map((doc) => [
+        doc._id,
+        {
+          conversation: doc._id,
+          root: doc.root,
+          item: "",
+          createdAt: doc.createdAt,
+          lastActivityAt: doc.createdAt,
+          seqOf: doc.seq,
+          lastSeq: doc.seq,
+        },
+      ]),
+    );
+    for (const node of nodes) {
+      const row = rows.get(node.conversation);
+      if (row === undefined) continue;
+      if (node.createdAt.getTime() > row.lastActivityAt.getTime())
+        row.lastActivityAt = node.createdAt;
+      if (node.seq > row.lastSeq) row.lastSeq = node.seq;
+      if (node.parent === null) row.item = node.item;
+    }
+    return [...rows.values()];
+  }
+
+  async _threadNodes({ conversation }: { conversation: string }) {
+    return { nodes: await this._getThread({ conversation }) };
   }
 }

@@ -42,6 +42,7 @@ const DISCUSSION_NAV = [
   { href: "/", label: "Discussions", icon: Sparkles },
   { href: "/categories", label: "Categories", icon: LayoutGrid },
   { href: "/tasks", label: "Tasks", icon: ListChecks },
+  { href: "/groups", label: "Groups", icon: UsersRound },
 ];
 
 const COURSE_PATHS = [
@@ -203,6 +204,11 @@ export function SiteHeader() {
                 <DropdownMenuItem asChild>
                   <Link href="/tasks">
                     <ListChecks className="size-4" /> Tasks
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/groups">
+                    <UsersRound className="size-4" /> Groups
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

@@ -9,10 +9,14 @@ concepts:
 
 ## Current behavior
 
-A question author can submit any string as the accepted answer. Commons checks
-that the question exists and belongs to that author, but it does not check that
-the answer exists, is a reply, belongs to the same conversation, or remains
-readable.
+Commons requires the caller to own the readable question and the answer to be a
+separate readable post in the same conversation. Self-acceptance, unknown posts,
+and posts in other conversations are refused. Direct replies and deeper
+descendants are accepted.
+
+An acceptance is shown only while its answer remains readable and distinct from
+the question. Purging either post clears resolution state; trashing hides an
+unavailable answer without clearing the stored acceptance.
 
 ## Unresolved decision
 
@@ -23,5 +27,5 @@ acceptance.
 ## Acceptance condition
 
 Application tests accept only the settled kind of reply in the question's
-conversation. They refuse an unknown answer, another root, a reply from another
+conversation. They refuse an unknown answer, the question itself, another root, a reply from another
 conversation, and every trashed, hidden, or purged case excluded by the policy.

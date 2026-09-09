@@ -1,9 +1,9 @@
+import { postReader } from "./audience-policy.ts";
 import { activeUser } from "../access/session.ts";
 import { each, former, no, reaction, view, when, where, now } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayEditPost, mayNotEditPost } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
-import { forumPost } from "./threads.ts";
 
 const {
   Bookmarking,
@@ -15,32 +15,34 @@ const {
   Reacting,
   Tagging,
   Tracking,
-  Trashing,
 } = concepts;
 
-export const readable = view("(post) is readable", ({ post }, _outputs, _bindings) =>
-  where(forumPost({ post }), Trashing._isTrashed({ item: post }).is({ trashed: false })),
+export const readable = view("(post) is readable", ({ post, reader }, _outputs, _bindings) =>
+  where(postReader({ post, user: reader })),
 ).holds();
-export const notReadable = view("(post) is not readable", ({ post }, _outputs, _bindings) =>
-  where(no(readable({ post }))),
+export const notReadable = view("(post) is not readable", ({ post, reader }, _outputs, _bindings) =>
+  where(no(readable({ post, reader }))),
 ).holds();
 export const publicPostsBy = view(
   "the public posts by (author)",
-  ({ author }, { post }, _bindings) =>
-    where(Posting._getByAuthor({ author }).is({ post }), readable({ post })),
+  ({ author, reader }, { post }, _bindings) =>
+    where(Posting._getByAuthor({ author }).is({ post }), readable({ post, reader })),
 ).many();
 /** What is this post? */
 export const thePost = former(
   "the post (post)",
-  ({ post }, { author, content, createdAt, editedAt, rendered }) =>
+  ({ post, reader }, { author, content, createdAt, editedAt, rendered }) =>
     where(
+      postReader({ post, user: reader }),
       Posting._getPost({ post }).is({ author, content, createdAt, editedAt }),
       Formatting._getRendered({ target: post }).is({ rendered }),
     ).form({ author, content, createdAt, editedAt, rendered }),
 );
 /** Which public posts belong to this author? */
-export const thePublicPostsOf = former("the public posts of (author)", ({ author }, { post }) =>
-  each(publicPostsBy({ author }).is({ post })).form({ post }),
+export const thePublicPostsOf = former(
+  "the public posts of (author)",
+  ({ author, reader }, { post }) =>
+    each(publicPostsBy({ author, reader }).is({ post })).form({ post }),
 );
 
 export const CreatedPostRefreshesDerivedContent = reaction(({ content, post }) =>
@@ -78,87 +80,81 @@ export const DeletedPostClearsSatellites = reaction(({ post, node }) =>
 
 export const GetPost = endpoint(
   "/posts/get",
-  ({ post }) =>
-    receive({ post }).then(
-      where(readable({ post }))
-        .then(respond({ post: thePost({ post }) }))
-        .named("success"),
-      where(notReadable({ post }))
-        .then(respond({ error: "NOT_FOUND" }))
-        .named("not-found"),
-    ),
-  { input: { required: ["post"] } },
+  ({ session, post, reader }) =>
+    receive({ session, post })
+      .where(activeUser({ session }).is({ user: reader }))
+      .then(
+        where(readable({ post, reader }))
+          .then(respond({ post: thePost({ post, reader }) }))
+          .named("success"),
+        where(notReadable({ post, reader }))
+          .then(respond({ error: "NOT_FOUND" }))
+          .named("not-found"),
+      ),
+  { input: { required: ["session", "post"] } },
 );
 
 export const PostsByAuthor = endpoint(
   "/posts/byAuthor",
-  ({ author }) => receive({ author }).then(respond({ posts: thePublicPostsOf({ author }) })),
-  { input: { required: ["author"] } },
+  ({ session, author, reader }) =>
+    receive({ session, author })
+      .where(activeUser({ session }).is({ user: reader }))
+      .then(respond({ posts: thePublicPostsOf({ author, reader }) })),
+  { input: { required: ["session", "author"] } },
 );
-export const EditPost = endpoint(
-  "/posts/edit",
-  ({ session, post, content, user, at }) =>
-    receive({ session, post, content }).then(
-      where(activeUser({ session }), no(Posting._getPost({ post })))
-        .then(respond({ error: "POST_NOT_FOUND" }))
-        .named("missing-post"),
-      where(now(at), activeUser({ session }).is({ user }), mayEditPost({ user, post }))
-        .then(Posting.edit({ post, content, at }))
-        .then(respond({ post }))
-        .named("post"),
-      where(activeUser({ session }), Trashing._isTrashed({ item: post }).is({ trashed: true }))
-        .then(respond({ error: "NOT_FOUND" }))
-        .named("trashed-post"),
-      where(activeUser({ session }).is({ user }), mayNotEditPost({ user, post }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("post-forbidden"),
-    ),
-  { input: { required: ["session", "post", "content"] } },
+export const EditPost = endpoint("/posts/edit", ({ session, post, content, user, at }) =>
+  receive({ session, post, content }).then(
+    where(
+      now(at),
+      activeUser({ session }).is({ user }),
+      postReader({ user, post }),
+      mayEditPost({ user, post }),
+    )
+      .then(Posting.edit({ post, content, at }))
+      .then(respond({ post }))
+      .named("edit"),
+    where(
+      activeUser({ session }).is({ user }),
+      postReader({ user, post }),
+      mayNotEditPost({ user, post }),
+    )
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+    where(activeUser({ session }).is({ user }), no(postReader({ user, post })))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+  ),
 );
-
-export const DeletePost = endpoint(
-  "/posts/delete",
-  ({ session, post, user, node }) =>
-    receive({ session, post }).then(
-      where(
-        activeUser({ session }).is({ user }),
-        Posting._getPost({ post }),
-        Trashing._isTrashed({ item: post }).is({ trashed: false }),
-        Posting._getPost({ post }).is({ author: user }),
-        Conversing._getNodeByItem({ item: post }).is({ node }),
-        Conversing._hasChildren({ node }).is({ present: false }),
-      )
-        .then(Posting.delete({ post }))
-        .then(respond({ post }))
-        .named("delete"),
-      where(
-        activeUser({ session }).is({ user }),
-        Posting._getPost({ post }),
-        Trashing._isTrashed({ item: post }).is({ trashed: false }),
-        Posting._getPost({ post }).is({ author: user }),
-        Conversing._getNodeByItem({ item: post }).is({ node }),
-        Conversing._hasChildren({ node }).is({ present: true }),
-      )
-        .then(respond({ error: "POST_HAS_REPLIES" }))
-        .named("has-replies"),
-      where(
-        activeUser({ session }).is({ user }),
-        Posting._getPost({ post }),
-        Trashing._isTrashed({ item: post }).is({ trashed: false }),
-        Posting._getPost({ post }).is.not({ author: user }),
-      )
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
-      where(
-        activeUser({ session }),
-        Posting._getPost({ post }),
-        Trashing._isTrashed({ item: post }).is({ trashed: true }),
-      )
-        .then(respond({ error: "NOT_FOUND" }))
-        .named("trashed"),
-      where(activeUser({ session }), no(Posting._getPost({ post })))
-        .then(respond({ error: "POST_NOT_FOUND" }))
-        .named("missing"),
-    ),
-  { input: { required: ["session", "post"] } },
+export const DeletePost = endpoint("/posts/delete", ({ session, post, user, node }) =>
+  receive({ session, post }).then(
+    where(
+      activeUser({ session }).is({ user }),
+      postReader({ user, post }),
+      Posting._getPost({ post }).is({ author: user }),
+      Conversing._getNodeByItem({ item: post }).is({ node }),
+      Conversing._hasChildren({ node }).is({ present: false }),
+    )
+      .then(Posting.delete({ post }))
+      .then(respond({ post }))
+      .named("delete"),
+    where(
+      activeUser({ session }).is({ user }),
+      postReader({ user, post }),
+      Posting._getPost({ post }).is({ author: user }),
+      Conversing._getNodeByItem({ item: post }).is({ node }),
+      Conversing._hasChildren({ node }).is({ present: true }),
+    )
+      .then(respond({ error: "POST_HAS_REPLIES" }))
+      .named("has-replies"),
+    where(
+      activeUser({ session }).is({ user }),
+      postReader({ user, post }),
+      Posting._getPost({ post }).is.not({ author: user }),
+    )
+      .then(respond({ error: "FORBIDDEN" }))
+      .named("forbidden"),
+    where(activeUser({ session }).is({ user }), no(postReader({ user, post })))
+      .then(respond({ error: "NOT_FOUND" }))
+      .named("hidden"),
+  ),
 );

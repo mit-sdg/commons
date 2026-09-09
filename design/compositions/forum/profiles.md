@@ -1,5 +1,7 @@
 # Profiles and public identity
 
+[Forum.profiles.GetProfileDisplays](reaction:Forum.profiles.GetProfileDisplays) accepts at most 64 account identifiers and returns only display names and avatars through [the display-identity former](former:Forum.profiles.theProfileDisplays). [profileDisplayReader](view:Forum.profiles.profileDisplayReader) admits the caller's own identity, or other identities when the caller is an active course member or holds `course:manage`. Missing and inaccessible identities are omitted; duplicate identifiers appear once. The bounded read uses Profiling's existing batch query and exposes neither biographies nor email addresses, including to staff.
+
 [Forum.profiles.GetProfile](reaction:Forum.profiles.GetProfile) resolves the caller from the session before
 using [theProfileOf view](view:Forum.profiles.theProfileOf) to choose fields. An authenticated account sees its own existing private profile;
 a caller holding `course:manage` can see another user's private fields; other
@@ -35,10 +37,11 @@ case-insensitive username match; ambiguous or absent identities return both the
 user and username as `null` rather than exposing candidates.
 
 The [user-page former](former:Forum.profiles.theUserPage) combines current account, profile, post, and thread
-state without copying it into another owner. A missing optional profile face
+state without copying it into another owner. Its post collection takes a trusted reader and filters each post through the current conversation audience before exposing content or placement. A missing optional profile face
 does not create a replacement identity or grant access.
 
 ```endpoints
+Forum.profiles.GetProfileDisplays at /profiles/displays
 Forum.profiles.GetProfile at /profiles/get
 Forum.profiles.ResolvePublicUser at /users/resolve
 Forum.profiles.SearchUsers at /users/search

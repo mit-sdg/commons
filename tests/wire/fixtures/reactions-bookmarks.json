@@ -17,6 +17,31 @@
       }
     },
     {
+      "id": "regAdminSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regAdmin.user",
+        "email": "u1_admin@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#2",
+          "email": "u1_admin@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#1"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#1",
+        "section": null
+      }
+    },
+    {
       "id": "loginAdmin",
       "phase": "setup",
       "kind": "send",
@@ -26,8 +51,8 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#3",
         "expiresAt": "<date>",
-        "session": "uuid#2",
         "user": "uuid#1"
       }
     },
@@ -43,7 +68,32 @@
         "email": "u1_mara@example.com"
       },
       "response": {
-        "user": "uuid#3"
+        "user": "uuid#4"
+      }
+    },
+    {
+      "id": "regMaraSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regMara.user",
+        "email": "u1_mara@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#5",
+          "email": "u1_mara@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#4"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#4",
+        "section": null
       }
     },
     {
@@ -56,9 +106,9 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#6",
         "expiresAt": "<date>",
-        "session": "uuid#4",
-        "user": "uuid#3"
+        "user": "uuid#4"
       }
     },
     {
@@ -73,7 +123,32 @@
         "email": "u1_noah@example.com"
       },
       "response": {
-        "user": "uuid#5"
+        "user": "uuid#7"
+      }
+    },
+    {
+      "id": "regNoahSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regNoah.user",
+        "email": "u1_noah@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#8",
+          "email": "u1_noah@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#7"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#7",
+        "section": null
       }
     },
     {
@@ -86,9 +161,9 @@
         "password": "password123"
       },
       "response": {
+        "session": "uuid#9",
         "expiresAt": "<date>",
-        "session": "uuid#6",
-        "user": "uuid#5"
+        "user": "uuid#7"
       }
     },
     {
@@ -98,12 +173,13 @@
       "target": "/threads/create",
       "body": {
         "session": "$loginMara.session",
-        "content": "Reactions test thread"
+        "content": "Reactions test thread",
+        "holders": ["standing:everyone"]
       },
       "response": {
-        "post": "uuid#7",
-        "conversation": "uuid#8",
-        "node": "uuid#9"
+        "post": "uuid#10",
+        "conversation": "uuid#11",
+        "node": "uuid#12"
       }
     },
     {
@@ -117,8 +193,8 @@
         "content": "First reply"
       },
       "response": {
-        "post": "uuid#10",
-        "node": "uuid#11"
+        "post": "uuid#13",
+        "node": "uuid#14"
       }
     },
     {
@@ -128,12 +204,13 @@
       "target": "/threads/create",
       "body": {
         "session": "$loginNoah.session",
-        "content": "Second thread"
+        "content": "Second thread",
+        "holders": ["standing:everyone"]
       },
       "response": {
-        "post": "uuid#12",
-        "conversation": "uuid#13",
-        "node": "uuid#14"
+        "post": "uuid#15",
+        "conversation": "uuid#16",
+        "node": "uuid#17"
       }
     },
     {
@@ -147,7 +224,7 @@
         "kind": "up"
       },
       "response": {
-        "reaction": "uuid#15"
+        "reaction": "uuid#18"
       }
     },
     {
@@ -161,7 +238,7 @@
         "kind": "up"
       },
       "response": {
-        "reaction": "uuid#16"
+        "reaction": "uuid#19"
       }
     },
     {
@@ -175,7 +252,7 @@
         "kind": "heart"
       },
       "response": {
-        "reaction": "uuid#17"
+        "reaction": "uuid#20"
       }
     },
     {
@@ -198,23 +275,24 @@
       "kind": "send",
       "target": "/reactions/forTarget",
       "body": {
-        "target": "$t1Create.post"
+        "target": "$t1Create.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "reactions": [
           {
-            "reaction": "uuid#15",
-            "user": "uuid#5",
+            "reaction": "uuid#18",
+            "user": "uuid#7",
             "kind": "up"
           },
           {
-            "reaction": "uuid#16",
-            "user": "uuid#3",
+            "reaction": "uuid#19",
+            "user": "uuid#4",
             "kind": "up"
           },
           {
-            "reaction": "uuid#17",
-            "user": "uuid#3",
+            "reaction": "uuid#20",
+            "user": "uuid#4",
             "kind": "heart"
           }
         ]
@@ -226,7 +304,8 @@
       "kind": "send",
       "target": "/reactions/forTarget",
       "body": {
-        "target": "$t1Reply.post"
+        "target": "$t1Reply.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "reactions": []
@@ -238,23 +317,24 @@
       "kind": "send",
       "target": "/reactions/forTarget",
       "body": {
-        "target": "$t1Create.post"
+        "target": "$t1Create.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "reactions": [
           {
-            "reaction": "uuid#15",
-            "user": "uuid#5",
+            "reaction": "uuid#18",
+            "user": "uuid#7",
             "kind": "up"
           },
           {
-            "reaction": "uuid#16",
-            "user": "uuid#3",
+            "reaction": "uuid#19",
+            "user": "uuid#4",
             "kind": "up"
           },
           {
-            "reaction": "uuid#17",
-            "user": "uuid#3",
+            "reaction": "uuid#20",
+            "user": "uuid#4",
             "kind": "heart"
           }
         ]
@@ -271,7 +351,7 @@
         "kind": "up"
       },
       "response": {
-        "reaction": "uuid#18"
+        "reaction": "uuid#21"
       }
     },
     {
@@ -323,10 +403,11 @@
       "target": "/reactions/add",
       "body": {
         "target": "$t1Create.post",
-        "kind": "up"
+        "kind": "up",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "error": "INVALID_INPUT"
+        "reaction": "uuid#22"
       }
     },
     {
@@ -349,7 +430,8 @@
       "kind": "send",
       "target": "/reactions/forTarget",
       "body": {
-        "target": "00000000-0000-4000-8000-00000000dead"
+        "target": "00000000-0000-4000-8000-00000000dead",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "error": "NOT_FOUND"
@@ -365,7 +447,7 @@
         "item": "$t1Reply.post"
       },
       "response": {
-        "bookmark": "uuid#19"
+        "bookmark": "uuid#23"
       }
     },
     {
@@ -378,7 +460,7 @@
         "item": "$t1Create.post"
       },
       "response": {
-        "bookmark": "uuid#20"
+        "bookmark": "uuid#24"
       }
     },
     {
@@ -405,11 +487,11 @@
       "response": {
         "bookmarks": [
           {
-            "item": "uuid#7",
+            "item": "uuid#10",
             "savedAt": "<date>"
           },
           {
-            "item": "uuid#10",
+            "item": "uuid#13",
             "savedAt": "<date>"
           }
         ]
@@ -421,10 +503,11 @@
       "kind": "send",
       "target": "/threads/forItem",
       "body": {
-        "item": "$t1Create.post"
+        "item": "$t1Create.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "conversation": "uuid#8"
+        "conversation": "uuid#11"
       }
     },
     {
@@ -433,10 +516,11 @@
       "kind": "send",
       "target": "/threads/forItem",
       "body": {
-        "item": "$t1Reply.post"
+        "item": "$t1Reply.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "conversation": "uuid#8"
+        "conversation": "uuid#11"
       }
     },
     {
@@ -525,7 +609,7 @@
         "item": "$t1Create.post"
       },
       "response": {
-        "bookmark": "uuid#20"
+        "bookmark": "uuid#24"
       }
     },
     {
@@ -551,7 +635,7 @@
         "item": "$t1Reply.post"
       },
       "response": {
-        "item": "uuid#10"
+        "item": "uuid#13"
       }
     },
     {
@@ -564,7 +648,7 @@
         "item": "$t1Reply.post"
       },
       "response": {
-        "item": "uuid#10"
+        "item": "uuid#13"
       }
     },
     {
@@ -573,7 +657,8 @@
       "kind": "send",
       "target": "/reactions/forTarget",
       "body": {
-        "target": "$t1Reply.post"
+        "target": "$t1Reply.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "error": "NOT_FOUND"
@@ -610,7 +695,8 @@
       "kind": "send",
       "target": "/threads/forItem",
       "body": {
-        "item": "$t1Reply.post"
+        "item": "$t1Reply.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "conversation": null
@@ -641,7 +727,7 @@
       "response": [
         {
           "kind": "up",
-          "count": 1
+          "count": 2
         },
         {
           "kind": "heart",

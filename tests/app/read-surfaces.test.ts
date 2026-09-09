@@ -40,6 +40,11 @@ describe("composed application reads", () => {
 
   test("the forum pages receive their complete formed rows", async () => {
     const app = assembleCommons(mongoImplementations(await testDb()));
+    const { user: viewer } = await app.concepts.Authenticating.register({
+      username: "viewer",
+      password: "password123",
+      email: "viewer@example.edu",
+    });
     const at = new Date("2026-07-19T12:00:00.000Z");
     const later = new Date("2026-07-19T13:00:00.000Z");
     const { post } = await app.concepts.Posting.create({
@@ -48,6 +53,10 @@ describe("composed application reads", () => {
       at,
     });
     const { conversation, node } = await app.concepts.Conversing.start({ item: post, at });
+    await app.concepts.Accessing.establish({
+      resource: conversation,
+      holders: [`account:${viewer}`],
+    });
     const { post: reply } = await app.concepts.Posting.create({
       author: "noah",
       content: "Start from the behavior.",
@@ -65,7 +74,7 @@ describe("composed application reads", () => {
     await app.concepts.Locking.lock({ target: conversation, at });
     await app.concepts.Resolving.accept({ question: post, answer: reply, by: "mara", at: later });
 
-    expect(await app.form(theHomeFeedByActivity({}))).toEqual([
+    expect(await app.form(theHomeFeedByActivity({ reader: viewer }))).toEqual([
       expect.objectContaining({
         conversation,
         item: post,
@@ -80,7 +89,7 @@ describe("composed application reads", () => {
       }),
     ]);
 
-    expect(await app.form(theThreadContext({ conversation }))).toEqual([
+    expect(await app.form(theThreadContext({ conversation, reader: viewer }))).toEqual([
       expect.objectContaining({
         item: post,
         category: { category, name: "Design", description: "Questions about the design" },
@@ -96,6 +105,11 @@ describe("composed application reads", () => {
 
   test("the moderation queue carries each target's flags and post", async () => {
     const app = assembleCommons(mongoImplementations(await testDb()));
+    const { user: viewer } = await app.concepts.Authenticating.register({
+      username: "viewer",
+      password: "password123",
+      email: "viewer@example.edu",
+    });
     const at = new Date("2026-07-19T12:00:00.000Z");
     const { post } = await app.concepts.Posting.create({
       author: "mara",
@@ -103,10 +117,14 @@ describe("composed application reads", () => {
       at,
     });
     const { conversation } = await app.concepts.Conversing.start({ item: post, at });
+    await app.concepts.Accessing.establish({
+      resource: conversation,
+      holders: [`account:${viewer}`],
+    });
     await app.concepts.Flagging.flag({ reporter: "noah", target: post, reason: "spam", at });
     await app.concepts.Flagging.flag({ reporter: "iris", target: post, reason: "duplicate", at });
 
-    expect(await app.form(theModerationQueue({}))).toEqual([
+    expect(await app.form(theModerationQueue({ reader: viewer }))).toEqual([
       expect.objectContaining({
         target: post,
         count: 2,

@@ -216,6 +216,12 @@ moveSection(seat: Seat, section: Section) : return (seat: Seat)
 ## Queries
 
 ```queries
+_activeUsers (users: Seq) : one (active: Seq)
+  answers the supplied user identities that currently hold active seats
+
+_activeSections (sections: Seq) : one (active: Boolean)
+  answers whether every supplied section exists and is active; the empty selection answers true
+
 _getClass () : optional (detail: Class)
   answers the configured Class
   answers no row before the Class is configured

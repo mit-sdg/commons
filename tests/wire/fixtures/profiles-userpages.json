@@ -17,6 +17,31 @@
       }
     },
     {
+      "id": "regAdminSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regAdmin.user",
+        "email": "u4_admin@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#2",
+          "email": "u4_admin@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#1"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#1",
+        "section": null
+      }
+    },
+    {
       "id": "loginAdmin",
       "phase": "setup",
       "kind": "send",
@@ -26,7 +51,7 @@
         "password": "password123"
       },
       "response": {
-        "session": "uuid#2",
+        "session": "uuid#3",
         "expiresAt": "<date>",
         "user": "uuid#1"
       }
@@ -43,7 +68,32 @@
         "email": "u4_mara@example.com"
       },
       "response": {
-        "user": "uuid#3"
+        "user": "uuid#4"
+      }
+    },
+    {
+      "id": "regMaraSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regMara.user",
+        "email": "u4_mara@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#5",
+          "email": "u4_mara@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#4"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#4",
+        "section": null
       }
     },
     {
@@ -56,9 +106,9 @@
         "password": "password123"
       },
       "response": {
-        "session": "uuid#4",
+        "session": "uuid#6",
         "expiresAt": "<date>",
-        "user": "uuid#3"
+        "user": "uuid#4"
       }
     },
     {
@@ -73,7 +123,32 @@
         "email": "u4_noah@example.com"
       },
       "response": {
-        "user": "uuid#5"
+        "user": "uuid#7"
+      }
+    },
+    {
+      "id": "regNoahSeat",
+      "phase": "setup",
+      "kind": "concept",
+      "target": "Rostering.enrol",
+      "body": {
+        "user": "$regNoah.user",
+        "email": "u4_noah@example.com",
+        "kind": "STUDENT",
+        "section": null
+      },
+      "response": {
+        "seat": {
+          "_id": "uuid#8",
+          "email": "u4_noah@example.com",
+          "kind": "STUDENT",
+          "section": null,
+          "status": "ACTIVE",
+          "user": "uuid#7"
+        },
+        "kind": "STUDENT",
+        "user": "uuid#7",
+        "section": null
       }
     },
     {
@@ -86,9 +161,9 @@
         "password": "password123"
       },
       "response": {
-        "session": "uuid#6",
+        "session": "uuid#9",
         "expiresAt": "<date>",
-        "user": "uuid#5"
+        "user": "uuid#7"
       }
     },
     {
@@ -98,12 +173,13 @@
       "target": "/threads/create",
       "body": {
         "session": "$loginMara.session",
-        "content": "Mara's thread"
+        "content": "Mara's thread",
+        "holders": ["standing:everyone"]
       },
       "response": {
-        "post": "uuid#7",
-        "conversation": "uuid#8",
-        "node": "uuid#9"
+        "post": "uuid#10",
+        "conversation": "uuid#11",
+        "node": "uuid#12"
       }
     },
     {
@@ -113,12 +189,13 @@
       "target": "/threads/create",
       "body": {
         "session": "$loginNoah.session",
-        "content": "Noah's thread"
+        "content": "Noah's thread",
+        "holders": ["standing:everyone"]
       },
       "response": {
-        "post": "uuid#10",
-        "conversation": "uuid#11",
-        "node": "uuid#12"
+        "post": "uuid#13",
+        "conversation": "uuid#14",
+        "node": "uuid#15"
       }
     },
     {
@@ -132,8 +209,8 @@
         "content": "Mara's reply in T2"
       },
       "response": {
-        "post": "uuid#13",
-        "node": "uuid#14"
+        "post": "uuid#16",
+        "node": "uuid#17"
       }
     },
     {
@@ -142,10 +219,16 @@
       "kind": "send",
       "target": "/profiles/get",
       "body": {
-        "user": "$loginMara.user"
+        "user": "$loginMara.user",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "error": "INVALID_INPUT"
+        "profile": {
+          "displayName": "Mara",
+          "bio": "",
+          "avatar": "",
+          "email": "u4_mara@example.com"
+        }
       }
     },
     {
@@ -158,7 +241,7 @@
         "bio": "Ports engines by day."
       },
       "response": {
-        "user": "uuid#3"
+        "user": "uuid#4"
       }
     },
     {
@@ -171,7 +254,7 @@
         "displayName": "Mara V."
       },
       "response": {
-        "user": "uuid#3"
+        "user": "uuid#4"
       }
     },
     {
@@ -184,7 +267,7 @@
         "avatar": "https://example.com/mara.png"
       },
       "response": {
-        "user": "uuid#3"
+        "user": "uuid#4"
       }
     },
     {
@@ -193,10 +276,16 @@
       "kind": "send",
       "target": "/profiles/get",
       "body": {
-        "user": "$loginMara.user"
+        "user": "$loginMara.user",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "error": "INVALID_INPUT"
+        "profile": {
+          "displayName": "Mara V.",
+          "bio": "Ports engines by day.",
+          "avatar": "https://example.com/mara.png",
+          "email": "u4_mara@example.com"
+        }
       }
     },
     {
@@ -209,7 +298,7 @@
         "displayName": ""
       },
       "response": {
-        "user": "uuid#5"
+        "user": "uuid#7"
       }
     },
     {
@@ -218,10 +307,16 @@
       "kind": "send",
       "target": "/profiles/get",
       "body": {
-        "user": "$loginNoah.user"
+        "user": "$loginNoah.user",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "error": "INVALID_INPUT"
+        "profile": {
+          "displayName": "",
+          "bio": "",
+          "avatar": "",
+          "email": "u4_noah@example.com"
+        }
       }
     },
     {
@@ -234,7 +329,7 @@
         "displayName": "Noah"
       },
       "response": {
-        "user": "uuid#5"
+        "user": "uuid#7"
       }
     },
     {
@@ -243,10 +338,11 @@
       "kind": "send",
       "target": "/profiles/setBio",
       "body": {
-        "bio": "x"
+        "bio": "x",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "error": "INVALID_INPUT"
+        "user": "uuid#1"
       }
     },
     {
@@ -268,10 +364,11 @@
       "kind": "send",
       "target": "/profiles/get",
       "body": {
-        "user": "00000000-0000-4000-8000-00000000dead"
+        "user": "00000000-0000-4000-8000-00000000dead",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "error": "INVALID_INPUT"
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -283,7 +380,7 @@
         "username": "u4_mara"
       },
       "response": {
-        "user": "uuid#3"
+        "user": "uuid#4"
       }
     },
     {
@@ -308,7 +405,17 @@
         "query": "u4_m"
       },
       "response": {
-        "error": "NOT_FOUND"
+        "users": [
+          {
+            "user": "uuid#4",
+            "username": "u4_mara",
+            "profile": {
+              "displayName": "Mara V.",
+              "bio": "Ports engines by day.",
+              "avatar": "https://example.com/mara.png"
+            }
+          }
+        ]
       }
     },
     {
@@ -321,7 +428,35 @@
         "query": "u4_"
       },
       "response": {
-        "error": "NOT_FOUND"
+        "users": [
+          {
+            "user": "uuid#1",
+            "username": "u4_admin",
+            "profile": {
+              "displayName": "Admin",
+              "bio": "x",
+              "avatar": ""
+            }
+          },
+          {
+            "user": "uuid#4",
+            "username": "u4_mara",
+            "profile": {
+              "displayName": "Mara V.",
+              "bio": "Ports engines by day.",
+              "avatar": "https://example.com/mara.png"
+            }
+          },
+          {
+            "user": "uuid#7",
+            "username": "u4_noah",
+            "profile": {
+              "displayName": "Noah",
+              "bio": "",
+              "avatar": ""
+            }
+          }
+        ]
       }
     },
     {
@@ -334,7 +469,35 @@
         "query": ""
       },
       "response": {
-        "error": "NOT_FOUND"
+        "users": [
+          {
+            "user": "uuid#1",
+            "username": "u4_admin",
+            "profile": {
+              "displayName": "Admin",
+              "bio": "x",
+              "avatar": ""
+            }
+          },
+          {
+            "user": "uuid#4",
+            "username": "u4_mara",
+            "profile": {
+              "displayName": "Mara V.",
+              "bio": "Ports engines by day.",
+              "avatar": "https://example.com/mara.png"
+            }
+          },
+          {
+            "user": "uuid#7",
+            "username": "u4_noah",
+            "profile": {
+              "displayName": "Noah",
+              "bio": "",
+              "avatar": ""
+            }
+          }
+        ]
       }
     },
     {
@@ -347,7 +510,7 @@
         "query": "zzz"
       },
       "response": {
-        "error": "NOT_FOUND"
+        "users": []
       }
     },
     {
@@ -381,10 +544,16 @@
       "kind": "send",
       "target": "/profiles/get",
       "body": {
-        "user": "$loginMara.user"
+        "user": "$loginMara.user",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "error": "INVALID_INPUT"
+        "profile": {
+          "displayName": "Mara V.",
+          "bio": "Ports engines by day.",
+          "avatar": "https://example.com/mara.png",
+          "email": "u4_mara@example.com"
+        }
       }
     },
     {
@@ -393,15 +562,16 @@
       "kind": "send",
       "target": "/posts/byAuthor",
       "body": {
-        "author": "$loginMara.user"
+        "author": "$loginMara.user",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "posts": [
           {
-            "post": "uuid#13"
+            "post": "uuid#16"
           },
           {
-            "post": "uuid#7"
+            "post": "uuid#10"
           }
         ]
       }
@@ -427,10 +597,11 @@
       "kind": "send",
       "target": "/threads/forItem",
       "body": {
-        "item": "$t1Create.post"
+        "item": "$t1Create.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "conversation": "uuid#8"
+        "conversation": "uuid#11"
       }
     },
     {
@@ -439,10 +610,11 @@
       "kind": "send",
       "target": "/threads/forItem",
       "body": {
-        "item": "$t2Reply.post"
+        "item": "$t2Reply.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
-        "conversation": "uuid#11"
+        "conversation": "uuid#14"
       }
     },
     {
@@ -451,11 +623,12 @@
       "kind": "send",
       "target": "/posts/get",
       "body": {
-        "post": "$t1Create.post"
+        "post": "$t1Create.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "post": {
-          "author": "uuid#3",
+          "author": "uuid#4",
           "content": "Mara's thread",
           "createdAt": "<date>",
           "editedAt": null,
@@ -469,11 +642,12 @@
       "kind": "send",
       "target": "/posts/get",
       "body": {
-        "post": "$t2Reply.post"
+        "post": "$t2Reply.post",
+        "session": "$loginAdmin.session"
       },
       "response": {
         "post": {
-          "author": "uuid#3",
+          "author": "uuid#4",
           "content": "Mara's reply in T2",
           "createdAt": "<date>",
           "editedAt": null,
@@ -501,7 +675,7 @@
       },
       "response": [
         {
-          "user": "uuid#3",
+          "user": "uuid#4",
           "username": "u4_mara"
         }
       ]

@@ -22,6 +22,19 @@ for (const [floor, make] of floors) {
       ]);
     });
 
+    test("batch metadata includes only existing selected posts without content or duplicates", async () => {
+      const posting = await make();
+      const at = new Date("2026-01-05T09:00:00Z");
+      const { post } = await posting.create({ author: "amara", content: "private body", at });
+      const { post: deleted } = await posting.create({ author: "noah", content: "deleted", at });
+      await posting.create({ author: "other", content: "unselected", at });
+      await posting.delete({ post: deleted });
+      expect(await posting._postMetadata({ posts: [post, post, deleted, "unknown"] })).toEqual({
+        posts: [{ post, author: "amara", createdAt: at }],
+      });
+      expect(await posting._postMetadata({ posts: [] })).toEqual({ posts: [] });
+    });
+
     test("delete removes the post", async () => {
       const posting = await make();
       const { post } = await posting.create({

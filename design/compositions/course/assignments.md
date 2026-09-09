@@ -60,3 +60,6 @@ Course.assignments.StaffList at /assignments/staff-list
 Course.assignments.StaffSummary at /assignments/staff-summary
 Course.assignments.Submit at /assignments/submit
 ```
+
+Each successful release triggers [AssignmentReleaseNotifiesStudent](reaction:Course.assignments.AssignmentReleaseNotifiesStudent).
+It creates an assignment_released notification for the actual active student assignee, linked to the assignment. This covers targeted publication and later enrolment; drafts and revisions that do not create a new release do not notify. Assigning rejects duplicate releases for the same assignment and person.

@@ -8,6 +8,28 @@ _specifications and composition source, then regenerate this file._
 
 ## Concepts
 
+### Accessing
+
+Defined in [Accessing](../design/concepts/Accessing.md), line 1.
+
+#### Actions
+
+- `establish(resource: Resource, holders: Seq) : return (resource: Resource)`
+  - Refuses `ACCESS_ALREADY_ESTABLISHED`: Access has already been established or retired.
+- `retire(resource: Resource) : return (resource: Resource)`
+
+#### Queries
+
+- `_grants(resource: Resource) : many (holder: Holder)`
+- `_isRetired(resource: Resource) : one (retired: Boolean)`
+- `_holders(resource: Resource) : optional (holders: Seq)`
+
+#### Instances
+
+- `Accessing` — instance of `Accessing` — [Commons application](../design/application.md), line 117.
+  - `Holder` is `AudienceHolder` — [Commons application](../design/application.md), line 119.
+  - `Resource` is `Conversing.Conversation` — [Commons application](../design/application.md), line 118.
+
 ### Assigning
 
 Defined in [Assigning](../design/concepts/Assigning.md), line 1.
@@ -53,10 +75,10 @@ Defined in [Assigning](../design/concepts/Assigning.md), line 1.
 
 #### Instances
 
-- `Assigning` — instance of `Assigning` — [Commons application](../design/application.md), line 122.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 124.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 123.
-  - `Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 125.
+- `Assigning` — instance of `Assigning` — [Commons application](../design/application.md), line 129.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 131.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 130.
+  - `Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 132.
 
 ### Authenticating
 
@@ -82,10 +104,12 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 
 #### Queries
 
+- `_knownUsers(users: Seq) : one (known: Boolean)`
 - `_getById(user: String) : optional (username: String, email: String)`
 - `_getByEmail(email: String) : optional (user: String)`
 - `_getByUsername(username: String) : optional (user: String)`
 - `_getUserCount() : one (count: Number)`
+- `_selectedUsers(users: Seq) : many (user: String)`
 - `_getUsers() : many (user: String, username: String, email: String)`
 - `_search(query: String) : many (user: String, username: String)`
 - `_resolveIdentity(ref: String) : one (user: String | Null, username: String | Null)`
@@ -93,7 +117,7 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 
 #### Instances
 
-- `Authenticating` — instance of `Authenticating` — [Commons application](../design/application.md), line 127.
+- `Authenticating` — instance of `Authenticating` — [Commons application](../design/application.md), line 134.
 
 ### Banking
 
@@ -128,9 +152,9 @@ Defined in [Banking](../design/concepts/Banking.md), line 1.
 
 #### Instances
 
-- `Banking` — instance of `Banking` — [Commons application](../design/application.md), line 129.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 131.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 130.
+- `Banking` — instance of `Banking` — [Commons application](../design/application.md), line 136.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 138.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 137.
 
 ### Bookmarking
 
@@ -151,9 +175,9 @@ Defined in [Bookmarking](../design/concepts/Bookmarking.md), line 1.
 
 #### Instances
 
-- `Bookmarking` — instance of `Bookmarking` — [Commons application](../design/application.md), line 133.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 135.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 134.
+- `Bookmarking` — instance of `Bookmarking` — [Commons application](../design/application.md), line 140.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 142.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 141.
 
 ### Categorizing
 
@@ -196,9 +220,9 @@ Defined in [Categorizing](../design/concepts/Categorizing.md), line 1.
 
 #### Instances
 
-- `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 137.
-  - `Item` is `Categorizable` — [Commons application](../design/application.md), line 139.
-  - `Scope` is `CategoryScope` — [Commons application](../design/application.md), line 138.
+- `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 144.
+  - `Item` is `Categorizable` — [Commons application](../design/application.md), line 146.
+  - `Scope` is `CategoryScope` — [Commons application](../design/application.md), line 145.
 
 ### Commissioning
 
@@ -226,9 +250,9 @@ Defined in [Commissioning](../design/concepts/Commissioning.md), line 1.
 
 #### Instances
 
-- `Commissioning` — instance of `Commissioning` — [Commons application](../design/application.md), line 114.
-  - `Execution` is `LiveExecution` — [Commons application](../design/application.md), line 116.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 115.
+- `Commissioning` — instance of `Commissioning` — [Commons application](../design/application.md), line 121.
+  - `Execution` is `LiveExecution` — [Commons application](../design/application.md), line 123.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 122.
 
 ### Conversing
 
@@ -247,6 +271,8 @@ Defined in [Conversing](../design/concepts/Conversing.md), line 1.
 
 #### Queries
 
+- `_exists(conversation: String) : one (exists: Boolean)`
+- `_threadNodes(conversation: String) : one (nodes: Seq)`
 - `_getThread(conversation: String) : many (node: String, item: String, parent: String | Null, depth: Number)`
 - `_getConversation(node: String) : optional (conversation: String)`
 - `_getNodeByItem(item: String) : optional (node: String)`
@@ -258,8 +284,8 @@ Defined in [Conversing](../design/concepts/Conversing.md), line 1.
 
 #### Instances
 
-- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 141.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 142.
+- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 148.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 149.
 
 ### Drafting
 
@@ -311,9 +337,9 @@ Defined in [Drafting](../design/concepts/Drafting.md), line 1.
 
 #### Instances
 
-- `Drafting` — instance of `Drafting` — [Commons application](../design/application.md), line 144.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 145.
-  - `Origin` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 146.
+- `Drafting` — instance of `Drafting` — [Commons application](../design/application.md), line 151.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 152.
+  - `Origin` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 153.
 
 ### Flagging
 
@@ -335,9 +361,9 @@ Defined in [Flagging](../design/concepts/Flagging.md), line 1.
 
 #### Instances
 
-- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 152.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 154.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 153.
+- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 159.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 161.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 160.
 
 ### Formatting
 
@@ -354,8 +380,8 @@ Defined in [Formatting](../design/concepts/Formatting.md), line 1.
 
 #### Instances
 
-- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 156.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 157.
+- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 163.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 164.
 
 ### Grading
 
@@ -392,12 +418,12 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 
 #### Instances
 
-- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 159.
-  - `Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 163.
-  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 164.
-  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 160.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 162.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 161.
+- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 166.
+  - `Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 170.
+  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 171.
+  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 167.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 169.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 168.
 
 ### Grouping
 
@@ -425,6 +451,8 @@ Defined in [Grouping](../design/concepts/Grouping.md), line 1.
 
 #### Queries
 
+- `_anyMembership(member: Person, groups: Seq) : one (included: Boolean)`
+- `_allMemberships(member: Person, groups: Seq) : one (included: Boolean)`
 - `_getGroup(group: String) : optional (title: String, createdAt: Date, updatedAt: Date)`
 - `_getMembers(group: String) : many (member: String)`
 - `_getGroupsOf(member: String) : many (group: String, title: String, createdAt: Date, updatedAt: Date)`
@@ -432,8 +460,8 @@ Defined in [Grouping](../design/concepts/Grouping.md), line 1.
 
 #### Instances
 
-- `Grouping` — instance of `Grouping` — [Commons application](../design/application.md), line 166.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 167.
+- `Grouping` — instance of `Grouping` — [Commons application](../design/application.md), line 173.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 174.
 
 ### Guiding
 
@@ -474,8 +502,8 @@ Defined in [Guiding](../design/concepts/Guiding.md), line 1.
 
 #### Instances
 
-- `Guiding` — instance of `Guiding` — [Commons application](../design/application.md), line 169.
-  - `Subject` is `GuidanceSubject` — [Commons application](../design/application.md), line 170.
+- `Guiding` — instance of `Guiding` — [Commons application](../design/application.md), line 176.
+  - `Subject` is `GuidanceSubject` — [Commons application](../design/application.md), line 177.
 
 ### Insisting
 
@@ -501,8 +529,8 @@ Defined in [Insisting](../design/concepts/Insisting.md), line 1.
 
 #### Instances
 
-- `Insisting` — instance of `Insisting` — [Commons application](../design/application.md), line 172.
-  - `Aim` is `LiveSubject` — [Commons application](../design/application.md), line 173.
+- `Insisting` — instance of `Insisting` — [Commons application](../design/application.md), line 179.
+  - `Aim` is `LiveSubject` — [Commons application](../design/application.md), line 180.
 
 ### Inviting
 
@@ -528,8 +556,8 @@ Defined in [Inviting](../design/concepts/Inviting.md), line 1.
 
 #### Instances
 
-- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 175.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 176.
+- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 182.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 183.
 
 ### Itemizing
 
@@ -558,8 +586,8 @@ Defined in [Itemizing](../design/concepts/Itemizing.md), line 1.
 
 #### Instances
 
-- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 178.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 179.
+- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 185.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 186.
 
 ### Linking
 
@@ -579,12 +607,12 @@ Defined in [Linking](../design/concepts/Linking.md), line 1.
 
 #### Instances
 
-- `AdoptLinking` — instance of `Linking` — [Commons application](../design/application.md), line 185.
-  - `Source` is `Drafting.Brief` — [Commons application](../design/application.md), line 186.
-  - `Target` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 187.
-- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 181.
-  - `Source` is `Linkable` — [Commons application](../design/application.md), line 182.
-  - `Target` is `Linkable` — [Commons application](../design/application.md), line 183.
+- `AdoptLinking` — instance of `Linking` — [Commons application](../design/application.md), line 192.
+  - `Source` is `Drafting.Brief` — [Commons application](../design/application.md), line 193.
+  - `Target` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 194.
+- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 188.
+  - `Source` is `Linkable` — [Commons application](../design/application.md), line 189.
+  - `Target` is `Linkable` — [Commons application](../design/application.md), line 190.
 
 ### Locating
 
@@ -603,8 +631,8 @@ Defined in [Locating](../design/concepts/Locating.md), line 1.
 
 #### Instances
 
-- `Locating` — instance of `Locating` — [Commons application](../design/application.md), line 192.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 193.
+- `Locating` — instance of `Locating` — [Commons application](../design/application.md), line 199.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 200.
 
 ### Locking
 
@@ -624,8 +652,8 @@ Defined in [Locking](../design/concepts/Locking.md), line 1.
 
 #### Instances
 
-- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 189.
-  - `Target` is `Lockable` — [Commons application](../design/application.md), line 190.
+- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 196.
+  - `Target` is `Lockable` — [Commons application](../design/application.md), line 197.
 
 ### Mailing
 
@@ -650,8 +678,8 @@ Defined in [Mailing](../design/concepts/Mailing.md), line 1.
 
 #### Instances
 
-- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 195.
-  - `Key` is `MailKey` — [Commons application](../design/application.md), line 196.
+- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 202.
+  - `Key` is `MailKey` — [Commons application](../design/application.md), line 203.
 
 ### Notifying
 
@@ -675,14 +703,14 @@ Defined in [Notifying](../design/concepts/Notifying.md), line 1.
 
 #### Instances
 
-- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 198.
-  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 201.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 199.
-  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 200.
-- `TaskNotifying` — instance of `Notifying` — [Commons application](../design/application.md), line 203.
-  - `Link` is `TaskSubject` — [Commons application](../design/application.md), line 206.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 204.
-  - `Subject` is `TaskSubject` — [Commons application](../design/application.md), line 205.
+- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 205.
+  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 208.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 206.
+  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 207.
+- `TaskNotifying` — instance of `Notifying` — [Commons application](../design/application.md), line 210.
+  - `Link` is `TaskSubject` — [Commons application](../design/application.md), line 213.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 211.
+  - `Subject` is `TaskSubject` — [Commons application](../design/application.md), line 212.
 
 ### Noting
 
@@ -720,9 +748,9 @@ Defined in [Noting](../design/concepts/Noting.md), line 1.
 
 #### Instances
 
-- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 208.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 209.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 210.
+- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 215.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 216.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 217.
 
 ### Pinning
 
@@ -745,9 +773,9 @@ Defined in [Pinning](../design/concepts/Pinning.md), line 1.
 
 #### Instances
 
-- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 212.
-  - `Item` is `Pinnable` — [Commons application](../design/application.md), line 213.
-  - `Scope` is `PinScope` — [Commons application](../design/application.md), line 214.
+- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 219.
+  - `Item` is `Pinnable` — [Commons application](../design/application.md), line 220.
+  - `Scope` is `PinScope` — [Commons application](../design/application.md), line 221.
 
 ### Posting
 
@@ -763,6 +791,7 @@ Defined in [Posting](../design/concepts/Posting.md), line 1.
 
 #### Queries
 
+- `_postMetadata(posts: Seq) : one (posts: Seq)`
 - `_getPost(post: String) : optional (author: String, content: String, createdAt: Date, editedAt: Date | Null)`
 - `_getByAuthor(author: String) : many (post: String)`
 - `_getMentions(post: String) : many (handle: String)`
@@ -770,8 +799,8 @@ Defined in [Posting](../design/concepts/Posting.md), line 1.
 
 #### Instances
 
-- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 216.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 217.
+- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 223.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 224.
 
 ### Profiling
 
@@ -796,8 +825,8 @@ Defined in [Profiling](../design/concepts/Profiling.md), line 1.
 
 #### Instances
 
-- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 219.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 220.
+- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 226.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 227.
 
 ### Publishing
 
@@ -820,9 +849,9 @@ Defined in [Publishing](../design/concepts/Publishing.md), line 1.
 
 #### Instances
 
-- `Publishing` — instance of `Publishing` — [Commons application](../design/application.md), line 222.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 223.
-  - `Material` is `LiveMaterial` — [Commons application](../design/application.md), line 224.
+- `Publishing` — instance of `Publishing` — [Commons application](../design/application.md), line 229.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 230.
+  - `Material` is `LiveMaterial` — [Commons application](../design/application.md), line 231.
 
 ### Questioning
 
@@ -895,8 +924,8 @@ Defined in [Questioning](../design/concepts/Questioning.md), line 1.
 
 #### Instances
 
-- `Questioning` — instance of `Questioning` — [Commons application](../design/application.md), line 226.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 227.
+- `Questioning` — instance of `Questioning` — [Commons application](../design/application.md), line 233.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 234.
 
 ### Reacting
 
@@ -919,9 +948,9 @@ Defined in [Reacting](../design/concepts/Reacting.md), line 1.
 
 #### Instances
 
-- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 229.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 230.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 231.
+- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 236.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 237.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 238.
 
 ### Reasoning
 
@@ -953,9 +982,9 @@ Defined in [Reasoning](../design/concepts/Reasoning.md), line 1.
 
 #### Instances
 
-- `Reasoning` — instance of `Reasoning` — [Commons application](../design/application.md), line 233.
-  - `Reasoner` is `LiveReasoner` — [Commons application](../design/application.md), line 234.
-  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 235.
+- `Reasoning` — instance of `Reasoning` — [Commons application](../design/application.md), line 240.
+  - `Reasoner` is `LiveReasoner` — [Commons application](../design/application.md), line 241.
+  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 242.
 
 ### Relaying
 
@@ -1001,9 +1030,9 @@ Defined in [Relaying](../design/concepts/Relaying.md), line 1.
 
 #### Instances
 
-- `Relaying` — instance of `Relaying` — [Commons application](../design/application.md), line 237.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 238.
-  - `Material` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 239.
+- `Relaying` — instance of `Relaying` — [Commons application](../design/application.md), line 244.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 245.
+  - `Material` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 246.
 
 ### Resolving
 
@@ -1023,10 +1052,10 @@ Defined in [Resolving](../design/concepts/Resolving.md), line 1.
 
 #### Instances
 
-- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 246.
-  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 249.
-  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 248.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 247.
+- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 253.
+  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 256.
+  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 255.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 254.
 
 ### Responding
 
@@ -1059,10 +1088,10 @@ Defined in [Responding](../design/concepts/Responding.md), line 1.
 
 #### Instances
 
-- `Responding` — instance of `Responding` — [Commons application](../design/application.md), line 241.
-  - `Item` is `LiveItem` — [Commons application](../design/application.md), line 244.
-  - `Participant` is `LiveParticipant` — [Commons application](../design/application.md), line 243.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 242.
+- `Responding` — instance of `Responding` — [Commons application](../design/application.md), line 248.
+  - `Item` is `LiveItem` — [Commons application](../design/application.md), line 251.
+  - `Participant` is `LiveParticipant` — [Commons application](../design/application.md), line 250.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 249.
 
 ### Revising
 
@@ -1081,8 +1110,8 @@ Defined in [Revising](../design/concepts/Revising.md), line 1.
 
 #### Instances
 
-- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 251.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 252.
+- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 258.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 259.
 
 ### Roling
 
@@ -1105,6 +1134,7 @@ Defined in [Roling](../design/concepts/Roling.md), line 1.
 
 #### Queries
 
+- `_capableUsers(users: Seq, context: Context, capabilities: Seq) : one (capable: Seq)`
 - `_hasCapability(user: String, context: String, capability: String) : one (allowed: Boolean)`
 - `_hasCapabilityHolder(context: String, capability: String) : one (present: Boolean)`
 - `_isSoleCapabilityHolder(user: String, context: String, capability: String) : one (sole: Boolean)`
@@ -1119,9 +1149,9 @@ Defined in [Roling](../design/concepts/Roling.md), line 1.
 
 #### Instances
 
-- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 254.
-  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 256.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 255.
+- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 261.
+  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 263.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 262.
 
 ### Rostering
 
@@ -1162,6 +1192,8 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 
 #### Queries
 
+- `_activeUsers(users: Seq) : one (active: Seq)`
+- `_activeSections(sections: Seq) : one (active: Boolean)`
 - `_getClass() : optional (detail: Class)`
 - `_getSections() : many (section: String, name: String, location: String, meetingPattern: String, status: String)`
 - `_getSeatByEmail(email: String) : optional (seat: String, email: String)`
@@ -1176,8 +1208,8 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 
 #### Instances
 
-- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 258.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 259.
+- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 265.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 266.
 
 ### Scoring
 
@@ -1202,10 +1234,10 @@ Defined in [Scoring](../design/concepts/Scoring.md), line 1.
 
 #### Instances
 
-- `Scoring` — instance of `Scoring` — [Commons application](../design/application.md), line 261.
-  - `Item` is `Questioning.Question` — [Commons application](../design/application.md), line 263.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 262.
-  - `Submission` is `Responding.Response` — [Commons application](../design/application.md), line 264.
+- `Scoring` — instance of `Scoring` — [Commons application](../design/application.md), line 268.
+  - `Item` is `Questioning.Question` — [Commons application](../design/application.md), line 270.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 269.
+  - `Submission` is `Responding.Response` — [Commons application](../design/application.md), line 271.
 
 ### Sessioning
 
@@ -1225,8 +1257,8 @@ Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 
 #### Instances
 
-- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 270.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 271.
+- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 277.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 278.
 
 ### Sharing
 
@@ -1245,8 +1277,8 @@ Defined in [Sharing](../design/concepts/Sharing.md), line 1.
 
 #### Instances
 
-- `Sharing` — instance of `Sharing` — [Commons application](../design/application.md), line 273.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 274.
+- `Sharing` — instance of `Sharing` — [Commons application](../design/application.md), line 280.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 281.
 
 ### Snapshotting
 
@@ -1263,9 +1295,9 @@ Defined in [Snapshotting](../design/concepts/Snapshotting.md), line 1.
 
 #### Instances
 
-- `RunSnapshotting` — instance of `Snapshotting` — [Commons application](../design/application.md), line 266.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 267.
-  - `Value` is `LiveRunSnapshot` — [Commons application](../design/application.md), line 268.
+- `RunSnapshotting` — instance of `Snapshotting` — [Commons application](../design/application.md), line 273.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 274.
+  - `Value` is `LiveRunSnapshot` — [Commons application](../design/application.md), line 275.
 
 ### Submitting
 
@@ -1290,10 +1322,10 @@ Defined in [Submitting](../design/concepts/Submitting.md), line 1.
 
 #### Instances
 
-- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 279.
-  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 282.
-  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 281.
-  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 280.
+- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 286.
+  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 289.
+  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 288.
+  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 287.
 
 ### Subscribing
 
@@ -1315,9 +1347,9 @@ Defined in [Subscribing](../design/concepts/Subscribing.md), line 1.
 
 #### Instances
 
-- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 284.
-  - `Person` is `Subscriber` — [Commons application](../design/application.md), line 285.
-  - `Target` is `Subscribable` — [Commons application](../design/application.md), line 286.
+- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 291.
+  - `Person` is `Subscriber` — [Commons application](../design/application.md), line 292.
+  - `Target` is `Subscribable` — [Commons application](../design/application.md), line 293.
 
 ### Suggesting
 
@@ -1345,8 +1377,8 @@ Defined in [Suggesting](../design/concepts/Suggesting.md), line 1.
 
 #### Instances
 
-- `Suggesting` — instance of `Suggesting` — [Commons application](../design/application.md), line 276.
-  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 277.
+- `Suggesting` — instance of `Suggesting` — [Commons application](../design/application.md), line 283.
+  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 284.
 
 ### Tagging
 
@@ -1374,8 +1406,8 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 
 #### Instances
 
-- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 288.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 289.
+- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 295.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 296.
 
 ### Tasking
 
@@ -1426,9 +1458,9 @@ Defined in [Tasking](../design/concepts/Tasking.md), line 1.
 
 #### Instances
 
-- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 291.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 293.
-  - `Scope` is `Grouping.Group` — [Commons application](../design/application.md), line 292.
+- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 298.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 300.
+  - `Scope` is `Grouping.Group` — [Commons application](../design/application.md), line 299.
 
 ### Tracking
 
@@ -1452,10 +1484,10 @@ Defined in [Tracking](../design/concepts/Tracking.md), line 1.
 
 #### Instances
 
-- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 295.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 297.
-  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 298.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 296.
+- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 302.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 304.
+  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 305.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 303.
 
 ### Trashing
 
@@ -1472,21 +1504,22 @@ Defined in [Trashing](../design/concepts/Trashing.md), line 1.
 
 #### Queries
 
+- `_anyTrashed(items: Seq) : one (trashed: Boolean)`
 - `_isTrashed(item: String) : one (trashed: Boolean)`
 - `_getTrashed() : many (item: String, trashedBy: String, trashedAt: Date)`
 - `_trashedItems() : one (items: Seq)`
 
 #### Instances
 
-- `Archiving` — instance of `Trashing` — [Commons application](../design/application.md), line 118.
-  - `Item` is `Authenticating.User` — [Commons application](../design/application.md), line 120.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 119.
-- `DraftTrashing` — instance of `Trashing` — [Commons application](../design/application.md), line 148.
-  - `Item` is `Drafting.Brief` — [Commons application](../design/application.md), line 150.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 149.
-- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 300.
-  - `Item` is `Trashable` — [Commons application](../design/application.md), line 302.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 301.
+- `Archiving` — instance of `Trashing` — [Commons application](../design/application.md), line 125.
+  - `Item` is `Authenticating.User` — [Commons application](../design/application.md), line 127.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 126.
+- `DraftTrashing` — instance of `Trashing` — [Commons application](../design/application.md), line 155.
+  - `Item` is `Drafting.Brief` — [Commons application](../design/application.md), line 157.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 156.
+- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 307.
+  - `Item` is `Trashable` — [Commons application](../design/application.md), line 309.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 308.
 
 ### Vouching
 
@@ -1507,57 +1540,63 @@ Defined in [Vouching](../design/concepts/Vouching.md), line 1.
 
 #### Instances
 
-- `PasswordResetVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 304.
-  - `Subject` is `Authenticating.User` — [Commons application](../design/application.md), line 305.
+- `PasswordResetVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 311.
+  - `Subject` is `Authenticating.User` — [Commons application](../design/application.md), line 312.
 
 ## Application types
 
 Concrete types:
 
-- `Categorizable` — [Commons application](../design/application.md), line 103.
-- `CategoryScope` — [Commons application](../design/application.md), line 90.
-- `GuidanceSubject` — [Commons application](../design/application.md), line 96.
-- `Linkable` — [Commons application](../design/application.md), line 70.
-- `LiveExecution` — [Commons application](../design/application.md), line 40.
-- `LiveItem` — [Commons application](../design/application.md), line 48.
-- `LiveMaterial` — [Commons application](../design/application.md), line 44.
-- `LiveParticipant` — [Commons application](../design/application.md), line 27.
-- `LiveReasoner` — [Commons application](../design/application.md), line 32.
-- `LiveRunSnapshot` — [Commons application](../design/application.md), line 36.
-- `LiveSubject` — [Commons application](../design/application.md), line 52.
-- `Lockable` — [Commons application](../design/application.md), line 18.
-- `MailKey` — [Commons application](../design/application.md), line 15.
-- `PinScope` — [Commons application](../design/application.md), line 85.
-- `Pinnable` — [Commons application](../design/application.md), line 80.
-- `Subscribable` — [Commons application](../design/application.md), line 66.
-- `Subscriber` — [Commons application](../design/application.md), line 62.
-- `TaskSubject` — [Commons application](../design/application.md), line 24.
-- `Trashable` — [Commons application](../design/application.md), line 74.
+- `AudienceHolder` — [Commons application](../design/application.md), line 15.
+- `Categorizable` — [Commons application](../design/application.md), line 106.
+- `CategoryScope` — [Commons application](../design/application.md), line 93.
+- `GuidanceSubject` — [Commons application](../design/application.md), line 99.
+- `Linkable` — [Commons application](../design/application.md), line 73.
+- `LiveExecution` — [Commons application](../design/application.md), line 43.
+- `LiveItem` — [Commons application](../design/application.md), line 51.
+- `LiveMaterial` — [Commons application](../design/application.md), line 47.
+- `LiveParticipant` — [Commons application](../design/application.md), line 30.
+- `LiveReasoner` — [Commons application](../design/application.md), line 35.
+- `LiveRunSnapshot` — [Commons application](../design/application.md), line 39.
+- `LiveSubject` — [Commons application](../design/application.md), line 55.
+- `Lockable` — [Commons application](../design/application.md), line 21.
+- `MailKey` — [Commons application](../design/application.md), line 18.
+- `PinScope` — [Commons application](../design/application.md), line 88.
+- `Pinnable` — [Commons application](../design/application.md), line 83.
+- `Subscribable` — [Commons application](../design/application.md), line 69.
+- `Subscriber` — [Commons application](../design/application.md), line 65.
+- `TaskSubject` — [Commons application](../design/application.md), line 27.
+- `Trashable` — [Commons application](../design/application.md), line 77.
 
 ## Computations
 
+- `addressingPeople(user: String, holders: Strings) : Strings` — [Commons application](../design/application.md), line 412.
 - `answerKind(value: Json, answer: String) : String` — [The wall](../design/compositions/live/walls.md), line 153.
 - `answerReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 134.
+- `audienceLabel(kind: String, identity: String, name: Any) : String` — [Commons application](../design/application.md), line 418.
 - `boardQuestions(value: LiveRunSnapshot, values: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 130.
 - `briefStanding(request: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 32.
-- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 390.
+- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 457.
 - `cardGiven(card: String) : String` — [The wall](../design/compositions/live/walls.md), line 114.
 - `cardId(response: String, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 86.
 - `cardStanding(card: String, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 78.
 - `carryUses() : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 88.
-- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 458.
+- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 525.
 - `cleanupAdmission(authorized: Json, openRun: Json, unlocked: Json, applied: Json, standing: Json) : String` — [The wall](../design/compositions/live/walls.md), line 40.
 - `cleanupBrief(account: String, candidates: Seq) : String` — [The wall](../design/compositions/live/walls.md), line 43.
 - `cleanupCategories(brief: String) : Seq` — [The wall](../design/compositions/live/walls.md), line 46.
 - `clearablePiles(categories: Json, standing?: Json, picked: Seq, reserved: Seq) : Seq` — [The wall](../design/compositions/live/walls.md), line 53.
 - `commissionAccount(outcome: String, failure: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 69.
 - `commissionOutcome(reply: String|Null, failure: String|Null, insistence: String|Null, categories: Json, values: Json, removed: Json, successors: Number) : String` — [The wall](../design/compositions/live/walls.md), line 66.
+- `completeAddressing(user: String, holders: Strings, admitted: Number) : Bool` — [Commons application](../design/application.md), line 427.
+- `currentAddressing(user: String, holders: Strings, known: Bool, activePeople: Strings, staffPeople: Strings, trashed: Bool, groups: Bool, sections: Bool, ownSection: Any) : Bool` — [Commons application](../design/application.md), line 409.
+- `currentAudienceMembership(user: String, holders: Strings, groupMember: Bool, activeSections: Bool, section: Any, seatStatus: Any, activeStudent: Bool, capabilities: Any) : Bool` — [Commons application](../design/application.md), line 436.
 - `definedSortingPiles(categories: Json, texts: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 212.
 - `draftContext(references: Strings, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 134.
 - `draftReferences(context: String) : Strings` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 137.
 - `draftRequest(request: String, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 140.
-- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 444.
-- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 448.
+- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 511.
+- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 515.
 - `editApplied(kind: String, target: String, value: String, title: Json, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Boolean` — [Edits the model proposes](../design/compositions/live/edits.md), line 69.
 - `editCap(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 121.
 - `editChoices(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 124.
@@ -1578,13 +1617,18 @@ Concrete types:
 - `editRoundTakesUse(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 96.
 - `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 103.
 - `editUse(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 130.
-- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 394.
+- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 461.
 - `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 137.
 - `failureStanding(failedAt: Date, at: Date) : String` — [The wall](../design/compositions/live/walls.md), line 73.
+- `forumMailKey(notification: String, recipient: String, post: String) : String` — [Notifications](../design/compositions/forum/notifications.md), line 57.
 - `guideScope(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 173.
 - `guideUse(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 171.
-- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 381.
-- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 378.
+- `hasStoredPosts(posts: Rows) : Bool` — [Commons application](../design/application.md), line 388.
+- `holderCode(kind: String, identity: String) : String` — [Commons application](../design/application.md), line 430.
+- `holderKind(holder: String) : String` — [Commons application](../design/application.md), line 424.
+- `holderSubject(holder: String) : String` — [Commons application](../design/application.md), line 421.
+- `invitationMailHtml(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 448.
+- `invitationMailText(invitation: String, credential: String) : String` — [Commons application](../design/application.md), line 445.
 - `isSame(left: String, right: String) : Bool` — [The wall](../design/compositions/live/walls.md), line 90.
 - `kindCap(kind: String, cap: Number) : Number` — [Relays and their runs](../design/compositions/live/relays.md), line 84.
 - `kindChoices(kind: String, choices: Strings) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 76.
@@ -1594,8 +1638,9 @@ Concrete types:
 - `lidLines(reply: String, categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 138.
 - `lidPassage(pile: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 133.
 - `linesStanding(lines: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 83.
-- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 387.
-- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 384.
+- `metadataOpeningAuthor(item: String, posts: Seq) : Any` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 38.
+- `notificationMailHtml(notification: String) : String` — [Commons application](../design/application.md), line 454.
+- `notificationMailText(notification: String) : String` — [Commons application](../design/application.md), line 451.
 - `openingAdmission(authorized: Json, relay: Json, legRelay: Json, open: Json, openRound: Json, ran: Json, source: Json, sourceRound: Json, sourceOpen: Json, groups: Json, content: Json) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 57.
 - `openingAuthor(brief: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 66.
 - `openingAuthorized() : Boolean` — [Relays and their runs](../design/compositions/live/relays.md), line 54.
@@ -1603,19 +1648,20 @@ Concrete types:
 - `openingGroups(picked: Seq, categories: Json, values: Json, value: Json) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 60.
 - `openingMaterial(brief: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 69.
 - `openingPresentation(brief: String) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 72.
-- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 468.
-- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 472.
-- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 475.
-- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 479.
-- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 483.
+- `ownsTaskScope(user: String, scope: String) : Boolean` — [Tasks](../design/compositions/tasks/tasks.md), line 116.
+- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 535.
+- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 539.
+- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 542.
+- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 546.
+- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 550.
 - `partLabel(value: Json, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 157.
 - `participantAnswers(reply: String, value: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 149.
 - `participantPassage(value: Json, participant: String) : String` — [The wall](../design/compositions/live/walls.md), line 142.
 - `participantQuestions(value: LiveRunSnapshot) : Seq` — [Live runs](../design/compositions/live/runs.md), line 126.
-- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 399.
-- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 404.
-- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 410.
-- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 407.
+- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 466.
+- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 471.
+- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 477.
+- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 474.
 - `pickPriority(count: Number) : Number` — [The wall](../design/compositions/live/walls.md), line 82.
 - `pileCards(pile: String, categories: Json, values: Json, value: Json) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 103.
 - `placingLines(reply: String, categories: Json, values: Json, removed: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 124.
@@ -1623,17 +1669,19 @@ Concrete types:
 - `placingReading(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 118.
 - `placingReason(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 129.
 - `placingRepairPassage(value: Json, categories: Json, values: Json, removed: Json, notes: String, offering: String, account: String) : String` — [The wall](../design/compositions/live/walls.md), line 110.
-- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 491.
-- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 496.
-- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 500.
+- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 558.
+- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 563.
+- `postPreview(content: String) : Record` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 40.
+- `previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings` — [Commons application](../design/application.md), line 406.
+- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 567.
 - `relayDraftPassage(request: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json, classDocuments: Json, relayDocuments: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 36.
 - `relayDraftReading(reply: String, passage: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 54.
 - `relayDraftReason(reply: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 59.
 - `relayDraftRepairPassage(passage: String, offering: String, account: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 50.
 - `relayEditLines(reply: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 63.
 - `relayGiven(relay: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 143.
-- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 463.
-- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 453.
+- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 530.
+- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 520.
 - `roundMaterialIsValid(title: String, prompt: String, choices: Strings, parts: Strings, cap: Number) : Boolean` — [Relays and their runs](../design/compositions/live/relays.md), line 158.
 - `sampledAnswers(reply: String) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 34.
 - `sampledGroups(reply: String, kind: String, choices: Json, use: String, carried?: Json) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 39.
@@ -1645,33 +1693,130 @@ Concrete types:
 - `samplingResolvedPassage(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 50.
 - `samplingResolvedPreview(resolution: Json) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 60.
 - `samplingResolvedStanding(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 53.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 413.
-- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 416.
+- `selectedIdentities(holders: Strings, kind: String) : Strings` — [Commons application](../design/application.md), line 415.
+- `selectedSection(section: Any) : Strings` — [Commons application](../design/application.md), line 439.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 480.
+- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 483.
 - `snapshotForm(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 112.
 - `snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 115.
 - `snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 122.
 - `snapshotRequirements(value: Json) : Seq` — [Live runs](../design/compositions/live/runs.md), line 119.
 - `snapshotTitle(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 109.
-- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 487.
+- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 554.
 - `sorterNotes(relay: String, run: String) : String` — [The wall](../design/compositions/live/walls.md), line 93.
 - `sortingAdmission(mode: String, authorized: Boolean|Null, live: Boolean|Null, openRun: Boolean|Null, waiting: Boolean|Null, unlocked: Boolean|Null, answered: Boolean|Null, applied: Boolean|Null, ready: Boolean|Null, value: Json) : String` — [The wall](../design/compositions/live/walls.md), line 60.
 - `sortingBrief(account: String, value: Json, categories: Json, values: Json, removed: Json, notes: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 63.
 - `sortingObservationPresent() : Boolean` — [The wall](../design/compositions/live/walls.md), line 57.
 - `sortingPileSubjects(categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 209.
-- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 422.
+- `staffCapabilities(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 433.
+- `staffQuestion(holders: Seq, nonStaffAuthor: Any) : Boolean` — [Feeds and thread context](../design/compositions/forum/feed.md), line 31.
+- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 489.
 - `summaryAdmission(items: Number) : String` — [The wall](../design/compositions/live/walls.md), line 50.
-- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 432.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 426.
-- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 429.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 441.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 435.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 438.
+- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 499.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 493.
+- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 496.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 508.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 502.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 505.
+- `threadLastActivity(posts: Rows) : Any` — [Commons application](../design/application.md), line 400.
+- `threadParticipants(posts: Rows) : Strings` — [Commons application](../design/application.md), line 403.
+- `threadPostIds(nodes: Rows) : Strings` — [Commons application](../design/application.md), line 391.
+- `threadReplyCount(posts: Rows) : Number` — [Commons application](../design/application.md), line 397.
 - `useFit(use: String, kind: String, choices: Strings, parts: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 97.
+- `validFeedOrder(order: String) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 34.
+- `validPostControlSelection(posts: Seq) : Boolean` — [Selected post controls](../design/compositions/forum/post-controls.md), line 33.
+- `validProfileSelection(users: Strings) : Bool` — [Commons application](../design/application.md), line 385.
+- `validThreadSelection(conversations: Seq) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 36.
+- `visibleAnswer(answer: Any) : Bool` — [Commons application](../design/application.md), line 442.
+- `visibleThreadPosts(nodes: Any, posts: Any, trashed: Any) : Rows` — [Commons application](../design/application.md), line 394.
 - `voteStanding(kind: String, choices: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 92.
 
 ## Views
 
 _Views name reusable conditions. Multiple `where` blocks are alternatives._
+
+### (holders) admit (user)
+
+```view
+(holders) admit (user) — inputs (holders, user); outputs (); bindings (groups, groupMember, section, sections, activeSections, seatStatus, activeStudent, role, capabilities, allowed)
+  where
+    groups is selectedIdentities (holders, kind: "group")
+    Grouping._anyMembership (groups, member: user) has (included: groupMember)
+    whether Rostering._getSeatByUser (user) has (section, status: seatStatus)
+    sections is selectedSection (section)
+    Rostering._activeSections (sections) has (active: activeSections)
+    Rostering._isActiveStudent (user) has (active: activeStudent)
+    whether Roling._getRole (context: "commons", user) has (role)
+    whether Roling._getRoleDetail (role) has (capabilities)
+    allowed is currentAudienceMembership (activeSections, activeStudent, capabilities, groupMember, holders, seatStatus, section, user)
+    allowed is among [true]
+```
+
+### (user) is an available audience account
+
+```view
+(user) is an available audience account — inputs (user); outputs (); bindings ()
+  where
+    Authenticating._getById (user)
+    Archiving._isTrashed (item: user) has (trashed: false)
+```
+
+### (user) belongs to the established audience of (conversation)
+
+```view
+(user) belongs to the established audience of (conversation) — inputs (user, conversation); outputs (); bindings (holders)
+  where
+    view "(user) is an available audience account" with (user)
+    Accessing._holders (resource: conversation) has (holders)
+    view "(holders) admit (user)" with (holders, user)
+    Conversing._exists (conversation) has (exists: true)
+```
+
+### the structural conversation containing post (post)
+
+```view
+the structural conversation containing post (post) — inputs (post); outputs (conversation); bindings (node) — answers at most one (conversation)
+  where
+    Conversing._getNodeByItem (item: post) has (node)
+    Conversing._getConversation (node) has (conversation)
+```
+
+### (user) may read forum post (post)
+
+```view
+(user) may read forum post (post) — inputs (user, post); outputs (); bindings (conversation)
+  where
+    view "the structural conversation containing post (post)" with (post) has (conversation)
+    view "(user) belongs to the established audience of (conversation)" with (conversation, user)
+    Posting._getPost (post)
+    Trashing._isTrashed (item: post) has (trashed: false)
+```
+
+### (post) is readable
+
+Authored path: `Forum.posts.readable`.
+- Covered by [Posts](../design/compositions/forum/posts.md), line 17.
+
+```view
+(post) is readable — inputs (post, reader); outputs (); bindings ()
+  where view "(user) may read forum post (post)" with (post, user: reader)
+```
+
+### (answer) is a visible answer to (question) for (reader)
+
+Authored path: `Forum.resolutions.admissibleAnswer`.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 27.
+
+```view
+(answer) is a visible answer to (question) for (reader) — inputs (answer, question, reader); outputs (); bindings (conversation, questionNode, answerNode)
+  where
+    view "(post) is readable" with (post: question, reader)
+    view "(post) is readable" with (post: answer, reader)
+    Conversing._getNodeByItem (item: question) has (node: questionNode)
+    Conversing._getNodeByItem (item: answer) has (node: answerNode) and not (node: questionNode)
+    Conversing._getConversation (node: questionNode) has (conversation)
+    Conversing._getConversation (node: answerNode) has (conversation)
+```
 
 ### (assignment) by (submitter) has submission artifact (artifact)
 
@@ -1737,28 +1882,45 @@ Authored path: `Course.submissions.submissionHasArtifact`.
   where no view "(card) is in a pile of a closed run" with (card)
 ```
 
-### (item) is intact
-
-Authored path: `Forum.threads.intact`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 30.
+### the stored posts in (conversation) for (user)
 
 ```view
-(item) is intact — inputs (item); outputs (); bindings ()
-  where Trashing._isTrashed (item) has (trashed: false)
+the stored posts in (conversation) for (user) — inputs (user, conversation); outputs (nodes, posts); bindings (items) — answers at most one (nodes, posts)
+  where
+    view "(user) belongs to the established audience of (conversation)" with (conversation, user)
+    Conversing._threadNodes (conversation) has (nodes)
+    items is threadPostIds (nodes)
+    Posting._postMetadata (posts: items) has (posts)
 ```
 
-### (conversation) is readable
-
-Authored path: `Forum.threads.readableConversation`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 7.
+### (user) may read audience conversation (conversation)
 
 ```view
-(conversation) is readable — inputs (conversation); outputs (); bindings (node, item)
+(user) may read audience conversation (conversation) — inputs (user, conversation); outputs (); bindings (posts, present)
   where
-    Conversing._getThread (conversation) has (item, node)
-    no Conversing._parentOf (node)
-    Posting._getPost (post: item)
-    view "(item) is intact" with (item)
+    view "the stored posts in (conversation) for (user)" with (conversation, user) has (posts)
+    present is hasStoredPosts (posts)
+    present is among [true]
+```
+
+### (conversation) is readable by (reader)
+
+Authored path: `Forum.threads.readableConversation`.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 5.
+
+```view
+(conversation) is readable by (reader) — inputs (conversation, reader); outputs (); bindings ()
+  where view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
+```
+
+### (holders) include the whole course
+
+Authored path: `Forum.notifications.courseWideNotificationAudience`.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 64.
+
+```view
+(holders) include the whole course — inputs (holders); outputs (); bindings ()
+  where "standing:everyone" is among holders
 ```
 
 ### (identifier) names no account
@@ -1766,6 +1928,28 @@ Authored path: `Forum.threads.readableConversation`.
 ```view
 (identifier) names no account — inputs (identifier); outputs (); bindings ()
   where no Authenticating._getById (user: identifier)
+```
+
+### (item) belongs to pin scope (scope) for (reader)
+
+Authored path: `Forum.pins.pinnable`.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 27.
+
+```view
+(item) belongs to pin scope (scope) for (reader) — inputs (item, scope, reader); outputs (); bindings ()
+  where
+    view "(post) is readable" with (post: item, reader)
+    view "the structural conversation containing post (post)" with (post: item) has (conversation: scope)
+```
+
+### (item) is intact
+
+Authored path: `Forum.threads.intact`.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 20.
+
+```view
+(item) is intact — inputs (item); outputs (); bindings ()
+  where Trashing._isTrashed (item) has (trashed: false)
 ```
 
 ### the round of (leg) in (run)
@@ -1865,6 +2049,34 @@ the round of (leg) in (run) — inputs (run, leg); outputs (round, open); bindin
     kind is among ["choice"]
 ```
 
+### (user) may read notification subject (subject)
+
+Authored path: `Forum.notifications.notificationSubjectReader`.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 69.
+
+```view
+(user) may read notification subject (subject) — inputs (user, subject); outputs (); bindings ()
+  where view "(user) may read forum post (post)" with (post: subject, user)
+  where
+    view "(user) is an available audience account" with (user)
+    Rostering._isActiveStudent (user) has (active: true)
+    Assigning._isAssigned (assignee: user, assignment: subject) has (assigned: true)
+    Assigning._getAssignments () has (assignment: subject, status: "PUBLISHED")
+```
+
+### (notification) is available to (user)
+
+Authored path: `Forum.notifications.readableNotification`.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 54.
+
+```view
+(notification) is available to (user) — inputs (notification, user); outputs (); bindings (subject, link)
+  where
+    Notifying._getInbox (recipient: user) has (link, notification, subject)
+    view "(user) may read notification subject (subject)" with (subject, user)
+    view "(user) may read notification subject (subject)" with (subject: link, user)
+```
+
 ### (participant) holds a seat on (run)
 
 ```view
@@ -1910,7 +2122,7 @@ the round of (leg) in (run) — inputs (run, leg); outputs (round, open); bindin
 ### (post) belongs to a forum conversation
 
 Authored path: `Forum.threads.forumPost`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 16.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 7.
 
 ```view
 (post) belongs to a forum conversation — inputs (post); outputs (); bindings (node)
@@ -1920,26 +2132,14 @@ Authored path: `Forum.threads.forumPost`.
     Conversing._getConversation (node)
 ```
 
-### (post) is readable
-
-Authored path: `Forum.posts.readable`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 17.
-
-```view
-(post) is readable — inputs (post); outputs (); bindings ()
-  where
-    view "(post) belongs to a forum conversation" with (post)
-    Trashing._isTrashed (item: post) has (trashed: false)
-```
-
 ### (post) is not readable
 
 Authored path: `Forum.posts.notReadable`.
 - Covered by [Posts](../design/compositions/forum/posts.md), line 18.
 
 ```view
-(post) is not readable — inputs (post); outputs (); bindings ()
-  where no view "(post) is readable" with (post)
+(post) is not readable — inputs (post, reader); outputs (); bindings ()
+  where no view "(post) is readable" with (post, reader)
 ```
 
 ### (question) belongs to (run)
@@ -2155,17 +2355,53 @@ the open round of (run) — inputs (run); outputs (round); bindings () — answe
   where Publishing._edition (edition: run) has (open: false)
 ```
 
-### (target) is public
-
-Authored path: `Forum.threads.publicTarget`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 28.
+### (user) is an active course member
 
 ```view
-(target) is public — inputs (target); outputs (); bindings ()
+(user) is an active course member — inputs (user); outputs (); bindings ()
+  where Rostering._getSeatByUser (user) has (status: "ACTIVE")
+```
+
+### (user) may manage the course
+
+```view
+(user) may manage the course — inputs (user); outputs (); bindings ()
+  where Roling._hasCapability (capability: "course:manage", context: "commons", user) has (allowed: true)
+  where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
+```
+
+### (session) may read the display identity of (user)
+
+Authored path: `Forum.profiles.profileDisplayReader`.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
+
+```view
+(session) may read the display identity of (user) — inputs (session, user); outputs (); bindings (reader)
+  where view "the active user of (session)" with (session) has (user)
   where
-    view "(post) belongs to a forum conversation" with (post: target)
-    view "(item) is intact" with (item: target)
-  where view "(conversation) is readable" with (conversation: target)
+    view "the active user of (session)" with (session) has (user: reader)
+    view "(user) may manage the course" with (user: reader)
+  where
+    view "the active user of (session)" with (session) has (user: reader)
+    view "(user) is an active course member" with (user: reader)
+```
+
+### (user) may read forum target (target)
+
+```view
+(user) may read forum target (target) — inputs (user, target); outputs (); bindings ()
+  where view "(user) may read forum post (post)" with (post: target, user)
+  where view "(user) may read audience conversation (conversation)" with (conversation: target, user)
+```
+
+### (target) is readable by (reader)
+
+Authored path: `Forum.threads.publicTarget`.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 18.
+
+```view
+(target) is readable by (reader) — inputs (target, reader); outputs (); bindings ()
+  where view "(user) may read forum target (target)" with (target, user: reader)
 ```
 
 ### (user) authored (post)
@@ -2173,6 +2409,17 @@ Authored path: `Forum.threads.publicTarget`.
 ```view
 (user) authored (post) — inputs (user, post); outputs (); bindings ()
   where Posting._getPost (post) has (author: user)
+```
+
+### (user) belongs to Staff
+
+```view
+(user) belongs to Staff — inputs (user); outputs (); bindings (role, capabilities, allowed)
+  where
+    Roling._getRole (context: "commons", user) has (role)
+    Roling._getRoleDetail (role) has (capabilities)
+    allowed is staffCapabilities (capabilities)
+    allowed is among [true]
 ```
 
 ### (user) belongs to task list (list)
@@ -2210,13 +2457,6 @@ Authored path: `Forum.threads.publicTarget`.
   where no Roling._getRole (context, user)
 ```
 
-### (user) is an active course member
-
-```view
-(user) is an active course member — inputs (user); outputs (); bindings ()
-  where Rostering._getSeatByUser (user) has (status: "ACTIVE")
-```
-
 ### (user) is an active student
 
 ```view
@@ -2229,6 +2469,14 @@ Authored path: `Forum.threads.publicTarget`.
 ```view
 (user) is archived — inputs (user); outputs (); bindings ()
   where Archiving._isTrashed (item: user) has (trashed: true)
+```
+
+### (user) is in the current course community
+
+```view
+(user) is in the current course community — inputs (user); outputs (); bindings ()
+  where Rostering._getSeatByUser (user) has (status: "ACTIVE")
+  where view "(user) belongs to Staff" with (user)
 ```
 
 ### (user) is not an active student
@@ -2274,13 +2522,47 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
   where Roling._isSoleCapabilityHolder (capability: "administer", context: "commons", user) has (sole: true)
 ```
 
+### (user) may use task scope (list)
+
+```view
+(user) may use task scope (list) — inputs (user, list); outputs (); bindings (owned)
+  where
+    Authenticating._getById (user)
+    owned is ownsTaskScope (scope: list, user)
+    owned is among [true]
+  where view "(user) belongs to task list (list)" with (list, user)
+```
+
 ### (user) may act on task (task) at (at)
 
 ```view
 (user) may act on task (task) at (at) — inputs (user, task, at); outputs (); bindings (list)
   where
     Tasking._getTask (at, task) has (scope: list)
-    Grouping._isMember (group: list, member: user) has (isMember: true)
+    view "(user) may use task scope (list)" with (list, user)
+```
+
+### (user) may address account (recipient)
+
+```view
+(user) may address account (recipient) — inputs (user, recipient); outputs (); bindings ()
+  where
+    view "(user) is an available audience account" with (user)
+    view "(user) is in the current course community" with (user)
+    view "(user) is an available audience account" with (user: recipient)
+    view "(user) is in the current course community" with (user: recipient)
+```
+
+### (user) may address section (section)
+
+```view
+(user) may address section (section) — inputs (user, section); outputs (); bindings ()
+  where
+    Rostering._getSections () has (section, status: "ACTIVE")
+    view "(user) belongs to Staff" with (user)
+  where
+    Rostering._getSections () has (section, status: "ACTIVE")
+    Rostering._getSeatByUser (user) has (section, status: "ACTIVE")
 ```
 
 ### (user) may administer
@@ -2307,6 +2589,28 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
     authorized is openingAuthorized
 ```
 
+### (user) may currently address the complete audience (holders)
+
+```view
+(user) may currently address the complete audience (holders) — inputs (user, holders); outputs (); bindings (people, groupIds, sectionIds, known, activePeople, staffPeople, trashed, groups, sections, ownSection, valid)
+  where
+    view "(user) is an available audience account" with (user)
+    view "(user) is in the current course community" with (user)
+    people is addressingPeople (holders, user)
+    groupIds is selectedIdentities (holders, kind: "group")
+    sectionIds is selectedIdentities (holders, kind: "section")
+    Authenticating._knownUsers (users: people) has (known)
+    Rostering._activeUsers (users: people) has (active: activePeople)
+    Roling._capableUsers (capabilities: ["administer", "course:manage", "grade", "student-records", "live:host"], context: "commons", users: people) has (capable: staffPeople)
+    Archiving._anyTrashed (items: people) has (trashed)
+    Grouping._allMemberships (groups: groupIds, member: user) has (included: groups)
+    Rostering._activeSections (sections: sectionIds) has (active: sections)
+    whether Rostering._getSeatByUser (user) has (section: ownSection, status: "ACTIVE")
+    valid is currentAddressing (activePeople, groups, holders, known, ownSection, sections, staffPeople, trashed, user)
+    valid is among [true]
+    view "(holders) admit (user)" with (holders, user)
+```
+
 ### (user) may edit (post)
 
 ```view
@@ -2327,19 +2631,21 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
   where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
 ```
 
+### (user) may inspect stored forum post (post)
+
+```view
+(user) may inspect stored forum post (post) — inputs (user, post); outputs (); bindings (conversation)
+  where
+    view "the structural conversation containing post (post)" with (post) has (conversation)
+    view "(user) belongs to the established audience of (conversation)" with (conversation, user)
+    Posting._getPost (post)
+```
+
 ### (user) may manage student records
 
 ```view
 (user) may manage student records — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "student-records", context: "commons", user) has (allowed: true)
-  where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
-```
-
-### (user) may manage the course
-
-```view
-(user) may manage the course — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "course:manage", context: "commons", user) has (allowed: true)
   where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
 ```
 
@@ -2351,13 +2657,20 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
   where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
 ```
 
+### (user) may not use task scope (list)
+
+```view
+(user) may not use task scope (list) — inputs (user, list); outputs (); bindings ()
+  where no view "(user) may use task scope (list)" with (list, user)
+```
+
 ### (user) may not act on task (task) at (at)
 
 ```view
 (user) may not act on task (task) at (at) — inputs (user, task, at); outputs (); bindings (list)
   where
     Tasking._getTask (at, task) has (scope: list)
-    Grouping._isMember (group: list, member: user) has (isMember: false)
+    view "(user) may not use task scope (list)" with (list, user)
   where no Tasking._getTask (at, task)
 ```
 
@@ -2465,6 +2778,19 @@ Authored path: `Course.submissions.mayReadSubmissionArtifact`.
   where Roling._hasCapability (capability: "grade", context: "commons", user) has (allowed: true)
   where Roling._hasCapability (capability: "student-records", context: "commons", user) has (allowed: true)
   where Roling._hasCapability (capability: "moderate", context: "commons", user) has (allowed: true)
+```
+
+### (user) receives a staff notification for (holders)
+
+Authored path: `Forum.notifications.staffNotificationRecipient`.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 64.
+
+```view
+(user) receives a staff notification for (holders) — inputs (user, holders); outputs (); bindings ()
+  where
+    "standing:staff" is among holders
+    no view "(holders) include the whole course" with (holders)
+    view "(user) belongs to Staff" with (user)
 ```
 
 ### a reply about (round) is applying
@@ -2648,6 +2974,39 @@ the account for (address) — inputs (address); outputs (user); bindings () — 
   where Authenticating._getByEmail (email: address) has (user)
 ```
 
+### the addressable holders for (user)
+
+```view
+the addressable holders for (user) — inputs (user); outputs (holder); bindings (recipient, group, section) — answers any number of (holder)
+  where
+    Authenticating._getUsers () has (user: recipient)
+    view "(user) may address account (recipient)" with (recipient, user)
+    holder is holderCode (identity: recipient, kind: "account")
+  where
+    view "(user) is an available audience account" with (user)
+    view "(user) is in the current course community" with (user)
+    Grouping._getGroupsOf (member: user) has (group)
+    holder is holderCode (identity: group, kind: "group")
+  where
+    view "(user) is an available audience account" with (user)
+    view "(user) is in the current course community" with (user)
+    Rostering._getSections () has (section, status: "ACTIVE")
+    view "(user) may address section (section)" with (section, user)
+    holder is holderCode (identity: section, kind: "section")
+  where
+    view "(user) is an available audience account" with (user)
+    view "(user) is in the current course community" with (user)
+    holder is holderCode (identity: "everyone", kind: "standing")
+  where
+    view "(user) is an available audience account" with (user)
+    view "(user) is in the current course community" with (user)
+    holder is holderCode (identity: "staff", kind: "standing")
+  where
+    view "(user) is an available audience account" with (user)
+    view "(user) belongs to Staff" with (user)
+    holder is holderCode (identity: "students", kind: "standing")
+```
+
 ### the archived user named (username)
 
 Authored path: `Access.auth.theArchivedUserNamed`.
@@ -2668,6 +3027,36 @@ Authored path: `Course.assignments.theAssignment`.
 ```view
 the assignment (assignment) — inputs (assignment); outputs (detail); bindings () — answers at most one (detail)
   where Assigning._getDetail (assignment) has (detail)
+```
+
+### the audience reader of (session)
+
+```view
+the audience reader of (session) — inputs (session); outputs (user); bindings () — answers at most one (user)
+  where
+    Sessioning._getUser (session) has (user)
+    view "(user) is an available audience account" with (user)
+```
+
+### the audience reader of (conversation) through (session)
+
+Authored path: `Forum.audiences.audienceReader`.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 12.
+
+```view
+the audience reader of (conversation) through (session) — inputs (conversation, session); outputs (user); bindings () — answers at most one (user)
+  where
+    view "the audience reader of (session)" with (session) has (user)
+    view "(user) may read audience conversation (conversation)" with (conversation, user)
+```
+
+### the available inputs for statistics of (conversation) for (reader)
+
+```view
+the available inputs for statistics of (conversation) for (reader) — inputs (conversation, reader); outputs (nodes, posts, trashed); bindings () — answers at most one (nodes, posts, trashed)
+  where
+    view "the stored posts in (conversation) for (user)" with (conversation, user: reader) has (nodes, posts)
+    Trashing._trashedItems () has (items: trashed)
 ```
 
 ### the background document rows of (relay)
@@ -2694,17 +3083,33 @@ the class configuration () — inputs (); outputs (detail); bindings () — answ
   where Rostering._getClass () has (detail)
 ```
 
-### the conversation placing (item)
+### the complete audience preview of (selected) for (user)
 
-Authored path: `Forum.threads.placementOf`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 6.
+Authored path: `Forum.audiences.previewAudience`.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 17.
 
 ```view
-the conversation placing (item) — inputs (item); outputs (conversation); bindings (node) — answers at most one (conversation)
+the complete audience preview of (selected) for (user) — inputs (selected, user); outputs (holders); bindings () — answers at most one (holders)
+  where
+    view "(holders) admit (user)" with (holders: selected, user)
+    holders is previewHolders (includeSender: false, selected, user)
+    view "(user) may currently address the complete audience (holders)" with (holders, user)
+  where
+    no view "(holders) admit (user)" with (holders: selected, user)
+    holders is previewHolders (includeSender: true, selected, user)
+    view "(user) may currently address the complete audience (holders)" with (holders, user)
+```
+
+### the conversation placing (item) for (reader)
+
+Authored path: `Forum.threads.placementOf`.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 5.
+
+```view
+the conversation placing (item) for (reader) — inputs (item, reader); outputs (conversation); bindings (node) — answers at most one (conversation)
   where
     Conversing._getNodeByItem (item) has (node)
-    Posting._getPost (post: item)
-    view "(item) is intact" with (item)
+    view "(user) may read forum post (post)" with (post: item, user: reader)
     Conversing._getConversation (node) has (conversation)
 ```
 
@@ -2773,11 +3178,34 @@ the material for opening (leg) — inputs (leg); outputs (content); bindings (qu
     Questioning._content (questionnaire) has (content)
 ```
 
+### the notification title of (assignment)
+
+Authored path: `Forum.notifications.assignmentNotificationTitle`.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 71.
+
+```view
+the notification title of (assignment) — inputs (assignment); outputs (assignmentTitle); bindings () — answers at most one (assignmentTitle)
+  where Assigning._getAssignments () has (assignment, status: "PUBLISHED", title: assignmentTitle)
+```
+
 ### the number of cards in (pile)
 
 ```view
 the number of cards in (pile) — inputs (pile); outputs (items); bindings () — answers exactly one (items)
   where items is the count of Categorizing._getItems (category: pile)
+```
+
+### the opening (item) by someone outside Staff
+
+Authored path: `Forum.feed.nonStaffOpening`.
+- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 28.
+
+```view
+the opening (item) by someone outside Staff — inputs (item, reader); outputs (author); bindings () — answers at most one (author)
+  where
+    view "(user) may read forum post (post)" with (post: item, user: reader)
+    Posting._getPost (post: item) has (author)
+    no view "(user) belongs to Staff" with (user: author)
 ```
 
 ### the other users mentioned in (post)
@@ -2791,6 +3219,7 @@ the other users mentioned in (post) — inputs (post); outputs (user); bindings 
     Posting._getMentions (post) has (handle)
     Authenticating._getByUsername (username: handle) has (user)
     Posting._getPost (post) and not (author: user)
+    view "(user) may read forum post (post)" with (post, user)
 ```
 
 ### the pick count of (round)
@@ -2819,7 +3248,7 @@ the preview inputs of (leg) with (picks) — inputs (leg, picks); outputs (resol
 ### the profile of (user)
 
 Authored path: `Forum.profiles.theProfileOf`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 4.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 6.
 
 ```view
 the profile of (user) — inputs (user); outputs (profile); bindings () — answers at most one (profile)
@@ -2832,20 +3261,10 @@ Authored path: `Forum.posts.publicPostsBy`.
 - Covered by [Posts](../design/compositions/forum/posts.md), line 21.
 
 ```view
-the public posts by (author) — inputs (author); outputs (post); bindings () — answers any number of (post)
+the public posts by (author) — inputs (author, reader); outputs (post); bindings () — answers any number of (post)
   where
     Posting._getByAuthor (author) has (post)
-    view "(post) is readable" with (post)
-```
-
-### the public posts in (conversation)
-
-```view
-the public posts in (conversation) — inputs (conversation); outputs (node, item, author, createdAt); bindings () — answers any number of (node, item, author, createdAt)
-  where
-    Conversing._getThread (conversation) has (item, node)
-    view "(item) is intact" with (item)
-    Posting._getPost (post: item) has (author, createdAt)
+    view "(post) is readable" with (post, reader)
 ```
 
 ### the question count of (questionnaire)
@@ -2864,7 +3283,47 @@ Authored path: `Forum.bookmarks.readableBookmarksOf`.
 the readable bookmarks of (user) — inputs (user); outputs (item, savedAt); bindings () — answers any number of (item, savedAt)
   where
     Bookmarking._getSaved (user) has (item, savedAt)
-    view "(post) is readable" with (post: item)
+    view "(post) is readable" with (post: item, reader: user)
+```
+
+### the readable home of opening (item) for (reader)
+
+Authored path: `Forum.feed.readableHome`.
+- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 39.
+
+```view
+the readable home of opening (item) for (reader) — inputs (item, reader); outputs (home); bindings () — answers at most one (home)
+  where
+    view "(user) may read forum post (post)" with (post: item, user: reader)
+    Categorizing._getHome (item) has (home)
+```
+
+### the readable parent (parent) for (user)
+
+Authored path: `Forum.threads.replyParent`.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 30.
+
+```view
+the readable parent (parent) for (user) — inputs (parent, user); outputs (conversation); bindings (item) — answers at most one (conversation)
+  where
+    Conversing._getItem (node: parent) has (item)
+    view "(user) may read forum post (post)" with (post: item, user)
+    Conversing._getConversation (node: parent) has (conversation)
+```
+
+### the retained name of (identity) as (kind)
+
+```view
+the retained name of (identity) as (kind) — inputs (kind, identity); outputs (name); bindings () — answers at most one (name)
+  where
+    kind is among ["account"]
+    Authenticating._getById (user: identity) has (username: name)
+  where
+    kind is among ["group"]
+    Grouping._getGroup (group: identity) has (title: name)
+  where
+    kind is among ["section"]
+    Rostering._getSections () has (name, section: identity)
 ```
 
 ### the role of (user) in (context)
@@ -3043,6 +3502,20 @@ the task notification mail of kind (kind) about (subject) for (recipient) at (at
     html is taskMailHtml (deadline, kind, listTitle, taskTitle)
 ```
 
+### the unread items for (user) in (scope)
+
+Authored path: `Forum.unread.visibleUnread`.
+- Covered by [Unread tracking](../design/compositions/forum/unread.md), line 27.
+
+```view
+the unread items for (user) in (scope) — inputs (user, scope); outputs (item); bindings () — answers any number of (item)
+  where
+    view "(user) may read audience conversation (conversation)" with (conversation: scope, user)
+    Tracking._getUnread (scope, user) has (item)
+    view "(user) may read forum post (post)" with (post: item, user)
+    view "the structural conversation containing post (post)" with (post: item) has (conversation: scope)
+```
+
 ### the user named (username)
 
 Authored path: `Access.auth.theUserNamed`.
@@ -3051,6 +3524,32 @@ Authored path: `Access.auth.theUserNamed`.
 ```view
 the user named (username) — inputs (username); outputs (user); bindings () — answers at most one (user)
   where Authenticating._getByUsername (username) has (user)
+```
+
+### the visible opening author outside Staff in (conversation)
+
+Authored path: `Forum.feedPages.nonStaffMetadataOpening`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 11.
+
+```view
+the visible opening author outside Staff in (conversation) — inputs (conversation, item, reader); outputs (author); bindings (posts) — answers at most one (author)
+  where
+    view "the stored posts in (conversation) for (user)" with (conversation, user: reader) has (posts)
+    Trashing._isTrashed (item) has (trashed: false)
+    author is metadataOpeningAuthor (item, posts)
+    no view "(user) belongs to Staff" with (user: author)
+```
+
+### the visible resolution of (question) for (reader)
+
+Authored path: `Forum.resolutions.visibleResolution`.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 29.
+
+```view
+the visible resolution of (question) for (reader) — inputs (question, reader); outputs (answer, resolvedBy, resolvedAt); bindings () — answers at most one (answer, resolvedBy, resolvedAt)
+  where
+    Resolving._getResolution (question) has (answer, resolvedAt, resolvedBy)
+    view "(answer) is a visible answer to (question) for (reader)" with (answer, question, reader)
 ```
 
 ### unlocked sorting observation
@@ -3106,6 +3605,65 @@ Former "host guidance for round (leg)" — inputs (leg); bindings (purpose, faci
     selection: the selection of the first Relaying._drawsOn (source: leg) has (leg: consumer)
 ```
 
+### the visible holder (holder)
+
+Authored path: `Forum.audiences.theHolder`.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 13.
+
+```former
+Former "the visible holder (holder)" — inputs (holder); bindings (kind, identity, name, label); promises exactly one record — forms:
+  a record of
+    where kind is holderKind (holder)
+    where identity is holderSubject (holder)
+    where whether view "the retained name of (identity) as (kind)" with (identity, kind) has (name)
+    where label is audienceLabel (identity, kind, name)
+    holder
+    identity
+    kind
+    label
+```
+
+### the explicit audience of (conversation)
+
+Authored path: `Forum.audiences.theAudience`.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 11.
+
+```former
+Former "the explicit audience of (conversation)" — inputs (conversation); bindings (holder); promises exactly one record — forms:
+  each Accessing._grants (resource: conversation) has (holder)
+    form a record of
+      … former "the visible holder (holder)" with (holder)
+```
+
+### the feed metadata of (conversation) for (reader)
+
+Authored path: `Forum.feedPages.theFeedEntry`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 5.
+
+```former
+Former "the feed metadata of (conversation) for (reader)" — inputs (conversation, item, reader); bindings (holders, nonStaffAuthor, staffQuestion); promises at most one record — forms:
+  a record of
+    where view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
+    where Accessing._holders (resource: conversation) has (holders)
+    where whether view "the visible opening author outside Staff in (conversation)" with (conversation, item, reader) has (author: nonStaffAuthor)
+    where staffQuestion is staffQuestion (holders, nonStaffAuthor)
+    audience: former "the explicit audience of (conversation)" with (conversation)
+    staffQuestion
+```
+
+### the activity-ordered feed index for (reader)
+
+Authored path: `Forum.feedPages.theActivityIndex`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 7.
+
+```former
+Former "the activity-ordered feed index for (reader)" — inputs (reader); bindings (conversation, item); promises exactly one record — forms:
+  each Conversing._getConversationsByLastActivity () has (conversation, item)
+    form a record of
+      conversation
+      … former "the feed metadata of (conversation) for (reader)" with (conversation, item, reader)
+```
+
 ### the answers outcome of (response)
 
 Authored path: `Live.participation.theAnswersOutcome`.
@@ -3127,6 +3685,24 @@ Former "the answers outcome of (response)" — inputs (response); bindings (run,
     score
 ```
 
+### the artifact (artifact) of (assignment) by (submitter) for (user)
+
+Authored path: `Course.submissions.theArtifactPost`.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 33.
+
+```former
+Former "the artifact (artifact) of (assignment) by (submitter) for (user)" — inputs (artifact, assignment, submitter, user); bindings (author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
+  a record of
+    where view "(user) may read (artifact) submitted by (submitter) for (assignment)" with (artifact, assignment, submitter, user)
+    where Posting._getPost (post: artifact) has (author, content, createdAt, editedAt)
+    where Formatting._getRendered (target: artifact) has (rendered)
+    author
+    content
+    createdAt
+    editedAt
+    rendered
+```
+
 ### the assigned population for (assignment)
 
 Authored path: `Course.submissions.theAssignedPopulationForAssignment`.
@@ -3143,6 +3719,19 @@ Former "the assigned population for (assignment)" — inputs (assignment); bindi
       dueOverride
       release
       status: releaseStatus
+```
+
+### the assignment notification presentation of (assignment) for (user)
+
+Authored path: `Forum.notifications.theAssignmentNotificationPresentation`.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 71.
+
+```former
+Former "the assignment notification presentation of (assignment) for (user)" — inputs (assignment, user); bindings (assignmentTitle); promises at most one record — forms:
+  a record of
+    where view "(user) may read notification subject (subject)" with (subject: assignment, user)
+    where view "the notification title of (assignment)" with (assignment) has (assignmentTitle)
+    assignmentTitle
 ```
 
 ### the assignments of (student)
@@ -3191,15 +3780,16 @@ Former "the background documents of (relay)" — inputs (relay); bindings (docum
       title
 ```
 
-### the backlinks of (target)
+### the backlinks of (target) for (reader)
 
 Authored path: `Forum.links.theBacklinksOf`.
 - Covered by [Post links](../design/compositions/forum/links.md), line 10.
 
 ```former
-Former "the backlinks of (target)" — inputs (target); bindings (source); promises exactly one record — forms:
+Former "the backlinks of (target) for (reader)" — inputs (target, reader); bindings (source); promises exactly one record — forms:
   each Linking._getBacklinks (target) has (source)
-    where view "(post) is readable" with (post: source)
+    where view "(post) is readable" with (post: source, reader)
+    where view "(post) is readable" with (post: target, reader)
     form a record of
       source
 ```
@@ -3246,11 +3836,12 @@ Former "the board of (run)" — inputs (run); bindings (questionnaire, title, fo
     token: the token of the first Sharing._sharesFor (subject: run) has (token)
 ```
 
-### the post summary of (item)
+### the post summary of (item) for (reader)
 
 ```former
-Former "the post summary of (item)" — inputs (item); bindings (author, content, createdAt, editedAt); promises at most one record — forms:
+Former "the post summary of (item) for (reader)" — inputs (item, reader); bindings (author, content, createdAt, editedAt); promises at most one record — forms:
   a record of
+    where view "(user) may read forum post (post)" with (post: item, user: reader)
     where Posting._getPost (post: item) has (author, content, createdAt, editedAt)
     author
     content
@@ -3268,7 +3859,7 @@ Former "the bookmarked posts of (user)" — inputs (user); bindings (item, saved
   each view "the readable bookmarks of (user)" with (user) has (item, savedAt)
     form a record of
       item
-      post: former "the post summary of (item)" with (item)
+      post: former "the post summary of (item) for (reader)" with (item, reader: user)
       savedAt
 ```
 
@@ -3340,18 +3931,82 @@ Former "the categories ()" — inputs (); bindings (category, name, description)
       name
 ```
 
-### the category of (item)
+### the category of (item) for (reader)
 
 Authored path: `Forum.categories.theCategoryOf`.
 - Covered by [Categories](../design/compositions/forum/categories.md), line 17.
 
 ```former
-Former "the category of (item)" — inputs (item); bindings (category, name, description); promises exactly one record — forms:
+Former "the category of (item) for (reader)" — inputs (item, reader); bindings (category, name, description); promises exactly one record — forms:
   each Categorizing._getCategory (item) has (category, description, name)
+    where view "(post) is readable" with (post: item, reader)
     form a record of
       category
       description
       name
+```
+
+### the reaction controls on (post) for (reader)
+
+Authored path: `Forum.postControls.theReactionControls`.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 14.
+
+```former
+Former "the reaction controls on (post) for (reader)" — inputs (post, reader); bindings (kind, count, mine); promises exactly one record — forms:
+  each Reacting._countByKind (target: post) has (count, kind)
+    where Reacting._hasReacted (kind, reactor: reader, target: post) has (hasReacted: mine)
+    arranged by count, descending
+    form a record of
+      count
+      kind
+      mine
+```
+
+### the controls of (post) in (conversation) for (reader)
+
+Authored path: `Forum.postControls.thePostControls`.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 12.
+
+```former
+Former "the controls of (post) in (conversation) for (reader)" — inputs (post, conversation, reader); bindings (saved, pinned, source, target); promises at most one record — forms:
+  a record of
+    where view "(item) belongs to pin scope (scope) for (reader)" with (item: post, reader, scope: conversation)
+    where Bookmarking._isSaved (item: post, user: reader) has (saved)
+    where Pinning._isPinned (item: post, scope: conversation) has (pinned)
+    backlinks: the count of Linking._getBacklinks (target: post) has (source)
+      where view "(post) is readable" with (post: source, reader)
+    forwardLinks: the count of Linking._getLinks (source: post) has (target)
+      where view "(post) is readable" with (post: target, reader)
+    pinned
+    reactions: former "the reaction controls on (post) for (reader)" with (post, reader)
+    saved
+```
+
+### the controls selected by (posts) in (conversation) for (reader)
+
+Authored path: `Forum.postControls.theSelectedPostControls`.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 10.
+
+```former
+Former "the controls selected by (posts) in (conversation) for (reader)" — inputs (posts, conversation, reader); bindings (post); promises exactly one record — forms:
+  each Conversing._getThread (conversation) has (item: post)
+    where post is among posts
+    form a record of
+      post
+      … former "the controls of (post) in (conversation) for (reader)" with (conversation, post, reader)
+```
+
+### the creation-ordered feed index for (reader)
+
+Authored path: `Forum.feedPages.theCreationIndex`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 6.
+
+```former
+Former "the creation-ordered feed index for (reader)" — inputs (reader); bindings (conversation, item); promises exactly one record — forms:
+  each Conversing._getConversations () has (conversation, item)
+    form a record of
+      conversation
+      … former "the feed metadata of (conversation) for (reader)" with (conversation, item, reader)
 ```
 
 ### the criteria of (item)
@@ -3385,6 +4040,31 @@ Former "the criterion scores of (learner) on (item)" — inputs (learner, item);
       points
 ```
 
+### the current audience options of (user)
+
+Authored path: `Forum.audiences.theOptions`.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 4.
+
+```former
+Former "the current audience options of (user)" — inputs (user); bindings (holder); promises exactly one record — forms:
+  each view "the addressable holders for (user)" with (user) has (holder)
+    form a record of
+      … former "the visible holder (holder)" with (holder)
+```
+
+### the current mail eligibility of (recipient) for (post) at (queued)
+
+Authored path: `Forum.notifications.theMailEligibility`.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 54.
+
+```former
+Former "the current mail eligibility of (recipient) for (post) at (queued)" — inputs (recipient, post, queued); bindings (); promises at most one record — forms:
+  a record of
+    where view "(user) may read notification subject (subject)" with (subject: post, user: recipient)
+    where Authenticating._getById (user: recipient) has (email: queued)
+    recipient
+```
+
 ### the dashboard seat of (user)
 
 Authored path: `Course.calendar.theDashboardSeatOf`.
@@ -3414,6 +4094,21 @@ Former "the defined roles ()" — inputs (); bindings (role, name, capabilities)
       capabilities
       name
       role
+```
+
+### the display identities of (users) for (session)
+
+Authored path: `Forum.profiles.theProfileDisplays`.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
+
+```former
+Former "the display identities of (users) for (session)" — inputs (users, session); bindings (user, displayName, avatar); promises exactly one record — forms:
+  each Profiling._getProfilesOf (users) has (avatar, displayName, user)
+    where view "(session) may read the display identity of (user)" with (session, user)
+    form a record of
+      avatar
+      displayName
+      user
 ```
 
 ### the drafting line of (brief)
@@ -3634,8 +4329,9 @@ Authored path: `Forum.moderation.theFlagsOn`.
 - Covered by [Moderation](../design/compositions/forum/moderation.md), line 35.
 
 ```former
-Former "the flags on (target)" — inputs (target); bindings (flag, reporter, reason, status, createdAt); promises exactly one record — forms:
+Former "the flags on (target)" — inputs (target, reader); bindings (flag, reporter, reason, status, createdAt); promises exactly one record — forms:
   each Flagging._getFlags (target) has (createdAt, flag, reason, reporter, status)
+    where view "(post) is readable" with (post: target, reader)
     form a record of
       createdAt
       flag
@@ -3644,15 +4340,16 @@ Former "the flags on (target)" — inputs (target); bindings (flag, reporter, re
       status
 ```
 
-### the forward links of (source)
+### the forward links of (source) for (reader)
 
 Authored path: `Forum.links.theForwardLinksOf`.
 - Covered by [Post links](../design/compositions/forum/links.md), line 8.
 
 ```former
-Former "the forward links of (source)" — inputs (source); bindings (target); promises exactly one record — forms:
+Former "the forward links of (source) for (reader)" — inputs (source, reader); bindings (target); promises exactly one record — forms:
   each Linking._getLinks (source) has (target)
-    where view "(post) is readable" with (post: target)
+    where view "(post) is readable" with (post: source, reader)
+    where view "(post) is readable" with (post: target, reader)
     form a record of
       target
 ```
@@ -3742,16 +4439,19 @@ Former "the grades on (item)" — inputs (item); bindings (learner, grade, score
       status
 ```
 
-### the thread stats of (conversation)
+### the thread stats of (conversation) for (reader)
 
 ```former
-Former "the thread stats of (conversation)" — inputs (conversation); bindings (replyNode, replyItem, activityItem, activityAt, partItem, participant); promises exactly one record — forms:
+Former "the thread stats of (conversation) for (reader)" — inputs (conversation, reader); bindings (nodes, posts, trashed, visible, replyCount, lastActivityAt, participants); promises exactly one record — forms:
   a record of
-    lastActivityAt: the activityAt of the first view "the public posts in (conversation)" with (conversation) has (createdAt: activityAt, item: activityItem)
-      arranged by activityAt, descending
-    participants: the distinct participant of each view "the public posts in (conversation)" with (conversation) has (author: participant, item: partItem)
-    replyCount: the count of view "the public posts in (conversation)" with (conversation) has (item: replyItem, node: replyNode)
-      where Conversing._parentOf (node: replyNode)
+    where whether view "the available inputs for statistics of (conversation) for (reader)" with (conversation, reader) has (nodes, posts, trashed)
+    where visible is visibleThreadPosts (nodes, posts, trashed)
+    where replyCount is threadReplyCount (posts: visible)
+    where lastActivityAt is threadLastActivity (posts: visible)
+    where participants is threadParticipants (posts: visible)
+    lastActivityAt
+    participants
+    replyCount
 ```
 
 ### the home feed by activity ()
@@ -3760,26 +4460,33 @@ Authored path: `Forum.feed.theHomeFeedByActivity`.
 - Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 6.
 
 ```former
-Former "the home feed by activity ()" — inputs (); bindings (conversation, root, item, createdAt, locked, resolved, home, tag, tagName); promises exactly one record — forms:
+Former "the home feed by activity ()" — inputs (reader); bindings (conversation, root, item, createdAt, locked, resolved, home, tag, tagName, answer, holders, nonStaffAuthor, staffQuestion); promises exactly one record — forms:
   each Conversing._getConversationsByLastActivity () has (conversation, createdAt, item, root)
-    where view "(item) is intact" with (item)
+    where view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
+    where Accessing._holders (resource: conversation) has (holders)
+    where whether view "the opening (item) by someone outside Staff" with (item, reader) has (author: nonStaffAuthor)
+    where staffQuestion is staffQuestion (holders, nonStaffAuthor)
     where Locking._isLocked (target: conversation) has (locked)
-    where Resolving._isResolved (question: item) has (resolved)
-    where whether Categorizing._getHome (item) has (home)
+    where whether view "the visible resolution of (question) for (reader)" with (question: item, reader) has (answer)
+    where resolved is visibleAnswer (answer)
+    where whether view "the readable home of opening (item) for (reader)" with (item, reader) has (home)
     form a record of
+      audience: former "the explicit audience of (conversation)" with (conversation)
       category: home
       conversation
       createdAt
       item
       locked
-      post: former "the post summary of (item)" with (item)
+      post: whether former "the post summary of (item) for (reader)" with (item, reader)
       resolved
       root
+      staffQuestion
       tags: each Tagging._getTags (target: item) has (name: tagName, tag)
+        where view "(user) may read forum post (post)" with (post: item, user: reader)
         form a record of
           name: tagName
           tag
-      … former "the thread stats of (conversation)" with (conversation)
+      … former "the thread stats of (conversation) for (reader)" with (conversation, reader)
 ```
 
 ### the home feed by creation ()
@@ -3788,26 +4495,33 @@ Authored path: `Forum.feed.theHomeFeedByCreation`.
 - Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 4.
 
 ```former
-Former "the home feed by creation ()" — inputs (); bindings (conversation, root, item, createdAt, locked, resolved, home, tag, tagName); promises exactly one record — forms:
+Former "the home feed by creation ()" — inputs (reader); bindings (conversation, root, item, createdAt, locked, resolved, home, tag, tagName, answer, holders, nonStaffAuthor, staffQuestion); promises exactly one record — forms:
   each Conversing._getConversations () has (conversation, createdAt, item, root)
-    where view "(item) is intact" with (item)
+    where view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
+    where Accessing._holders (resource: conversation) has (holders)
+    where whether view "the opening (item) by someone outside Staff" with (item, reader) has (author: nonStaffAuthor)
+    where staffQuestion is staffQuestion (holders, nonStaffAuthor)
     where Locking._isLocked (target: conversation) has (locked)
-    where Resolving._isResolved (question: item) has (resolved)
-    where whether Categorizing._getHome (item) has (home)
+    where whether view "the visible resolution of (question) for (reader)" with (question: item, reader) has (answer)
+    where resolved is visibleAnswer (answer)
+    where whether view "the readable home of opening (item) for (reader)" with (item, reader) has (home)
     form a record of
+      audience: former "the explicit audience of (conversation)" with (conversation)
       category: home
       conversation
       createdAt
       item
       locked
-      post: former "the post summary of (item)" with (item)
+      post: whether former "the post summary of (item) for (reader)" with (item, reader)
       resolved
       root
+      staffQuestion
       tags: each Tagging._getTags (target: item) has (name: tagName, tag)
+        where view "(user) may read forum post (post)" with (post: item, user: reader)
         form a record of
           name: tagName
           tag
-      … former "the thread stats of (conversation)" with (conversation)
+      … former "the thread stats of (conversation) for (reader)" with (conversation, reader)
 ```
 
 ### the notification presentation of (item)
@@ -3816,8 +4530,9 @@ Authored path: `Forum.notifications.theNotificationPresentationOf`.
 - Covered by [Notifications](../design/compositions/forum/notifications.md), line 33.
 
 ```former
-Former "the notification presentation of (item)" — inputs (item); bindings (author, content, createdAt, editedAt, username, displayName, avatar); promises exactly one record — forms:
+Former "the notification presentation of (item)" — inputs (item, reader); bindings (author, content, createdAt, editedAt, username, displayName, avatar); promises at most one record — forms:
   a record of
+    where view "(user) may read forum post (post)" with (post: item, user: reader)
     where Posting._getPost (post: item) has (author, content, createdAt, editedAt)
     where Authenticating._getById (user: author) has (username)
     where whether Profiling._getProfileFields (user: author) has (avatar, displayName)
@@ -3841,13 +4556,15 @@ Authored path: `Forum.notifications.theInboxOf`.
 ```former
 Former "the inbox of (user)" — inputs (user); bindings (notification, kind, link, createdAt, read); promises exactly one record — forms:
   each Notifying._getInbox (recipient: user) has (createdAt, kind, link, notification, read)
+    where view "(notification) is available to (user)" with (notification, user)
     form a record of
       createdAt
       kind
       link
       notification
       read
-      … former "the notification presentation of (item)" with (item: link), with blank leaves if absent
+      … former "the notification presentation of (item)" with (item: link, reader: user), with blank leaves if absent
+      … former "the assignment notification presentation of (assignment) for (user)" with (assignment: link, user), with blank leaves if absent
 ```
 
 ### the invitation details of (invitation) with (credential)
@@ -3882,15 +4599,15 @@ Former "the invitations ()" — inputs (); bindings (invitation, channel, addres
       user
 ```
 
-### the items in (category)
+### the items in (category) for (reader)
 
 Authored path: `Forum.categories.theItemsIn`.
 - Covered by [Categories](../design/compositions/forum/categories.md), line 15.
 
 ```former
-Former "the items in (category)" — inputs (category); bindings (item); promises exactly one record — forms:
+Former "the items in (category) for (reader)" — inputs (category, reader); bindings (item); promises exactly one record — forms:
   each Categorizing._getItems (category) has (item)
-    where view "(post) is readable" with (post: item)
+    where view "(post) is readable" with (post: item, reader)
     form a record of
       item
 ```
@@ -3944,8 +4661,9 @@ Authored path: `Forum.revisions.theLatestRevisionOf`.
 - Covered by [Revision history](../design/compositions/forum/revisions.md), line 16.
 
 ```former
-Former "the latest revision of (item)" — inputs (item); bindings (revision, number, content, savedAt); promises exactly one record — forms:
+Former "the latest revision of (item)" — inputs (item, reader); bindings (revision, number, content, savedAt); promises exactly one record — forms:
   each Revising._getLatest (item) has (content, number, revision, savedAt)
+    where view "(user) may inspect stored forum post (post)" with (post: item, user: reader)
     form a record of
       content
       number
@@ -3959,9 +4677,9 @@ Authored path: `Forum.moderation.theLockedList`.
 - Covered by [Moderation](../design/compositions/forum/moderation.md), line 23.
 
 ```former
-Former "the locked list ()" — inputs (); bindings (target, lockedAt); promises exactly one record — forms:
+Former "the locked list ()" — inputs (reader); bindings (target, lockedAt); promises exactly one record — forms:
   each Locking._getLocked () has (lockedAt, target)
-    where view "(target) is public" with (target)
+    where view "(target) is readable by (reader)" with (reader, target)
     form a record of
       lockedAt
       target
@@ -3993,9 +4711,9 @@ Authored path: `Forum.moderation.theModerationQueue`.
 - Covered by [Moderation](../design/compositions/forum/moderation.md), line 32.
 
 ```former
-Former "the moderation queue ()" — inputs (); bindings (target, count, node, conversation, author, content, createdAt, editedAt, rendered, flag, reporter, reason, status, flaggedAt); promises exactly one record — forms:
+Former "the moderation queue ()" — inputs (reader); bindings (target, count, node, conversation, author, content, createdAt, editedAt, rendered, flag, reporter, reason, status, flaggedAt); promises exactly one record — forms:
   each Flagging._getOpenTargets () has (count, target)
-    where view "(post) is readable" with (post: target)
+    where view "(post) is readable" with (post: target, reader)
     where Posting._getPost (post: target) has (author, content, createdAt, editedAt)
     where Formatting._getRendered (target) has (rendered)
     where whether Conversing._getNodeByItem (item: target) has (node)
@@ -4048,6 +4766,7 @@ Authored path: `Forum.notifications.theNotificationsOf`.
 ```former
 Former "the notifications of (user)" — inputs (user); bindings (notification, kind, subject, link, createdAt, read); promises exactly one record — forms:
   each Notifying._getInbox (recipient: user) has (createdAt, kind, link, notification, read, subject)
+    where view "(notification) is available to (user)" with (notification, user)
     form a record of
       createdAt
       kind
@@ -4084,9 +4803,9 @@ Authored path: `Forum.moderation.theOpenFlags`.
 - Covered by [Moderation](../design/compositions/forum/moderation.md), line 31.
 
 ```former
-Former "the open flags ()" — inputs (); bindings (target, count); promises exactly one record — forms:
+Former "the open flags ()" — inputs (reader); bindings (target, count); promises exactly one record — forms:
   each Flagging._getOpenTargets () has (count, target)
-    where view "(post) is readable" with (post: target)
+    where view "(post) is readable" with (post: target, reader)
     form a record of
       count
       target
@@ -4140,15 +4859,15 @@ Former "the pick of (pile) on (round)" — inputs (round, pile); bindings (); pr
     picked: pile
 ```
 
-### the pins of (scope)
+### the pins of (scope) for (reader)
 
 Authored path: `Forum.pins.thePinsOf`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 9.
 
 ```former
-Former "the pins of (scope)" — inputs (scope); bindings (item, priority); promises exactly one record — forms:
+Former "the pins of (scope) for (reader)" — inputs (scope, reader); bindings (item, priority); promises exactly one record — forms:
   each Pinning._getPinned (scope) has (item, priority)
-    where view "(post) is readable" with (post: item)
+    where view "(item) belongs to pin scope (scope) for (reader)" with (item, reader, scope)
     form a record of
       item
       priority
@@ -4160,8 +4879,9 @@ Authored path: `Forum.posts.thePost`.
 - Covered by [Posts](../design/compositions/forum/posts.md), line 20.
 
 ```former
-Former "the post (post)" — inputs (post); bindings (author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
+Former "the post (post)" — inputs (post, reader); bindings (author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
   a record of
+    where view "(user) may read forum post (post)" with (post, user: reader)
     where Posting._getPost (post) has (author, content, createdAt, editedAt)
     where Formatting._getRendered (target: post) has (rendered)
     author
@@ -4169,6 +4889,23 @@ Former "the post (post)" — inputs (post); bindings (author, content, createdAt
     createdAt
     editedAt
     rendered
+```
+
+### the preview of opening (item) for (reader)
+
+Authored path: `Forum.feedPages.theOpeningPreview`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 21.
+
+```former
+Former "the preview of opening (item) for (reader)" — inputs (item, reader); bindings (author, content, createdAt, editedAt, preview); promises at most one record — forms:
+  a record of
+    where view "(user) may read forum post (post)" with (post: item, user: reader)
+    where Posting._getPost (post: item) has (author, content, createdAt, editedAt)
+    where preview is postPreview (content)
+    author
+    createdAt
+    editedAt
+    preview
 ```
 
 ### the private profile of (user)
@@ -4201,8 +4938,8 @@ Authored path: `Forum.posts.thePublicPostsOf`.
 - Covered by [Posts](../design/compositions/forum/posts.md), line 23.
 
 ```former
-Former "the public posts of (author)" — inputs (author); bindings (post); promises exactly one record — forms:
-  each view "the public posts by (author)" with (author) has (post)
+Former "the public posts of (author)" — inputs (author, reader); bindings (post); promises exactly one record — forms:
+  each view "the public posts by (author)" with (author, reader) has (post)
     form a record of
       post
 ```
@@ -4266,27 +5003,29 @@ Former "the questionnaires" — inputs (); bindings (questionnaire, title, form,
       token
 ```
 
-### the reaction counts on (target)
+### the reaction counts on (target) for (reader)
 
 Authored path: `Forum.reactions.theReactionCountsOn`.
 - Covered by [Post reactions](../design/compositions/forum/reactions.md), line 11.
 
 ```former
-Former "the reaction counts on (target)" — inputs (target); bindings (kind, count); promises exactly one record — forms:
+Former "the reaction counts on (target) for (reader)" — inputs (target, reader); bindings (kind, count); promises exactly one record — forms:
   each Reacting._countByKind (target) has (count, kind)
+    where view "(post) is readable" with (post: target, reader)
     form a record of
       count
       kind
 ```
 
-### the reactions on (target)
+### the reactions on (target) for (reader)
 
 Authored path: `Forum.reactions.theReactionsOn`.
 - Covered by [Post reactions](../design/compositions/forum/reactions.md), line 10.
 
 ```former
-Former "the reactions on (target)" — inputs (target); bindings (reaction, reactor, kind); promises exactly one record — forms:
+Former "the reactions on (target) for (reader)" — inputs (target, reader); bindings (reaction, reactor, kind); promises exactly one record — forms:
   each Reacting._getReactionsForTarget (target) has (kind, reaction, reactor)
+    where view "(post) is readable" with (post: target, reader)
     form a record of
       kind
       reaction
@@ -4445,15 +5184,14 @@ Former "the released grades of (learner)" — inputs (learner); bindings (item, 
       status
 ```
 
-### the resolution of (question)
+### the resolution of (question) for (reader)
 
 Authored path: `Forum.resolutions.theResolutionOf`.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 12.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 11.
 
 ```former
-Former "the resolution of (question)" — inputs (question); bindings (answer, resolvedBy, resolvedAt); promises exactly one record — forms:
-  each Resolving._getResolution (question) has (answer, resolvedAt, resolvedBy)
-    where view "(post) is readable" with (post: answer)
+Former "the resolution of (question) for (reader)" — inputs (question, reader); bindings (answer, resolvedBy, resolvedAt); promises exactly one record — forms:
+  each view "the visible resolution of (question) for (reader)" with (question, reader) has (answer, resolvedAt, resolvedBy)
     form a record of
       answer
       resolvedAt
@@ -4466,8 +5204,9 @@ Authored path: `Forum.revisions.theRevisionHistoryOf`.
 - Covered by [Revision history](../design/compositions/forum/revisions.md), line 12.
 
 ```former
-Former "the revision history of (item)" — inputs (item); bindings (revision, number, content, savedAt); promises exactly one record — forms:
+Former "the revision history of (item)" — inputs (item, reader); bindings (revision, number, content, savedAt); promises exactly one record — forms:
   each Revising._getRevisions (item) has (content, number, revision, savedAt)
+    where view "(user) may inspect stored forum post (post)" with (post: item, user: reader)
     form a record of
       content
       number
@@ -4481,8 +5220,9 @@ Authored path: `Forum.revisions.theRevisionNumberedOf`.
 - Covered by [Revision history](../design/compositions/forum/revisions.md), line 14.
 
 ```former
-Former "the revision numbered (number) of (item)" — inputs (number, item); bindings (content, savedAt); promises exactly one record — forms:
+Former "the revision numbered (number) of (item)" — inputs (number, item, reader); bindings (content, savedAt); promises exactly one record — forms:
   each Revising._getRevision (item, number) has (content, savedAt)
+    where view "(user) may inspect stored forum post (post)" with (post: item, user: reader)
     form a record of
       content
       savedAt
@@ -4626,6 +5366,32 @@ Former "the sections ()" — inputs (); bindings (section, name, location, meeti
       status
 ```
 
+### the selected summary of (conversation) for (reader)
+
+Authored path: `Forum.feedPages.theSelectedSummary`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 20.
+
+```former
+Former "the selected summary of (conversation) for (reader)" — inputs (conversation, item, reader); bindings (locked, answer, resolved, home, tag, tagName); promises at most one record — forms:
+  a record of
+    where view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
+    where Locking._isLocked (target: conversation) has (locked)
+    where whether view "the visible resolution of (question) for (reader)" with (question: item, reader) has (answer)
+    where resolved is visibleAnswer (answer)
+    where whether view "the readable home of opening (item) for (reader)" with (item, reader) has (home)
+    category: home
+    locked
+    post: whether former "the preview of opening (item) for (reader)" with (item, reader)
+    resolved
+    tags: each Tagging._getTags (target: item) has (name: tagName, tag)
+      where view "(user) may read forum post (post)" with (post: item, user: reader)
+      form a record of
+        name: tagName
+        tag
+    … former "the feed metadata of (conversation) for (reader)" with (conversation, item, reader)
+    … former "the thread stats of (conversation) for (reader)" with (conversation, reader)
+```
+
 ### the staff assignments ()
 
 Authored path: `Course.assignments.theStaffAssignments`.
@@ -4705,6 +5471,24 @@ Former "the staff notes on (learner)" — inputs (learner); bindings (note, auth
       visibility
 ```
 
+### the stored post (post) for (reader)
+
+Authored path: `Forum.moderation.theStoredPost`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 55.
+
+```former
+Former "the stored post (post) for (reader)" — inputs (post, reader); bindings (author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
+  a record of
+    where view "(user) may inspect stored forum post (post)" with (post, user: reader)
+    where Posting._getPost (post) has (author, content, createdAt, editedAt)
+    where Formatting._getRendered (target: post) has (rendered)
+    author
+    content
+    createdAt
+    editedAt
+    rendered
+```
+
 ### the submissions by (submitter)
 
 Authored path: `Course.submissions.theSubmissionsBy`.
@@ -4740,15 +5524,15 @@ Former "the submissions for (assignment)" — inputs (assignment); bindings (sub
       submitterName
 ```
 
-### the subscribers of (target)
+### the subscribers of (target) for (reader)
 
 Authored path: `Forum.subscriptions.theSubscribersOf`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 14.
 
 ```former
-Former "the subscribers of (target)" — inputs (target); bindings (user); promises exactly one record — forms:
+Former "the subscribers of (target) for (reader)" — inputs (target, reader); bindings (user); promises exactly one record — forms:
   each Subscribing._getSubscribers (target) has (user)
-    where view "(conversation) is readable" with (conversation: target)
+    where view "(conversation) is readable by (reader)" with (conversation: target, reader)
     form a record of
       user
 ```
@@ -4761,10 +5545,27 @@ Authored path: `Forum.subscriptions.theSubscriptionsOf`.
 ```former
 Former "the subscriptions of (user)" — inputs (user); bindings (target, subscribedAt); promises exactly one record — forms:
   each Subscribing._getSubscriptions (user) has (subscribedAt, target)
-    where view "(conversation) is readable" with (conversation: target)
+    where view "(conversation) is readable by (reader)" with (conversation: target, reader: user)
     form a record of
       subscribedAt
       target
+```
+
+### the summaries selected by (conversations) for (reader)
+
+Authored path: `Forum.feedPages.theSelectedSummaries`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 19.
+
+```former
+Former "the summaries selected by (conversations) for (reader)" — inputs (conversations, reader); bindings (conversation, root, item, createdAt); promises exactly one record — forms:
+  each Conversing._getConversations () has (conversation, createdAt, item, root)
+    where conversation is among conversations
+    form a record of
+      conversation
+      createdAt
+      item
+      root
+      … former "the selected summary of (conversation) for (reader)" with (conversation, item, reader)
 ```
 
 ### the tags ()
@@ -4780,43 +5581,43 @@ Former "the tags ()" — inputs (); bindings (tag, name); promises exactly one r
       tag
 ```
 
-### the tags on (target)
+### the tags on (target) for (reader)
 
 Authored path: `Forum.tags.theTagsOn`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 14.
 
 ```former
-Former "the tags on (target)" — inputs (target); bindings (tag, name); promises exactly one record — forms:
+Former "the tags on (target) for (reader)" — inputs (target, reader); bindings (tag, name); promises exactly one record — forms:
   each Tagging._getTags (target) has (name, tag)
-    where view "(post) is readable" with (post: target)
+    where view "(post) is readable" with (post: target, reader)
     form a record of
       name
       tag
 ```
 
-### the targets tagged (tag)
+### the targets tagged (tag) for (reader)
 
 Authored path: `Forum.tags.theTargetsTagged`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 16.
 
 ```former
-Former "the targets tagged (tag)" — inputs (tag); bindings (target); promises exactly one record — forms:
+Former "the targets tagged (tag) for (reader)" — inputs (tag, reader); bindings (target); promises exactly one record — forms:
   each Tagging._getTargets (tag) has (target)
-    where view "(post) is readable" with (post: target)
+    where view "(post) is readable" with (post: target, reader)
     form a record of
       target
 ```
 
-### the targets tagged with (name)
+### the targets tagged with (name) for (reader)
 
 Authored path: `Forum.tags.theTargetsTaggedWithName`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 18.
 
 ```former
-Former "the targets tagged with (name)" — inputs (name); bindings (tag, target); promises exactly one record — forms:
+Former "the targets tagged with (name) for (reader)" — inputs (name, reader); bindings (tag, target); promises exactly one record — forms:
   each Tagging._getByName (name) has (tag)
     where Tagging._getTargets (tag) has (target)
-    where view "(post) is readable" with (post: target)
+    where view "(post) is readable" with (post: target, reader)
     form a record of
       target
 ```
@@ -4901,7 +5702,7 @@ Former "the task lists of (user) at (at)" — inputs (user, at); bindings (list,
 ### the tasks assigned to (user) at (at)
 
 Authored path: `Tasks.tasks.theTasksAssignedTo`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 89.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 96.
 
 ```former
 Former "the tasks assigned to (user) at (at)" — inputs (user, at); bindings (task, title, details, startsAt, endsAt, state, overdue, createdAt, updatedAt, list, listTitle); promises exactly one record — forms:
@@ -4926,7 +5727,7 @@ Former "the tasks assigned to (user) at (at)" — inputs (user, at); bindings (t
 ### the tasks in (list) at (at)
 
 Authored path: `Tasks.tasks.theTasksIn`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 87.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 94.
 
 ```former
 Former "the tasks in (list) at (at)" — inputs (list, at); bindings (task, title, details, startsAt, endsAt, assignee, state, overdue, createdAt, updatedAt); promises exactly one record — forms:
@@ -4945,15 +5746,16 @@ Former "the tasks in (list) at (at)" — inputs (list, at); bindings (task, titl
       updatedAt
 ```
 
-### the thread (conversation)
+### the thread (conversation) for (reader)
 
 Authored path: `Forum.threads.theThread`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 30.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 20.
 
 ```former
-Former "the thread (conversation)" — inputs (conversation); bindings (node, item, parent, depth, author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
+Former "the thread (conversation) for (reader)" — inputs (conversation, reader); bindings (node, item, parent, depth, author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
   each Conversing._getThread (conversation) has (depth, item, node, parent)
-    where view "(item) is intact" with (item)
+    where view "(user) belongs to the established audience of (conversation)" with (conversation, user: reader)
+    where Trashing._isTrashed (item) has (trashed: false)
     where Posting._getPost (post: item) has (author, content, createdAt, editedAt)
     where Formatting._getRendered (target: item) has (rendered)
     form a record of
@@ -4975,23 +5777,32 @@ Authored path: `Forum.feed.theThreadContext`.
 - Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 13.
 
 ```former
-Former "the thread context (conversation)" — inputs (conversation); bindings (node, item, category, tag, tagName, locked, answer); promises exactly one record — forms:
+Former "the thread context (conversation)" — inputs (conversation, reader); bindings (node, item, category, tag, tagName, locked, answer, child, childItem, parent, depth); promises exactly one record — forms:
   each Conversing._getThread (conversation) has (item, node)
     where no Conversing._parentOf (node)
-    where view "(item) is intact" with (item)
-    where whether Categorizing._getHome (item) has (home: category)
+    where view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
+    where whether view "the readable home of opening (item) for (reader)" with (item, reader) has (home: category)
     where Locking._isLocked (target: conversation) has (locked)
-    where whether Resolving._getResolution (question: item) has (answer)
+    where whether view "the visible resolution of (question) for (reader)" with (question: item, reader) has (answer)
     form a record of
       acceptedAnswer: answer
+      audience: former "the explicit audience of (conversation)" with (conversation)
       category
       item
       locked
+      root: node
+      structure: each Conversing._getThread (conversation) has (depth, item: childItem, node: child, parent)
+        form a record of
+          depth
+          item: childItem
+          node: child
+          parent
       tags: each Tagging._getTags (target: item) has (name: tagName, tag)
+        where view "(user) may read forum post (post)" with (post: item, user: reader)
         form a record of
           name: tagName
           tag
-      … former "the thread stats of (conversation)" with (conversation)
+      … former "the thread stats of (conversation) for (reader)" with (conversation, reader)
 ```
 
 ### the trash bin ()
@@ -5000,13 +5811,23 @@ Authored path: `Forum.moderation.theTrashBin`.
 - Covered by [Moderation](../design/compositions/forum/moderation.md), line 11.
 
 ```former
-Former "the trash bin ()" — inputs (); bindings (item, trashedBy, trashedAt); promises exactly one record — forms:
+Former "the trash bin ()" — inputs (reader); bindings (item, trashedBy, trashedAt); promises exactly one record — forms:
   each Trashing._getTrashed () has (item, trashedAt, trashedBy)
-    where view "(post) belongs to a forum conversation" with (post: item)
+    where view "(user) may inspect stored forum post (post)" with (post: item, user: reader)
     form a record of
       item
       trashedAt
       trashedBy
+```
+
+### the unread count of (user) in (scope)
+
+Authored path: `Forum.unread.theUnreadCount`.
+- Covered by [Unread tracking](../design/compositions/forum/unread.md), line 29.
+
+```former
+Former "the unread count of (user) in (scope)" — inputs (user, scope); bindings (item); promises exactly one record — forms:
+  the count of view "the unread items for (user) in (scope)" with (scope, user) has (item)
 ```
 
 ### the unread of (user) in (scope)
@@ -5016,27 +5837,27 @@ Authored path: `Forum.unread.theUnreadOf`.
 
 ```former
 Former "the unread of (user) in (scope)" — inputs (user, scope); bindings (item); promises exactly one record — forms:
-  each Tracking._getUnread (scope, user) has (item)
+  each view "the unread items for (user) in (scope)" with (scope, user) has (item)
     form a record of
       item
 ```
 
-### the user page of (user)
+### the user page of (user) for (reader)
 
 Authored path: `Forum.profiles.theUserPage`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 37.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 39.
 
 ```former
-Former "the user page of (user)" — inputs (user); bindings (post, node, conversation); promises exactly one record — forms:
+Former "the user page of (user) for (reader)" — inputs (user, reader); bindings (post, node, conversation); promises exactly one record — forms:
   a record of
     posts: each Posting._getByAuthor (author: user) has (post)
-      where view "(item) is intact" with (item: post)
+      where view "(user) may read forum post (post)" with (post, user: reader)
       where whether Conversing._getNodeByItem (item: post) has (node)
       where whether Conversing._getConversation (node) has (conversation)
       form a record of
         conversation
         item: post
-        post: whether former "the post summary of (item)" with (item: post)
+        post: whether former "the post summary of (item) for (reader)" with (item: post, reader)
     profile: whether former "the profile face of (user)" with (user)
     role: whether former "the role face of (user) in (context)" with (context: "commons", user)
 ```
@@ -5044,7 +5865,7 @@ Former "the user page of (user)" — inputs (user); bindings (post, node, conver
 ### the user search (query)
 
 Authored path: `Forum.profiles.theUserSearch`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 31.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 33.
 
 ```former
 Former "the user search (query)" — inputs (query); bindings (user, username); promises exactly one record — forms:
@@ -5053,6 +5874,17 @@ Former "the user search (query)" — inputs (query); bindings (user, username); 
       profile: former "the profile face of (user)" with (user)
       user
       username
+```
+
+### the visible unread notifications of (user)
+
+Authored path: `Forum.notifications.theUnreadCount`.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 54.
+
+```former
+Former "the visible unread notifications of (user)" — inputs (user); bindings (notification); promises exactly one record — forms:
+  the count of Notifying._getInbox (recipient: user) has (notification, read: false)
+    where view "(notification) is available to (user)" with (notification, user)
 ```
 
 ### the wall of (round) as (viewer) sees it
@@ -5128,14 +5960,14 @@ Authored path: `Forum.subscriptions.theWatchedThreadsOf`.
 ```former
 Former "the watched threads of (user)" — inputs (user); bindings (target, subscribedAt, rootItem, rootNode); promises exactly one record — forms:
   each Subscribing._getSubscriptions (user) has (subscribedAt, target)
-    where view "(conversation) is readable" with (conversation: target)
+    where view "(conversation) is readable by (reader)" with (conversation: target, reader: user)
     where Conversing._getThread (conversation: target) has (item: rootItem, node: rootNode)
     where no Conversing._parentOf (node: rootNode)
     form a record of
       conversation: target
-      post: whether former "the post summary of (item)" with (item: rootItem)
+      post: whether former "the post summary of (item) for (reader)" with (item: rootItem, reader: user)
       subscribedAt
-      … former "the thread stats of (conversation)" with (conversation: target), with blank leaves if absent
+      … former "the thread stats of (conversation) for (reader)" with (conversation: target, reader: user), with blank leaves if absent
 ```
 
 ## Reactions
@@ -6675,6 +7507,20 @@ where
   earlier, RequestBoundary.request (assignment, path: "/assignments/archive", requestId, session)
 then
   RequestBoundary.respond (assignment: archived, requestId)
+```
+
+### Course.assignments.AssignmentReleaseNotifiesStudent
+
+Authored path: `Course.assignments.AssignmentReleaseNotifiesStudent`.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 64.
+
+```reaction
+when Assigning.assign (assignee, assignment, at)
+where
+  view "(user) is an active student" with (user: assignee)
+  Assigning._getAssignments () has (assignment, status: "PUBLISHED")
+then
+  Notifying.notify (at, kind: "assignment_released", link: assignment, recipient: assignee, subject: assignment)
 ```
 
 ### Course.assignments.ClaimedStudentSeatReceivesPublished
@@ -10052,7 +10898,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may read (artifact) submitted by (submitter) for (assignment)" with (artifact, assignment, submitter, user)
 then
-  RequestBoundary.respond (post: former "the post (post)" with (post: artifact), requestId)
+  RequestBoundary.respond (post: former "the artifact (artifact) of (assignment) by (submitter) for (user)" with (artifact, assignment, submitter, user), requestId)
 ```
 
 ### Course.submissions.Attempts:attempts
@@ -10323,17 +11169,135 @@ then
   RequestBoundary.respond (error: message, requestId)
 ```
 
+### Forum.audiences.ForConversation:audience
+
+Authored path: `Forum.audiences.ForConversation`.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 10.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 29.
+
+```reaction
+when RequestBoundary.request (conversation, path: "/audiences/forConversation", requestId, session)
+where
+  view "the audience reader of (conversation) through (session)" with (conversation, session)
+then
+  RequestBoundary.respond (holders: former "the explicit audience of (conversation)" with (conversation), requestId)
+```
+
+### Forum.audiences.ForConversation:hidden
+
+Authored path: `Forum.audiences.ForConversation`.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 10.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 29.
+
+```reaction
+when RequestBoundary.request (conversation, path: "/audiences/forConversation", requestId, session)
+where
+  view "the active user of (session)" with (session)
+  no view "the audience reader of (conversation) through (session)" with (conversation, session)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Forum.audiences.Options:not-in-course
+
+Authored path: `Forum.audiences.Options`.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 3.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 28.
+
+```reaction
+when RequestBoundary.request (path: "/audiences/options", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  no view "(user) is in the current course community" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Forum.audiences.Options:options
+
+Authored path: `Forum.audiences.Options`.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 3.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 28.
+
+```reaction
+when RequestBoundary.request (path: "/audiences/options", requestId, session)
+where
+  view "the audience reader of (session)" with (session) has (user)
+  view "(user) is in the current course community" with (user)
+then
+  RequestBoundary.respond (holders: former "the current audience options of (user)" with (user), requestId)
+```
+
+### Forum.audiences.Options:unavailable-account
+
+Authored path: `Forum.audiences.Options`.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 3.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 28.
+
+```reaction
+when RequestBoundary.request (path: "/audiences/options", requestId, session)
+where
+  view "the active user of (session)" with (session)
+  no view "the audience reader of (session)" with (session)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Forum.audiences.Preview:preview
+
+Authored path: `Forum.audiences.Preview`.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 17.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 27.
+
+```reaction
+when RequestBoundary.request (holders, path: "/audiences/preview", requestId, session)
+where
+  view "the audience reader of (session)" with (session) has (user)
+  view "the complete audience preview of (selected) for (user)" with (selected: holders, user) has (holders: finalHolders)
+then
+  RequestBoundary.respond (holders: finalHolders, requestId)
+```
+
+### Forum.audiences.Preview:unaddressable
+
+Authored path: `Forum.audiences.Preview`.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 17.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 27.
+
+```reaction
+when RequestBoundary.request (holders, path: "/audiences/preview", requestId, session)
+where
+  view "the audience reader of (session)" with (session) has (user)
+  no view "the complete audience preview of (selected) for (user)" with (selected: holders, user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Forum.audiences.Preview:unavailable
+
+Authored path: `Forum.audiences.Preview`.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 17.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 27.
+
+```reaction
+when RequestBoundary.request (holders, path: "/audiences/preview", requestId, session)
+where
+  no view "the audience reader of (session)" with (session)
+then
+  RequestBoundary.respond (error: "UNAUTHORIZED", requestId)
+```
+
 ### Forum.bookmarks.IsSaved:hidden
 
 Authored path: `Forum.bookmarks.IsSaved`.
 - Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 14.
-- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 23.
+- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 22.
 
 ```reaction
 when RequestBoundary.request (item, path: "/bookmarks/isSaved", requestId, session)
 where
-  view "the active user of (session)" with (session)
-  view "(post) is not readable" with (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is not readable" with (post: item, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -10342,13 +11306,13 @@ then
 
 Authored path: `Forum.bookmarks.IsSaved`.
 - Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 14.
-- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 23.
+- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 22.
 
 ```reaction
 when RequestBoundary.request (item, path: "/bookmarks/isSaved", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(post) is readable" with (post: item)
+  view "(post) is readable" with (post: item, reader: user)
   Bookmarking._isSaved (item, user) has (saved)
 then
   RequestBoundary.respond (requestId, saved)
@@ -10358,7 +11322,7 @@ then
 
 Authored path: `Forum.bookmarks.ListBookmarks`.
 - Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 10.
-- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 24.
+- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 23.
 
 ```reaction
 when RequestBoundary.request (path: "/bookmarks/list", requestId, session)
@@ -10383,13 +11347,13 @@ then
 
 Authored path: `Forum.bookmarks.SaveBookmark`.
 - Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 4.
-- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 25.
+- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 24.
 
 ```reaction
 when RequestBoundary.request (item, path: "/bookmarks/save", requestId, session)
 where
-  view "the active user of (session)" with (session)
-  view "(post) is not readable" with (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is not readable" with (post: item, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -10398,14 +11362,14 @@ then
 
 Authored path: `Forum.bookmarks.SaveBookmark`.
 - Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 4.
-- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 25.
+- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 24.
 
 ```reaction
 when RequestBoundary.request (item, path: "/bookmarks/save", requestId, session)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(post) is readable" with (post: item)
+  view "(post) is readable" with (post: item, reader: user)
 then
   Bookmarking.save (at, item, user)
 ```
@@ -10414,7 +11378,7 @@ then
 
 Authored path: `Forum.bookmarks.SaveBookmark`.
 - Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 4.
-- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 25.
+- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 24.
 
 ```reaction
 when Bookmarking.save (at, item, user, bookmark), asked by Forum.bookmarks.SaveBookmark:success
@@ -10428,13 +11392,13 @@ then
 
 Authored path: `Forum.bookmarks.UnsaveBookmark`.
 - Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 4.
-- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 26.
+- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 25.
 
 ```reaction
 when RequestBoundary.request (item, path: "/bookmarks/unsave", requestId, session)
 where
-  view "the active user of (session)" with (session)
-  view "(post) is not readable" with (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is not readable" with (post: item, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -10443,13 +11407,13 @@ then
 
 Authored path: `Forum.bookmarks.UnsaveBookmark`.
 - Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 4.
-- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 26.
+- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 25.
 
 ```reaction
 when RequestBoundary.request (item, path: "/bookmarks/unsave", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(post) is readable" with (post: item)
+  view "(post) is readable" with (post: item, reader: user)
 then
   Bookmarking.unsave (item, user)
 ```
@@ -10458,7 +11422,7 @@ then
 
 Authored path: `Forum.bookmarks.UnsaveBookmark`.
 - Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 4.
-- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 26.
+- Covered by [Bookmarks](../design/compositions/forum/bookmarks.md), line 25.
 
 ```reaction
 when Bookmarking.unsave (item, user, bookmark), asked by Forum.bookmarks.UnsaveBookmark:success
@@ -10479,6 +11443,7 @@ when RequestBoundary.request (category, item, path: "/categories/assign", reques
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not moderate" with (user)
+  view "(post) is readable" with (post: item, reader: user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -10493,8 +11458,7 @@ Authored path: `Forum.categories.AssignCategory`.
 when RequestBoundary.request (category, item, path: "/categories/assign", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may moderate" with (user)
-  view "(post) is not readable" with (post: item)
+  view "(post) is not readable" with (post: item, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -10510,7 +11474,7 @@ when RequestBoundary.request (category, item, path: "/categories/assign", reques
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) is readable" with (post: item)
+  view "(post) is readable" with (post: item, reader: user)
 then
   Categorizing.assign (category, item)
 ```
@@ -10536,9 +11500,10 @@ Authored path: `Forum.categories.CategoryForItem`.
 - Covered by [Categories](../design/compositions/forum/categories.md), line 27.
 
 ```reaction
-when RequestBoundary.request (item, path: "/categories/forItem", requestId)
+when RequestBoundary.request (item, path: "/categories/forItem", requestId, session)
 where
-  view "(post) is not readable" with (post: item)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is not readable" with (post: item, reader)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -10550,11 +11515,12 @@ Authored path: `Forum.categories.CategoryForItem`.
 - Covered by [Categories](../design/compositions/forum/categories.md), line 27.
 
 ```reaction
-when RequestBoundary.request (item, path: "/categories/forItem", requestId)
+when RequestBoundary.request (item, path: "/categories/forItem", requestId, session)
 where
-  view "(post) is readable" with (post: item)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is readable" with (post: item, reader)
 then
-  RequestBoundary.respond (category: former "the category of (item)" with (item), requestId)
+  RequestBoundary.respond (category: former "the category of (item) for (reader)" with (item, reader), requestId)
 ```
 
 ### Forum.categories.CategoryItems
@@ -10564,9 +11530,11 @@ Authored path: `Forum.categories.CategoryItems`.
 - Covered by [Categories](../design/compositions/forum/categories.md), line 28.
 
 ```reaction
-when RequestBoundary.request (category, path: "/categories/items", requestId)
+when RequestBoundary.request (category, path: "/categories/items", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: reader)
 then
-  RequestBoundary.respond (items: former "the items in (category)" with (category), requestId)
+  RequestBoundary.respond (items: former "the items in (category) for (reader)" with (category, reader), requestId)
 ```
 
 ### Forum.categories.CreateCategory:forbidden
@@ -10664,7 +11632,9 @@ Authored path: `Forum.categories.ListCategories`.
 - Covered by [Categories](../design/compositions/forum/categories.md), line 31.
 
 ```reaction
-when RequestBoundary.request (path: "/categories/list", requestId)
+when RequestBoundary.request (path: "/categories/list", requestId, session)
+where
+  view "the active user of (session)" with (session)
 then
   RequestBoundary.respond (categories: former "the categories ()", requestId)
 ```
@@ -10693,6 +11663,7 @@ when RequestBoundary.request (item, path: "/categories/unassign", requestId, ses
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not moderate" with (user)
+  view "(post) is readable" with (post: item, reader: user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -10707,8 +11678,7 @@ Authored path: `Forum.categories.UnassignCategory`.
 when RequestBoundary.request (item, path: "/categories/unassign", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may moderate" with (user)
-  view "(post) is not readable" with (post: item)
+  view "(post) is not readable" with (post: item, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -10724,7 +11694,7 @@ when RequestBoundary.request (item, path: "/categories/unassign", requestId, ses
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) is readable" with (post: item)
+  view "(post) is readable" with (post: item, reader: user)
 then
   Categorizing.unassign (item)
 ```
@@ -10743,40 +11713,145 @@ then
   RequestBoundary.respond (item: unassigned, requestId)
 ```
 
-### Forum.feed.GetThread
+### Forum.feed.GetThread:hidden
 
 Authored path: `Forum.feed.GetThread`.
 - Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 11.
-- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 26.
+- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 23.
 
 ```reaction
-when RequestBoundary.request (conversation, path: "/threads/get", requestId)
+when RequestBoundary.request (conversation, path: "/threads/get", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: reader)
+  no view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
 then
-  RequestBoundary.respond (context: former "the thread context (conversation)" with (conversation), requestId, thread: former "the thread (conversation)" with (conversation))
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Forum.feed.GetThread:visible
+
+Authored path: `Forum.feed.GetThread`.
+- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 11.
+- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 23.
+
+```reaction
+when RequestBoundary.request (conversation, path: "/threads/get", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
+then
+  RequestBoundary.respond (context: former "the thread context (conversation)" with (conversation, reader), requestId, thread: former "the thread (conversation) for (reader)" with (conversation, reader))
 ```
 
 ### Forum.feed.ListActivity
 
 Authored path: `Forum.feed.ListActivity`.
 - Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 5.
-- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 27.
+- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 24.
 
 ```reaction
-when RequestBoundary.request (path: "/threads/activity", requestId)
+when RequestBoundary.request (path: "/threads/activity", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: reader)
 then
-  RequestBoundary.respond (conversations: former "the home feed by activity ()", requestId)
+  RequestBoundary.respond (conversations: former "the home feed by activity ()" with (reader), requestId)
 ```
 
 ### Forum.feed.ListLatest
 
 Authored path: `Forum.feed.ListLatest`.
 - Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 3.
-- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 28.
+- Covered by [Feeds and thread context](../design/compositions/forum/feed.md), line 25.
 
 ```reaction
-when RequestBoundary.request (path: "/threads/latest", requestId)
+when RequestBoundary.request (path: "/threads/latest", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: reader)
 then
-  RequestBoundary.respond (conversations: former "the home feed by creation ()", requestId)
+  RequestBoundary.respond (conversations: former "the home feed by creation ()" with (reader), requestId)
+```
+
+### Forum.feedPages.Index:activity
+
+Authored path: `Forum.feedPages.Index`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 3.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 29.
+
+```reaction
+when RequestBoundary.request (order, path: "/threads/index", requestId, session)
+where
+  view "the active user of (session)" with (session)
+  valid is validFeedOrder (order)
+  order is among ["activity"]
+  view "the active user of (session)" with (session) has (user: reader)
+then
+  RequestBoundary.respond (conversations: former "the activity-ordered feed index for (reader)" with (reader), requestId)
+```
+
+### Forum.feedPages.Index:invalid
+
+Authored path: `Forum.feedPages.Index`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 3.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 29.
+
+```reaction
+when RequestBoundary.request (order, path: "/threads/index", requestId, session)
+where
+  view "the active user of (session)" with (session)
+  valid is validFeedOrder (order)
+  valid is among [false]
+then
+  RequestBoundary.respond (error: "INVALID_REQUEST", requestId)
+```
+
+### Forum.feedPages.Index:latest
+
+Authored path: `Forum.feedPages.Index`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 3.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 29.
+
+```reaction
+when RequestBoundary.request (order, path: "/threads/index", requestId, session)
+where
+  view "the active user of (session)" with (session)
+  valid is validFeedOrder (order)
+  order is among ["latest"]
+  view "the active user of (session)" with (session) has (user: reader)
+then
+  RequestBoundary.respond (conversations: former "the creation-ordered feed index for (reader)" with (reader), requestId)
+```
+
+### Forum.feedPages.Summaries:invalid
+
+Authored path: `Forum.feedPages.Summaries`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 15.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 30.
+
+```reaction
+when RequestBoundary.request (conversations, path: "/threads/summaries", requestId, session)
+where
+  view "the active user of (session)" with (session)
+  valid is validThreadSelection (conversations)
+  valid is among [false]
+then
+  RequestBoundary.respond (error: "INVALID_REQUEST", requestId)
+```
+
+### Forum.feedPages.Summaries:valid
+
+Authored path: `Forum.feedPages.Summaries`.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 15.
+- Covered by [Paged discussion list](../design/compositions/forum/feed-pages.md), line 30.
+
+```reaction
+when RequestBoundary.request (conversations, path: "/threads/summaries", requestId, session)
+where
+  view "the active user of (session)" with (session)
+  valid is validThreadSelection (conversations)
+  valid is among [true]
+  view "the active user of (session)" with (session) has (user: reader)
+then
+  RequestBoundary.respond (conversations: former "the summaries selected by (conversations) for (reader)" with (conversations, reader), requestId)
 ```
 
 ### Forum.links.Backlinks:hidden
@@ -10786,9 +11861,10 @@ Authored path: `Forum.links.Backlinks`.
 - Covered by [Post links](../design/compositions/forum/links.md), line 20.
 
 ```reaction
-when RequestBoundary.request (path: "/links/backlinks", requestId, target)
+when RequestBoundary.request (path: "/links/backlinks", requestId, session, target)
 where
-  view "(post) is not readable" with (post: target)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is not readable" with (post: target, reader)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -10800,11 +11876,12 @@ Authored path: `Forum.links.Backlinks`.
 - Covered by [Post links](../design/compositions/forum/links.md), line 20.
 
 ```reaction
-when RequestBoundary.request (path: "/links/backlinks", requestId, target)
+when RequestBoundary.request (path: "/links/backlinks", requestId, session, target)
 where
-  view "(post) is readable" with (post: target)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is readable" with (post: target, reader)
 then
-  RequestBoundary.respond (requestId, sources: former "the backlinks of (target)" with (target))
+  RequestBoundary.respond (requestId, sources: former "the backlinks of (target) for (reader)" with (reader, target))
 ```
 
 ### Forum.links.Forward:hidden
@@ -10814,9 +11891,10 @@ Authored path: `Forum.links.Forward`.
 - Covered by [Post links](../design/compositions/forum/links.md), line 21.
 
 ```reaction
-when RequestBoundary.request (path: "/links/forward", requestId, source)
+when RequestBoundary.request (path: "/links/forward", requestId, session, source)
 where
-  view "(post) is not readable" with (post: source)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is not readable" with (post: source, reader)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -10828,11 +11906,12 @@ Authored path: `Forum.links.Forward`.
 - Covered by [Post links](../design/compositions/forum/links.md), line 21.
 
 ```reaction
-when RequestBoundary.request (path: "/links/forward", requestId, source)
+when RequestBoundary.request (path: "/links/forward", requestId, session, source)
 where
-  view "(post) is readable" with (post: source)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is readable" with (post: source, reader)
 then
-  RequestBoundary.respond (requestId, targets: former "the forward links of (source)" with (source))
+  RequestBoundary.respond (requestId, targets: former "the forward links of (source) for (reader)" with (reader, source))
 ```
 
 ### Forum.moderation.FlagRaise:hidden
@@ -10844,8 +11923,8 @@ Authored path: `Forum.moderation.FlagRaise`.
 ```reaction
 when RequestBoundary.request (path: "/flags/raise", reason, requestId, session, target)
 where
-  view "the active user of (session)" with (session)
-  view "(post) is not readable" with (post: target)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is not readable" with (post: target, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -10861,7 +11940,7 @@ when RequestBoundary.request (path: "/flags/raise", reason, requestId, session, 
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(post) is readable" with (post: target)
+  view "(post) is readable" with (post: target, reader: user)
 then
   Flagging.flag (at, reason, reporter: user, target)
 ```
@@ -10891,6 +11970,7 @@ when RequestBoundary.request (outcome, path: "/flags/resolve", requestId, sessio
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not moderate" with (user)
+  view "(post) is readable" with (post: target, reader: user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -10905,8 +11985,7 @@ Authored path: `Forum.moderation.FlagResolve`.
 when RequestBoundary.request (outcome, path: "/flags/resolve", requestId, session, target)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may moderate" with (user)
-  view "(post) is not readable" with (post: target)
+  view "(post) is not readable" with (post: target, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -10922,7 +12001,7 @@ when RequestBoundary.request (outcome, path: "/flags/resolve", requestId, sessio
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) is readable" with (post: target)
+  view "(post) is readable" with (post: target, reader: user)
 then
   Flagging.resolve (outcome, target)
 ```
@@ -10952,7 +12031,7 @@ when RequestBoundary.request (path: "/flags/forTarget", requestId, session, targ
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) is not readable" with (post: target)
+  view "(post) is not readable" with (post: target, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -10968,9 +12047,9 @@ when RequestBoundary.request (path: "/flags/forTarget", requestId, session, targ
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) is readable" with (post: target)
+  view "(post) is readable" with (post: target, reader: user)
 then
-  RequestBoundary.respond (flags: former "the flags on (target)" with (target), requestId)
+  RequestBoundary.respond (flags: former "the flags on (target)" with (reader: user, target), requestId)
 ```
 
 ### Forum.moderation.FlagsForTarget:target-hidden
@@ -11015,7 +12094,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
 then
-  RequestBoundary.respond (requestId, targets: former "the open flags ()")
+  RequestBoundary.respond (requestId, targets: former "the open flags ()" with (reader: user))
 ```
 
 ### Forum.moderation.GetTrashedPost:hidden
@@ -11044,7 +12123,7 @@ when RequestBoundary.request (item, path: "/moderation/posts/get", requestId, se
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) belongs to a forum conversation" with (post: item)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
   Trashing._isTrashed (item) has (trashed: false)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -11061,7 +12140,7 @@ when RequestBoundary.request (item, path: "/moderation/posts/get", requestId, se
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  no view "(post) belongs to a forum conversation" with (post: item)
+  no view "(user) may inspect stored forum post (post)" with (post: item, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11077,10 +12156,10 @@ when RequestBoundary.request (item, path: "/moderation/posts/get", requestId, se
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) belongs to a forum conversation" with (post: item)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
   Trashing._isTrashed (item) has (trashed: true)
 then
-  RequestBoundary.respond (post: former "the post (post)" with (post: item), requestId)
+  RequestBoundary.respond (post: former "the stored post (post) for (reader)" with (post: item, reader: user), requestId)
 ```
 
 ### Forum.moderation.IsLocked:hidden
@@ -11090,9 +12169,10 @@ Authored path: `Forum.moderation.IsLocked`.
 - Covered by [Moderation](../design/compositions/forum/moderation.md), line 44.
 
 ```reaction
-when RequestBoundary.request (path: "/locks/isLocked", requestId, target)
+when RequestBoundary.request (path: "/locks/isLocked", requestId, session, target)
 where
-  no view "(target) is public" with (target)
+  view "the active user of (session)" with (session) has (user)
+  no view "(target) is readable by (reader)" with (reader: user, target)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11104,9 +12184,10 @@ Authored path: `Forum.moderation.IsLocked`.
 - Covered by [Moderation](../design/compositions/forum/moderation.md), line 44.
 
 ```reaction
-when RequestBoundary.request (path: "/locks/isLocked", requestId, target)
+when RequestBoundary.request (path: "/locks/isLocked", requestId, session, target)
 where
-  view "(target) is public" with (target)
+  view "the active user of (session)" with (session) has (user)
+  view "(target) is readable by (reader)" with (reader: user, target)
   Locking._isLocked (target) has (locked)
 then
   RequestBoundary.respond (locked, requestId)
@@ -11123,6 +12204,7 @@ when RequestBoundary.request (item, path: "/trash/isTrashed", requestId, session
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not moderate" with (user)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11137,8 +12219,7 @@ Authored path: `Forum.moderation.IsTrashed`.
 when RequestBoundary.request (item, path: "/trash/isTrashed", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may moderate" with (user)
-  no view "(post) belongs to a forum conversation" with (post: item)
+  no view "(user) may inspect stored forum post (post)" with (post: item, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11154,7 +12235,7 @@ when RequestBoundary.request (item, path: "/trash/isTrashed", requestId, session
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) belongs to a forum conversation" with (post: item)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
   Trashing._isTrashed (item) has (trashed)
 then
   RequestBoundary.respond (requestId, trashed)
@@ -11167,9 +12248,11 @@ Authored path: `Forum.moderation.LockList`.
 - Covered by [Moderation](../design/compositions/forum/moderation.md), line 46.
 
 ```reaction
-when RequestBoundary.request (path: "/locks/list", requestId)
+when RequestBoundary.request (path: "/locks/list", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
 then
-  RequestBoundary.respond (locked: former "the locked list ()", requestId)
+  RequestBoundary.respond (locked: former "the locked list ()" with (reader: user), requestId)
 ```
 
 ### Forum.moderation.LockTarget:forbidden
@@ -11183,6 +12266,7 @@ when RequestBoundary.request (path: "/locks/lock", requestId, session, target)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not moderate" with (user)
+  view "(target) is readable by (reader)" with (reader: user, target)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -11197,8 +12281,7 @@ Authored path: `Forum.moderation.LockTarget`.
 when RequestBoundary.request (path: "/locks/lock", requestId, session, target)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may moderate" with (user)
-  no view "(target) is public" with (target)
+  no view "(target) is readable by (reader)" with (reader: user, target)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11215,7 +12298,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(target) is public" with (target)
+  view "(target) is readable by (reader)" with (reader: user, target)
 then
   Locking.lock (at, target)
 ```
@@ -11245,6 +12328,7 @@ when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not moderate" with (user)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -11259,8 +12343,24 @@ Authored path: `Forum.moderation.PurgeItem`.
 when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
+  no view "(user) may inspect stored forum post (post)" with (post: item, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Forum.moderation.PurgeItem:not-trashed
+
+Authored path: `Forum.moderation.PurgeItem`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 5.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 48.
+
+```reaction
+when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
   view "(user) may moderate" with (user)
-  no view "(post) belongs to a forum conversation" with (post: item)
+  Trashing._isTrashed (item) has (trashed: false)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11276,9 +12376,10 @@ when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) belongs to a forum conversation" with (post: item)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
+  Trashing._isTrashed (item) has (trashed: true)
 then
-  Trashing.purge (item)
+  Posting.delete (post: item)
 ```
 
 ### Forum.moderation.PurgeItem:success#2
@@ -11288,7 +12389,19 @@ Authored path: `Forum.moderation.PurgeItem`.
 - Covered by [Moderation](../design/compositions/forum/moderation.md), line 48.
 
 ```reaction
-when Trashing.purge (item), asked by Forum.moderation.PurgeItem:success
+when Posting.delete (post: item), asked by Forum.moderation.PurgeItem:success
+then
+  Trashing.purge (item)
+```
+
+### Forum.moderation.PurgeItem:success#3
+
+Authored path: `Forum.moderation.PurgeItem`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 5.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 48.
+
+```reaction
+when Trashing.purge (item), asked by Forum.moderation.PurgeItem:success#2
 where
   earlier, RequestBoundary.request (item, path: "/trash/purge", requestId, session)
 then
@@ -11306,6 +12419,7 @@ when RequestBoundary.request (item, path: "/trash/restore", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not moderate" with (user)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -11320,8 +12434,7 @@ Authored path: `Forum.moderation.RestoreItem`.
 when RequestBoundary.request (item, path: "/trash/restore", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may moderate" with (user)
-  no view "(post) belongs to a forum conversation" with (post: item)
+  no view "(user) may inspect stored forum post (post)" with (post: item, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11337,7 +12450,7 @@ when RequestBoundary.request (item, path: "/trash/restore", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) belongs to a forum conversation" with (post: item)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
 then
   Trashing.restore (item)
 ```
@@ -11367,6 +12480,7 @@ when RequestBoundary.request (item, path: "/trash/trash", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not moderate" with (user)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -11381,8 +12495,7 @@ Authored path: `Forum.moderation.TrashItem`.
 when RequestBoundary.request (item, path: "/trash/trash", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may moderate" with (user)
-  no view "(post) belongs to a forum conversation" with (post: item)
+  no view "(user) may inspect stored forum post (post)" with (post: item, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11399,7 +12512,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) belongs to a forum conversation" with (post: item)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
 then
   Trashing.trash (at, by: user, item)
 ```
@@ -11445,7 +12558,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
 then
-  RequestBoundary.respond (requestId, trashed: former "the trash bin ()")
+  RequestBoundary.respond (requestId, trashed: former "the trash bin ()" with (reader: user))
 ```
 
 ### Forum.moderation.UnlockTarget:forbidden
@@ -11459,6 +12572,7 @@ when RequestBoundary.request (path: "/locks/unlock", requestId, session, target)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not moderate" with (user)
+  view "(target) is readable by (reader)" with (reader: user, target)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -11473,8 +12587,7 @@ Authored path: `Forum.moderation.UnlockTarget`.
 when RequestBoundary.request (path: "/locks/unlock", requestId, session, target)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may moderate" with (user)
-  no view "(target) is public" with (target)
+  no view "(target) is readable by (reader)" with (reader: user, target)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11490,7 +12603,7 @@ when RequestBoundary.request (path: "/locks/unlock", requestId, session, target)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(target) is public" with (target)
+  view "(target) is readable by (reader)" with (reader: user, target)
 then
   Locking.unlock (target)
 ```
@@ -11519,36 +12632,53 @@ when Resolving.accept (answer, at, by)
 where
   Posting._getPost (post: answer) has (author: answerAuthor)
   Posting._getPost (post: answer) and not (author: by)
+  view "(user) may read forum post (post)" with (post: answer, user: answerAuthor)
 then
   Notifying.notify (at, kind: "accepted", link: answer, recipient: answerAuthor, subject: answer)
 ```
 
-### Forum.notifications.Dismiss
+### Forum.notifications.Dismiss:dismiss
 
 Authored path: `Forum.notifications.Dismiss`.
 - Covered by [Notifications](../design/compositions/forum/notifications.md), line 39.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 50.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 46.
 
 ```reaction
 when RequestBoundary.request (notification, path: "/notifications/dismiss", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
+  view "(notification) is available to (user)" with (notification, user)
 then
   Notifying.dismiss (notification, recipient: user)
 ```
 
-### Forum.notifications.Dismiss#2
+### Forum.notifications.Dismiss:dismiss#2
 
 Authored path: `Forum.notifications.Dismiss`.
 - Covered by [Notifications](../design/compositions/forum/notifications.md), line 39.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 50.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 46.
 
 ```reaction
-when Notifying.dismiss (notification, recipient: user, result.notification: dismissed), asked by Forum.notifications.Dismiss
+when Notifying.dismiss (notification, recipient: user, result.notification: dismissed), asked by Forum.notifications.Dismiss:dismiss
 where
   earlier, RequestBoundary.request (notification, path: "/notifications/dismiss", requestId, session)
 then
   RequestBoundary.respond (notification: dismissed, requestId)
+```
+
+### Forum.notifications.Dismiss:hidden
+
+Authored path: `Forum.notifications.Dismiss`.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 39.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 46.
+
+```reaction
+when RequestBoundary.request (notification, path: "/notifications/dismiss", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  no view "(notification) is available to (user)" with (notification, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### Forum.notifications.EditMentionsNotify
@@ -11569,7 +12699,7 @@ then
 
 Authored path: `Forum.notifications.ListNotifications`.
 - Covered by [Notifications](../design/compositions/forum/notifications.md), line 29.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 51.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 47.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/list", requestId, session)
@@ -11579,56 +12709,74 @@ then
   RequestBoundary.respond (notifications: former "the notifications of (user)" with (user), requestId)
 ```
 
-### Forum.notifications.MarkAllRead
+### Forum.notifications.MarkAllRead:answer
 
 Authored path: `Forum.notifications.MarkAllRead`.
 - Covered by [Notifications](../design/compositions/forum/notifications.md), line 38.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 52.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 48.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/markAllRead", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
 then
-  Notifying.markAllRead (recipient: user)
+  RequestBoundary.respond (recipient: user, requestId)
 ```
 
-### Forum.notifications.MarkAllRead#2
+### Forum.notifications.MarkAllRead:visible
 
 Authored path: `Forum.notifications.MarkAllRead`.
 - Covered by [Notifications](../design/compositions/forum/notifications.md), line 38.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 52.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 48.
 
 ```reaction
-when Notifying.markAllRead (recipient: user, result.recipient), asked by Forum.notifications.MarkAllRead
+when RequestBoundary.request (path: "/notifications/markAllRead", requestId, session)
 where
-  earlier, RequestBoundary.request (path: "/notifications/markAllRead", requestId, session)
+  view "the active user of (session)" with (session) has (user)
+  Notifying._getInbox (recipient: user) has (notification, read: false)
+  view "(notification) is available to (user)" with (notification, user)
 then
-  RequestBoundary.respond (recipient, requestId)
+  Notifying.markRead (notification, recipient: user)
 ```
 
-### Forum.notifications.MarkRead
+### Forum.notifications.MarkRead:hidden
 
 Authored path: `Forum.notifications.MarkRead`.
 - Covered by [Notifications](../design/compositions/forum/notifications.md), line 38.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 53.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 49.
 
 ```reaction
 when RequestBoundary.request (notification, path: "/notifications/markRead", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
+  no view "(notification) is available to (user)" with (notification, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Forum.notifications.MarkRead:read
+
+Authored path: `Forum.notifications.MarkRead`.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 38.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 49.
+
+```reaction
+when RequestBoundary.request (notification, path: "/notifications/markRead", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(notification) is available to (user)" with (notification, user)
 then
   Notifying.markRead (notification, recipient: user)
 ```
 
-### Forum.notifications.MarkRead#2
+### Forum.notifications.MarkRead:read#2
 
 Authored path: `Forum.notifications.MarkRead`.
 - Covered by [Notifications](../design/compositions/forum/notifications.md), line 38.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 53.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 49.
 
 ```reaction
-when Notifying.markRead (notification, recipient: user, result.notification: marked), asked by Forum.notifications.MarkRead
+when Notifying.markRead (notification, recipient: user, result.notification: marked), asked by Forum.notifications.MarkRead:read
 where
   earlier, RequestBoundary.request (notification, path: "/notifications/markRead", requestId, session)
 then
@@ -11641,19 +12789,21 @@ Authored path: `Forum.notifications.NotificationQueuesEmail`.
 - Covered by [Notifications](../design/compositions/forum/notifications.md), line 24.
 
 ```reaction
-when Notifying.notify (at, kind, recipient, notification)
+when Notifying.notify (at, kind, recipient, subject, notification)
 where
+  view "(user) may read notification subject (subject)" with (subject, user: recipient)
   Authenticating._getById (user: recipient) has (email)
+  key is forumMailKey (notification, post: subject, recipient)
   text is notificationMailText (notification)
   html is notificationMailHtml (notification)
 then
-  Mailing.enqueue (at, html, key: notification, recipient: email, subject: "New Commons notification", text)
+  Mailing.enqueue (at, html, key, recipient: email, subject: "New Commons notification", text)
 ```
 
 ### Forum.notifications.PurgeClearsNotifications
 
 Authored path: `Forum.notifications.PurgeClearsNotifications`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 45.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 43.
 
 ```reaction
 when Trashing.purge (item)
@@ -11665,7 +12815,7 @@ then
 
 Authored path: `Forum.notifications.ReadInbox`.
 - Covered by [Notifications](../design/compositions/forum/notifications.md), line 31.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 54.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 50.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/inbox", requestId, session)
@@ -11701,6 +12851,7 @@ where
   Conversing._getItem (node: parent) has (item: parentItem)
   Posting._getPost (post: parentItem) has (author: parentAuthor)
   Posting._getPost (post: item) and not (author: parentAuthor)
+  view "(user) may read forum post (post)" with (post: item, user: parentAuthor)
 then
   Notifying.notify (at, kind: "reply", link: item, recipient: parentAuthor, subject: item)
 ```
@@ -11719,6 +12870,7 @@ where
   Conversing._getItem (node: parent) has (item: parentItem)
   Posting._getPost (post: parentItem) and not (author: subscriber)
   view "(user) is not mentioned in (post)" with (post: item, user: subscriber)
+  view "(user) may read forum post (post)" with (post: item, user: subscriber)
 then
   Notifying.notify (at, kind: "followed_reply", link: item, recipient: subscriber, subject: item)
 ```
@@ -11729,38 +12881,82 @@ Authored path: `Forum.notifications.RootMentionsNotify`.
 - Covered by [Notifications](../design/compositions/forum/notifications.md), line 12.
 
 ```reaction
-when Conversing.start (at, item)
+when Accessing.establish (resource: conversation)
 where
+  Conversing._getThread (conversation) has (item, node)
+  no Conversing._parentOf (node)
   view "the other users mentioned in (post)" with (post: item) has (user: mentioned)
+  at is the current flow's instant
 then
   Notifying.notify (at, kind: "mention", link: item, recipient: mentioned, subject: item)
+```
+
+### Forum.notifications.RootNotifiesAddressedAccounts
+
+Authored path: `Forum.notifications.RootNotifiesAddressedAccounts`.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 61.
+
+```reaction
+when Accessing.establish (holders, resource: conversation)
+where
+  users is selectedIdentities (holders, kind: "account")
+  Authenticating._selectedUsers (users) has (user: recipient)
+  Conversing._getThread (conversation) has (item, node)
+  no Conversing._parentOf (node)
+  Posting._getPost (post: item) and not (author: recipient)
+  view "(user) may read forum post (post)" with (post: item, user: recipient)
+  view "(user) is not mentioned in (post)" with (post: item, user: recipient)
+  no view "(user) receives a staff notification for (holders)" with (holders, user: recipient)
+  at is the current flow's instant
+then
+  Notifying.notify (at, kind: "addressed", link: item, recipient, subject: item)
+```
+
+### Forum.notifications.RootNotifiesStaff
+
+Authored path: `Forum.notifications.RootNotifiesStaff`.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 63.
+
+```reaction
+when Accessing.establish (holders, resource: conversation)
+where
+  Authenticating._getUsers () has (user: recipient)
+  view "(user) receives a staff notification for (holders)" with (holders, user: recipient)
+  Conversing._getThread (conversation) has (item, node)
+  no Conversing._parentOf (node)
+  Posting._getPost (post: item) and not (author: recipient)
+  view "(user) may read forum post (post)" with (post: item, user: recipient)
+  view "(user) is not mentioned in (post)" with (post: item, user: recipient)
+  at is the current flow's instant
+then
+  Notifying.notify (at, kind: "staff_message", link: item, recipient, subject: item)
 ```
 
 ### Forum.notifications.UnreadCount
 
 Authored path: `Forum.notifications.UnreadCount`.
 - Covered by [Notifications](../design/compositions/forum/notifications.md), line 34.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 55.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 51.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/unreadCount", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  Notifying._getUnreadCount (recipient: user) has (count)
 then
-  RequestBoundary.respond (count, requestId)
+  RequestBoundary.respond (count: former "the visible unread notifications of (user)" with (user), requestId)
 ```
 
 ### Forum.pins.IsPinned:hidden
 
 Authored path: `Forum.pins.IsPinned`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 10.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 22.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 20.
 
 ```reaction
-when RequestBoundary.request (item, path: "/pins/isPinned", requestId, scope)
+when RequestBoundary.request (item, path: "/pins/isPinned", requestId, scope, session)
 where
-  view "(post) is not readable" with (post: item)
+  view "the active user of (session)" with (session) has (user: reader)
+  no view "(item) belongs to pin scope (scope) for (reader)" with (item, reader, scope)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11769,12 +12965,13 @@ then
 
 Authored path: `Forum.pins.IsPinned`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 10.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 22.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 20.
 
 ```reaction
-when RequestBoundary.request (item, path: "/pins/isPinned", requestId, scope)
+when RequestBoundary.request (item, path: "/pins/isPinned", requestId, scope, session)
 where
-  view "(post) is readable" with (post: item)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(item) belongs to pin scope (scope) for (reader)" with (item, reader, scope)
   Pinning._isPinned (item, scope) has (pinned)
 then
   RequestBoundary.respond (pinned, requestId)
@@ -11784,13 +12981,14 @@ then
 
 Authored path: `Forum.pins.PinItem`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 4.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 23.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 21.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/pin", priority, requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not moderate" with (user)
+  view "(item) belongs to pin scope (scope) for (reader)" with (item, reader: user, scope)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -11799,14 +12997,13 @@ then
 
 Authored path: `Forum.pins.PinItem`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 4.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 23.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 21.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/pin", priority, requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may moderate" with (user)
-  view "(post) is not readable" with (post: item)
+  no view "(item) belongs to pin scope (scope) for (reader)" with (item, reader: user, scope)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11815,7 +13012,7 @@ then
 
 Authored path: `Forum.pins.PinItem`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 4.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 23.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 21.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/pin", priority, requestId, scope, session)
@@ -11823,7 +13020,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) is readable" with (post: item)
+  view "(item) belongs to pin scope (scope) for (reader)" with (item, reader: user, scope)
 then
   Pinning.pin (at, item, priority, scope)
 ```
@@ -11832,7 +13029,7 @@ then
 
 Authored path: `Forum.pins.PinItem`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 4.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 23.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 21.
 
 ```reaction
 when Pinning.pin (at, item, priority, scope, pin), asked by Forum.pins.PinItem:success
@@ -11842,22 +13039,40 @@ then
   RequestBoundary.respond (pin, requestId)
 ```
 
-### Forum.pins.PinsForScope
+### Forum.pins.PinsForScope:unavailable
 
 Authored path: `Forum.pins.PinsForScope`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 8.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 24.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 22.
 
 ```reaction
-when RequestBoundary.request (path: "/pins/forScope", requestId, scope)
+when RequestBoundary.request (path: "/pins/forScope", requestId, scope, session)
+where
+  view "the active user of (session)" with (session) has (user: reader)
+  no view "(user) may read audience conversation (conversation)" with (conversation: scope, user: reader)
 then
-  RequestBoundary.respond (pinned: former "the pins of (scope)" with (scope), requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Forum.pins.PinsForScope:visible
+
+Authored path: `Forum.pins.PinsForScope`.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 8.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 22.
+
+```reaction
+when RequestBoundary.request (path: "/pins/forScope", requestId, scope, session)
+where
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(user) may read audience conversation (conversation)" with (conversation: scope, user: reader)
+then
+  RequestBoundary.respond (pinned: former "the pins of (scope) for (reader)" with (reader, scope), requestId)
 ```
 
 ### Forum.pins.PurgeClearsPins
 
 Authored path: `Forum.pins.PurgeClearsPins`.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 16.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 14.
 
 ```reaction
 when Trashing.purge (item)
@@ -11869,13 +13084,14 @@ then
 
 Authored path: `Forum.pins.SetPinPriority`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 5.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 25.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 23.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/setPriority", priority, requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not moderate" with (user)
+  view "(item) belongs to pin scope (scope) for (reader)" with (item, reader: user, scope)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -11884,14 +13100,13 @@ then
 
 Authored path: `Forum.pins.SetPinPriority`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 5.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 25.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 23.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/setPriority", priority, requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may moderate" with (user)
-  view "(post) is not readable" with (post: item)
+  no view "(item) belongs to pin scope (scope) for (reader)" with (item, reader: user, scope)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11900,14 +13115,14 @@ then
 
 Authored path: `Forum.pins.SetPinPriority`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 5.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 25.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 23.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/setPriority", priority, requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) is readable" with (post: item)
+  view "(item) belongs to pin scope (scope) for (reader)" with (item, reader: user, scope)
 then
   Pinning.setPriority (item, priority, scope)
 ```
@@ -11916,7 +13131,7 @@ then
 
 Authored path: `Forum.pins.SetPinPriority`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 5.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 25.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 23.
 
 ```reaction
 when Pinning.setPriority (item, priority, scope, pin), asked by Forum.pins.SetPinPriority:success
@@ -11930,13 +13145,14 @@ then
 
 Authored path: `Forum.pins.UnpinItem`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 4.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 26.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 24.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/unpin", requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not moderate" with (user)
+  view "(item) belongs to pin scope (scope) for (reader)" with (item, reader: user, scope)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -11945,14 +13161,13 @@ then
 
 Authored path: `Forum.pins.UnpinItem`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 4.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 26.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 24.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/unpin", requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may moderate" with (user)
-  view "(post) is not readable" with (post: item)
+  no view "(item) belongs to pin scope (scope) for (reader)" with (item, reader: user, scope)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -11961,14 +13176,14 @@ then
 
 Authored path: `Forum.pins.UnpinItem`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 4.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 26.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 24.
 
 ```reaction
 when RequestBoundary.request (item, path: "/pins/unpin", requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) is readable" with (post: item)
+  view "(item) belongs to pin scope (scope) for (reader)" with (item, reader: user, scope)
 then
   Pinning.unpin (item, scope)
 ```
@@ -11977,7 +13192,7 @@ then
 
 Authored path: `Forum.pins.UnpinItem`.
 - Covered by [Pins](../design/compositions/forum/pins.md), line 4.
-- Covered by [Pins](../design/compositions/forum/pins.md), line 26.
+- Covered by [Pins](../design/compositions/forum/pins.md), line 24.
 
 ```reaction
 when Pinning.unpin (item, scope), asked by Forum.pins.UnpinItem:success
@@ -11985,6 +13200,58 @@ where
   earlier, RequestBoundary.request (item, path: "/pins/unpin", requestId, scope, session)
 then
   RequestBoundary.respond (item, requestId)
+```
+
+### Forum.postControls.PostControls:hidden
+
+Authored path: `Forum.postControls.PostControls`.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 3.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 29.
+
+```reaction
+when RequestBoundary.request (conversation, path: "/threads/post-controls", posts, requestId, session)
+where
+  view "the active user of (session)" with (session)
+  valid is validPostControlSelection (posts)
+  valid is among [true]
+  view "the active user of (session)" with (session) has (user: reader)
+  no view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Forum.postControls.PostControls:invalid
+
+Authored path: `Forum.postControls.PostControls`.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 3.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 29.
+
+```reaction
+when RequestBoundary.request (conversation, path: "/threads/post-controls", posts, requestId, session)
+where
+  view "the active user of (session)" with (session)
+  valid is validPostControlSelection (posts)
+  valid is among [false]
+then
+  RequestBoundary.respond (error: "INVALID_REQUEST", requestId)
+```
+
+### Forum.postControls.PostControls:visible
+
+Authored path: `Forum.postControls.PostControls`.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 3.
+- Covered by [Selected post controls](../design/compositions/forum/post-controls.md), line 29.
+
+```reaction
+when RequestBoundary.request (conversation, path: "/threads/post-controls", posts, requestId, session)
+where
+  view "the active user of (session)" with (session)
+  valid is validPostControlSelection (posts)
+  valid is among [true]
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
+then
+  RequestBoundary.respond (posts: former "the controls selected by (posts) in (conversation) for (reader)" with (conversation, posts, reader), requestId)
 ```
 
 ### Forum.posts.CreatedPostRefreshesDerivedContent:links
@@ -12019,8 +13286,7 @@ Authored path: `Forum.posts.DeletePost`.
 when RequestBoundary.request (path: "/posts/delete", post, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  Posting._getPost (post)
-  Trashing._isTrashed (item: post) has (trashed: false)
+  view "(user) may read forum post (post)" with (post, user)
   Posting._getPost (post) has (author: user)
   Conversing._getNodeByItem (item: post) has (node)
   Conversing._hasChildren (node) has (present: false)
@@ -12052,8 +13318,7 @@ Authored path: `Forum.posts.DeletePost`.
 when RequestBoundary.request (path: "/posts/delete", post, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  Posting._getPost (post)
-  Trashing._isTrashed (item: post) has (trashed: false)
+  view "(user) may read forum post (post)" with (post, user)
   Posting._getPost (post) and not (author: user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
@@ -12069,8 +13334,7 @@ Authored path: `Forum.posts.DeletePost`.
 when RequestBoundary.request (path: "/posts/delete", post, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  Posting._getPost (post)
-  Trashing._isTrashed (item: post) has (trashed: false)
+  view "(user) may read forum post (post)" with (post, user)
   Posting._getPost (post) has (author: user)
   Conversing._getNodeByItem (item: post) has (node)
   Conversing._hasChildren (node) has (present: true)
@@ -12078,7 +13342,7 @@ then
   RequestBoundary.respond (error: "POST_HAS_REPLIES", requestId)
 ```
 
-### Forum.posts.DeletePost:missing
+### Forum.posts.DeletePost:hidden
 
 Authored path: `Forum.posts.DeletePost`.
 - Covered by [Posts](../design/compositions/forum/posts.md), line 25.
@@ -12087,24 +13351,8 @@ Authored path: `Forum.posts.DeletePost`.
 ```reaction
 when RequestBoundary.request (path: "/posts/delete", post, requestId, session)
 where
-  view "the active user of (session)" with (session)
-  no Posting._getPost (post)
-then
-  RequestBoundary.respond (error: "POST_NOT_FOUND", requestId)
-```
-
-### Forum.posts.DeletePost:trashed
-
-Authored path: `Forum.posts.DeletePost`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 25.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 37.
-
-```reaction
-when RequestBoundary.request (path: "/posts/delete", post, requestId, session)
-where
-  view "the active user of (session)" with (session)
-  Posting._getPost (post)
-  Trashing._isTrashed (item: post) has (trashed: true)
+  view "the active user of (session)" with (session) has (user)
+  no view "(user) may read forum post (post)" with (post, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12211,22 +13459,7 @@ then
   Tracking.unregister (item: post)
 ```
 
-### Forum.posts.EditPost:missing-post
-
-Authored path: `Forum.posts.EditPost`.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 10.
-- Covered by [Posts](../design/compositions/forum/posts.md), line 38.
-
-```reaction
-when RequestBoundary.request (content, path: "/posts/edit", post, requestId, session)
-where
-  view "the active user of (session)" with (session)
-  no Posting._getPost (post)
-then
-  RequestBoundary.respond (error: "POST_NOT_FOUND", requestId)
-```
-
-### Forum.posts.EditPost:post
+### Forum.posts.EditPost:edit
 
 Authored path: `Forum.posts.EditPost`.
 - Covered by [Posts](../design/compositions/forum/posts.md), line 10.
@@ -12237,26 +13470,27 @@ when RequestBoundary.request (content, path: "/posts/edit", post, requestId, ses
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
+  view "(user) may read forum post (post)" with (post, user)
   view "(user) may edit (post)" with (post, user)
 then
   Posting.edit (at, content, post)
 ```
 
-### Forum.posts.EditPost:post#2
+### Forum.posts.EditPost:edit#2
 
 Authored path: `Forum.posts.EditPost`.
 - Covered by [Posts](../design/compositions/forum/posts.md), line 10.
 - Covered by [Posts](../design/compositions/forum/posts.md), line 38.
 
 ```reaction
-when Posting.edit (at, content, post), asked by Forum.posts.EditPost:post
+when Posting.edit (at, content, post), asked by Forum.posts.EditPost:edit
 where
   earlier, RequestBoundary.request (content, path: "/posts/edit", post, requestId, session)
 then
   RequestBoundary.respond (post, requestId)
 ```
 
-### Forum.posts.EditPost:post-forbidden
+### Forum.posts.EditPost:forbidden
 
 Authored path: `Forum.posts.EditPost`.
 - Covered by [Posts](../design/compositions/forum/posts.md), line 10.
@@ -12266,12 +13500,13 @@ Authored path: `Forum.posts.EditPost`.
 when RequestBoundary.request (content, path: "/posts/edit", post, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
+  view "(user) may read forum post (post)" with (post, user)
   view "(user) may not edit (post)" with (post, user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
-### Forum.posts.EditPost:trashed-post
+### Forum.posts.EditPost:hidden
 
 Authored path: `Forum.posts.EditPost`.
 - Covered by [Posts](../design/compositions/forum/posts.md), line 10.
@@ -12280,8 +13515,8 @@ Authored path: `Forum.posts.EditPost`.
 ```reaction
 when RequestBoundary.request (content, path: "/posts/edit", post, requestId, session)
 where
-  view "the active user of (session)" with (session)
-  Trashing._isTrashed (item: post) has (trashed: true)
+  view "the active user of (session)" with (session) has (user)
+  no view "(user) may read forum post (post)" with (post, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12315,9 +13550,10 @@ Authored path: `Forum.posts.GetPost`.
 - Covered by [Posts](../design/compositions/forum/posts.md), line 39.
 
 ```reaction
-when RequestBoundary.request (path: "/posts/get", post, requestId)
+when RequestBoundary.request (path: "/posts/get", post, requestId, session)
 where
-  view "(post) is not readable" with (post)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is not readable" with (post, reader)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12329,11 +13565,12 @@ Authored path: `Forum.posts.GetPost`.
 - Covered by [Posts](../design/compositions/forum/posts.md), line 39.
 
 ```reaction
-when RequestBoundary.request (path: "/posts/get", post, requestId)
+when RequestBoundary.request (path: "/posts/get", post, requestId, session)
 where
-  view "(post) is readable" with (post)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is readable" with (post, reader)
 then
-  RequestBoundary.respond (post: former "the post (post)" with (post), requestId)
+  RequestBoundary.respond (post: former "the post (post)" with (post, reader), requestId)
 ```
 
 ### Forum.posts.PostsByAuthor
@@ -12343,16 +13580,18 @@ Authored path: `Forum.posts.PostsByAuthor`.
 - Covered by [Posts](../design/compositions/forum/posts.md), line 40.
 
 ```reaction
-when RequestBoundary.request (author, path: "/posts/byAuthor", requestId)
+when RequestBoundary.request (author, path: "/posts/byAuthor", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: reader)
 then
-  RequestBoundary.respond (posts: former "the public posts of (author)" with (author), requestId)
+  RequestBoundary.respond (posts: former "the public posts of (author)" with (author, reader), requestId)
 ```
 
 ### Forum.profiles.GetProfile:hidden
 
 Authored path: `Forum.profiles.GetProfile`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 42.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 5.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 45.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
@@ -12367,8 +13606,8 @@ then
 ### Forum.profiles.GetProfile:member
 
 Authored path: `Forum.profiles.GetProfile`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 42.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 5.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 45.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
@@ -12384,8 +13623,8 @@ then
 ### Forum.profiles.GetProfile:missing
 
 Authored path: `Forum.profiles.GetProfile`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 42.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 5.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 45.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
@@ -12399,8 +13638,8 @@ then
 ### Forum.profiles.GetProfile:staff
 
 Authored path: `Forum.profiles.GetProfile`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 42.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 5.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 45.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
@@ -12415,8 +13654,8 @@ then
 ### Forum.profiles.GetProfile:success
 
 Authored path: `Forum.profiles.GetProfile`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 42.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 5.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 45.
 
 ```reaction
 when RequestBoundary.request (path: "/profiles/get", requestId, session, user)
@@ -12427,11 +13666,43 @@ then
   RequestBoundary.respond (profile: former "the private profile of (user)" with (user), requestId)
 ```
 
+### Forum.profiles.GetProfileDisplays:invalid
+
+Authored path: `Forum.profiles.GetProfileDisplays`.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 44.
+
+```reaction
+when RequestBoundary.request (path: "/profiles/displays", requestId, session, users)
+where
+  view "the active user of (session)" with (session)
+  valid is validProfileSelection (users)
+  valid is among [false]
+then
+  RequestBoundary.respond (error: "INVALID_REQUEST", requestId)
+```
+
+### Forum.profiles.GetProfileDisplays:valid
+
+Authored path: `Forum.profiles.GetProfileDisplays`.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 44.
+
+```reaction
+when RequestBoundary.request (path: "/profiles/displays", requestId, session, users)
+where
+  view "the active user of (session)" with (session)
+  valid is validProfileSelection (users)
+  valid is among [true]
+then
+  RequestBoundary.respond (profiles: former "the display identities of (users) for (session)" with (session, users), requestId)
+```
+
 ### Forum.profiles.ResolvePublicUser
 
 Authored path: `Forum.profiles.ResolvePublicUser`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 32.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 43.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 34.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 46.
 
 ```reaction
 when RequestBoundary.request (path: "/users/resolve", ref, requestId)
@@ -12444,8 +13715,8 @@ then
 ### Forum.profiles.SearchUsers:hidden
 
 Authored path: `Forum.profiles.SearchUsers`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 30.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 44.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 32.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 47.
 
 ```reaction
 when RequestBoundary.request (path: "/users/search", query, requestId, session)
@@ -12459,8 +13730,8 @@ then
 ### Forum.profiles.SearchUsers:success
 
 Authored path: `Forum.profiles.SearchUsers`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 30.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 44.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 32.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 47.
 
 ```reaction
 when RequestBoundary.request (path: "/users/search", query, requestId, session)
@@ -12474,8 +13745,8 @@ then
 ### Forum.profiles.SetAvatar
 
 Authored path: `Forum.profiles.SetAvatar`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 26.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 45.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 28.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 48.
 
 ```reaction
 when RequestBoundary.request (avatar, path: "/profiles/setAvatar", requestId, session)
@@ -12488,8 +13759,8 @@ then
 ### Forum.profiles.SetAvatar#2
 
 Authored path: `Forum.profiles.SetAvatar`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 26.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 45.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 28.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 48.
 
 ```reaction
 when Profiling.setAvatar (avatar, user), asked by Forum.profiles.SetAvatar
@@ -12502,8 +13773,8 @@ then
 ### Forum.profiles.SetBio
 
 Authored path: `Forum.profiles.SetBio`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 25.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 46.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 27.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 49.
 
 ```reaction
 when RequestBoundary.request (bio, path: "/profiles/setBio", requestId, session)
@@ -12516,8 +13787,8 @@ then
 ### Forum.profiles.SetBio#2
 
 Authored path: `Forum.profiles.SetBio`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 25.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 46.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 27.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 49.
 
 ```reaction
 when Profiling.setBio (bio, user), asked by Forum.profiles.SetBio
@@ -12530,8 +13801,8 @@ then
 ### Forum.profiles.SetDisplayName
 
 Authored path: `Forum.profiles.SetDisplayName`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 25.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 47.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 27.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 50.
 
 ```reaction
 when RequestBoundary.request (displayName, path: "/profiles/setDisplayName", requestId, session)
@@ -12544,8 +13815,8 @@ then
 ### Forum.profiles.SetDisplayName#2
 
 Authored path: `Forum.profiles.SetDisplayName`.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 25.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 47.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 27.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 50.
 
 ```reaction
 when Profiling.setDisplayName (displayName, user), asked by Forum.profiles.SetDisplayName
@@ -12676,8 +13947,8 @@ Authored path: `Forum.reactions.AddReaction`.
 ```reaction
 when RequestBoundary.request (kind, path: "/reactions/add", requestId, session, target)
 where
-  view "the active user of (session)" with (session)
-  view "(post) is not readable" with (post: target)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is not readable" with (post: target, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12693,7 +13964,7 @@ when RequestBoundary.request (kind, path: "/reactions/add", requestId, session, 
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(post) is readable" with (post: target)
+  view "(post) is readable" with (post: target, reader: user)
 then
   Reacting.react (at, kind, reactor: user, target)
 ```
@@ -12730,9 +14001,10 @@ Authored path: `Forum.reactions.ReactionsForTarget`.
 - Covered by [Post reactions](../design/compositions/forum/reactions.md), line 21.
 
 ```reaction
-when RequestBoundary.request (path: "/reactions/forTarget", requestId, target)
+when RequestBoundary.request (path: "/reactions/forTarget", requestId, session, target)
 where
-  view "(post) is not readable" with (post: target)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is not readable" with (post: target, reader)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12744,11 +14016,12 @@ Authored path: `Forum.reactions.ReactionsForTarget`.
 - Covered by [Post reactions](../design/compositions/forum/reactions.md), line 21.
 
 ```reaction
-when RequestBoundary.request (path: "/reactions/forTarget", requestId, target)
+when RequestBoundary.request (path: "/reactions/forTarget", requestId, session, target)
 where
-  view "(post) is readable" with (post: target)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is readable" with (post: target, reader)
 then
-  RequestBoundary.respond (reactions: former "the reactions on (target)" with (target), requestId)
+  RequestBoundary.respond (reactions: former "the reactions on (target) for (reader)" with (reader, target), requestId)
 ```
 
 ### Forum.reactions.RemoveReaction:hidden
@@ -12760,8 +14033,8 @@ Authored path: `Forum.reactions.RemoveReaction`.
 ```reaction
 when RequestBoundary.request (kind, path: "/reactions/remove", requestId, session, target)
 where
-  view "the active user of (session)" with (session)
-  view "(post) is not readable" with (post: target)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is not readable" with (post: target, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12776,7 +14049,7 @@ Authored path: `Forum.reactions.RemoveReaction`.
 when RequestBoundary.request (kind, path: "/reactions/remove", requestId, session, target)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(post) is readable" with (post: target)
+  view "(post) is readable" with (post: target, reader: user)
 then
   Reacting.unreact (kind, reactor: user, target)
 ```
@@ -12799,7 +14072,7 @@ then
 
 Authored path: `Forum.resolutions.AcceptAnswer`.
 - Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 4.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 24.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 21.
 
 ```reaction
 when RequestBoundary.request (answer, path: "/resolutions/accept", question, requestId, session)
@@ -12807,8 +14080,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) authored (post)" with (post: question, user)
-  view "(post) is readable" with (post: question)
-  view "(post) is readable" with (post: answer)
+  view "(answer) is a visible answer to (question) for (reader)" with (answer, question, reader: user)
 then
   Resolving.accept (answer, at, by: user, question)
 ```
@@ -12817,7 +14089,7 @@ then
 
 Authored path: `Forum.resolutions.AcceptAnswer`.
 - Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 4.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 24.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 21.
 
 ```reaction
 when Resolving.accept (answer, at, by: user, question, resolution), asked by Forum.resolutions.AcceptAnswer:accepted
@@ -12831,14 +14103,14 @@ then
 
 Authored path: `Forum.resolutions.AcceptAnswer`.
 - Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 4.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 24.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 21.
 
 ```reaction
 when RequestBoundary.request (answer, path: "/resolutions/accept", question, requestId, session)
 where
-  view "the active user of (session)" with (session)
-  view "(post) is readable" with (post: question)
-  view "(post) is not readable" with (post: answer)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is readable" with (post: question, reader: user)
+  no view "(answer) is a visible answer to (question) for (reader)" with (answer, question, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12847,13 +14119,13 @@ then
 
 Authored path: `Forum.resolutions.AcceptAnswer`.
 - Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 4.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 24.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 21.
 
 ```reaction
 when RequestBoundary.request (answer, path: "/resolutions/accept", question, requestId, session)
 where
-  view "the active user of (session)" with (session)
-  view "(post) is not readable" with (post: question)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is not readable" with (post: question, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12862,15 +14134,14 @@ then
 
 Authored path: `Forum.resolutions.AcceptAnswer`.
 - Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 4.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 24.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 21.
 
 ```reaction
 when RequestBoundary.request (answer, path: "/resolutions/accept", question, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) did not author (post)" with (post: question, user)
-  view "(post) is readable" with (post: question)
-  view "(post) is readable" with (post: answer)
+  view "(answer) is a visible answer to (question) for (reader)" with (answer, question, reader: user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -12878,14 +14149,14 @@ then
 ### Forum.resolutions.ClearResolution:hidden
 
 Authored path: `Forum.resolutions.ClearResolution`.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 7.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 25.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 6.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 22.
 
 ```reaction
 when RequestBoundary.request (path: "/resolutions/clear", question, requestId, session)
 where
-  view "the active user of (session)" with (session)
-  view "(post) is not readable" with (post: question)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is not readable" with (post: question, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12893,15 +14164,15 @@ then
 ### Forum.resolutions.ClearResolution:not-author
 
 Authored path: `Forum.resolutions.ClearResolution`.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 7.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 25.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 6.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 22.
 
 ```reaction
 when RequestBoundary.request (path: "/resolutions/clear", question, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) did not author (post)" with (post: question, user)
-  view "(post) is readable" with (post: question)
+  view "(post) is readable" with (post: question, reader: user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -12909,15 +14180,15 @@ then
 ### Forum.resolutions.ClearResolution:success
 
 Authored path: `Forum.resolutions.ClearResolution`.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 7.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 25.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 6.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 22.
 
 ```reaction
 when RequestBoundary.request (path: "/resolutions/clear", question, requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) authored (post)" with (post: question, user)
-  view "(post) is readable" with (post: question)
+  view "(post) is readable" with (post: question, reader: user)
 then
   Resolving.clear (question)
 ```
@@ -12925,8 +14196,8 @@ then
 ### Forum.resolutions.ClearResolution:success#2
 
 Authored path: `Forum.resolutions.ClearResolution`.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 7.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 25.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 6.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 22.
 
 ```reaction
 when Resolving.clear (question, result.question: cleared), asked by Forum.resolutions.ClearResolution:success
@@ -12939,13 +14210,14 @@ then
 ### Forum.resolutions.GetResolution:hidden
 
 Authored path: `Forum.resolutions.GetResolution`.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 11.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 26.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 10.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 23.
 
 ```reaction
-when RequestBoundary.request (path: "/resolutions/get", question, requestId)
+when RequestBoundary.request (path: "/resolutions/get", question, requestId, session)
 where
-  view "(post) is not readable" with (post: question)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is not readable" with (post: question, reader)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12953,50 +14225,69 @@ then
 ### Forum.resolutions.GetResolution:success
 
 Authored path: `Forum.resolutions.GetResolution`.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 11.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 26.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 10.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 23.
 
 ```reaction
-when RequestBoundary.request (path: "/resolutions/get", question, requestId)
+when RequestBoundary.request (path: "/resolutions/get", question, requestId, session)
 where
-  view "(post) is readable" with (post: question)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is readable" with (post: question, reader)
 then
-  RequestBoundary.respond (requestId, resolution: former "the resolution of (question)" with (question))
+  RequestBoundary.respond (requestId, resolution: former "the resolution of (question) for (reader)" with (question, reader))
 ```
 
 ### Forum.resolutions.IsResolved:hidden
 
 Authored path: `Forum.resolutions.IsResolved`.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 14.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 27.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 13.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 24.
 
 ```reaction
-when RequestBoundary.request (path: "/resolutions/isResolved", question, requestId)
+when RequestBoundary.request (path: "/resolutions/isResolved", question, requestId, session)
 where
-  view "(post) is not readable" with (post: question)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is not readable" with (post: question, reader)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### Forum.resolutions.IsResolved:success
+### Forum.resolutions.IsResolved:resolved
 
 Authored path: `Forum.resolutions.IsResolved`.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 14.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 27.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 13.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 24.
 
 ```reaction
-when RequestBoundary.request (path: "/resolutions/isResolved", question, requestId)
+when RequestBoundary.request (path: "/resolutions/isResolved", question, requestId, session)
 where
-  view "(post) is readable" with (post: question)
-  Resolving._isResolved (question) has (resolved)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is readable" with (post: question, reader)
+  view "the visible resolution of (question) for (reader)" with (question, reader)
 then
-  RequestBoundary.respond (requestId, resolved)
+  RequestBoundary.respond (requestId, resolved: true)
+```
+
+### Forum.resolutions.IsResolved:unresolved
+
+Authored path: `Forum.resolutions.IsResolved`.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 13.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 24.
+
+```reaction
+when RequestBoundary.request (path: "/resolutions/isResolved", question, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is readable" with (post: question, reader)
+  no view "the visible resolution of (question) for (reader)" with (question, reader)
+then
+  RequestBoundary.respond (requestId, resolved: false)
 ```
 
 ### Forum.resolutions.PurgedPostClearsResolutions:answer
 
 Authored path: `Forum.resolutions.PurgedPostClearsResolutions`.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 19.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 16.
 
 ```reaction
 when Trashing.purge (item)
@@ -13009,7 +14300,7 @@ then
 ### Forum.resolutions.PurgedPostClearsResolutions:question
 
 Authored path: `Forum.resolutions.PurgedPostClearsResolutions`.
-- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 19.
+- Covered by [Accepted answers](../design/compositions/forum/resolutions.md), line 16.
 
 ```reaction
 when Trashing.purge (item)
@@ -13026,9 +14317,10 @@ Authored path: `Forum.revisions.GetRevision`.
 - Covered by [Revision history](../design/compositions/forum/revisions.md), line 34.
 
 ```reaction
-when RequestBoundary.request (item, number, path: "/revisions/get", requestId)
+when RequestBoundary.request (item, number, path: "/revisions/get", requestId, session)
 where
-  view "(post) is not readable" with (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is not readable" with (post: item, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -13040,11 +14332,12 @@ Authored path: `Forum.revisions.GetRevision`.
 - Covered by [Revision history](../design/compositions/forum/revisions.md), line 34.
 
 ```reaction
-when RequestBoundary.request (item, number, path: "/revisions/get", requestId)
+when RequestBoundary.request (item, number, path: "/revisions/get", requestId, session)
 where
-  view "(post) is readable" with (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is readable" with (post: item, reader: user)
 then
-  RequestBoundary.respond (requestId, revision: former "the revision numbered (number) of (item)" with (item, number))
+  RequestBoundary.respond (requestId, revision: former "the revision numbered (number) of (item)" with (item, number, reader: user))
 ```
 
 ### Forum.revisions.LatestRevision:hidden
@@ -13054,9 +14347,10 @@ Authored path: `Forum.revisions.LatestRevision`.
 - Covered by [Revision history](../design/compositions/forum/revisions.md), line 35.
 
 ```reaction
-when RequestBoundary.request (item, path: "/revisions/latest", requestId)
+when RequestBoundary.request (item, path: "/revisions/latest", requestId, session)
 where
-  view "(post) is not readable" with (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is not readable" with (post: item, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -13068,11 +14362,12 @@ Authored path: `Forum.revisions.LatestRevision`.
 - Covered by [Revision history](../design/compositions/forum/revisions.md), line 35.
 
 ```reaction
-when RequestBoundary.request (item, path: "/revisions/latest", requestId)
+when RequestBoundary.request (item, path: "/revisions/latest", requestId, session)
 where
-  view "(post) is readable" with (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is readable" with (post: item, reader: user)
 then
-  RequestBoundary.respond (requestId, revision: former "the latest revision of (item)" with (item))
+  RequestBoundary.respond (requestId, revision: former "the latest revision of (item)" with (item, reader: user))
 ```
 
 ### Forum.revisions.ListRevisions:hidden
@@ -13082,9 +14377,10 @@ Authored path: `Forum.revisions.ListRevisions`.
 - Covered by [Revision history](../design/compositions/forum/revisions.md), line 36.
 
 ```reaction
-when RequestBoundary.request (item, path: "/revisions/list", requestId)
+when RequestBoundary.request (item, path: "/revisions/list", requestId, session)
 where
-  view "(post) is not readable" with (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is not readable" with (post: item, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -13096,11 +14392,12 @@ Authored path: `Forum.revisions.ListRevisions`.
 - Covered by [Revision history](../design/compositions/forum/revisions.md), line 36.
 
 ```reaction
-when RequestBoundary.request (item, path: "/revisions/list", requestId)
+when RequestBoundary.request (item, path: "/revisions/list", requestId, session)
 where
-  view "(post) is readable" with (post: item)
+  view "the active user of (session)" with (session) has (user)
+  view "(post) is readable" with (post: item, reader: user)
 then
-  RequestBoundary.respond (requestId, revisions: former "the revision history of (item)" with (item))
+  RequestBoundary.respond (requestId, revisions: former "the revision history of (item)" with (item, reader: user))
 ```
 
 ### Forum.revisions.ModeratorGetRevision:hidden
@@ -13129,7 +14426,7 @@ when RequestBoundary.request (item, number, path: "/moderation/revisions/get", r
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) belongs to a forum conversation" with (post: item)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
   view "(item) is intact" with (item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -13146,7 +14443,7 @@ when RequestBoundary.request (item, number, path: "/moderation/revisions/get", r
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  no view "(post) belongs to a forum conversation" with (post: item)
+  no view "(user) may inspect stored forum post (post)" with (post: item, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -13162,10 +14459,10 @@ when RequestBoundary.request (item, number, path: "/moderation/revisions/get", r
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) belongs to a forum conversation" with (post: item)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
   Trashing._isTrashed (item) has (trashed: true)
 then
-  RequestBoundary.respond (requestId, revision: former "the revision numbered (number) of (item)" with (item, number))
+  RequestBoundary.respond (requestId, revision: former "the revision numbered (number) of (item)" with (item, number, reader: user))
 ```
 
 ### Forum.revisions.ModeratorLatestRevision:hidden
@@ -13194,7 +14491,7 @@ when RequestBoundary.request (item, path: "/moderation/revisions/latest", reques
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) belongs to a forum conversation" with (post: item)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
   view "(item) is intact" with (item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -13211,7 +14508,7 @@ when RequestBoundary.request (item, path: "/moderation/revisions/latest", reques
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  no view "(post) belongs to a forum conversation" with (post: item)
+  no view "(user) may inspect stored forum post (post)" with (post: item, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -13227,10 +14524,10 @@ when RequestBoundary.request (item, path: "/moderation/revisions/latest", reques
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) belongs to a forum conversation" with (post: item)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
   Trashing._isTrashed (item) has (trashed: true)
 then
-  RequestBoundary.respond (requestId, revision: former "the latest revision of (item)" with (item))
+  RequestBoundary.respond (requestId, revision: former "the latest revision of (item)" with (item, reader: user))
 ```
 
 ### Forum.revisions.ModeratorListRevisions:hidden
@@ -13259,7 +14556,7 @@ when RequestBoundary.request (item, path: "/moderation/revisions/list", requestI
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) belongs to a forum conversation" with (post: item)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
   view "(item) is intact" with (item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
@@ -13276,7 +14573,7 @@ when RequestBoundary.request (item, path: "/moderation/revisions/list", requestI
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  no view "(post) belongs to a forum conversation" with (post: item)
+  no view "(user) may inspect stored forum post (post)" with (post: item, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -13292,10 +14589,10 @@ when RequestBoundary.request (item, path: "/moderation/revisions/list", requestI
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(post) belongs to a forum conversation" with (post: item)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
   Trashing._isTrashed (item) has (trashed: true)
 then
-  RequestBoundary.respond (requestId, revisions: former "the revision history of (item)" with (item))
+  RequestBoundary.respond (requestId, revisions: former "the revision history of (item)" with (item, reader: user))
 ```
 
 ### Forum.revisions.PurgeClearsRevisions
@@ -13335,13 +14632,13 @@ then
 
 Authored path: `Forum.subscriptions.IsSubscribed`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 10.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 28.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 22.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/isSubscribed", requestId, session, target)
 where
-  view "the active user of (session)" with (session)
-  no view "(conversation) is readable" with (conversation: target)
+  view "the active user of (session)" with (session) has (user)
+  no view "(conversation) is readable by (reader)" with (conversation: target, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -13350,13 +14647,13 @@ then
 
 Authored path: `Forum.subscriptions.IsSubscribed`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 10.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 28.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 22.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/isSubscribed", requestId, session, target)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(conversation) is readable" with (conversation: target)
+  view "(conversation) is readable by (reader)" with (conversation: target, reader: user)
   Subscribing._isSubscribed (target, user) has (subscribed)
 then
   RequestBoundary.respond (requestId, subscribed)
@@ -13366,7 +14663,7 @@ then
 
 Authored path: `Forum.subscriptions.MySubscriptions`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 6.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 29.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 23.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/mine", requestId, session)
@@ -13379,29 +14676,46 @@ then
 ### Forum.subscriptions.PurgeClearsConversationSubscriptions
 
 Authored path: `Forum.subscriptions.PurgeClearsConversationSubscriptions`.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 21.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 29.
 
 ```reaction
 when Trashing.purge (item)
 where
   Conversing._getNodeByItem (item) has (node)
   no Conversing._parentOf (node)
+  Conversing._hasChildren (node) has (present: false)
   Conversing._getConversation (node) has (conversation)
 then
   Subscribing.clearTarget (target: conversation)
+```
+
+### Forum.subscriptions.StartingFollowsConversation
+
+Authored path: `Forum.subscriptions.StartingFollowsConversation`.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 31.
+
+```reaction
+when Accessing.establish (resource)
+where
+  Conversing._getConversations () has (conversation: resource, item)
+  Posting._getPost (post: item) has (author: user, createdAt: at)
+  view "(user) may read audience conversation (conversation)" with (conversation: resource, user)
+  Subscribing._isSubscribed (target: resource, user) has (subscribed: false)
+then
+  Subscribing.subscribe (at, target: resource, user)
 ```
 
 ### Forum.subscriptions.Subscribe:hidden
 
 Authored path: `Forum.subscriptions.Subscribe`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 4.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 30.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 24.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/subscribe", requestId, session, target)
 where
-  view "the active user of (session)" with (session)
-  no view "(conversation) is readable" with (conversation: target)
+  view "the active user of (session)" with (session) has (user)
+  no view "(conversation) is readable by (reader)" with (conversation: target, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -13410,14 +14724,14 @@ then
 
 Authored path: `Forum.subscriptions.Subscribe`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 4.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 30.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 24.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/subscribe", requestId, session, target)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(conversation) is readable" with (conversation: target)
+  view "(conversation) is readable by (reader)" with (conversation: target, reader: user)
 then
   Subscribing.subscribe (at, target, user)
 ```
@@ -13426,7 +14740,7 @@ then
 
 Authored path: `Forum.subscriptions.Subscribe`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 4.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 30.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 24.
 
 ```reaction
 when Subscribing.subscribe (at, target, user, subscription), asked by Forum.subscriptions.Subscribe:success
@@ -13440,12 +14754,13 @@ then
 
 Authored path: `Forum.subscriptions.Subscribers`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 13.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 31.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 25.
 
 ```reaction
-when RequestBoundary.request (path: "/subscriptions/subscribers", requestId, target)
+when RequestBoundary.request (path: "/subscriptions/subscribers", requestId, session, target)
 where
-  no view "(conversation) is readable" with (conversation: target)
+  view "the active user of (session)" with (session) has (user: reader)
+  no view "(conversation) is readable by (reader)" with (conversation: target, reader)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -13454,27 +14769,28 @@ then
 
 Authored path: `Forum.subscriptions.Subscribers`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 13.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 31.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 25.
 
 ```reaction
-when RequestBoundary.request (path: "/subscriptions/subscribers", requestId, target)
+when RequestBoundary.request (path: "/subscriptions/subscribers", requestId, session, target)
 where
-  view "(conversation) is readable" with (conversation: target)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(conversation) is readable by (reader)" with (conversation: target, reader)
 then
-  RequestBoundary.respond (requestId, subscribers: former "the subscribers of (target)" with (target))
+  RequestBoundary.respond (requestId, subscribers: former "the subscribers of (target) for (reader)" with (reader, target))
 ```
 
 ### Forum.subscriptions.Unsubscribe:hidden
 
 Authored path: `Forum.subscriptions.Unsubscribe`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 4.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 32.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 26.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/unsubscribe", requestId, session, target)
 where
-  view "the active user of (session)" with (session)
-  no view "(conversation) is readable" with (conversation: target)
+  view "the active user of (session)" with (session) has (user)
+  no view "(conversation) is readable by (reader)" with (conversation: target, reader: user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -13483,13 +14799,13 @@ then
 
 Authored path: `Forum.subscriptions.Unsubscribe`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 4.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 32.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 26.
 
 ```reaction
 when RequestBoundary.request (path: "/subscriptions/unsubscribe", requestId, session, target)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(conversation) is readable" with (conversation: target)
+  view "(conversation) is readable by (reader)" with (conversation: target, reader: user)
 then
   Subscribing.unsubscribe (target, user)
 ```
@@ -13498,7 +14814,7 @@ then
 
 Authored path: `Forum.subscriptions.Unsubscribe`.
 - Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 4.
-- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 32.
+- Covered by [Thread subscriptions](../design/compositions/forum/subscriptions.md), line 26.
 
 ```reaction
 when Subscribing.unsubscribe (target, user, subscription), asked by Forum.subscriptions.Unsubscribe:success
@@ -13512,13 +14828,13 @@ then
 
 Authored path: `Forum.tags.AddTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 4.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 28.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 35.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/add", requestId, session, tag, target)
 where
-  view "the active user of (session)" with (session)
-  view "(post) is not readable" with (post: target)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is not readable" with (post: target, reader)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -13527,13 +14843,13 @@ then
 
 Authored path: `Forum.tags.AddTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 4.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 28.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 35.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/add", requestId, session, tag, target)
 where
-  view "the active user of (session)" with (session)
-  view "(post) is readable" with (post: target)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is readable" with (post: target, reader)
 then
   Tagging.addTag (tag, target)
 ```
@@ -13542,7 +14858,7 @@ then
 
 Authored path: `Forum.tags.AddTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 4.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 28.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 35.
 
 ```reaction
 when Tagging.addTag (tag, target, result.target: tagged), asked by Forum.tags.AddTag:success
@@ -13556,7 +14872,7 @@ then
 
 Authored path: `Forum.tags.CreateTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 4.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 29.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 36.
 
 ```reaction
 when RequestBoundary.request (name, path: "/tags/create", requestId, session)
@@ -13570,7 +14886,7 @@ then
 
 Authored path: `Forum.tags.CreateTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 4.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 29.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 36.
 
 ```reaction
 when Tagging.createTag (name, tag), asked by Forum.tags.CreateTag
@@ -13584,10 +14900,12 @@ then
 
 Authored path: `Forum.tags.ListTags`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 11.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 30.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 37.
 
 ```reaction
-when RequestBoundary.request (path: "/tags/list", requestId)
+when RequestBoundary.request (path: "/tags/list", requestId, session)
+where
+  view "the active user of (session)" with (session)
 then
   RequestBoundary.respond (requestId, tags: former "the tags ()")
 ```
@@ -13607,13 +14925,13 @@ then
 
 Authored path: `Forum.tags.RemoveTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 5.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 31.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 38.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/remove", requestId, session, tag, target)
 where
-  view "the active user of (session)" with (session)
-  view "(post) is not readable" with (post: target)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is not readable" with (post: target, reader)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -13622,13 +14940,13 @@ then
 
 Authored path: `Forum.tags.RemoveTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 5.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 31.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 38.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/remove", requestId, session, tag, target)
 where
-  view "the active user of (session)" with (session)
-  view "(post) is readable" with (post: target)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is readable" with (post: target, reader)
 then
   Tagging.removeTag (tag, target)
 ```
@@ -13637,7 +14955,7 @@ then
 
 Authored path: `Forum.tags.RemoveTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 5.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 31.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 38.
 
 ```reaction
 when Tagging.removeTag (tag, target, result.target: untagged), asked by Forum.tags.RemoveTag:success
@@ -13651,36 +14969,41 @@ then
 
 Authored path: `Forum.tags.TagTargets`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 15.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 32.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 39.
 
 ```reaction
-when RequestBoundary.request (path: "/tags/targets", requestId, tag)
+when RequestBoundary.request (path: "/tags/targets", requestId, session, tag)
+where
+  view "the active user of (session)" with (session) has (user: reader)
 then
-  RequestBoundary.respond (requestId, targets: former "the targets tagged (tag)" with (tag))
+  RequestBoundary.respond (requestId, targets: former "the targets tagged (tag) for (reader)" with (reader, tag))
 ```
 
 ### Forum.tags.TagTargetsByName
 
 Authored path: `Forum.tags.TagTargetsByName`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 17.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 33.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 40.
 
 ```reaction
-when RequestBoundary.request (name, path: "/tags/targetsByName", requestId)
+when RequestBoundary.request (name, path: "/tags/targetsByName", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user: reader)
 then
-  RequestBoundary.respond (requestId, targets: former "the targets tagged with (name)" with (name))
+  RequestBoundary.respond (requestId, targets: former "the targets tagged with (name) for (reader)" with (name, reader))
 ```
 
 ### Forum.tags.TagsForTarget:hidden
 
 Authored path: `Forum.tags.TagsForTarget`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 13.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 34.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 41.
 
 ```reaction
-when RequestBoundary.request (path: "/tags/forTarget", requestId, target)
+when RequestBoundary.request (path: "/tags/forTarget", requestId, session, target)
 where
-  view "(post) is not readable" with (post: target)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is not readable" with (post: target, reader)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -13689,27 +15012,29 @@ then
 
 Authored path: `Forum.tags.TagsForTarget`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 13.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 34.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 41.
 
 ```reaction
-when RequestBoundary.request (path: "/tags/forTarget", requestId, target)
+when RequestBoundary.request (path: "/tags/forTarget", requestId, session, target)
 where
-  view "(post) is readable" with (post: target)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "(post) is readable" with (post: target, reader)
 then
-  RequestBoundary.respond (requestId, tags: former "the tags on (target)" with (target))
+  RequestBoundary.respond (requestId, tags: former "the tags on (target) for (reader)" with (reader, target))
 ```
 
 ### Forum.threads.CreateThread
 
 Authored path: `Forum.threads.CreateThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 3.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 25.
 
 ```reaction
-when RequestBoundary.request (content, path: "/threads/create", requestId, session)
+when RequestBoundary.request (content, holders, path: "/threads/create", requestId, session)
 where
   at is the current flow's instant
-  view "the active user of (session)" with (session) has (user)
+  view "the audience reader of (session)" with (session) has (user)
+  view "(user) may currently address the complete audience (holders)" with (holders, user)
 then
   Posting.create (at, author: user, content)
 ```
@@ -13718,7 +15043,7 @@ then
 
 Authored path: `Forum.threads.CreateThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 3.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 25.
 
 ```reaction
 when Posting.create (at, author: user, content, post), asked by Forum.threads.CreateThread
@@ -13730,26 +15055,58 @@ then
 
 Authored path: `Forum.threads.CreateThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 3.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 35.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 25.
 
 ```reaction
 when Conversing.start (at, item: post, conversation, node), asked by Forum.threads.CreateThread#2
 where
-  earlier, RequestBoundary.request (content, path: "/threads/create", requestId, session)
+  earlier, RequestBoundary.request (content, holders, path: "/threads/create", requestId, session)
+then
+  Accessing.establish (holders, resource: conversation)
+```
+
+### Forum.threads.CreateThread#4
+
+Authored path: `Forum.threads.CreateThread`.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 3.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 25.
+
+```reaction
+when Accessing.establish (holders, resource: conversation), asked by Forum.threads.CreateThread#3
+where
+  earlier, Posting.create (at, author: user, content, post), asked by Forum.threads.CreateThread
+  earlier, Conversing.start (at, item: post, conversation, node), asked by Forum.threads.CreateThread#2
+  earlier, RequestBoundary.request (content, holders, path: "/threads/create", requestId, session)
 then
   RequestBoundary.respond (conversation, node, post, requestId)
+```
+
+### Forum.threads.CreateThreadDenied
+
+Authored path: `Forum.threads.CreateThreadDenied`.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 30.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 33.
+
+```reaction
+when RequestBoundary.request (content, holders, path: "/threads/create", requestId, session)
+where
+  view "the audience reader of (session)" with (session) has (user)
+  no view "(user) may currently address the complete audience (holders)" with (holders, user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
 
 ### Forum.threads.ForItem:absent
 
 Authored path: `Forum.threads.ForItem`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 27.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 36.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 17.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 26.
 
 ```reaction
-when RequestBoundary.request (item, path: "/threads/forItem", requestId)
+when RequestBoundary.request (item, path: "/threads/forItem", requestId, session)
 where
-  no view "the conversation placing (item)" with (item)
+  view "the active user of (session)" with (session) has (user: reader)
+  no view "the conversation placing (item) for (reader)" with (item, reader)
 then
   RequestBoundary.respond (conversation: null, requestId)
 ```
@@ -13757,13 +15114,14 @@ then
 ### Forum.threads.ForItem:found
 
 Authored path: `Forum.threads.ForItem`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 27.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 36.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 17.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 26.
 
 ```reaction
-when RequestBoundary.request (item, path: "/threads/forItem", requestId)
+when RequestBoundary.request (item, path: "/threads/forItem", requestId, session)
 where
-  view "the conversation placing (item)" with (item) has (conversation)
+  view "the active user of (session)" with (session) has (user: reader)
+  view "the conversation placing (item) for (reader)" with (item, reader) has (conversation)
 then
   RequestBoundary.respond (conversation, requestId)
 ```
@@ -13772,13 +15130,13 @@ then
 
 Authored path: `Forum.threads.ReplyToThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 5.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 37.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 27.
 
 ```reaction
 when RequestBoundary.request (content, parent, path: "/threads/reply", requestId, session)
 where
-  view "the active user of (session)" with (session)
-  Conversing._getConversation (node: parent) has (conversation)
+  view "the audience reader of (session)" with (session) has (user)
+  view "the readable parent (parent) for (user)" with (parent, user) has (conversation)
   Locking._isLocked (target: conversation) has (locked: true)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
@@ -13788,28 +15146,28 @@ then
 
 Authored path: `Forum.threads.ReplyToThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 5.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 37.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 27.
 
 ```reaction
 when RequestBoundary.request (content, parent, path: "/threads/reply", requestId, session)
 where
-  view "the active user of (session)" with (session)
-  no Conversing._getConversation (node: parent)
+  view "the audience reader of (session)" with (session) has (user)
+  no view "the readable parent (parent) for (user)" with (parent, user)
 then
-  RequestBoundary.respond (error: "PARENT_NODE_NOT_FOUND", requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
 ### Forum.threads.ReplyToThread:reply
 
 Authored path: `Forum.threads.ReplyToThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 5.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 37.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 27.
 
 ```reaction
 when RequestBoundary.request (content, parent, path: "/threads/reply", requestId, session)
 where
-  view "the active user of (session)" with (session) has (user)
-  Conversing._getConversation (node: parent) has (conversation)
+  view "the audience reader of (session)" with (session) has (user)
+  view "the readable parent (parent) for (user)" with (parent, user) has (conversation)
   Locking._isLocked (target: conversation) has (locked: false)
   at is the current flow's instant
 then
@@ -13820,7 +15178,7 @@ then
 
 Authored path: `Forum.threads.ReplyToThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 5.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 37.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 27.
 
 ```reaction
 when Posting.create (at, author: user, content, post), asked by Forum.threads.ReplyToThread:reply
@@ -13834,7 +15192,7 @@ then
 
 Authored path: `Forum.threads.ReplyToThread`.
 - Covered by [Threads](../design/compositions/forum/threads.md), line 5.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 37.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 27.
 
 ```reaction
 when Conversing.reply (at, item: post, parent, node), asked by Forum.threads.ReplyToThread:reply#2
@@ -13847,7 +15205,7 @@ then
 ### Forum.threads.TrackReplyUnread
 
 Authored path: `Forum.threads.TrackReplyUnread`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 20.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 11.
 
 ```reaction
 when Conversing.reply (item, node)
@@ -13860,7 +15218,7 @@ then
 ### Forum.threads.TrackRootUnread
 
 Authored path: `Forum.threads.TrackRootUnread`.
-- Covered by [Threads](../design/compositions/forum/threads.md), line 18.
+- Covered by [Threads](../design/compositions/forum/threads.md), line 9.
 
 ```reaction
 when Conversing.start (item, conversation)
@@ -13872,31 +15230,50 @@ then
 
 Authored path: `Forum.unread.MarkAllSeen`.
 - Covered by [Unread tracking](../design/compositions/forum/unread.md), line 11.
-- Covered by [Unread tracking](../design/compositions/forum/unread.md), line 21.
+- Covered by [Unread tracking](../design/compositions/forum/unread.md), line 20.
 
 ```reaction
 when RequestBoundary.request (path: "/unread/markAllSeen", requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
+  view "the unread items for (user) in (scope)" with (scope, user) has (item)
 then
-  Tracking.markAllSeen (scope, user)
+  Tracking.markSeen (item, user)
 ```
 
-### Forum.unread.MarkAllSeen#2
+### Forum.unread.MarkAllSeenResult:seen
 
-Authored path: `Forum.unread.MarkAllSeen`.
-- Covered by [Unread tracking](../design/compositions/forum/unread.md), line 11.
+Authored path: `Forum.unread.MarkAllSeenResult`.
 - Covered by [Unread tracking](../design/compositions/forum/unread.md), line 21.
+- Covered by [Unread tracking](../design/compositions/forum/unread.md), line 31.
 
 ```reaction
-when Tracking.markAllSeen (scope, user), asked by Forum.unread.MarkAllSeen
+when RequestBoundary.request (path: "/unread/markAllSeen", requestId, scope, session)
+at the flow's settlement frontier
 where
-  earlier, RequestBoundary.request (path: "/unread/markAllSeen", requestId, scope, session)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may read audience conversation (conversation)" with (conversation: scope, user)
 then
   RequestBoundary.respond (requestId, user)
 ```
 
-### Forum.unread.MarkSeen
+### Forum.unread.MarkAllSeenResult:unavailable
+
+Authored path: `Forum.unread.MarkAllSeenResult`.
+- Covered by [Unread tracking](../design/compositions/forum/unread.md), line 21.
+- Covered by [Unread tracking](../design/compositions/forum/unread.md), line 31.
+
+```reaction
+when RequestBoundary.request (path: "/unread/markAllSeen", requestId, scope, session)
+at the flow's settlement frontier
+where
+  view "the active user of (session)" with (session) has (user)
+  no view "(user) may read audience conversation (conversation)" with (conversation: scope, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Forum.unread.MarkSeen:seen
 
 Authored path: `Forum.unread.MarkSeen`.
 - Covered by [Unread tracking](../design/compositions/forum/unread.md), line 9.
@@ -13906,25 +15283,41 @@ Authored path: `Forum.unread.MarkSeen`.
 when RequestBoundary.request (item, path: "/unread/markSeen", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
+  view "(user) may read forum post (post)" with (post: item, user)
 then
   Tracking.markSeen (item, user)
 ```
 
-### Forum.unread.MarkSeen#2
+### Forum.unread.MarkSeen:seen#2
 
 Authored path: `Forum.unread.MarkSeen`.
 - Covered by [Unread tracking](../design/compositions/forum/unread.md), line 9.
 - Covered by [Unread tracking](../design/compositions/forum/unread.md), line 22.
 
 ```reaction
-when Tracking.markSeen (item, user), asked by Forum.unread.MarkSeen
+when Tracking.markSeen (item, user), asked by Forum.unread.MarkSeen:seen
 where
   earlier, RequestBoundary.request (item, path: "/unread/markSeen", requestId, session)
 then
   RequestBoundary.respond (item, requestId)
 ```
 
-### Forum.unread.UnreadCount
+### Forum.unread.MarkSeen:unavailable
+
+Authored path: `Forum.unread.MarkSeen`.
+- Covered by [Unread tracking](../design/compositions/forum/unread.md), line 9.
+- Covered by [Unread tracking](../design/compositions/forum/unread.md), line 22.
+
+```reaction
+when RequestBoundary.request (item, path: "/unread/markSeen", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  no view "(user) may read forum post (post)" with (post: item, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Forum.unread.UnreadCount:unavailable
 
 Authored path: `Forum.unread.UnreadCount`.
 - Covered by [Unread tracking](../design/compositions/forum/unread.md), line 4.
@@ -13934,12 +15327,27 @@ Authored path: `Forum.unread.UnreadCount`.
 when RequestBoundary.request (path: "/unread/count", requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
-  Tracking._getUnreadCount (scope, user) has (count)
+  no view "(user) may read audience conversation (conversation)" with (conversation: scope, user)
 then
-  RequestBoundary.respond (count, requestId)
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### Forum.unread.UnreadList
+### Forum.unread.UnreadCount:visible
+
+Authored path: `Forum.unread.UnreadCount`.
+- Covered by [Unread tracking](../design/compositions/forum/unread.md), line 4.
+- Covered by [Unread tracking](../design/compositions/forum/unread.md), line 23.
+
+```reaction
+when RequestBoundary.request (path: "/unread/count", requestId, scope, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may read audience conversation (conversation)" with (conversation: scope, user)
+then
+  RequestBoundary.respond (count: former "the unread count of (user) in (scope)" with (scope, user), requestId)
+```
+
+### Forum.unread.UnreadList:unavailable
 
 Authored path: `Forum.unread.UnreadList`.
 - Covered by [Unread tracking](../design/compositions/forum/unread.md), line 3.
@@ -13949,6 +15357,22 @@ Authored path: `Forum.unread.UnreadList`.
 when RequestBoundary.request (path: "/unread/list", requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
+  no view "(user) may read audience conversation (conversation)" with (conversation: scope, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Forum.unread.UnreadList:visible
+
+Authored path: `Forum.unread.UnreadList`.
+- Covered by [Unread tracking](../design/compositions/forum/unread.md), line 3.
+- Covered by [Unread tracking](../design/compositions/forum/unread.md), line 24.
+
+```reaction
+when RequestBoundary.request (path: "/unread/list", requestId, scope, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may read audience conversation (conversation)" with (conversation: scope, user)
 then
   RequestBoundary.respond (items: former "the unread of (user) in (scope)" with (scope, user), requestId)
 ```
@@ -25278,8 +26702,8 @@ then
 ### Tasks.tasks.AssignTask:assignee-outside-list
 
 Authored path: `Tasks.tasks.AssignTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 94.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 30.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 101.
 
 ```reaction
 when RequestBoundary.request (assignee, path: "/tasks/assign", requestId, session, task)
@@ -25288,7 +26712,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may act on task (task) at (at)" with (at, task, user)
   view "the task list holding (task) at (at)" with (at, task) has (list)
-  view "(user) does not belong to task list (list)" with (list, user: assignee)
+  view "(user) may not use task scope (list)" with (list, user: assignee)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -25296,8 +26720,8 @@ then
 ### Tasks.tasks.AssignTask:forbidden
 
 Authored path: `Tasks.tasks.AssignTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 94.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 30.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 101.
 
 ```reaction
 when RequestBoundary.request (assignee, path: "/tasks/assign", requestId, session, task)
@@ -25312,8 +26736,8 @@ then
 ### Tasks.tasks.AssignTask:self-assignment
 
 Authored path: `Tasks.tasks.AssignTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 94.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 30.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 101.
 
 ```reaction
 when RequestBoundary.request (assignee, path: "/tasks/assign", requestId, session, task)
@@ -25322,7 +26746,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may act on task (task) at (at)" with (at, task, user)
   view "the task list holding (task) at (at)" with (at, task) has (list)
-  view "(user) belongs to task list (list)" with (list, user: assignee)
+  view "(user) may use task scope (list)" with (list, user: assignee)
   view "the active user of (session)" with (session) has (user: assignee)
 then
   Tasking.assign (assignee, at, task)
@@ -25331,8 +26755,8 @@ then
 ### Tasks.tasks.AssignTask:self-assignment#2
 
 Authored path: `Tasks.tasks.AssignTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 94.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 30.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 101.
 
 ```reaction
 when Tasking.assign (assignee, at, task, result.task: assigned), asked by Tasks.tasks.AssignTask:self-assignment
@@ -25345,8 +26769,8 @@ then
 ### Tasks.tasks.AssignTask:success
 
 Authored path: `Tasks.tasks.AssignTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 94.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 30.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 101.
 
 ```reaction
 when RequestBoundary.request (assignee, path: "/tasks/assign", requestId, session, task)
@@ -25355,7 +26779,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may act on task (task) at (at)" with (at, task, user)
   view "the task list holding (task) at (at)" with (at, task) has (list)
-  view "(user) belongs to task list (list)" with (list, user: assignee)
+  view "(user) may use task scope (list)" with (list, user: assignee)
   view "the active user of (session)" with (session) and not (user: assignee)
 then
   Tasking.assign (assignee, at, task)
@@ -25364,8 +26788,8 @@ then
 ### Tasks.tasks.AssignTask:success#2
 
 Authored path: `Tasks.tasks.AssignTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 94.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 30.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 101.
 
 ```reaction
 when Tasking.assign (assignee, at, task, result.task: assigned), asked by Tasks.tasks.AssignTask:success
@@ -25376,8 +26800,8 @@ then
 ### Tasks.tasks.AssignTask:success#3
 
 Authored path: `Tasks.tasks.AssignTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 23.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 94.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 30.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 101.
 
 ```reaction
 when TaskNotifying.notify (at, kind: "task-assigned", link: task, recipient: assignee, subject: task), asked by Tasks.tasks.AssignTask:success#2
@@ -25391,8 +26815,8 @@ then
 ### Tasks.tasks.CancelTask:announced
 
 Authored path: `Tasks.tasks.CancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 95.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 41.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/cancel", requestId, session, task)
@@ -25408,8 +26832,8 @@ then
 ### Tasks.tasks.CancelTask:announced#2
 
 Authored path: `Tasks.tasks.CancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 95.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 41.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
 
 ```reaction
 when Tasking.cancel (at, task, assignee: recipient, result.task: canceled), asked by Tasks.tasks.CancelTask:announced
@@ -25420,8 +26844,8 @@ then
 ### Tasks.tasks.CancelTask:announced#3
 
 Authored path: `Tasks.tasks.CancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 95.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 41.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
 
 ```reaction
 when TaskNotifying.notify (at, kind: "task-canceled", link: task, recipient, subject: task), asked by Tasks.tasks.CancelTask:announced#2
@@ -25435,8 +26859,8 @@ then
 ### Tasks.tasks.CancelTask:forbidden
 
 Authored path: `Tasks.tasks.CancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 95.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 41.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/cancel", requestId, session, task)
@@ -25451,8 +26875,8 @@ then
 ### Tasks.tasks.CancelTask:silent
 
 Authored path: `Tasks.tasks.CancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 95.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 41.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/cancel", requestId, session, task)
@@ -25468,8 +26892,8 @@ then
 ### Tasks.tasks.CancelTask:silent#2
 
 Authored path: `Tasks.tasks.CancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 34.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 95.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 41.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
 
 ```reaction
 when Tasking.cancel (at, task, result.task: canceled), asked by Tasks.tasks.CancelTask:silent
@@ -25482,8 +26906,8 @@ then
 ### Tasks.tasks.CompleteTask:announced
 
 Authored path: `Tasks.tasks.CompleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 96.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 35.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/complete", requestId, session, task)
@@ -25499,8 +26923,8 @@ then
 ### Tasks.tasks.CompleteTask:announced#2
 
 Authored path: `Tasks.tasks.CompleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 96.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 35.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
 
 ```reaction
 when Tasking.complete (at, task, assignee: recipient, result.task: completed), asked by Tasks.tasks.CompleteTask:announced
@@ -25511,8 +26935,8 @@ then
 ### Tasks.tasks.CompleteTask:announced#3
 
 Authored path: `Tasks.tasks.CompleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 96.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 35.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
 
 ```reaction
 when TaskNotifying.notify (at, kind: "task-completed", link: task, recipient, subject: task), asked by Tasks.tasks.CompleteTask:announced#2
@@ -25526,8 +26950,8 @@ then
 ### Tasks.tasks.CompleteTask:forbidden
 
 Authored path: `Tasks.tasks.CompleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 96.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 35.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/complete", requestId, session, task)
@@ -25542,8 +26966,8 @@ then
 ### Tasks.tasks.CompleteTask:silent
 
 Authored path: `Tasks.tasks.CompleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 96.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 35.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/complete", requestId, session, task)
@@ -25559,8 +26983,8 @@ then
 ### Tasks.tasks.CompleteTask:silent#2
 
 Authored path: `Tasks.tasks.CompleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 28.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 96.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 35.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
 
 ```reaction
 when Tasking.complete (at, task, result.task: completed), asked by Tasks.tasks.CompleteTask:silent
@@ -25573,14 +26997,14 @@ then
 ### Tasks.tasks.CreateTask:forbidden
 
 Authored path: `Tasks.tasks.CreateTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 10.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 97.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 18.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 104.
 
 ```reaction
 when RequestBoundary.request (details, endsAt, list, path: "/tasks/create", requestId, session, startsAt, title)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) does not belong to task list (list)" with (list, user)
+  view "(user) may not use task scope (list)" with (list, user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -25588,15 +27012,15 @@ then
 ### Tasks.tasks.CreateTask:success
 
 Authored path: `Tasks.tasks.CreateTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 10.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 97.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 18.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 104.
 
 ```reaction
 when RequestBoundary.request (details, endsAt, list, path: "/tasks/create", requestId, session, startsAt, title)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) belongs to task list (list)" with (list, user)
+  view "(user) may use task scope (list)" with (list, user)
 then
   Tasking.create (assignee: null, at, details, endsAt, scope: list, startsAt, title)
 ```
@@ -25604,8 +27028,8 @@ then
 ### Tasks.tasks.CreateTask:success#2
 
 Authored path: `Tasks.tasks.CreateTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 10.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 97.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 18.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 104.
 
 ```reaction
 when Tasking.create (assignee: null, at, details, endsAt, scope: list, startsAt, title, task), asked by Tasks.tasks.CreateTask:success
@@ -25618,8 +27042,8 @@ then
 ### Tasks.tasks.DeleteTask:forbidden
 
 Authored path: `Tasks.tasks.DeleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 65.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 98.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 72.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 105.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/delete", requestId, session, task)
@@ -25634,8 +27058,8 @@ then
 ### Tasks.tasks.DeleteTask:success
 
 Authored path: `Tasks.tasks.DeleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 65.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 98.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 72.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 105.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/delete", requestId, session, task)
@@ -25650,8 +27074,8 @@ then
 ### Tasks.tasks.DeleteTask:success#2
 
 Authored path: `Tasks.tasks.DeleteTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 65.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 98.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 72.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 105.
 
 ```reaction
 when Tasking.delete (at, task), asked by Tasks.tasks.DeleteTask:success
@@ -25664,8 +27088,8 @@ then
 ### Tasks.tasks.DescribeTask:forbidden
 
 Authored path: `Tasks.tasks.DescribeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 17.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 99.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 24.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 106.
 
 ```reaction
 when RequestBoundary.request (details, path: "/tasks/describe", requestId, session, task, title)
@@ -25680,8 +27104,8 @@ then
 ### Tasks.tasks.DescribeTask:success
 
 Authored path: `Tasks.tasks.DescribeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 17.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 99.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 24.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 106.
 
 ```reaction
 when RequestBoundary.request (details, path: "/tasks/describe", requestId, session, task, title)
@@ -25696,8 +27120,8 @@ then
 ### Tasks.tasks.DescribeTask:success#2
 
 Authored path: `Tasks.tasks.DescribeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 17.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 99.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 24.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 106.
 
 ```reaction
 when Tasking.describe (at, details, task, title, result.task: described), asked by Tasks.tasks.DescribeTask:success
@@ -25710,8 +27134,8 @@ then
 ### Tasks.tasks.MyTasks
 
 Authored path: `Tasks.tasks.MyTasks`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 88.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 100.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 95.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 107.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/mine", requestId, session)
@@ -25722,11 +27146,26 @@ then
   RequestBoundary.respond (requestId, tasks: former "the tasks assigned to (user) at (at)" with (at, user))
 ```
 
+### Tasks.tasks.PersonalTasks
+
+Authored path: `Tasks.tasks.PersonalTasks`.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 7.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 108.
+
+```reaction
+when RequestBoundary.request (path: "/tasks/personal", requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+then
+  RequestBoundary.respond (requestId, tasks: former "the tasks in (list) at (at)" with (at, list: user))
+```
+
 ### Tasks.tasks.ReleaseTask:forbidden
 
 Authored path: `Tasks.tasks.ReleaseTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 26.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 101.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 33.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 109.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/release", requestId, session, task)
@@ -25741,8 +27180,8 @@ then
 ### Tasks.tasks.ReleaseTask:success
 
 Authored path: `Tasks.tasks.ReleaseTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 26.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 101.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 33.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 109.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/release", requestId, session, task)
@@ -25757,8 +27196,8 @@ then
 ### Tasks.tasks.ReleaseTask:success#2
 
 Authored path: `Tasks.tasks.ReleaseTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 26.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 101.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 33.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 109.
 
 ```reaction
 when Tasking.release (at, task, result.task: released), asked by Tasks.tasks.ReleaseTask:success
@@ -25771,8 +27210,8 @@ then
 ### Tasks.tasks.ReopenTask:announced
 
 Authored path: `Tasks.tasks.ReopenTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 38.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 110.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/reopen", requestId, session, task)
@@ -25788,8 +27227,8 @@ then
 ### Tasks.tasks.ReopenTask:announced#2
 
 Authored path: `Tasks.tasks.ReopenTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 38.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 110.
 
 ```reaction
 when Tasking.reopen (at, task, assignee: recipient, result.task: reopened), asked by Tasks.tasks.ReopenTask:announced
@@ -25800,8 +27239,8 @@ then
 ### Tasks.tasks.ReopenTask:announced#3
 
 Authored path: `Tasks.tasks.ReopenTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 38.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 110.
 
 ```reaction
 when TaskNotifying.notify (at, kind: "task-reopened", link: task, recipient, subject: task), asked by Tasks.tasks.ReopenTask:announced#2
@@ -25815,8 +27254,8 @@ then
 ### Tasks.tasks.ReopenTask:forbidden
 
 Authored path: `Tasks.tasks.ReopenTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 38.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 110.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/reopen", requestId, session, task)
@@ -25831,8 +27270,8 @@ then
 ### Tasks.tasks.ReopenTask:silent
 
 Authored path: `Tasks.tasks.ReopenTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 38.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 110.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/reopen", requestId, session, task)
@@ -25848,8 +27287,8 @@ then
 ### Tasks.tasks.ReopenTask:silent#2
 
 Authored path: `Tasks.tasks.ReopenTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 31.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 102.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 38.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 110.
 
 ```reaction
 when Tasking.reopen (at, task, result.task: reopened), asked by Tasks.tasks.ReopenTask:silent
@@ -25862,8 +27301,8 @@ then
 ### Tasks.tasks.RetimeTask:announced
 
 Authored path: `Tasks.tasks.RetimeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 27.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 111.
 
 ```reaction
 when RequestBoundary.request (endsAt, path: "/tasks/retime", requestId, session, startsAt, task)
@@ -25879,8 +27318,8 @@ then
 ### Tasks.tasks.RetimeTask:announced#2
 
 Authored path: `Tasks.tasks.RetimeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 27.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 111.
 
 ```reaction
 when Tasking.retime (at, endsAt, startsAt, task, assignee: recipient, result.task: retimed), asked by Tasks.tasks.RetimeTask:announced
@@ -25891,8 +27330,8 @@ then
 ### Tasks.tasks.RetimeTask:announced#3
 
 Authored path: `Tasks.tasks.RetimeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 27.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 111.
 
 ```reaction
 when TaskNotifying.notify (at, kind: "task-retimed", link: task, recipient, subject: task), asked by Tasks.tasks.RetimeTask:announced#2
@@ -25906,8 +27345,8 @@ then
 ### Tasks.tasks.RetimeTask:forbidden
 
 Authored path: `Tasks.tasks.RetimeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 27.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 111.
 
 ```reaction
 when RequestBoundary.request (endsAt, path: "/tasks/retime", requestId, session, startsAt, task)
@@ -25922,8 +27361,8 @@ then
 ### Tasks.tasks.RetimeTask:silent
 
 Authored path: `Tasks.tasks.RetimeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 27.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 111.
 
 ```reaction
 when RequestBoundary.request (endsAt, path: "/tasks/retime", requestId, session, startsAt, task)
@@ -25939,8 +27378,8 @@ then
 ### Tasks.tasks.RetimeTask:silent#2
 
 Authored path: `Tasks.tasks.RetimeTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 20.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 103.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 27.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 111.
 
 ```reaction
 when Tasking.retime (at, endsAt, startsAt, task, result.task: retimed), asked by Tasks.tasks.RetimeTask:silent
@@ -25953,8 +27392,8 @@ then
 ### Tasks.tasks.UncancelTask:announced
 
 Authored path: `Tasks.tasks.UncancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 104.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 44.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 112.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/uncancel", requestId, session, task)
@@ -25970,8 +27409,8 @@ then
 ### Tasks.tasks.UncancelTask:announced#2
 
 Authored path: `Tasks.tasks.UncancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 104.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 44.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 112.
 
 ```reaction
 when Tasking.uncancel (at, task, assignee: recipient, result.task: uncanceled), asked by Tasks.tasks.UncancelTask:announced
@@ -25982,8 +27421,8 @@ then
 ### Tasks.tasks.UncancelTask:announced#3
 
 Authored path: `Tasks.tasks.UncancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 104.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 44.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 112.
 
 ```reaction
 when TaskNotifying.notify (at, kind: "task-uncanceled", link: task, recipient, subject: task), asked by Tasks.tasks.UncancelTask:announced#2
@@ -25997,8 +27436,8 @@ then
 ### Tasks.tasks.UncancelTask:forbidden
 
 Authored path: `Tasks.tasks.UncancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 104.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 44.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 112.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/uncancel", requestId, session, task)
@@ -26013,8 +27452,8 @@ then
 ### Tasks.tasks.UncancelTask:silent
 
 Authored path: `Tasks.tasks.UncancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 104.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 44.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 112.
 
 ```reaction
 when RequestBoundary.request (path: "/tasks/uncancel", requestId, session, task)
@@ -26030,8 +27469,8 @@ then
 ### Tasks.tasks.UncancelTask:silent#2
 
 Authored path: `Tasks.tasks.UncancelTask`.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 37.
-- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 104.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 44.
+- Covered by [Tasks](../design/compositions/tasks/tasks.md), line 112.
 
 ```reaction
 when Tasking.uncancel (at, task, result.task: uncanceled), asked by Tasks.tasks.UncancelTask:silent
@@ -26059,6 +27498,9 @@ not listed here have no explicit input contract.
 - `/assignments/staff-list` — requires `session`
 - `/assignments/staff-summary` — requires `assignment`, `session`
 - `/assignments/submit` — requires `assignment`, `content`, `session`
+- `/audiences/forConversation` — requires `conversation`, `session`
+- `/audiences/options` — requires `session`
+- `/audiences/preview` — requires `holders`, `session`
 - `/auth/accept-invitation` — requires `displayName`, `invitation`, `password`, `temporaryPassword`, `username`
 - `/auth/changePassword` — requires `session`, `oldPassword`, `newPassword`
 - `/auth/invitation` — requires `invitation`, `temporaryPassword`
@@ -26078,8 +27520,9 @@ not listed here have no explicit input contract.
 - `/categories/assign` — requires `category`, `item`, `session`
 - `/categories/create` — requires `description`, `name`, `session`
 - `/categories/delete` — requires `category`, `session`
-- `/categories/forItem` — requires `item`
-- `/categories/items` — requires `category`
+- `/categories/forItem` — requires `item`, `session`
+- `/categories/items` — requires `category`, `session`
+- `/categories/list` — requires `session`
 - `/categories/unassign` — requires `item`, `session`
 - `/flags/forTarget` — requires `session`, `target`
 - `/flags/open` — requires `session`
@@ -26117,8 +27560,8 @@ not listed here have no explicit input contract.
 - `/late-days/policy` — requires `session`
 - `/late-days/staff-cancel` — requires `session`, `learner`, `assignment`
 - `/late-days/staff-change` — requires `session`, `learner`, `assignment`, `days`
-- `/links/backlinks` — requires `target`
-- `/links/forward` — requires `source`
+- `/links/backlinks` — requires `session`, `target`
+- `/links/forward` — requires `session`, `source`
 - `/live/drafts/abandon` — requires `session`, `brief`
 - `/live/drafts/adopt` — requires `session`, `candidate`
 - `/live/drafts/clarify` — requires `session`, `clarification`, `answer`
@@ -26218,7 +27661,8 @@ not listed here have no explicit input contract.
 - `/live/walls/unpick` — requires `session`, `round`, `pile`
 - `/lms/me` — requires `session`
 - `/lms/staff-dashboard` — requires `session`
-- `/locks/isLocked` — requires `target`
+- `/locks/isLocked` — requires `session`, `target`
+- `/locks/list` — requires `session`
 - `/locks/lock` — requires `session`, `target`
 - `/locks/unlock` — requires `session`, `target`
 - `/mail/list` — requires `session`
@@ -26232,29 +27676,30 @@ not listed here have no explicit input contract.
 - `/notifications/markAllRead` — requires `session`
 - `/notifications/markRead` — requires `notification`, `session`
 - `/notifications/unreadCount` — requires `session`
-- `/pins/forScope` — requires `scope`
-- `/pins/isPinned` — requires `item`, `scope`
+- `/pins/forScope` — requires `session`, `scope`
+- `/pins/isPinned` — requires `session`, `item`, `scope`
 - `/pins/pin` — requires `session`, `item`, `scope`, `priority`
 - `/pins/setPriority` — requires `session`, `item`, `scope`, `priority`
 - `/pins/unpin` — requires `session`, `item`, `scope`
-- `/posts/byAuthor` — requires `author`
-- `/posts/delete` — requires `session`, `post`
-- `/posts/edit` — requires `session`, `post`, `content`
-- `/posts/get` — requires `post`
+- `/posts/byAuthor` — requires `session`, `author`
+- `/posts/delete` — requires `post`, `session`
+- `/posts/edit` — requires `content`, `post`, `session`
+- `/posts/get` — requires `session`, `post`
+- `/profiles/displays` — requires `session`, `users`
 - `/profiles/get` — requires `session`, `user`
 - `/profiles/setAvatar` — requires `session`, `avatar`
 - `/profiles/setBio` — requires `session`, `bio`
 - `/profiles/setDisplayName` — requires `session`, `displayName`
 - `/reactions/add` — requires `session`, `target`, `kind`
-- `/reactions/forTarget` — requires `target`
+- `/reactions/forTarget` — requires `session`, `target`
 - `/reactions/remove` — requires `kind`, `session`, `target`
 - `/resolutions/accept` — requires `answer`, `question`, `session`
 - `/resolutions/clear` — requires `question`, `session`
-- `/resolutions/get` — requires `question`
-- `/resolutions/isResolved` — requires `question`
-- `/revisions/get` — requires `item`, `number`
-- `/revisions/latest` — requires `item`
-- `/revisions/list` — requires `item`
+- `/resolutions/get` — requires `question`, `session`
+- `/resolutions/isResolved` — requires `question`, `session`
+- `/revisions/get` — requires `session`, `item`, `number`
+- `/revisions/latest` — requires `session`, `item`
+- `/revisions/list` — requires `session`, `item`
 - `/roles/assign` — requires `context`, `role`, `session`, `user`
 - `/roles/define` — requires `capabilities`, `name`, `session`
 - `/roles/delete` — requires `role`, `session`
@@ -26296,14 +27741,15 @@ not listed here have no explicit input contract.
 - `/subscriptions/isSubscribed` — requires `session`, `target`
 - `/subscriptions/mine` — requires `session`
 - `/subscriptions/subscribe` — requires `session`, `target`
-- `/subscriptions/subscribers` — requires `target`
+- `/subscriptions/subscribers` — requires `session`, `target`
 - `/subscriptions/unsubscribe` — requires `session`, `target`
 - `/tags/add` — requires `session`, `tag`, `target`
 - `/tags/create` — requires `session`, `name`
-- `/tags/forTarget` — requires `target`
+- `/tags/forTarget` — requires `session`, `target`
+- `/tags/list` — requires `session`
 - `/tags/remove` — requires `session`, `tag`, `target`
-- `/tags/targets` — requires `tag`
-- `/tags/targetsByName` — requires `name`
+- `/tags/targets` — requires `session`, `tag`
+- `/tags/targetsByName` — requires `name`, `session`
 - `/tasklists/add-member` — requires `session`, `list`, `candidate`
 - `/tasklists/create` — requires `session`; fills `title` with "" when absent
 - `/tasklists/get` — requires `list`, `session`
@@ -26323,23 +27769,29 @@ not listed here have no explicit input contract.
 - `/tasks/delete` — requires `session`, `task`
 - `/tasks/describe` — requires `session`, `task`, `title`; fills `details` with "" when absent
 - `/tasks/mine` — requires `session`
+- `/tasks/personal` — requires `session`
 - `/tasks/release` — requires `session`, `task`
 - `/tasks/reopen` — requires `session`, `task`
 - `/tasks/retime` — requires `endsAt`, `session`, `startsAt`, `task`
 - `/tasks/uncancel` — requires `session`, `task`
-- `/threads/create` — requires `content`, `session`
-- `/threads/forItem` — requires `item`
-- `/threads/get` — requires `conversation`
+- `/threads/activity` — requires `session`
+- `/threads/create` — requires `content`, `holders`, `session`
+- `/threads/forItem` — requires `item`, `session`
+- `/threads/get` — requires `conversation`, `session`
+- `/threads/index` — requires `session`, `order`
+- `/threads/latest` — requires `session`
+- `/threads/post-controls` — requires `session`, `conversation`, `posts`
 - `/threads/reply` — requires `content`, `parent`, `session`
+- `/threads/summaries` — requires `session`, `conversations`
 - `/trash/isTrashed` — requires `item`, `session`
 - `/trash/list` — requires `session`
 - `/trash/purge` — requires `item`, `session`
 - `/trash/restore` — requires `item`, `session`
 - `/trash/trash` — requires `item`, `session`
-- `/unread/count` — requires `session`, `scope`
-- `/unread/list` — requires `session`, `scope`
-- `/unread/markAllSeen` — requires `session`, `scope`
-- `/unread/markSeen` — requires `session`, `item`
+- `/unread/count` — requires `scope`, `session`
+- `/unread/list` — requires `scope`, `session`
+- `/unread/markAllSeen` — requires `scope`, `session`
+- `/unread/markSeen` — requires `item`, `session`
 - `/users/archive` — requires `session`, `user`
 - `/users/list` — requires `session`
 - `/users/resolve` — requires `ref`

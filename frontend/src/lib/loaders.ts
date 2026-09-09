@@ -2,22 +2,39 @@ import { api, CommonsError, unwrap } from "@/lib/api";
 import { COMMONS_CONTEXT } from "@/lib/auth";
 import type {
   Category,
-  ConversationSummary,
+  ConversationPreview,
+  FeedEntry,
   Profile,
   RoleOfUser,
   Tag,
   ThreadNode,
 } from "@/lib/models";
 
-export async function loadFeed(
-  sort: "latest" | "activity" = "latest",
-): Promise<ConversationSummary[]> {
-  const result =
-    sort === "activity"
-      ? await api.threads.activity({})
-      : await api.threads.latest({});
-  const { conversations } = unwrap(result);
-  return conversations;
+export async function loadFeedIndex(
+  order: "latest" | "activity",
+): Promise<FeedEntry[]> {
+  return unwrap(await api.threads.index({ order })).conversations;
+}
+
+export async function loadThreadSummaries(
+  conversations: string[],
+): Promise<ConversationPreview[]> {
+  const rows: ConversationPreview[] = [];
+  const unique = [...new Set(conversations)];
+  for (let offset = 0; offset < unique.length; offset += 25) {
+    rows.push(
+      ...unwrap(
+        await api.threads.summaries({
+          conversations: unique.slice(offset, offset + 25),
+        }),
+      ).conversations,
+    );
+  }
+  const byId = new Map(rows.map((row) => [String(row.conversation), row]));
+  return unique.flatMap((id) => {
+    const row = byId.get(id);
+    return row ? [row] : [];
+  });
 }
 
 export async function loadUserOverview(user: string): Promise<{
@@ -34,8 +51,11 @@ export async function loadUserOverview(user: string): Promise<{
 }
 
 export interface ThreadPage {
+  audience: import("@/lib/api").Output<"/audiences/forConversation">["holders"];
   nodes: ThreadNode[];
-  root: ThreadNode;
+  root: ThreadNode | null;
+  rootNodeId: string;
+  structure: import("@/lib/api").Output<"/threads/get">["context"][number]["structure"];
   questionId: string;
   category: Category | null;
   tags: Tag[];
@@ -50,12 +70,14 @@ export async function loadThreadPage(
   const { thread: nodes, context } = unwrap(
     await api.threads.get({ conversation }),
   );
-  const root = nodes[0];
   const details = context[0];
-  if (!root || !details) throw new CommonsError("Conversation not found");
+  if (!details) throw new CommonsError("Conversation not found");
   return {
+    audience: details.audience,
     nodes,
-    root,
+    root: nodes.find((node) => node.node === details.root) ?? null,
+    rootNodeId: details.root,
+    structure: details.structure,
     questionId: String(details.item),
     category: details.category,
     tags: details.tags,

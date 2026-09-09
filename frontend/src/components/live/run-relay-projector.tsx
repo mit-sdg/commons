@@ -245,7 +245,7 @@ export function RelayProjector({
             .querySelector<HTMLButtonElement>("[data-join-expand]")
             ?.focus();
         }}
-        className="h-dvh max-w-none sm:max-w-none rounded-none border-0 flex flex-col items-center justify-center gap-5 overflow-y-auto p-8 data-[state=open]:animate-none data-[state=closed]:animate-none"
+        className="h-dvh max-h-dvh max-w-none sm:max-w-none rounded-none border-0 flex flex-col items-center justify-center gap-5 overflow-y-auto p-8 data-[state=open]:animate-none data-[state=closed]:animate-none"
       >
         <DialogTitle className="text-center font-display text-3xl sm:text-5xl">
           {run.title}

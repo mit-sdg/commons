@@ -673,18 +673,33 @@ describe("the two notification instances stay apart", () => {
     expect(await app.concepts.Notifying._getInbox({ recipient: noah.user })).toEqual([]);
     expect(await app.concepts.TaskNotifying._getInbox({ recipient: noah.user })).toHaveLength(1);
 
+    const { post: forumPost } = await app.concepts.Posting.create({
+      author: noah.user,
+      content: "Forum notice",
+      at: new Date(),
+    });
+    const { conversation } = await app.concepts.Conversing.start({
+      item: forumPost,
+      at: new Date(),
+    });
+    await app.concepts.Accessing.establish({
+      resource: conversation,
+      holders: [`account:${noah.user}`],
+    });
     const forumNotification = await app.concepts.Notifying.notify({
       recipient: noah.user,
       kind: "reply",
-      subject: "post-1",
-      link: "post-1",
+      subject: forumPost,
+      link: forumPost,
       at: new Date(),
     });
     await app.whenIdle();
 
     const both = await pending(app);
     expect(both).toHaveLength(2);
-    const forumMail = both.filter((message) => message.key === forumNotification.notification);
+    const forumMail = both.filter((message) =>
+      message.key.includes(forumNotification.notification),
+    );
     expect(forumMail).toHaveLength(1);
     expect(forumMail[0].subject).toBe("New Commons notification");
     // and the forum entry never reaches the task inbox

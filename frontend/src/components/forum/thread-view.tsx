@@ -2,10 +2,12 @@
 
 import { Lock, LockOpen, MessageSquare, Pin, Users } from "lucide-react";
 import { toast } from "sonner";
+import { AudienceChips } from "@/components/forum/audience-picker";
 import { CategoryBadge } from "@/components/forum/badges";
 import { CategoryAssign } from "@/components/forum/category-assign";
 import { Composer } from "@/components/forum/composer";
 import { PostCard } from "@/components/forum/post-card";
+import { PostControlsProvider } from "@/components/forum/post-controls-provider";
 import { PostPreview } from "@/components/forum/post-preview";
 import { SubscribeButton } from "@/components/forum/subscribe-button";
 import { TagEditor } from "@/components/forum/tag-editor";
@@ -22,48 +24,58 @@ import { useAuth } from "@/lib/auth";
 import { count, titleFromContent } from "@/lib/format";
 import { loadThreadPage, type ThreadPage } from "@/lib/loaders";
 import type { ThreadNode } from "@/lib/models";
+import { loadMyLists } from "@/lib/tasks";
 import { cn } from "@/lib/utils";
 
 interface ThreadBranch {
-  node: ThreadNode;
+  node: ThreadNode | null;
+  position: ThreadPage["structure"][number];
   children: ThreadBranch[];
 }
 
-function nodeKey(node: ThreadNode): string {
-  return String(node.node);
-}
-
-function parentKey(node: ThreadNode): string | null {
-  return node.parent == null ? null : String(node.parent);
-}
-
-function buildThreadTree(nodes: ThreadNode[]): ThreadBranch[] {
-  const branches = new Map<string, ThreadBranch>();
-
-  for (const node of nodes) {
-    branches.set(nodeKey(node), { node, children: [] });
-  }
-
+function buildThreadTree(
+  nodes: ThreadNode[],
+  structure: ThreadPage["structure"],
+): ThreadBranch[] {
+  const visible = new Map(nodes.map((node) => [node.node, node]));
+  const branches = new Map(
+    structure.map((position) => [
+      position.node,
+      {
+        node: visible.get(position.node) ?? null,
+        position,
+        children: [] as ThreadBranch[],
+      },
+    ]),
+  );
   const roots: ThreadBranch[] = [];
-  for (const node of nodes) {
-    const branch = branches.get(nodeKey(node));
-    if (!branch) continue;
-
-    const parent = parentKey(node);
-    const parentBranch = parent ? branches.get(parent) : null;
-    if (parentBranch) parentBranch.children.push(branch);
+  for (const branch of branches.values()) {
+    const parent =
+      branch.position.parent == null
+        ? null
+        : branches.get(branch.position.parent);
+    if (parent) parent.children.push(branch);
     else roots.push(branch);
   }
-
   return roots;
 }
 
-export function ThreadView({ conversation }: { conversation: string }) {
+export function ThreadView({
+  conversation,
+  batchedControls = false,
+  fromGroup,
+}: {
+  conversation: string;
+  batchedControls?: boolean;
+  fromGroup?: string;
+}) {
   const { session, permissions } = useAuth();
   const { data, error, loading, refetch } = useQuery<ThreadPage>(
     () => loadThreadPage(conversation),
     [conversation],
   );
+  const groups = useQuery(session ? loadMyLists : null, [session]);
+  const origin = groups.data?.find((group) => group.list === fromGroup);
   const subscribers = useQuery<{ subscribers: { user: string }[] }>(
     () => api.subscriptions.subscribers({ target: conversation }),
     [conversation],
@@ -96,15 +108,18 @@ export function ThreadView({ conversation }: { conversation: string }) {
     acceptedAnswer,
     replyCount,
   } = data;
-  const rootAuthorId = String(root.post.author);
-  const title = titleFromContent(root.post.content);
+  const rootAuthorId = root ? String(root.post.author) : "";
+  const title = root
+    ? titleFromContent(root.post.content)
+    : "Opening post unavailable";
   const subscriberCount = subscribers.data?.subscribers.length ?? 0;
   const pinnedItems = pinned.data?.pinned ?? [];
-  const threadTree = buildThreadTree(nodes);
+  const threadTree = buildThreadTree(nodes, data.structure);
 
   function refetchAll() {
     refetch();
     pinned.refetch();
+    subscribers.refetch();
   }
 
   async function toggleLock() {
@@ -120,15 +135,18 @@ export function ThreadView({ conversation }: { conversation: string }) {
   }
 
   async function postRootReply(content: string) {
-    if (!session) return;
+    if (!session || !root) return;
     const result = await api.threads.reply({
       parent: String(root.node),
       content,
     });
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
+    if ("error" in result) {
+      const message = publicErrorMessage(result.error);
+      toast.error(message);
+      throw new Error(message);
+    } else {
       toast.success("Reply posted");
-      refetch();
+      refetchAll();
     }
   }
 
@@ -136,10 +154,14 @@ export function ThreadView({ conversation }: { conversation: string }) {
     <PageContainer>
       <div className="mb-4">
         <Link
-          href="/"
+          href={
+            origin
+              ? `/groups/${encodeURIComponent(origin.list)}?view=discussions`
+              : "/"
+          }
           className="text-sm text-muted-foreground hover:text-foreground"
         >
-          ← All topics
+          ← {origin ? origin.title || "Group discussions" : "All discussions"}
         </Link>
       </div>
 
@@ -180,12 +202,17 @@ export function ThreadView({ conversation }: { conversation: string }) {
             ) : null}
           </div>
           <div className="flex items-center gap-2">
-            <SubscribeButton conversation={conversation} />
-            <CategoryAssign
-              item={questionId}
-              current={category ? String(category.category) : null}
-              onChanged={refetch}
+            <SubscribeButton
+              key={hashTargetVersion}
+              conversation={conversation}
             />
+            {root ? (
+              <CategoryAssign
+                item={questionId}
+                current={category ? String(category.category) : null}
+                onChanged={refetch}
+              />
+            ) : null}
             {session && permissions.can("moderate") ? (
               <Button
                 variant="outline"
@@ -204,10 +231,17 @@ export function ThreadView({ conversation }: { conversation: string }) {
           </div>
         </div>
         <div className="mt-3">
-          <TagEditor target={questionId} tags={tags} onChanged={refetch} />
+          {root ? (
+            <TagEditor target={questionId} tags={tags} onChanged={refetch} />
+          ) : null}
         </div>
       </header>
 
+      <AudienceChips
+        holders={data.audience.map((holder) => holder.holder)}
+        options={data.audience}
+        groupLinks={groups.data?.map((group) => group.list)}
+      />
       <UnreadBanner newCount={unread.newCount} onMarkAll={unread.markAll} />
 
       {pinnedItems.length > 0 ? (
@@ -228,28 +262,38 @@ export function ThreadView({ conversation }: { conversation: string }) {
         </section>
       ) : null}
 
-      <ol className="thread-tree" aria-label="Discussion thread">
-        {threadTree.map((branch) => (
-          <ThreadBranchView
-            key={nodeKey(branch.node)}
-            branch={branch}
-            level={0}
-            rootNodeId={String(root.node)}
-            questionId={questionId}
-            rootAuthorId={rootAuthorId}
-            acceptedAnswer={acceptedAnswer}
-            locked={locked}
-            scope={conversation}
-            unreadItems={unread.unreadItems}
-            onChanged={refetchAll}
-          />
-        ))}
-      </ol>
+      <PostControlsProvider
+        conversation={conversation}
+        observation={data}
+        enabled={batchedControls}
+      >
+        <ol className="thread-tree" aria-label="Discussion thread">
+          {threadTree.map((branch) => (
+            <ThreadBranchView
+              key={branch.position.node}
+              branch={branch}
+              level={0}
+              rootNodeId={data.rootNodeId}
+              questionId={questionId}
+              rootAuthorId={rootAuthorId}
+              acceptedAnswer={acceptedAnswer}
+              locked={locked}
+              scope={conversation}
+              unreadItems={unread.unreadItems}
+              onChanged={refetchAll}
+            />
+          ))}
+        </ol>
+      </PostControlsProvider>
 
       <section className="mt-8 border-t border-border pt-6">
         {locked ? (
           <p className="rounded-lg border border-border bg-muted/40 p-4 text-center text-sm text-muted-foreground">
             This topic is locked. New replies are disabled.
+          </p>
+        ) : !root ? (
+          <p className="text-sm text-muted-foreground">
+            Reply to an available post to continue this discussion.
           </p>
         ) : session ? (
           <>
@@ -300,23 +344,32 @@ function ThreadBranchView({
   unreadItems: Set<string>;
   onChanged: () => void;
 }) {
-  const isRoot = nodeKey(branch.node) === rootNodeId;
+  const isRoot = branch.position.node === rootNodeId;
   const hasChildren = branch.children.length > 0;
 
   return (
     <li className={cn("thread-branch", level > 0 && "thread-branch--child")}>
       <div className="thread-branch-content">
-        <PostCard
-          node={branch.node}
-          isRoot={isRoot}
-          questionId={questionId}
-          rootAuthorId={rootAuthorId}
-          acceptedAnswer={acceptedAnswer}
-          locked={locked}
-          scope={scope}
-          isUnread={unreadItems.has(String(branch.node.item))}
-          onChanged={onChanged}
-        />
+        {branch.node ? (
+          <PostCard
+            node={branch.node}
+            isRoot={isRoot}
+            questionId={questionId}
+            rootAuthorId={rootAuthorId}
+            acceptedAnswer={acceptedAnswer}
+            locked={locked}
+            scope={scope}
+            isUnread={unreadItems.has(String(branch.node.item))}
+            onChanged={onChanged}
+          />
+        ) : (
+          <p
+            id={`post-${branch.position.item}`}
+            className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground"
+          >
+            {isRoot ? "Opening post unavailable" : "Post unavailable"}
+          </p>
+        )}
       </div>
 
       {hasChildren ? (
@@ -328,7 +381,7 @@ function ThreadBranchView({
         >
           {branch.children.map((child) => (
             <ThreadBranchView
-              key={nodeKey(child.node)}
+              key={child.position.node}
               branch={child}
               level={level + 1}
               rootNodeId={rootNodeId}

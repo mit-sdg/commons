@@ -1,8 +1,8 @@
-import { each, form, former, view, where } from "@mit-sdg/sync-engine/language";
-import { concepts } from "../../concepts.ts";
-import { intact } from "./threads.ts";
+import { former, view, where, whether, compute } from "@mit-sdg/sync-engine/language";
+import { concepts, computations as c } from "../../concepts.ts";
+import { conversationPosts, postReader } from "./audience-policy.ts";
 
-const { Authenticating, Conversing, Posting, Profiling } = concepts;
+const { Authenticating, Posting, Profiling, Trashing } = concepts;
 
 /** What profile face belongs to this user? */
 export const theProfileFaceOf = former(
@@ -37,9 +37,12 @@ export const thePrivateProfileOf = former(
 
 /** What summary describes this post? */
 export const thePostSummaryOf = former(
-  "the post summary of (item)",
-  ({ item }, { author, content, createdAt, editedAt }) =>
-    where(Posting._getPost({ post: item }).is({ author, content, createdAt, editedAt })).form({
+  "the post summary of (item) for (reader)",
+  ({ item, reader }, { author, content, createdAt, editedAt }) =>
+    where(
+      postReader({ user: reader, post: item }),
+      Posting._getPost({ post: item }).is({ author, content, createdAt, editedAt }),
+    ).form({
       author,
       content,
       createdAt,
@@ -47,31 +50,26 @@ export const thePostSummaryOf = former(
     }),
 ).optional();
 
-export const publicThreadPosts = view(
-  "the public posts in (conversation)",
-  ({ conversation }, { node, item, author, createdAt }, _bindings) =>
+const statisticsInputs = view(
+  "the available inputs for statistics of (conversation) for (reader)",
+  ({ conversation, reader }, { nodes, posts, trashed }, _vars) =>
     where(
-      Conversing._getThread({ conversation }).is({ node, item }),
-      intact({ item }),
-      Posting._getPost({ post: item }).is({ author, createdAt }),
+      conversationPosts({ user: reader, conversation }).is({ nodes, posts }),
+      Trashing._trashedItems({}).is({ items: trashed }),
     ),
-).many();
-
+).optional();
 /** What statistics describe this conversation? */
 export const theThreadStatsOf = former(
-  "the thread stats of (conversation)",
-  ({ conversation }, { replyNode, replyItem, activityItem, activityAt, partItem, participant }) =>
-    form({
-      replyCount: each(publicThreadPosts({ conversation }).is({ node: replyNode, item: replyItem }))
-        .where(Conversing._parentOf({ node: replyNode }))
-        .count(),
-      lastActivityAt: each(
-        publicThreadPosts({ conversation }).is({ item: activityItem, createdAt: activityAt }),
-      )
-        .arranged(activityAt, "descending")
-        .first(activityAt),
-      participants: each(
-        publicThreadPosts({ conversation }).is({ item: partItem, author: participant }),
-      ).distinct(participant),
-    }),
+  "the thread stats of (conversation) for (reader)",
+  (
+    { conversation, reader },
+    { nodes, posts, trashed, visible, replyCount, lastActivityAt, participants },
+  ) =>
+    where(
+      whether(statisticsInputs({ conversation, reader }).is({ nodes, posts, trashed })),
+      compute(c.visibleThreadPosts, { nodes, posts, trashed }, visible),
+      compute(c.threadReplyCount, { posts: visible }, replyCount),
+      compute(c.threadLastActivity, { posts: visible }, lastActivityAt),
+      compute(c.threadParticipants, { posts: visible }, participants),
+    ).form({ replyCount, lastActivityAt, participants }),
 );

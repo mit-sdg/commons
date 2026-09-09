@@ -1,14 +1,58 @@
 import { activeUser } from "../access/session.ts";
-import { each, form, former, no, view, where, whether } from "@mit-sdg/sync-engine/language";
+import {
+  compute,
+  each,
+  form,
+  former,
+  is,
+  no,
+  view,
+  where,
+  whether,
+} from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { COMMONS } from "../access/capabilities.ts";
 import { isActiveCourseMember, mayManageCourse, mayNotManageCourse } from "../access/policy.ts";
 import { theRoleFaceOf } from "../access/roles.ts";
-import { concepts } from "../../concepts.ts";
+import { concepts, computations } from "../../concepts.ts";
 import { thePostSummaryOf, thePrivateProfileOf, theProfileFaceOf } from "./fragments.ts";
-import { intact } from "./threads.ts";
+import { postReader } from "./audience-policy.ts";
 
 const { Authenticating, Conversing, Posting, Profiling } = concepts;
+
+export const profileDisplayReader = view(
+  "(session) may read the display identity of (user)",
+  ({ session, user }, _out, { reader }) => [
+    where(activeUser({ session }).is({ user })),
+    where(activeUser({ session }).is({ user: reader }), mayManageCourse({ user: reader })),
+    where(activeUser({ session }).is({ user: reader }), isActiveCourseMember({ user: reader })),
+  ],
+).holds();
+
+/** Which display identities may this reader see? */
+export const theProfileDisplays = former(
+  "the display identities of (users) for (session)",
+  ({ users, session }, { user, displayName, avatar }) =>
+    each(Profiling._getProfilesOf({ users }).is({ user, displayName, avatar }))
+      .where(profileDisplayReader({ session, user }))
+      .form({ user, displayName, avatar }),
+);
+
+export const GetProfileDisplays = endpoint(
+  "/profiles/displays",
+  ({ session, users, valid }) =>
+    receive({ session, users })
+      .where(activeUser({ session }), compute(computations.validProfileSelection, { users }, valid))
+      .then(
+        where(is.among(valid, [true]))
+          .then(respond({ profiles: theProfileDisplays({ users, session }) }))
+          .named("valid"),
+        where(is.among(valid, [false]))
+          .then(respond({ error: "INVALID_REQUEST" }))
+          .named("invalid"),
+      ),
+  { input: { required: ["session", "users"] } },
+);
 /** What is this user's profile? */
 export const theProfileOf = view("the profile of (user)", ({ user }, { profile }, _bindings) =>
   where(Profiling._getProfile({ user }).is({ profile })),
@@ -23,21 +67,21 @@ export const theUserSearch = former("the user search (query)", ({ query }, { use
 );
 /** What belongs on this user's page? */
 export const theUserPage = former(
-  "the user page of (user)",
-  ({ user }, { post, node, conversation }) =>
+  "the user page of (user) for (reader)",
+  ({ user, reader }, { post, node, conversation }) =>
     form({
       profile: whether(theProfileFaceOf({ user })),
       role: whether(theRoleFaceOf({ user, context: COMMONS })),
       posts: each(Posting._getByAuthor({ author: user }).is({ post }))
         .where(
-          intact({ item: post }),
+          postReader({ user: reader, post }),
           whether(Conversing._getNodeByItem({ item: post }).is({ node })),
           whether(Conversing._getConversation({ node }).is({ conversation })),
         )
         .form({
           item: post,
           conversation,
-          post: whether(thePostSummaryOf({ item: post })),
+          post: whether(thePostSummaryOf({ item: post, reader })),
         }),
     }),
 );

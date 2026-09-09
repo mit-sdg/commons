@@ -14,6 +14,7 @@ import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { REACTION_KINDS } from "@/lib/constants";
 import type { Reaction } from "@/lib/models";
+import type { SharedPostControls } from "@/lib/post-controls";
 import { cn } from "@/lib/utils";
 
 const REACTION_LABELS: Record<string, string> = {
@@ -27,17 +28,27 @@ const REACTION_LABELS: Record<string, string> = {
   "🙏": "thanks",
 };
 
-export function ReactionBar({ target }: { target: string }) {
+export function ReactionBar({
+  target,
+  controls,
+}: {
+  target: string;
+  controls?: SharedPostControls;
+}) {
   const { session, me } = useAuth();
-  const { data, refetch } = useQuery<{ reactions: Reaction[] }>(
-    () => api.reactions.forTarget({ target }),
-    [target],
-  );
+  const { data, refetch: refetchIndividual } = useQuery<{
+    reactions: Reaction[];
+  }>(controls ? null : () => api.reactions.forTarget({ target }), [target]);
 
+  const refetch = controls?.refetch ?? refetchIndividual;
   const reactions = useMemo(() => data?.reactions ?? [], [data]);
   const myId = me ? String(me.user) : null;
 
   const groups = useMemo(() => {
+    if (controls)
+      return controls.data.reactions.map(
+        ({ kind, count, mine }) => [kind, { count, mine }] as const,
+      );
     const map = new Map<string, { count: number; mine: boolean }>();
     for (const r of reactions) {
       const prev = map.get(r.kind) ?? { count: 0, mine: false };
@@ -47,7 +58,7 @@ export function ReactionBar({ target }: { target: string }) {
       });
     }
     return [...map.entries()].sort((a, b) => b[1].count - a[1].count);
-  }, [reactions, myId]);
+  }, [reactions, myId, controls]);
 
   async function toggle(kind: string, mine: boolean) {
     if (!session) {

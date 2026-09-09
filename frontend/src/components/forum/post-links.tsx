@@ -3,19 +3,27 @@
 import { ArrowRightLeft, CornerDownRight } from "lucide-react";
 import { useQuery } from "@/hooks/use-query";
 import { api, unwrap } from "@/lib/api";
+import type { SharedPostControls } from "@/lib/post-controls";
 
-export function PostLinks({ post }: { post: string }) {
+export function PostLinks({
+  post,
+  controls,
+}: {
+  post: string;
+  controls?: SharedPostControls;
+}) {
   const back = useQuery(
-    () => api.links.backlinks({ target: post }).then(unwrap),
+    controls ? null : () => api.links.backlinks({ target: post }).then(unwrap),
     [post],
   );
   const forward = useQuery(
-    () => api.links.forward({ source: post }).then(unwrap),
+    controls ? null : () => api.links.forward({ source: post }).then(unwrap),
     [post],
   );
 
-  const backCount = back.data?.sources.length ?? 0;
-  const forwardCount = forward.data?.targets.length ?? 0;
+  const backCount = controls?.data.backlinks ?? back.data?.sources.length ?? 0;
+  const forwardCount =
+    controls?.data.forwardLinks ?? forward.data?.targets.length ?? 0;
   if (backCount === 0 && forwardCount === 0) return null;
 
   return (

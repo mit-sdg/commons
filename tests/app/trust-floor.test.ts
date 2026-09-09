@@ -424,7 +424,11 @@ describe("HTTP authorization and privacy", () => {
   });
 
   test("revision routes require a member session and hide trashed items while moderate readers may use moderation routes", async () => {
-    const thread = await call("/threads/create", { content: "private after trash" }, admin.cookie);
+    const thread = await call(
+      "/threads/create",
+      { holders: ["standing:everyone"], content: "private after trash" },
+      admin.cookie,
+    );
     const item = thread.body.post as string;
     for (const [path, body] of [
       ["/revisions/list", { item }],
@@ -472,15 +476,22 @@ describe("HTTP authorization and privacy", () => {
       learner.cookie,
     );
     const artifact = (attempts.body.attempts as { artifacts: string[] }[])[0].artifacts[0];
-    const thread = await call("/threads/create", { content: "A forum post" }, learner.cookie);
+    const thread = await call(
+      "/threads/create",
+      { holders: ["standing:everyone"], content: "A forum post" },
+      learner.cookie,
+    );
+    expect((await call("/posts/byAuthor", { author: learner.user }, learner.cookie)).body).toEqual({
+      posts: [{ post: thread.body.post }],
+    });
 
     expect((await call("/posts/byAuthor", { author: learner.user }, outsider.cookie)).body).toEqual(
       {
-        posts: [{ post: thread.body.post }],
+        posts: [],
       },
     );
     expect((await call("/posts/get", { post: thread.body.post }, outsider.cookie)).status).toBe(
-      200,
+      404,
     );
     for (const [path, body] of [
       ["/posts/get", { post: artifact }],
@@ -539,7 +550,11 @@ describe("HTTP authorization and privacy", () => {
   });
 
   test("target reads and mutations return the same 404 shapes for trashed, purged, and unknown posts except /threads/forItem, which returns its documented null shape", async () => {
-    const made = await call("/threads/create", { content: "satellite target" }, admin.cookie);
+    const made = await call(
+      "/threads/create",
+      { holders: ["standing:everyone"], content: "satellite target" },
+      admin.cookie,
+    );
     const item = made.body.post as string;
     const conversation = made.body.conversation as string;
     await call(
@@ -562,16 +577,16 @@ describe("HTTP authorization and privacy", () => {
       ["/reactions/forTarget", (post: string) => ({ target: post })],
       ["/links/backlinks", (post: string) => ({ target: post })],
       ["/links/forward", (post: string) => ({ source: post })],
-      ["/pins/isPinned", (post: string) => ({ item: post, scope: "forum" })],
+      ["/pins/isPinned", (post: string) => ({ item: post, scope: conversation })],
       ["/resolutions/get", (post: string) => ({ question: post })],
       ["/resolutions/isResolved", (post: string) => ({ question: post })],
       ["/threads/forItem", (post: string) => ({ item: post })],
       ["/locks/isLocked", (post: string) => ({ target: post })],
-      ["/bookmarks/isSaved", (post: string) => ({ item: post }), outsider.cookie],
+      ["/bookmarks/isSaved", (post: string) => ({ item: post }), learner.cookie],
       ["/flags/forTarget", (post: string) => ({ target: post }), admin.cookie],
     ] as const;
     const conversationProbes = [
-      ["/subscriptions/isSubscribed", (target: string) => ({ target }), outsider.cookie],
+      ["/subscriptions/isSubscribed", (target: string) => ({ target }), learner.cookie],
       ["/subscriptions/subscribers", (target: string) => ({ target })],
     ] as const;
 
@@ -600,8 +615,9 @@ describe("HTTP authorization and privacy", () => {
       );
     }
     for (const [path, bodyOf, cookie] of conversationProbes) {
-      expect(await call(path, bodyOf(conversation), cookie), `${path} trashed`).toEqual(
-        await call(path, bodyOf(unknownConversation), cookie),
+      expect((await call(path, bodyOf(conversation), cookie ?? learner.cookie)).status).toBe(200);
+      expect((await call(path, bodyOf(unknownConversation), cookie ?? learner.cookie)).status).toBe(
+        404,
       );
     }
     const hiddenMutations = [
@@ -611,15 +627,13 @@ describe("HTTP authorization and privacy", () => {
       ["/tags/remove", { target: item, tag: tag.body.tag }, learner.cookie],
       ["/reactions/add", { target: item, kind: "like" }, learner.cookie],
       ["/reactions/remove", { target: item, kind: "like" }, learner.cookie],
-      ["/pins/pin", { item, scope: "forum", priority: 1 }, admin.cookie],
-      ["/pins/unpin", { item, scope: "forum" }, admin.cookie],
-      ["/pins/setPriority", { item, scope: "forum", priority: 2 }, admin.cookie],
+      ["/pins/pin", { item, scope: conversation, priority: 1 }, admin.cookie],
+      ["/pins/unpin", { item, scope: conversation }, admin.cookie],
+      ["/pins/setPriority", { item, scope: conversation, priority: 2 }, admin.cookie],
       ["/flags/raise", { target: item, reason: "hidden" }, learner.cookie],
       ["/flags/resolve", { target: item, outcome: "dismissed" }, admin.cookie],
       ["/bookmarks/save", { item }, learner.cookie],
       ["/bookmarks/unsave", { item }, learner.cookie],
-      ["/subscriptions/subscribe", { target: conversation }, learner.cookie],
-      ["/subscriptions/unsubscribe", { target: conversation }, learner.cookie],
     ] as const;
     for (const [path, body, cookie] of hiddenMutations) {
       expect(await call(path, body, cookie), `${path} mutation`).toMatchObject({

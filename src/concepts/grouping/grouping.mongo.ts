@@ -152,4 +152,22 @@ export class MongoGroupingConcept {
     const doc = await this.groups.findOne({ _id: group });
     return { isMember: doc !== null && doc.members.includes(member) };
   }
+  async _anyMembership({ member, groups }: { member: string; groups: string[] }) {
+    return {
+      included:
+        (await this.groups.findOne(
+          { _id: { $in: groups }, members: member },
+          { projection: { _id: 1 } },
+        )) !== null,
+    };
+  }
+
+  async _allMemberships({ member, groups }: { member: string; groups: string[] }) {
+    const selected = [...new Set(groups)];
+    return {
+      included:
+        (await this.groups.countDocuments({ _id: { $in: selected }, members: member })) ===
+        selected.length,
+    };
+  }
 }

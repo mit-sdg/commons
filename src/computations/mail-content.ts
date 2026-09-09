@@ -43,8 +43,8 @@ export function notificationMailHtml(_input: { notification: string }): string {
 }
 
 const taskListKindPhrase: Record<string, string> = {
-  "task-list-added": "You were added to the task list",
-  "task-list-removed": "You were removed from the task list",
+  "task-list-added": "You were added to the group",
+  "task-list-removed": "You were removed from the group",
 };
 
 const taskKindPhrase: Record<string, string> = {
@@ -57,7 +57,7 @@ const taskKindPhrase: Record<string, string> = {
 };
 
 const membershipPhrase = (kind: string): string =>
-  taskListKindPhrase[kind] ?? "Your membership of the task list changed";
+  taskListKindPhrase[kind] ?? "Your membership of the group changed";
 
 const taskPhrase = (kind: string): string =>
   taskKindPhrase[kind] ?? "A task assigned to you changed";
@@ -77,12 +77,12 @@ export function taskListMailSubject({
 }
 
 export function taskListMailText({ kind, listTitle }: { kind: string; listTitle: string }): string {
-  return `${membershipPhrase(kind)} "${listTitle}".\n\n${taskListsLink()}`;
+  return `${membershipPhrase(kind)} "${listTitle}".\n\n${configuredPublicOrigin()}/groups`;
 }
 
 export function taskListMailHtml({ kind, listTitle }: { kind: string; listTitle: string }): string {
-  const link = taskListsLink();
-  return `<p>${escapeHtml(membershipPhrase(kind))} &quot;${escapeHtml(listTitle)}&quot;.</p><p><a href="${escapeHtml(link)}">Open your task lists</a></p>`;
+  const link = `${configuredPublicOrigin()}/groups`;
+  return `<p>${escapeHtml(membershipPhrase(kind))} &quot;${escapeHtml(listTitle)}&quot;.</p><p><a href="${escapeHtml(link)}">Open groups</a></p>`;
 }
 
 export function taskMailSubject({
@@ -108,7 +108,7 @@ export function taskMailText({
   listTitle: string;
   deadline: string;
 }): string {
-  return `${taskPhrase(kind)}.\n\nTask: ${taskTitle}\nList: ${listTitle}\nDue: ${deadline}\n\n${taskListsLink()}`;
+  return `${taskPhrase(kind)}.\n\nTask: ${taskTitle}\nGroup: ${listTitle}\nDue: ${deadline}\n\n${taskListsLink()}`;
 }
 
 export function taskMailHtml({
@@ -123,5 +123,5 @@ export function taskMailHtml({
   deadline: string;
 }): string {
   const link = taskListsLink();
-  return `<p>${escapeHtml(taskPhrase(kind))}.</p><ul><li>Task: ${escapeHtml(taskTitle)}</li><li>List: ${escapeHtml(listTitle)}</li><li>Due: ${escapeHtml(deadline)}</li></ul><p><a href="${escapeHtml(link)}">Open your task lists</a></p>`;
+  return `<p>${escapeHtml(taskPhrase(kind))}.</p><ul><li>Task: ${escapeHtml(taskTitle)}</li><li>Group: ${escapeHtml(listTitle)}</li><li>Due: ${escapeHtml(deadline)}</li></ul><p><a href="${escapeHtml(link)}">Open tasks</a></p>`;
 }

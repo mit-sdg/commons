@@ -56,22 +56,16 @@ import {
 } from "@/lib/role-subjects";
 import { cn } from "@/lib/utils";
 
-/**
- * The capabilities a role may carry, in the order the server declares them.
- *
- * `administer` is a wildcard rather than a power of its own: a role carrying it
- * satisfies every check, including capabilities added later.
- */
+// This registry is data-only and shared with backend role validation.
+import {
+  CAPABILITY_NAMES,
+  CAPABILITIES as ROLE_CAPABILITIES,
+} from "../../../../src/compositions/access/capabilities";
+
 const CAPABILITY_INFO: Record<string, string> = {
   administer:
     "Everything. A role carrying this satisfies every permission check, now and as new ones are added.",
-  moderate:
-    "Lock threads, trash posts, pin items, resolve flags, read post revisions, and assign posts to categories. Creating or deleting a category needs administer.",
-  "course:manage":
-    "Create and revise assignments, manage sections and enrolment, and set up or revise the class.",
-  grade: "Enter grades, view the gradebook, and view every submission.",
-  "student-records":
-    "Manage late days and staff notes about individual students.",
+  ...ROLE_CAPABILITIES,
 };
 
 function InviteMembersSection({ onInvited }: { onInvited: () => void }) {
@@ -590,9 +584,7 @@ function RoleAdmin({
   // `administer` is a wildcard the built-in administrator role carries, not a
   // registry entry: the server refuses a role defined with it, so it is
   // described here rather than offered as a choice.
-  const CAPABILITIES = Object.keys(CAPABILITY_INFO).filter(
-    (cap) => cap !== "administer",
-  );
+  const CAPABILITIES = CAPABILITY_NAMES;
 
   // This one list answers what the named person holds, how many people hold
   // each role, and who the administrators are, so a role change has to refresh

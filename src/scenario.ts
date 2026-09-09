@@ -28,13 +28,20 @@ export async function runScenario(instances: CommonsImplementations) {
   });
   if ("error" in login) throw new Error(String(login.error));
 
+  await edge.application.concepts.Rostering.enrol({
+    user: registered.user,
+    email: "mara@example.test",
+    kind: "STUDENT",
+    section: null,
+  });
   const created = await commons.threads.create({
     session: login.session,
     content: "What should a course make possible?",
+    holders: ["standing:everyone"],
   });
   if ("error" in created) throw new Error(String(created.error));
 
-  const listed = await commons.threads.activity({});
+  const listed = await commons.threads.activity({ session: login.session });
   if ("error" in listed) throw new Error(String(listed.error));
 
   return {

@@ -107,6 +107,9 @@ resetPassword(user: User, newPassword: String) : return (user: User)
 ## Queries
 
 ```queries
+_knownUsers (users: Seq) : one (known: Boolean)
+  answers whether every supplied user identity is registered; the empty selection answers true
+
 _getById (user: String) : optional (username: String, email: String)
   answers the username and email of the User
   answers no row when the User does not exist
@@ -121,6 +124,9 @@ _getByUsername (username: String) : optional (user: String)
 
 _getUserCount () : one (count: Number)
   answers the number of Users
+
+_selectedUsers (users: Seq) : many (user: String)
+  answers the registered account identities among the supplied users without resolving usernames
 
 _getUsers () : many (user: String, username: String, email: String)
   answers all registered Users with their usernames and email addresses

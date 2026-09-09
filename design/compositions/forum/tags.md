@@ -24,6 +24,13 @@ application on that post. Ordinary
 Posting deletion asks Tagging for the same idempotent clear through post cleanup.
 Commons offers no operation that deletes an entire tag definition.
 
+Creating a tag publishes its name to the shared catalog, independently of applying
+it to a post. Removing an application or failing to apply a newly created tag does
+not hide that name. The tag editor labels creation as course-wide and keeps a
+small visibility notice next to the creation input. Inline help explains that all
+signed-in users can see names even when the discussion is private, warns against
+sensitive names, and distinguishes that visibility from the discussion's audience.
+
 ```endpoints
 Forum.tags.AddTag at /tags/add
 Forum.tags.CreateTag at /tags/create
@@ -33,3 +40,5 @@ Forum.tags.TagTargets at /tags/targets
 Forum.tags.TagTargetsByName at /tags/targetsByName
 Forum.tags.TagsForTarget at /tags/forTarget
 ```
+
+All target reads and changes derive the reader from the session and apply the conversation’s current audience. Collections filter before projecting related identities or counts; author and moderator roles provide no ordinary read exception.

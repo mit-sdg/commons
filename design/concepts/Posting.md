@@ -59,6 +59,10 @@ delete(post: Post) : return (post: Post)
 ## Queries
 
 ```queries
+_postMetadata (posts: Seq) : one (posts: Seq)
+  answers identity, author, and creation time for the existing supplied Posts in one sequence
+  includes each matching Post once, omits unknown Posts, and promises no sequence order
+
 _getPost (post: String) : optional (author: String, content: String, createdAt: Date, editedAt: Date|Null)
   answers the complete Post
   answers no row when the Post does not exist

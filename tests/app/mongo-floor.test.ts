@@ -28,6 +28,12 @@ describe("Commons with Posting on MongoDB", () => {
       password: "password123",
       email: "amara@example.com",
     });
+    await app.concepts.Rostering.enrol({
+      user: registered.user,
+      email: (await app.concepts.Authenticating._getById({ user: registered.user }))[0].email,
+      kind: "STUDENT",
+      section: null,
+    });
     await app.concepts.Profiling.createProfile({
       user: registered.user,
       displayName: "Amara",
@@ -37,7 +43,11 @@ describe("Commons with Posting on MongoDB", () => {
       password: "password123",
     })) as { session: string };
 
-    const thread = await send("/threads/create", { session, content: "Hello from Mongo" });
+    const thread = await send("/threads/create", {
+      holders: ["standing:everyone"],
+      session,
+      content: "Hello from Mongo",
+    });
     expect(thread.post).toBeDefined();
     expect(thread.conversation).toBeDefined();
 
@@ -48,7 +58,7 @@ describe("Commons with Posting on MongoDB", () => {
     });
     expect(reply.post).toBeDefined();
 
-    const got = (await send("/threads/get", { conversation: thread.conversation })) as {
+    const got = (await send("/threads/get", { session, conversation: thread.conversation })) as {
       thread: { item: string; post: { content: string }; rendered: string }[];
     };
     expect(got.thread).toHaveLength(2);
@@ -65,6 +75,12 @@ describe("Commons with Posting on MongoDB", () => {
         password: "password123",
         email: `${username}@example.com`,
       });
+      await app.concepts.Rostering.enrol({
+        user: registered.user,
+        email: (await app.concepts.Authenticating._getById({ user: registered.user }))[0].email,
+        kind: "STUDENT",
+        section: null,
+      });
       await app.concepts.Profiling.createProfile({
         user: registered.user,
         displayName: username,
@@ -79,7 +95,11 @@ describe("Commons with Posting on MongoDB", () => {
       password: "password123",
     })) as { session: string };
 
-    const thread = await send("/threads/create", { session: ada, content: "before" });
+    const thread = await send("/threads/create", {
+      holders: ["standing:everyone"],
+      session: ada,
+      content: "before",
+    });
     const denied = await send("/posts/edit", {
       session: eve,
       post: thread.post,
@@ -89,7 +109,7 @@ describe("Commons with Posting on MongoDB", () => {
 
     const edited = await send("/posts/edit", { session: ada, post: thread.post, content: "after" });
     expect(edited.post).toBeDefined();
-    const got = (await send("/posts/get", { post: thread.post })) as {
+    const got = (await send("/posts/get", { session: ada, post: thread.post })) as {
       post: { content: string };
     };
     expect(got.post.content).toBe("after");

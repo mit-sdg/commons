@@ -10,6 +10,12 @@ async function actor(app: ReturnType<typeof assembleCommons>, username: string) 
     password: "password123",
     email: `${username}@example.edu`,
   });
+  await app.concepts.Rostering.enrol({
+    user: registered.user,
+    email: `${username}@example.edu`,
+    kind: "STUDENT",
+    section: null,
+  });
   await app.concepts.Profiling.createProfile({
     user: registered.user,
     displayName: username,
@@ -56,6 +62,7 @@ describe("boundary partitions", () => {
     const app = assembleCommons(mongoImplementations(await testDb()));
     const session = await actor(app, "thread_partition");
     const created = await app.invoker.invoke("/threads/create", {
+      holders: ["standing:everyone"],
       session,
       content: "Question",
     } as never);
@@ -87,7 +94,7 @@ describe("boundary partitions", () => {
       app,
       "/threads/reply",
       { session, parent: "missing-node", content: "Nowhere" },
-      { error: "PARENT_NODE_NOT_FOUND" },
+      { error: "NOT_FOUND" },
     );
   });
 
@@ -96,6 +103,7 @@ describe("boundary partitions", () => {
     const authorSession = await actor(app, "resolution_author");
     const otherSession = await actor(app, "resolution_other");
     const created = await app.invoker.invoke("/threads/create", {
+      holders: ["standing:everyone"],
       session: authorSession,
       content: "Question",
     } as never);
@@ -143,6 +151,9 @@ describe("boundary partitions", () => {
     const app = assembleCommons(mongoImplementations(await testDb()));
     await actor(app, "profile_overlap_admin");
     const session = await actor(app, "profile_overlap");
+    const [{ user }] = await app.concepts.Sessioning._getUser({ session });
+    const [{ seat }] = await app.concepts.Rostering._getSeatByUser({ user });
+    await app.concepts.Rostering.dropSeat({ seat });
     const before = inspectAssembly(app).occurrences.length;
     const result = await app.invoker.invoke("/profiles/get", {
       session,

@@ -3,9 +3,8 @@ import { each, former, is, no, view, where, whether } from "@mit-sdg/sync-engine
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { isActiveStudent, isNotActiveStudent, mayGrade, mayNotGrade } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
-import { thePost } from "../forum/posts.ts";
 
-const { Assigning, Profiling, Submitting } = concepts;
+const { Assigning, Formatting, Posting, Profiling, Submitting } = concepts;
 
 /** What is this learner's latest submission for this assignment? */
 export const theLatestSubmission = view(
@@ -184,6 +183,17 @@ export const Attempts = endpoint(
     ),
 );
 
+/** What submission artifact may this account inspect? */
+export const theArtifactPost = former(
+  "the artifact (artifact) of (assignment) by (submitter) for (user)",
+  ({ artifact, assignment, submitter, user }, { author, content, createdAt, editedAt, rendered }) =>
+    where(
+      mayReadSubmissionArtifact({ user, assignment, submitter, artifact }),
+      Posting._getPost({ post: artifact }).is({ author, content, createdAt, editedAt }),
+      Formatting._getRendered({ target: artifact }).is({ rendered }),
+    ).form({ author, content, createdAt, editedAt, rendered }),
+);
+
 export const Artifact = endpoint(
   "/submissions/artifact",
   ({ session, assignment, submitter, artifact, user }) =>
@@ -192,7 +202,7 @@ export const Artifact = endpoint(
         activeUser({ session }).is({ user }),
         mayReadSubmissionArtifact({ user, assignment, submitter, artifact }),
       )
-        .then(respond({ post: thePost({ post: artifact }) }))
+        .then(respond({ post: theArtifactPost({ artifact, assignment, submitter, user }) }))
         .named("success"),
       where(
         activeUser({ session }).is({ user }),

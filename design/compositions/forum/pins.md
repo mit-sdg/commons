@@ -8,9 +8,7 @@ priority appears first.
 [Forum.pins.PinsForScope](reaction:Forum.pins.PinsForScope) forms
 [the priority-ordered readable pins](former:Forum.pins.thePinsOf) in one scope.
 [Forum.pins.IsPinned](reaction:Forum.pins.IsPinned) reports one readable post's status in that scope. The
-scope is treated as an opaque conversation identity used to group pins;
-authority does not vary by scope, and pinning does not separately verify that
-the conversation exists.
+scope must be the post’s actual conversation, and the caller must currently belong to its audience.
 
 Trash hides a pin without removing it, so restore makes it visible again.
 After permanent post purge, [Forum.pins.PurgeClearsPins](reaction:Forum.pins.PurgeClearsPins) removes its pins from
@@ -25,3 +23,5 @@ Forum.pins.PinsForScope at /pins/forScope
 Forum.pins.SetPinPriority at /pins/setPriority
 Forum.pins.UnpinItem at /pins/unpin
 ```
+
+[pinnable](view:Forum.pins.pinnable) A pin belongs to the post’s actual conversation and requires current reader admission.

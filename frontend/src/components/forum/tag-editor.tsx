@@ -1,11 +1,12 @@
 "use client";
 
 import { Loader2, Plus, Tag as TagIcon, X } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useId, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@/components/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { InlineHelp } from "@/components/ui/inline-help";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
@@ -27,6 +28,8 @@ export function TagEditor({
   onChanged: () => void;
 }) {
   const { session } = useAuth();
+  const nameId = useId();
+  const visibilityId = useId();
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
@@ -163,8 +166,13 @@ export function TagEditor({
               </ScrollArea>
             ) : null}
 
+            <label htmlFor={nameId} className="mb-2 block text-xs font-medium">
+              Create course-wide tag
+            </label>
             <div className="flex items-center gap-2">
               <Input
+                id={nameId}
+                aria-describedby={visibilityId}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && add()}
@@ -177,14 +185,19 @@ export function TagEditor({
                 className="size-8 shrink-0"
                 onClick={add}
                 disabled={busy || !name.trim()}
-                aria-label="Add tag"
+                aria-label="Create course-wide tag"
               >
                 <Plus className="size-4" />
               </Button>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Type to create a new tag, or pick one above.
-            </p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+              <p id={visibilityId}>Tag names are visible course-wide.</p>
+              <InlineHelp label="Who can see tag names?">
+                Tag names are visible to all signed-in users, including tags
+                created on private discussions. Avoid sensitive names. The
+                discussion itself stays limited to its audience.
+              </InlineHelp>
+            </div>
           </PopoverContent>
         </Popover>
       ) : null}

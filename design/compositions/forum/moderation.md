@@ -51,3 +51,5 @@ Forum.moderation.TrashItem at /trash/trash
 Forum.moderation.TrashList at /trash/list
 Forum.moderation.UnlockTarget at /locks/unlock
 ```
+
+[Stored post presentation](former:Forum.moderation.theStoredPost) requires the moderator to belong to the post’s audience, including while the post is trashed.

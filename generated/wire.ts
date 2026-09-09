@@ -85,7 +85,7 @@ export type CommonsWire = {
     output: {
       "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["publish"]>>, ["assignment"]>>;
     };
-    error: { error: AppWideError | "ASSIGNMENT_NOT_DRAFT" | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "ASSIGNMENT_SCHEDULE_INVALID" | "FORBIDDEN" | "INVALID_INPUT" | "RELEASE_ALREADY_EXISTS" };
+    error: { error: AppWideError | "ASSIGNMENT_NOT_DRAFT" | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "ASSIGNMENT_SCHEDULE_INVALID" | "FORBIDDEN" | "INVALID_INPUT" | "MAIL_RECIPIENT_INVALID" | "RELEASE_ALREADY_EXISTS" };
   };
   "/assignments/revise": {
     input: {
@@ -104,7 +104,7 @@ export type CommonsWire = {
     output: {
       "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["revise"]>>, ["assignment"]>>;
     };
-    error: { error: AppWideError | "ASSIGNMENT_AUDIENCE_INVALID" | "ASSIGNMENT_EVERYONE_NO_TARGETS" | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "ASSIGNMENT_NOT_REVISABLE" | "ASSIGNMENT_SCHEDULE_INVALID" | "ASSIGNMENT_TARGETS_REQUIRED" | "FORBIDDEN" | "INVALID_INPUT" | "RELEASE_ALREADY_EXISTS" };
+    error: { error: AppWideError | "ASSIGNMENT_AUDIENCE_INVALID" | "ASSIGNMENT_EVERYONE_NO_TARGETS" | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "ASSIGNMENT_NOT_REVISABLE" | "ASSIGNMENT_SCHEDULE_INVALID" | "ASSIGNMENT_TARGETS_REQUIRED" | "FORBIDDEN" | "INVALID_INPUT" | "MAIL_RECIPIENT_INVALID" | "RELEASE_ALREADY_EXISTS" };
   };
   "/assignments/set-due-override": {
     input: {
@@ -163,6 +163,45 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
   };
+  "/audiences/forConversation": {
+    input: {
+      "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "holders": {
+        "holder": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>[0], ["holder"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>[0], ["holder"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>>>, ["holder"]>]>>;
+        "identity": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>]>]>>;
+        "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["kind"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>>, []>]>>;
+        "label": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>>, []>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/audiences/options": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "holders": {
+        "holder": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>[0], ["holder"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>[0], ["holder"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderCode"]["fn"]>>, []>]>>;
+        "identity": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>]>]>>;
+        "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["kind"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>>, []>]>>;
+        "label": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>>, []>>;
+      }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/audiences/preview": {
+    input: {
+      "holders": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["previewHolders"]["fn"]>[0], ["selected"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "holders": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["addressingPeople"]["fn"]>[0], ["holders"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["currentAddressing"]["fn"]>[0], ["holders"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["currentAudienceMembership"]["fn"]>[0], ["holders"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["selectedIdentities"]["fn"]>[0], ["holders"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["previewHolders"]["fn"]>>, []>]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "UNAUTHORIZED" };
+  };
   "/auth/accept-invitation": {
     input: {
       "displayName": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["createProfile"]>[0], ["displayName"]>>;
@@ -174,7 +213,7 @@ export type CommonsWire = {
     output: {
       "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Inviting"]["claim"]>[0], ["user"]>>;
     };
-    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "EMAIL_TAKEN" | "INVALID_BODY" | "INVALID_INPUT" | "INVITATION_INVALID" | "PASSWORD_INVALID_LENGTH" | "PROFILE_ALREADY_EXISTS" | "RELEASE_ALREADY_EXISTS" | "ROLE_NOT_FOUND" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_FOUND" | "SEAT_NOT_PENDING" | "USERNAME_INVALID_CHARS" | "USERNAME_INVALID_LENGTH" | "USERNAME_TAKEN" };
+    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "EMAIL_TAKEN" | "INVALID_BODY" | "INVALID_INPUT" | "INVITATION_INVALID" | "MAIL_RECIPIENT_INVALID" | "PASSWORD_INVALID_LENGTH" | "PROFILE_ALREADY_EXISTS" | "RELEASE_ALREADY_EXISTS" | "ROLE_NOT_FOUND" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_FOUND" | "SEAT_NOT_PENDING" | "USERNAME_INVALID_CHARS" | "USERNAME_INVALID_LENGTH" | "USERNAME_TAKEN" };
   };
   "/auth/changePassword": {
     input: {
@@ -363,7 +402,7 @@ export type CommonsWire = {
   "/categories/assign": {
     input: {
       "category": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["category"]>>;
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["item"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
@@ -395,6 +434,7 @@ export type CommonsWire = {
   "/categories/forItem": {
     input: {
       "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "category": {
@@ -408,6 +448,7 @@ export type CommonsWire = {
   "/categories/items": {
     input: {
       "category": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getItems"]>[0], ["category"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "items": {
@@ -417,7 +458,9 @@ export type CommonsWire = {
     error: { error: AppWideError | "INVALID_INPUT" };
   };
   "/categories/list": {
-    input: Record<string, never>;
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
     output: {
       "categories": {
         "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>>;
@@ -425,11 +468,11 @@ export type CommonsWire = {
         "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["name"]>>;
       }[];
     };
-    error: { error: AppWideError };
+    error: { error: AppWideError | "INVALID_INPUT" };
   };
   "/categories/unassign": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["unassign"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["unassign"]>[0], ["item"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
@@ -480,7 +523,7 @@ export type CommonsWire = {
     input: {
       "outcome": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Flagging"]["resolve"]>[0], ["outcome"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "target": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Flagging"]["resolve"]>[0], ["target"]>>;
+      "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Flagging"]["resolve"]>[0], ["target"]>]>>;
     };
     output: {
       "target": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Flagging"]["resolve"]>[0], ["target"]>>;
@@ -928,6 +971,7 @@ export type CommonsWire = {
   };
   "/links/backlinks": {
     input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
     };
     output: {
@@ -939,6 +983,7 @@ export type CommonsWire = {
   };
   "/links/forward": {
     input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "source": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
     };
     output: {
@@ -2593,7 +2638,8 @@ export type CommonsWire = {
   };
   "/locks/isLocked": {
     input: {
-      "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>]>]>>;
     };
     output: {
       "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
@@ -2601,19 +2647,21 @@ export type CommonsWire = {
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
   };
   "/locks/list": {
-    input: Record<string, never>;
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
     output: {
       "locked": {
         "lockedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_getLocked"]>>>, ["lockedAt"]>>;
-        "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_getLocked"]>>>, ["target"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_getLocked"]>>>, ["target"]>]>]>>;
+        "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_getLocked"]>>>, ["target"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_getLocked"]>>>, ["target"]>]>]>>;
       }[];
     };
-    error: { error: AppWideError };
+    error: { error: AppWideError | "INVALID_INPUT" };
   };
   "/locks/lock": {
     input: {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "target": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["lock"]>[0], ["target"]>>;
+      "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["lock"]>[0], ["target"]>]>>;
     };
     output: {
       "target": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["lock"]>[0], ["target"]>>;
@@ -2623,7 +2671,7 @@ export type CommonsWire = {
   "/locks/unlock": {
     input: {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "target": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["unlock"]>[0], ["target"]>>;
+      "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["unlock"]>[0], ["target"]>]>>;
     };
     output: {
       "target": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["unlock"]>[0], ["target"]>>;
@@ -2717,7 +2765,7 @@ export type CommonsWire = {
     output: {
       "notification": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["dismiss"]>>, ["notification"]>>;
     };
-    error: { error: AppWideError | "INVALID_INPUT" | "NOTIFICATION_NOT_FOUND" };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOTIFICATION_NOT_FOUND" | "NOT_FOUND" };
   };
   "/notifications/inbox": {
     input: {
@@ -2731,6 +2779,7 @@ export type CommonsWire = {
           "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>]>> | null;
           "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>> | null;
         };
+        "assignmentTitle": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignments"]>>>, ["title"]>> | null;
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["createdAt"]>>;
         "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["kind"]>>;
         "link": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["link"]>>;
@@ -2767,9 +2816,9 @@ export type CommonsWire = {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
-      "recipient": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["markAllRead"]>>, ["recipient"]>>;
+      "recipient": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>>;
     };
-    error: { error: AppWideError | "INVALID_INPUT" };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOTIFICATION_NOT_FOUND" };
   };
   "/notifications/markRead": {
     input: {
@@ -2779,20 +2828,21 @@ export type CommonsWire = {
     output: {
       "notification": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["markRead"]>>, ["notification"]>>;
     };
-    error: { error: AppWideError | "INVALID_INPUT" | "NOTIFICATION_NOT_FOUND" };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOTIFICATION_NOT_FOUND" | "NOT_FOUND" };
   };
   "/notifications/unreadCount": {
     input: {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
-      "count": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getUnreadCount"]>>>, ["count"]>>;
+      "count": number;
     };
     error: { error: AppWideError | "INVALID_INPUT" };
   };
   "/pins/forScope": {
     input: {
-      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_getPinned"]>[0], ["scope"]>>;
+      "scope": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "pinned": {
@@ -2800,12 +2850,13 @@ export type CommonsWire = {
         "priority": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["_getPinned"]>>>, ["priority"]>>;
       }[];
     };
-    error: { error: AppWideError | "INVALID_INPUT" };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
   };
   "/pins/isPinned": {
     input: {
       "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
-      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>>;
+      "scope": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "pinned": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>>>, ["pinned"]>>;
@@ -2814,9 +2865,9 @@ export type CommonsWire = {
   };
   "/pins/pin": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["item"]>]>>;
       "priority": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["priority"]>>;
-      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["scope"]>>;
+      "scope": Jsonify<OneOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["scope"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
@@ -2826,9 +2877,9 @@ export type CommonsWire = {
   };
   "/pins/setPriority": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["setPriority"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["setPriority"]>[0], ["item"]>]>>;
       "priority": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["setPriority"]>[0], ["priority"]>>;
-      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["setPriority"]>[0], ["scope"]>>;
+      "scope": Jsonify<OneOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["setPriority"]>[0], ["scope"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
@@ -2838,8 +2889,8 @@ export type CommonsWire = {
   };
   "/pins/unpin": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["item"]>>;
-      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["scope"]>>;
+      "item": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["item"]>]>>;
+      "scope": Jsonify<OneOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["scope"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
@@ -2850,6 +2901,7 @@ export type CommonsWire = {
   "/posts/byAuthor": {
     input: {
       "author": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getByAuthor"]>[0], ["author"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "posts": {
@@ -2860,7 +2912,7 @@ export type CommonsWire = {
   };
   "/posts/delete": {
     input: {
-      "post": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["delete"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "post": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["delete"]>[0], ["post"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
@@ -2871,7 +2923,7 @@ export type CommonsWire = {
   "/posts/edit": {
     input: {
       "content": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["edit"]>[0], ["content"]>>;
-      "post": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["edit"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+      "post": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["edit"]>[0], ["post"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
@@ -2882,6 +2934,7 @@ export type CommonsWire = {
   "/posts/get": {
     input: {
       "post": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Formatting"]["_getRendered"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "post": {
@@ -2893,6 +2946,20 @@ export type CommonsWire = {
       };
     };
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/profiles/displays": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "users": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validProfileSelection"]["fn"]>[0], ["users"]>>;
+    };
+    output: {
+      "profiles": {
+        "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["avatar"]>>;
+        "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["displayName"]>>;
+        "user": Jsonify<OneOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["user"]>]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "INVALID_REQUEST" };
   };
   "/profiles/get": {
     input: {
@@ -2958,6 +3025,7 @@ export type CommonsWire = {
   };
   "/reactions/forTarget": {
     input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reacting"]["_getReactionsForTarget"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
     };
     output: {
@@ -3004,6 +3072,7 @@ export type CommonsWire = {
   "/resolutions/get": {
     input: {
       "question": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Resolving"]["_getResolution"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "resolution": {
@@ -3016,10 +3085,13 @@ export type CommonsWire = {
   };
   "/resolutions/isResolved": {
     input: {
-      "question": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Resolving"]["_isResolved"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+      "question": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
-      "resolved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Resolving"]["_isResolved"]>>>, ["resolved"]>>;
+      "resolved": true;
+    } | {
+      "resolved": false;
     };
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
   };
@@ -3027,6 +3099,7 @@ export type CommonsWire = {
     input: {
       "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Revising"]["_getRevision"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
       "number": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Revising"]["_getRevision"]>[0], ["number"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "revision": {
@@ -3039,6 +3112,7 @@ export type CommonsWire = {
   "/revisions/latest": {
     input: {
       "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Revising"]["_getLatest"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "revision": {
@@ -3053,6 +3127,7 @@ export type CommonsWire = {
   "/revisions/list": {
     input: {
       "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Revising"]["_getRevisions"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "revisions": {
@@ -3318,7 +3393,7 @@ export type CommonsWire = {
     output: {
       "seat": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["reinstateSeat"]>>, ["seat"]>>;
     };
-    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "FORBIDDEN" | "INVALID_INPUT" | "RELEASE_ALREADY_EXISTS" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_DROPPED" | "SEAT_NOT_FOUND" };
+    error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "FORBIDDEN" | "INVALID_INPUT" | "MAIL_RECIPIENT_INVALID" | "RELEASE_ALREADY_EXISTS" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_DROPPED" | "SEAT_NOT_FOUND" };
   };
   "/roster/remove": {
     input: {
@@ -3611,7 +3686,7 @@ export type CommonsWire = {
   "/subscriptions/isSubscribed": {
     input: {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>[0], ["target"]>]>>;
+      "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>[0], ["target"]>]>>;
     };
     output: {
       "subscribed": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
@@ -3625,7 +3700,7 @@ export type CommonsWire = {
     output: {
       "subscriptions": {
         "subscribedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_getSubscriptions"]>>>, ["subscribedAt"]>>;
-        "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_getSubscriptions"]>>>, ["target"]>]>>;
+        "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_getSubscriptions"]>>>, ["target"]>]>>;
       }[];
     };
     error: { error: AppWideError | "INVALID_INPUT" };
@@ -3642,7 +3717,8 @@ export type CommonsWire = {
   };
   "/subscriptions/subscribers": {
     input: {
-      "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_getSubscribers"]>[0], ["target"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_getSubscribers"]>[0], ["target"]>]>>;
     };
     output: {
       "subscribers": {
@@ -3684,6 +3760,7 @@ export type CommonsWire = {
   };
   "/tags/forTarget": {
     input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTags"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
     };
     output: {
@@ -3695,14 +3772,16 @@ export type CommonsWire = {
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
   };
   "/tags/list": {
-    input: Record<string, never>;
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
     output: {
       "tags": {
         "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getAllTags"]>>>, ["name"]>>;
         "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getAllTags"]>>>, ["tag"]>>;
       }[];
     };
-    error: { error: AppWideError };
+    error: { error: AppWideError | "INVALID_INPUT" };
   };
   "/tags/remove": {
     input: {
@@ -3717,6 +3796,7 @@ export type CommonsWire = {
   };
   "/tags/targets": {
     input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTargets"]>[0], ["tag"]>>;
     };
     output: {
@@ -3729,6 +3809,7 @@ export type CommonsWire = {
   "/tags/targetsByName": {
     input: {
       "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getByName"]>[0], ["name"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "targets": {
@@ -3903,7 +3984,7 @@ export type CommonsWire = {
   };
   "/tasks/assign": {
     input: {
-      "assignee": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["member"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["assignee"]>]>>;
+      "assignee": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["assignee"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["task"]>]>>;
     };
@@ -3942,7 +4023,7 @@ export type CommonsWire = {
     input: {
       "details"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["details"]>>;
       "endsAt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["endsAt"]>>;
-      "list": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["group"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["scope"]>]>>;
+      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["scope"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "startsAt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["startsAt"]>>;
       "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["title"]>>;
@@ -3991,6 +4072,26 @@ export type CommonsWire = {
         "task": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["task"]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["title"]>>;
         "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["updatedAt"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/tasks/personal": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "tasks": {
+        "assignee": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["assignee"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["createdAt"]>>;
+        "details": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["details"]>>;
+        "endsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["endsAt"]>>;
+        "overdue": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["overdue"]>>;
+        "startsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["startsAt"]>>;
+        "state": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["state"]>>;
+        "task": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["task"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["title"]>>;
+        "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["updatedAt"]>>;
       }[];
     };
     error: { error: AppWideError | "INVALID_INPUT" };
@@ -4044,48 +4145,59 @@ export type CommonsWire = {
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "MAIL_RECIPIENT_INVALID" | "TASK_ALREADY_COMPLETE" | "TASK_NOT_CANCELED" | "TASK_NOT_FOUND" };
   };
   "/threads/activity": {
-    input: Record<string, never>;
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
     output: {
       "conversations": ({
+        "audience": {
+          "holder": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>[0], ["holder"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>[0], ["holder"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>>>, ["holder"]>]>>;
+          "identity": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>]>]>>;
+          "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["kind"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>>, []>]>>;
+          "label": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>>, []>>;
+        }[];
         "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>>>, ["home"]>> | null;
-        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["conversation"]>]>>;
+        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["conversation"]>]>>;
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["createdAt"]>>;
-        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Resolving"]["_isResolved"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["item"]>]>>;
-        "lastActivityAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Resolving"]["_getResolution"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["item"]>]>>;
+        "lastActivityAt": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadLastActivity"]["fn"]>>, []>>;
         "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
-        "participants": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>>[];
+        "participants": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadParticipants"]["fn"]>>, []>>;
         "post": {
-          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>>;
-          "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["content"]>>;
-          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>>;
-          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>>;
+          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>> | null;
+          "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["content"]>> | null;
+          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>> | null;
         };
-        "replyCount": number;
-        "resolved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Resolving"]["_isResolved"]>>>, ["resolved"]>>;
+        "replyCount": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadReplyCount"]["fn"]>>, []>>;
+        "resolved": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["visibleAnswer"]["fn"]>>, []>>;
         "root": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["root"]>>;
+        "staffQuestion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["staffQuestion"]["fn"]>>, []>>;
         "tags": {
           "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTags"]>>>, ["name"]>>;
           "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTags"]>>>, ["tag"]>>;
         }[];
       })[];
     };
-    error: { error: AppWideError };
+    error: { error: AppWideError | "INVALID_INPUT" };
   };
   "/threads/create": {
     input: {
       "content": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["create"]>[0], ["content"]>>;
+      "holders": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["addressingPeople"]["fn"]>[0], ["holders"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["currentAddressing"]["fn"]>[0], ["holders"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["currentAudienceMembership"]["fn"]>[0], ["holders"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["selectedIdentities"]["fn"]>[0], ["holders"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["establish"]>[0], ["holders"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
-      "conversation": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["start"]>>, ["conversation"]>>;
+      "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["establish"]>[0], ["resource"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["start"]>>, ["conversation"]>]>>;
       "node": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["start"]>>, ["node"]>>;
-      "post": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["start"]>[0], ["item"]>>;
+      "post": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["start"]>[0], ["item"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["create"]>>, ["post"]>]>>;
     };
-    error: { error: AppWideError | "INVALID_INPUT" | "ITEM_ALREADY_IN_CONVERSATION" | "ITEM_ALREADY_REGISTERED" | "MAIL_RECIPIENT_INVALID" };
+    error: { error: AppWideError | "ACCESS_ALREADY_ESTABLISHED" | "ALREADY_SUBMITTED" | "ALREADY_SUBSCRIBED" | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_IN_CONVERSATION" | "ITEM_ALREADY_REGISTERED" | "MAIL_RECIPIENT_INVALID" | "NO_PARTICIPANT" };
   };
   "/threads/forItem": {
     input: {
       "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "conversation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>> | null;
@@ -4094,17 +4206,31 @@ export type CommonsWire = {
   };
   "/threads/get": {
     input: {
-      "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>]>>;
+      "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "context": ({
-        "acceptedAnswer": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Resolving"]["_getResolution"]>>>, ["answer"]>> | null;
+        "acceptedAnswer": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Resolving"]["_getResolution"]>>>, ["answer"]>]>> | null;
+        "audience": {
+          "holder": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>[0], ["holder"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>[0], ["holder"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>>>, ["holder"]>]>>;
+          "identity": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>]>]>>;
+          "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["kind"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>>, []>]>>;
+          "label": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>>, []>>;
+        }[];
         "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>>>, ["home"]>> | null;
-        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Resolving"]["_getResolution"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["item"]>]>>;
-        "lastActivityAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Resolving"]["_getResolution"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["item"]>]>>;
+        "lastActivityAt": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadLastActivity"]["fn"]>>, []>>;
         "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
-        "participants": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>>[];
-        "replyCount": number;
+        "participants": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadParticipants"]["fn"]>>, []>>;
+        "replyCount": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadReplyCount"]["fn"]>>, []>>;
+        "root": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_parentOf"]>[0], ["node"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["node"]>]>>;
+        "structure": {
+          "depth": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["depth"]>>;
+          "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["item"]>>;
+          "node": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["node"]>>;
+          "parent": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["parent"]>>;
+        }[];
         "tags": {
           "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTags"]>>>, ["name"]>>;
           "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTags"]>>>, ["tag"]>>;
@@ -4124,51 +4250,150 @@ export type CommonsWire = {
         "rendered": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Formatting"]["_getRendered"]>>>, ["rendered"]>>;
       }[];
     };
-    error: { error: AppWideError | "INVALID_INPUT" };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/threads/index": {
+    input: {
+      "order": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validFeedOrder"]["fn"]>[0], ["order"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "conversations": {
+        "audience": {
+          "holder": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>[0], ["holder"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>[0], ["holder"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>>>, ["holder"]>]>>;
+          "identity": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>]>]>>;
+          "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["kind"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>>, []>]>>;
+          "label": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>>, []>>;
+        }[];
+        "conversation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["conversation"]>>;
+        "staffQuestion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["staffQuestion"]["fn"]>>, []>>;
+      }[];
+    } | {
+      "conversations": {
+        "audience": {
+          "holder": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>[0], ["holder"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>[0], ["holder"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>>>, ["holder"]>]>>;
+          "identity": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>]>]>>;
+          "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["kind"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>>, []>]>>;
+          "label": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>>, []>>;
+        }[];
+        "conversation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["conversation"]>>;
+        "staffQuestion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["staffQuestion"]["fn"]>>, []>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "INVALID_REQUEST" };
   };
   "/threads/latest": {
-    input: Record<string, never>;
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
     output: {
       "conversations": ({
+        "audience": {
+          "holder": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>[0], ["holder"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>[0], ["holder"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>>>, ["holder"]>]>>;
+          "identity": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>]>]>>;
+          "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["kind"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>>, []>]>>;
+          "label": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>>, []>>;
+        }[];
         "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>>>, ["home"]>> | null;
-        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["conversation"]>]>>;
+        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["conversation"]>]>>;
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["createdAt"]>>;
-        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Resolving"]["_isResolved"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["item"]>]>>;
-        "lastActivityAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Resolving"]["_getResolution"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["item"]>]>>;
+        "lastActivityAt": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadLastActivity"]["fn"]>>, []>>;
         "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
-        "participants": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>>[];
+        "participants": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadParticipants"]["fn"]>>, []>>;
         "post": {
-          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>>;
-          "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["content"]>>;
-          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>>;
-          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>>;
+          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>> | null;
+          "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["content"]>> | null;
+          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>> | null;
         };
-        "replyCount": number;
-        "resolved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Resolving"]["_isResolved"]>>>, ["resolved"]>>;
+        "replyCount": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadReplyCount"]["fn"]>>, []>>;
+        "resolved": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["visibleAnswer"]["fn"]>>, []>>;
         "root": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["root"]>>;
+        "staffQuestion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["staffQuestion"]["fn"]>>, []>>;
         "tags": {
           "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTags"]>>>, ["name"]>>;
           "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTags"]>>>, ["tag"]>>;
         }[];
       })[];
     };
-    error: { error: AppWideError };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/threads/post-controls": {
+    input: {
+      "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>]>>;
+      "posts": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validPostControlSelection"]["fn"]>[0], ["posts"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "posts": {
+        "backlinks": number;
+        "forwardLinks": number;
+        "pinned": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>>>, ["pinned"]>>;
+        "post": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["item"]>>;
+        "reactions": {
+          "count": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reacting"]["_countByKind"]>>>, ["count"]>>;
+          "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reacting"]["_hasReacted"]>[0], ["kind"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reacting"]["_countByKind"]>>>, ["kind"]>]>>;
+          "mine": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reacting"]["_hasReacted"]>>>, ["hasReacted"]>>;
+        }[];
+        "saved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Bookmarking"]["_isSaved"]>>>, ["saved"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/threads/reply": {
     input: {
       "content": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["create"]>[0], ["content"]>>;
-      "parent": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>[0], ["node"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["reply"]>[0], ["parent"]>]>>;
+      "parent": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>[0], ["node"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getItem"]>[0], ["node"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["reply"]>[0], ["parent"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "node": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["reply"]>>, ["node"]>>;
       "post": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["reply"]>[0], ["item"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_IN_CONVERSATION" | "ITEM_ALREADY_REGISTERED" | "MAIL_RECIPIENT_INVALID" | "PARENT_NODE_NOT_FOUND" };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_ALREADY_IN_CONVERSATION" | "ITEM_ALREADY_REGISTERED" | "MAIL_RECIPIENT_INVALID" | "NOT_FOUND" | "PARENT_NODE_NOT_FOUND" };
+  };
+  "/threads/summaries": {
+    input: {
+      "conversations": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validThreadSelection"]["fn"]>[0], ["conversations"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "conversations": ({
+        "audience": {
+          "holder": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>[0], ["holder"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>[0], ["holder"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>>>, ["holder"]>]>>;
+          "identity": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>]>]>>;
+          "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["kind"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>>, []>]>>;
+          "label": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>>, []>>;
+        }[];
+        "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>>>, ["home"]>> | null;
+        "conversation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["conversation"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["createdAt"]>>;
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["item"]>>;
+        "lastActivityAt": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadLastActivity"]["fn"]>>, []>>;
+        "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
+        "participants": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadParticipants"]["fn"]>>, []>>;
+        "post": {
+          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>> | null;
+          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>> | null;
+          "preview": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["postPreview"]["fn"]>>, []>> | null;
+        };
+        "replyCount": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadReplyCount"]["fn"]>>, []>>;
+        "resolved": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["visibleAnswer"]["fn"]>>, []>>;
+        "root": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["root"]>>;
+        "staffQuestion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["staffQuestion"]["fn"]>>, []>>;
+        "tags": {
+          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTags"]>>>, ["name"]>>;
+          "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTags"]>>>, ["tag"]>>;
+        }[];
+      })[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "INVALID_REQUEST" };
   };
   "/trash/isTrashed": {
     input: {
-      "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+      "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
@@ -4191,7 +4416,7 @@ export type CommonsWire = {
   };
   "/trash/purge": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["purge"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["purge"]>[0], ["item"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
@@ -4201,7 +4426,7 @@ export type CommonsWire = {
   };
   "/trash/restore": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["restore"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["restore"]>[0], ["item"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
@@ -4211,7 +4436,7 @@ export type CommonsWire = {
   };
   "/trash/trash": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
@@ -4221,35 +4446,35 @@ export type CommonsWire = {
   };
   "/unread/count": {
     input: {
-      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tracking"]["_getUnreadCount"]>[0], ["scope"]>>;
+      "scope": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
-      "count": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tracking"]["_getUnreadCount"]>>>, ["count"]>>;
+      "count": number;
     };
-    error: { error: AppWideError | "INVALID_INPUT" };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
   };
   "/unread/list": {
     input: {
-      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tracking"]["_getUnread"]>[0], ["scope"]>>;
+      "scope": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "items": {
-        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tracking"]["_getUnread"]>>>, ["item"]>>;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tracking"]["_getUnread"]>>>, ["item"]>]>>;
       }[];
     };
-    error: { error: AppWideError | "INVALID_INPUT" };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
   };
   "/unread/markAllSeen": {
     input: {
-      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tracking"]["markAllSeen"]>[0], ["scope"]>>;
+      "scope": Jsonify<OneOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
-      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tracking"]["markAllSeen"]>[0], ["user"]>>;
+      "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["currentAudienceMembership"]["fn"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Archiving"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_anyMembership"]>[0], ["member"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["_getRole"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>]>>;
     };
-    error: { error: AppWideError | "INVALID_INPUT" };
+    error: { error: AppWideError | "INVALID_INPUT" | "ITEM_ALREADY_SEEN" | "ITEM_NOT_REGISTERED" | "NOT_FOUND" };
   };
   "/unread/markSeen": {
     input: {
@@ -4259,7 +4484,7 @@ export type CommonsWire = {
     output: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tracking"]["markSeen"]>[0], ["item"]>>;
     };
-    error: { error: AppWideError | "INVALID_INPUT" | "ITEM_ALREADY_SEEN" | "ITEM_NOT_REGISTERED" };
+    error: { error: AppWideError | "INVALID_INPUT" | "ITEM_ALREADY_SEEN" | "ITEM_NOT_REGISTERED" | "NOT_FOUND" };
   };
   "/users/archive": {
     input: {
@@ -4473,6 +4698,41 @@ export type CommonsWireHttp = {
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
   };
+  "/audiences/forConversation": {
+    input: {
+      "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>]>>;
+    };
+    output: {
+      "holders": {
+        "holder": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>[0], ["holder"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>[0], ["holder"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>>>, ["holder"]>]>>;
+        "identity": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>]>]>>;
+        "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["kind"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>>, []>]>>;
+        "label": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>>, []>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/audiences/options": {
+    input: Record<string, never>;
+    output: {
+      "holders": {
+        "holder": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>[0], ["holder"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>[0], ["holder"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderCode"]["fn"]>>, []>]>>;
+        "identity": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>]>]>>;
+        "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["kind"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>>, []>]>>;
+        "label": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>>, []>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/audiences/preview": {
+    input: {
+      "holders": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["previewHolders"]["fn"]>[0], ["selected"]>>;
+    };
+    output: {
+      "holders": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["addressingPeople"]["fn"]>[0], ["holders"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["currentAddressing"]["fn"]>[0], ["holders"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["currentAudienceMembership"]["fn"]>[0], ["holders"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["selectedIdentities"]["fn"]>[0], ["holders"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["previewHolders"]["fn"]>>, []>]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
   "/auth/accept-invitation": {
     input: {
       "displayName": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["createProfile"]>[0], ["displayName"]>>;
@@ -4657,7 +4917,7 @@ export type CommonsWireHttp = {
   "/categories/assign": {
     input: {
       "category": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["category"]>>;
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>[0], ["item"]>]>>;
     };
     output: {
       "item": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["assign"]>>, ["item"]>>;
@@ -4716,11 +4976,11 @@ export type CommonsWireHttp = {
         "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["name"]>>;
       }[];
     };
-    error: { error: HttpAppWideError };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
   };
   "/categories/unassign": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["unassign"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["unassign"]>[0], ["item"]>]>>;
     };
     output: {
       "item": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["unassign"]>>, ["item"]>>;
@@ -4765,7 +5025,7 @@ export type CommonsWireHttp = {
   "/flags/resolve": {
     input: {
       "outcome": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Flagging"]["resolve"]>[0], ["outcome"]>>;
-      "target": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Flagging"]["resolve"]>[0], ["target"]>>;
+      "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Flagging"]["resolve"]>[0], ["target"]>]>>;
     };
     output: {
       "target": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Flagging"]["resolve"]>[0], ["target"]>>;
@@ -6741,7 +7001,7 @@ export type CommonsWireHttp = {
   };
   "/locks/isLocked": {
     input: {
-      "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>]>]>>;
+      "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>]>]>>;
     };
     output: {
       "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
@@ -6753,14 +7013,14 @@ export type CommonsWireHttp = {
     output: {
       "locked": {
         "lockedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_getLocked"]>>>, ["lockedAt"]>>;
-        "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_getLocked"]>>>, ["target"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_getLocked"]>>>, ["target"]>]>]>>;
+        "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_getLocked"]>>>, ["target"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_getLocked"]>>>, ["target"]>]>]>>;
       }[];
     };
-    error: { error: HttpAppWideError };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
   };
   "/locks/lock": {
     input: {
-      "target": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["lock"]>[0], ["target"]>>;
+      "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["lock"]>[0], ["target"]>]>>;
     };
     output: {
       "target": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["lock"]>[0], ["target"]>>;
@@ -6769,7 +7029,7 @@ export type CommonsWireHttp = {
   };
   "/locks/unlock": {
     input: {
-      "target": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["unlock"]>[0], ["target"]>>;
+      "target": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["unlock"]>[0], ["target"]>]>>;
     };
     output: {
       "target": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["unlock"]>[0], ["target"]>>;
@@ -6868,6 +7128,7 @@ export type CommonsWireHttp = {
           "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>]>> | null;
           "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>> | null;
         };
+        "assignmentTitle": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignments"]>>>, ["title"]>> | null;
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["createdAt"]>>;
         "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["kind"]>>;
         "link": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["link"]>>;
@@ -6900,9 +7161,9 @@ export type CommonsWireHttp = {
   "/notifications/markAllRead": {
     input: Record<string, never>;
     output: {
-      "recipient": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["markAllRead"]>>, ["recipient"]>>;
+      "recipient": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>>;
     };
-    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/notifications/markRead": {
     input: {
@@ -6916,13 +7177,13 @@ export type CommonsWireHttp = {
   "/notifications/unreadCount": {
     input: Record<string, never>;
     output: {
-      "count": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getUnreadCount"]>>>, ["count"]>>;
+      "count": number;
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" };
   };
   "/pins/forScope": {
     input: {
-      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_getPinned"]>[0], ["scope"]>>;
+      "scope": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>>;
     };
     output: {
       "pinned": {
@@ -6930,12 +7191,12 @@ export type CommonsWireHttp = {
         "priority": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["_getPinned"]>>>, ["priority"]>>;
       }[];
     };
-    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/pins/isPinned": {
     input: {
       "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
-      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>>;
+      "scope": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>]>>;
     };
     output: {
       "pinned": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>>>, ["pinned"]>>;
@@ -6944,9 +7205,9 @@ export type CommonsWireHttp = {
   };
   "/pins/pin": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["item"]>]>>;
       "priority": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["priority"]>>;
-      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["scope"]>>;
+      "scope": Jsonify<OneOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>[0], ["scope"]>]>>;
     };
     output: {
       "pin": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["pin"]>>, ["pin"]>>;
@@ -6955,9 +7216,9 @@ export type CommonsWireHttp = {
   };
   "/pins/setPriority": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["setPriority"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["setPriority"]>[0], ["item"]>]>>;
       "priority": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["setPriority"]>[0], ["priority"]>>;
-      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["setPriority"]>[0], ["scope"]>>;
+      "scope": Jsonify<OneOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["setPriority"]>[0], ["scope"]>]>>;
     };
     output: {
       "pin": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["setPriority"]>>, ["pin"]>>;
@@ -6966,8 +7227,8 @@ export type CommonsWireHttp = {
   };
   "/pins/unpin": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["item"]>>;
-      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["scope"]>>;
+      "item": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["item"]>]>>;
+      "scope": Jsonify<OneOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["scope"]>]>>;
     };
     output: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["unpin"]>[0], ["item"]>>;
@@ -6987,7 +7248,7 @@ export type CommonsWireHttp = {
   };
   "/posts/delete": {
     input: {
-      "post": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["delete"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
+      "post": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["delete"]>[0], ["post"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>]>>;
     };
     output: {
       "post": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["delete"]>[0], ["post"]>>;
@@ -6997,7 +7258,7 @@ export type CommonsWireHttp = {
   "/posts/edit": {
     input: {
       "content": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["edit"]>[0], ["content"]>>;
-      "post": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["edit"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+      "post": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["edit"]>[0], ["post"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>]>>;
     };
     output: {
       "post": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["edit"]>[0], ["post"]>>;
@@ -7018,6 +7279,19 @@ export type CommonsWireHttp = {
       };
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/profiles/displays": {
+    input: {
+      "users": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validProfileSelection"]["fn"]>[0], ["users"]>>;
+    };
+    output: {
+      "profiles": {
+        "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["avatar"]>>;
+        "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["displayName"]>>;
+        "user": Jsonify<OneOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["user"]>]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
   };
   "/profiles/get": {
     input: {
@@ -7133,10 +7407,12 @@ export type CommonsWireHttp = {
   };
   "/resolutions/isResolved": {
     input: {
-      "question": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Resolving"]["_isResolved"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+      "question": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
     };
     output: {
-      "resolved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Resolving"]["_isResolved"]>>>, ["resolved"]>>;
+      "resolved": true;
+    } | {
+      "resolved": false;
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
   };
@@ -7687,7 +7963,7 @@ export type CommonsWireHttp = {
   };
   "/subscriptions/isSubscribed": {
     input: {
-      "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>[0], ["target"]>]>>;
+      "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>[0], ["target"]>]>>;
     };
     output: {
       "subscribed": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
@@ -7699,7 +7975,7 @@ export type CommonsWireHttp = {
     output: {
       "subscriptions": {
         "subscribedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_getSubscriptions"]>>>, ["subscribedAt"]>>;
-        "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_getSubscriptions"]>>>, ["target"]>]>>;
+        "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_getSubscriptions"]>>>, ["target"]>]>>;
       }[];
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" };
@@ -7715,7 +7991,7 @@ export type CommonsWireHttp = {
   };
   "/subscriptions/subscribers": {
     input: {
-      "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_getSubscribers"]>[0], ["target"]>]>>;
+      "target": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_getSubscribers"]>[0], ["target"]>]>>;
     };
     output: {
       "subscribers": {
@@ -7772,7 +8048,7 @@ export type CommonsWireHttp = {
         "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getAllTags"]>>>, ["tag"]>>;
       }[];
     };
-    error: { error: HttpAppWideError };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
   };
   "/tags/remove": {
     input: {
@@ -7956,7 +8232,7 @@ export type CommonsWireHttp = {
   };
   "/tasks/assign": {
     input: {
-      "assignee": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["member"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["assignee"]>]>>;
+      "assignee": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["assignee"]>>;
       "task": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTask"]>[0], ["task"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["assign"]>[0], ["task"]>]>>;
     };
     output: {
@@ -7992,7 +8268,7 @@ export type CommonsWireHttp = {
     input: {
       "details"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["details"]>>;
       "endsAt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["endsAt"]>>;
-      "list": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_isMember"]>[0], ["group"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["scope"]>]>>;
+      "list": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["scope"]>>;
       "startsAt": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["startsAt"]>>;
       "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tasking"]["create"]>[0], ["title"]>>;
     };
@@ -8036,6 +8312,24 @@ export type CommonsWireHttp = {
         "task": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["task"]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["title"]>>;
         "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getAssigned"]>>>, ["updatedAt"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/tasks/personal": {
+    input: Record<string, never>;
+    output: {
+      "tasks": {
+        "assignee": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["assignee"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["createdAt"]>>;
+        "details": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["details"]>>;
+        "endsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["endsAt"]>>;
+        "overdue": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["overdue"]>>;
+        "startsAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["startsAt"]>>;
+        "state": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["state"]>>;
+        "task": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["task"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["title"]>>;
+        "updatedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tasking"]["_getTasksInScope"]>>>, ["updatedAt"]>>;
       }[];
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" };
@@ -8088,40 +8382,48 @@ export type CommonsWireHttp = {
     input: Record<string, never>;
     output: {
       "conversations": ({
+        "audience": {
+          "holder": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>[0], ["holder"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>[0], ["holder"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>>>, ["holder"]>]>>;
+          "identity": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>]>]>>;
+          "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["kind"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>>, []>]>>;
+          "label": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>>, []>>;
+        }[];
         "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>>>, ["home"]>> | null;
-        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["conversation"]>]>>;
+        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["conversation"]>]>>;
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["createdAt"]>>;
-        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Resolving"]["_isResolved"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["item"]>]>>;
-        "lastActivityAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Resolving"]["_getResolution"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["item"]>]>>;
+        "lastActivityAt": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadLastActivity"]["fn"]>>, []>>;
         "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
-        "participants": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>>[];
+        "participants": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadParticipants"]["fn"]>>, []>>;
         "post": {
-          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>>;
-          "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["content"]>>;
-          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>>;
-          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>>;
+          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>> | null;
+          "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["content"]>> | null;
+          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>> | null;
         };
-        "replyCount": number;
-        "resolved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Resolving"]["_isResolved"]>>>, ["resolved"]>>;
+        "replyCount": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadReplyCount"]["fn"]>>, []>>;
+        "resolved": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["visibleAnswer"]["fn"]>>, []>>;
         "root": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["root"]>>;
+        "staffQuestion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["staffQuestion"]["fn"]>>, []>>;
         "tags": {
           "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTags"]>>>, ["name"]>>;
           "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTags"]>>>, ["tag"]>>;
         }[];
       })[];
     };
-    error: { error: HttpAppWideError };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
   };
   "/threads/create": {
     input: {
       "content": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["create"]>[0], ["content"]>>;
+      "holders": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["addressingPeople"]["fn"]>[0], ["holders"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["currentAddressing"]["fn"]>[0], ["holders"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["currentAudienceMembership"]["fn"]>[0], ["holders"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["selectedIdentities"]["fn"]>[0], ["holders"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["establish"]>[0], ["holders"]>]>>;
     };
     output: {
-      "conversation": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["start"]>>, ["conversation"]>>;
+      "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["establish"]>[0], ["resource"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["start"]>>, ["conversation"]>]>>;
       "node": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["start"]>>, ["node"]>>;
-      "post": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["start"]>[0], ["item"]>>;
+      "post": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["start"]>[0], ["item"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["create"]>>, ["post"]>]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" };
   };
   "/threads/forItem": {
     input: {
@@ -8134,17 +8436,30 @@ export type CommonsWireHttp = {
   };
   "/threads/get": {
     input: {
-      "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>]>>;
+      "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>]>>;
     };
     output: {
       "context": ({
-        "acceptedAnswer": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Resolving"]["_getResolution"]>>>, ["answer"]>> | null;
+        "acceptedAnswer": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Resolving"]["_getResolution"]>>>, ["answer"]>]>> | null;
+        "audience": {
+          "holder": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>[0], ["holder"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>[0], ["holder"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>>>, ["holder"]>]>>;
+          "identity": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>]>]>>;
+          "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["kind"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>>, []>]>>;
+          "label": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>>, []>>;
+        }[];
         "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>>>, ["home"]>> | null;
-        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Resolving"]["_getResolution"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["item"]>]>>;
-        "lastActivityAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Resolving"]["_getResolution"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["item"]>]>>;
+        "lastActivityAt": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadLastActivity"]["fn"]>>, []>>;
         "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
-        "participants": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>>[];
-        "replyCount": number;
+        "participants": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadParticipants"]["fn"]>>, []>>;
+        "replyCount": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadReplyCount"]["fn"]>>, []>>;
+        "root": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_parentOf"]>[0], ["node"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["node"]>]>>;
+        "structure": {
+          "depth": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["depth"]>>;
+          "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["item"]>>;
+          "node": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["node"]>>;
+          "parent": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["parent"]>>;
+        }[];
         "tags": {
           "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTags"]>>>, ["name"]>>;
           "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTags"]>>>, ["tag"]>>;
@@ -8164,40 +8479,97 @@ export type CommonsWireHttp = {
         "rendered": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Formatting"]["_getRendered"]>>>, ["rendered"]>>;
       }[];
     };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/threads/index": {
+    input: {
+      "order": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validFeedOrder"]["fn"]>[0], ["order"]>>;
+    };
+    output: {
+      "conversations": {
+        "audience": {
+          "holder": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>[0], ["holder"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>[0], ["holder"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>>>, ["holder"]>]>>;
+          "identity": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>]>]>>;
+          "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["kind"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>>, []>]>>;
+          "label": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>>, []>>;
+        }[];
+        "conversation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversationsByLastActivity"]>>>, ["conversation"]>>;
+        "staffQuestion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["staffQuestion"]["fn"]>>, []>>;
+      }[];
+    } | {
+      "conversations": {
+        "audience": {
+          "holder": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>[0], ["holder"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>[0], ["holder"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>>>, ["holder"]>]>>;
+          "identity": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>]>]>>;
+          "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["kind"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>>, []>]>>;
+          "label": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>>, []>>;
+        }[];
+        "conversation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["conversation"]>>;
+        "staffQuestion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["staffQuestion"]["fn"]>>, []>>;
+      }[];
+    };
     error: { error: HttpAppWideError | "INVALID_REQUEST" };
   };
   "/threads/latest": {
     input: Record<string, never>;
     output: {
       "conversations": ({
+        "audience": {
+          "holder": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>[0], ["holder"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>[0], ["holder"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>>>, ["holder"]>]>>;
+          "identity": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>]>]>>;
+          "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["kind"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>>, []>]>>;
+          "label": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>>, []>>;
+        }[];
         "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>>>, ["home"]>> | null;
-        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["conversation"]>]>>;
+        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["conversation"]>]>>;
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["createdAt"]>>;
-        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Resolving"]["_isResolved"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["item"]>]>>;
-        "lastActivityAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Resolving"]["_getResolution"]>[0], ["question"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["item"]>]>>;
+        "lastActivityAt": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadLastActivity"]["fn"]>>, []>>;
         "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
-        "participants": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>>[];
+        "participants": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadParticipants"]["fn"]>>, []>>;
         "post": {
-          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>>;
-          "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["content"]>>;
-          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>>;
-          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>>;
+          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>> | null;
+          "content": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["content"]>> | null;
+          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>> | null;
         };
-        "replyCount": number;
-        "resolved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Resolving"]["_isResolved"]>>>, ["resolved"]>>;
+        "replyCount": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadReplyCount"]["fn"]>>, []>>;
+        "resolved": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["visibleAnswer"]["fn"]>>, []>>;
         "root": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["root"]>>;
+        "staffQuestion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["staffQuestion"]["fn"]>>, []>>;
         "tags": {
           "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTags"]>>>, ["name"]>>;
           "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTags"]>>>, ["tag"]>>;
         }[];
       })[];
     };
-    error: { error: HttpAppWideError };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/threads/post-controls": {
+    input: {
+      "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>]>>;
+      "posts": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validPostControlSelection"]["fn"]>[0], ["posts"]>>;
+    };
+    output: {
+      "posts": {
+        "backlinks": number;
+        "forwardLinks": number;
+        "pinned": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>>>, ["pinned"]>>;
+        "post": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getThread"]>>>, ["item"]>>;
+        "reactions": {
+          "count": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reacting"]["_countByKind"]>>>, ["count"]>>;
+          "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reacting"]["_hasReacted"]>[0], ["kind"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reacting"]["_countByKind"]>>>, ["kind"]>]>>;
+          "mine": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reacting"]["_hasReacted"]>>>, ["hasReacted"]>>;
+        }[];
+        "saved": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Bookmarking"]["_isSaved"]>>>, ["saved"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/threads/reply": {
     input: {
       "content": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["create"]>[0], ["content"]>>;
-      "parent": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>[0], ["node"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["reply"]>[0], ["parent"]>]>>;
+      "parent": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>[0], ["node"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getItem"]>[0], ["node"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["reply"]>[0], ["parent"]>]>>;
     };
     output: {
       "node": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["reply"]>>, ["node"]>>;
@@ -8205,9 +8577,46 @@ export type CommonsWireHttp = {
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
+  "/threads/summaries": {
+    input: {
+      "conversations": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validThreadSelection"]["fn"]>[0], ["conversations"]>>;
+    };
+    output: {
+      "conversations": ({
+        "audience": {
+          "holder": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>[0], ["holder"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>[0], ["holder"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Accessing"]["_grants"]>>>, ["holder"]>]>>;
+          "identity": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroup"]>[0], ["group"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["identity"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderSubject"]["fn"]>>, []>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>]>]>>;
+          "kind": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>[0], ["kind"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["holderKind"]["fn"]>>, []>]>>;
+          "label": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["audienceLabel"]["fn"]>>, []>>;
+        }[];
+        "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getHome"]>>>, ["home"]>> | null;
+        "conversation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["conversation"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["createdAt"]>>;
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["item"]>>;
+        "lastActivityAt": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadLastActivity"]["fn"]>>, []>>;
+        "locked": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
+        "participants": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadParticipants"]["fn"]>>, []>>;
+        "post": {
+          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["author"]>> | null;
+          "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["createdAt"]>> | null;
+          "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>>>, ["editedAt"]>> | null;
+          "preview": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["postPreview"]["fn"]>>, []>> | null;
+        };
+        "replyCount": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["threadReplyCount"]["fn"]>>, []>>;
+        "resolved": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["visibleAnswer"]["fn"]>>, []>>;
+        "root": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversations"]>>>, ["root"]>>;
+        "staffQuestion": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["staffQuestion"]["fn"]>>, []>>;
+        "tags": {
+          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTags"]>>>, ["name"]>>;
+          "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_getTags"]>>>, ["tag"]>>;
+        }[];
+      })[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
   "/trash/isTrashed": {
     input: {
-      "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
+      "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>>;
     };
     output: {
       "trashed": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>>>, ["trashed"]>>;
@@ -8227,7 +8636,7 @@ export type CommonsWireHttp = {
   };
   "/trash/purge": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["purge"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["purge"]>[0], ["item"]>]>>;
     };
     output: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["purge"]>[0], ["item"]>>;
@@ -8236,7 +8645,7 @@ export type CommonsWireHttp = {
   };
   "/trash/restore": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["restore"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["restore"]>[0], ["item"]>]>>;
     };
     output: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["restore"]>[0], ["item"]>>;
@@ -8245,7 +8654,7 @@ export type CommonsWireHttp = {
   };
   "/trash/trash": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>>;
+      "item": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>]>>;
     };
     output: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["trash"]>[0], ["item"]>>;
@@ -8254,32 +8663,32 @@ export type CommonsWireHttp = {
   };
   "/unread/count": {
     input: {
-      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tracking"]["_getUnreadCount"]>[0], ["scope"]>>;
+      "scope": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>>;
     };
     output: {
-      "count": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tracking"]["_getUnreadCount"]>>>, ["count"]>>;
+      "count": number;
     };
-    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/unread/list": {
     input: {
-      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tracking"]["_getUnread"]>[0], ["scope"]>>;
+      "scope": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>>;
     };
     output: {
       "items": {
-        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tracking"]["_getUnread"]>>>, ["item"]>>;
+        "item": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getNodeByItem"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Posting"]["_getPost"]>[0], ["post"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tracking"]["_getUnread"]>>>, ["item"]>]>>;
       }[];
     };
-    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/unread/markAllSeen": {
     input: {
-      "scope": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tracking"]["markAllSeen"]>[0], ["scope"]>>;
+      "scope": Jsonify<OneOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>]>]>>;
     };
     output: {
-      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tracking"]["markAllSeen"]>[0], ["user"]>>;
+      "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["currentAudienceMembership"]["fn"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Archiving"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_anyMembership"]>[0], ["member"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["_getRole"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>]>>;
     };
-    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/unread/markSeen": {
     input: {
@@ -8288,7 +8697,7 @@ export type CommonsWireHttp = {
     output: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tracking"]["markSeen"]>[0], ["item"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/users/archive": {
     input: {

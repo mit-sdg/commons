@@ -1,7 +1,7 @@
-import { no, view, where } from "@mit-sdg/sync-engine/language";
-import { concepts } from "../../concepts.ts";
+import { compute, is, no, view, where } from "@mit-sdg/sync-engine/language";
+import { concepts, computations } from "../../concepts.ts";
 
-const { Grouping, Tasking } = concepts;
+const { Authenticating, Grouping, Tasking } = concepts;
 
 export const belongsToList = view(
   "(user) belongs to task list (list)",
@@ -25,6 +25,24 @@ export const doesNotBelongToList = view(
     ),
 ).holds();
 
+/** A task scope is either the actor's own account or a group they belong to. */
+export const mayUseTaskScope = view(
+  "(user) may use task scope (list)",
+  ({ user, list }, _outputs, { owned }) => [
+    where(
+      Authenticating._getById({ user }),
+      compute(computations.ownsTaskScope, { user, scope: list }, owned),
+      is.among(owned, [true]),
+    ),
+    where(belongsToList({ user, list })),
+  ],
+).holds();
+
+export const mayNotUseTaskScope = view(
+  "(user) may not use task scope (list)",
+  ({ user, list }, _outputs, _bindings) => where(no(mayUseTaskScope({ user, list }))),
+).holds();
+
 /** Which list holds this task? Membership runs from the list to the task. */
 export const theListHolding = view(
   "the task list holding (task) at (at)",
@@ -34,25 +52,13 @@ export const theListHolding = view(
 export const mayActOnTask = view(
   "(user) may act on task (task) at (at)",
   ({ user, task, at }, _outputs, { list }) =>
-    where(
-      Tasking._getTask({ task, at }).is({ scope: list }),
-      Grouping._isMember({
-        group: list,
-        member: user,
-      }).is({ isMember: true }),
-    ),
+    where(Tasking._getTask({ task, at }).is({ scope: list }), mayUseTaskScope({ user, list })),
 ).holds();
 
 export const mayNotActOnTask = view(
   "(user) may not act on task (task) at (at)",
   ({ user, task, at }, _outputs, { list }) => [
-    where(
-      Tasking._getTask({ task, at }).is({ scope: list }),
-      Grouping._isMember({
-        group: list,
-        member: user,
-      }).is({ isMember: false }),
-    ),
+    where(Tasking._getTask({ task, at }).is({ scope: list }), mayNotUseTaskScope({ user, list })),
     where(no(Tasking._getTask({ task, at }))),
   ],
 ).holds();

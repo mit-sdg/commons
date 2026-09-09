@@ -12,13 +12,16 @@ export interface MailSender {
   }): Promise<unknown>;
 }
 
-interface PendingMail {
+export interface PendingMail {
+  key: string;
   message: string;
   recipient: string;
   subject: string;
   text: string;
   html: string;
 }
+
+export type MailEligibility = (mail: PendingMail) => Promise<boolean>;
 
 type Awaitable<Value> = Value | PromiseLike<Value>;
 
@@ -59,11 +62,13 @@ export async function deliverPendingMail(
   outbox: MailOutbox,
   configuration: MailConfiguration,
   sender: MailSender,
+  eligible: MailEligibility = async (mail) => !mail.key.startsWith("forum:"),
 ): Promise<number> {
   const pending = await outbox._getPending({});
   let delivered = 0;
   for (const mail of pending) {
     try {
+      if (!(await eligible(mail))) continue;
       await sender.sendMail({
         from: configuration.from,
         to: mail.recipient,
@@ -95,12 +100,13 @@ export function startMailWorker(
   configuration: MailConfiguration,
   sender: MailSender = smtpSender(configuration),
   intervalMs = 2_000,
+  eligible?: MailEligibility,
 ) {
   let stopped = false;
   let running: Promise<void> | undefined;
   const tick = () => {
     if (stopped || running !== undefined) return;
-    running = deliverPendingMail(outbox, configuration, sender)
+    running = deliverPendingMail(outbox, configuration, sender, eligible)
       .then(() => undefined)
       .catch(() => console.error("email: could not read the outbox."))
       .finally(() => {

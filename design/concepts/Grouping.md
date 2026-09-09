@@ -111,6 +111,12 @@ leave(group: Group, member: Person, at: Date) : return (group: Group)
 ## Queries
 
 ```queries
+_anyMembership (member: Person, groups: Seq) : one (included: Boolean)
+  answers whether the member belongs to at least one supplied group; unknown groups do not match and the empty selection answers false
+
+_allMemberships (member: Person, groups: Seq) : one (included: Boolean)
+  answers whether the member belongs to every supplied group; unknown groups fail and the empty selection answers true
+
 _getGroup (group: String) : optional (title: String, createdAt: Date, updatedAt: Date)
   answers the group's title and timestamps
   answers no row when the group does not exist

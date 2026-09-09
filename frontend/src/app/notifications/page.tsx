@@ -20,6 +20,7 @@ const FILTER_LABELS: Record<NotificationFilter, string> = {
   all: "All",
   unread: "Unread",
   forum: "Discussions",
+  course: "Course",
   task: "Tasks",
 };
 
@@ -27,6 +28,7 @@ const EMPTY_DESCRIPTIONS: Record<NotificationFilter, string> = {
   all: "When something happens, you'll hear about it here.",
   unread: "Everything here has been read.",
   forum: "Replies, mentions, and answers will show up here.",
+  course: "New assignments will show up here.",
   task: "Task assignments and list changes will show up here.",
 };
 

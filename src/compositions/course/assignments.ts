@@ -19,7 +19,7 @@ import {
 } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 
-const { Assigning, Posting, Rostering, Submitting } = concepts;
+const { Assigning, Notifying, Posting, Rostering, Submitting } = concepts;
 /** Which assignments belong to this learner? */
 export const theAssignmentsOf = former(
   "the assignments of (student)",
@@ -445,5 +445,23 @@ export const Submit = endpoint(
       where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
+    ),
+);
+
+/** Notify each actual release, including targeted publication and later enrolment. */
+export const AssignmentReleaseNotifiesStudent = reaction(({ assignment, assignee, at }) =>
+  when(Assigning.assign({ assignment, assignee, at }).responds())
+    .where(
+      isActiveStudent({ user: assignee }),
+      Assigning._getAssignments({}).is({ assignment, status: "PUBLISHED" }),
+    )
+    .then(
+      Notifying.notify({
+        recipient: assignee,
+        kind: "assignment_released",
+        subject: assignment,
+        link: assignment,
+        at,
+      }),
     ),
 );

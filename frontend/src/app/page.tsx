@@ -2,23 +2,23 @@
 
 import {
   BookOpen,
-  Clock,
   GraduationCap,
   MessagesSquare,
   PenLine,
   StickyNote,
 } from "lucide-react";
 import { useCallback, useState } from "react";
+import { AudienceFilter } from "@/components/forum/audience-picker";
 import { CategoryDot } from "@/components/forum/badges";
-import { TopicRow } from "@/components/forum/topic-row";
+import { TopicList } from "@/components/forum/topic-list";
 import { Link } from "@/components/link";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@/hooks/use-query";
-import { api } from "@/lib/api";
+import { api, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { matchesDiscussionAudience } from "@/lib/discussion-filters";
 import {
   loadAssignments,
   loadGradesForMe,
@@ -26,7 +26,7 @@ import {
   loadRosterMe,
   loadVisibleNotes,
 } from "@/lib/lms";
-import { loadFeed } from "@/lib/loaders";
+import { loadFeedIndex } from "@/lib/loaders";
 import { SELF_ADD_HREF } from "@/lib/roster-people";
 
 function CategoriesCard() {
@@ -114,8 +114,8 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
             {canManageCourse ? (
               <>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Add yourself as staff to preview the student experience.
-                  Review your details before confirming.
+                  Add yourself to the course roster. Review your details before
+                  confirming.
                 </p>
                 <Button asChild size="sm" variant="outline" className="mt-3">
                   <Link href={SELF_ADD_HREF}>Add yourself to the roster</Link>
@@ -161,13 +161,10 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
     );
   }
 
-  const upcoming =
-    assignmentsData?.assignments
-      ?.filter((a) => a.status === "ASSIGNED")
-      .slice(0, 5) ?? [];
+  const assigned =
+    assignmentsData?.assignments?.filter((a) => a.status === "ASSIGNED") ?? [];
   const released =
-    gradesData?.grades?.filter((g) => g.status === "RELEASED").slice(0, 5) ??
-    [];
+    gradesData?.grades?.filter((g) => g.status === "RELEASED") ?? [];
   const unacknowledged =
     notesData?.notes?.filter((n) => !n.acknowledgedAt).length ?? 0;
 
@@ -201,11 +198,9 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
             href="/assignments"
             className="rounded-lg border border-border bg-card p-3 hover:bg-muted/50 transition-colors"
           >
-            <p className="text-xs text-muted-foreground">Upcoming</p>
-            <p className="text-2xl font-semibold">{upcoming.length}</p>
-            <p className="text-xs text-muted-foreground">
-              {upcoming.length === 1 ? "assignment due" : "assignments due"}
-            </p>
+            <p className="text-xs text-muted-foreground">Assignments</p>
+            <p className="text-2xl font-semibold">{assigned.length}</p>
+            <p className="text-xs text-muted-foreground">assigned to you</p>
           </Link>
           <Link
             href="/notes"
@@ -233,59 +228,6 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
         </div>
       </div>
 
-      {upcoming.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Clock className="size-4" /> Upcoming Assignments
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {upcoming.map((a) => (
-                <Link
-                  key={a.assignment}
-                  href={`/assignments/${a.assignment}`}
-                  className="flex items-center justify-between rounded-lg border border-border px-3 py-2 hover:bg-muted/50 transition-colors"
-                >
-                  <span className="text-sm font-medium">{a.assignment}</span>
-                  <Badge variant="secondary" className="text-xs">
-                    DUE
-                  </Badge>
-                </Link>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {released.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <GraduationCap className="size-4" /> Recent Grades
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {released.map((g) => (
-                <div
-                  key={g.grade}
-                  className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
-                >
-                  <span className="text-sm font-medium">
-                    {g.label || g.item}
-                  </span>
-                  <Badge>
-                    {g.score} / {g.maxPoints}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {unacknowledged > 0 && (
         <Card>
           <CardHeader className="pb-2">
@@ -309,19 +251,56 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
 }
 
 export default function HomePage() {
+  const { me, permissions } = useAuth();
+  const [recipientSelection, setRecipientSelection] = useState({
+    user: me?.user,
+    holder: "",
+  });
+  const addressedTo =
+    recipientSelection.user === me?.user ? recipientSelection.holder : "";
+  const selectRecipient = (holder: string) =>
+    setRecipientSelection({ user: me?.user, holder });
   const [sort, setSort] = useState<"latest" | "activity">("latest");
+  const [audienceFilter, setAudienceFilter] = useState<
+    "all" | "everyone" | "private" | "staff"
+  >("all");
   const {
     data,
     loading: feedLoading,
     error: feedError,
     refetch,
   } = useQuery(
-    useCallback(() => loadFeed(sort), [sort]),
-    [sort],
+    useCallback(() => loadFeedIndex(sort), [sort]),
+    [sort, me?.user],
   );
-  const { me, permissions } = useAuth();
 
+  const addressable = useQuery(
+    me ? async () => unwrap(await api.audiences.options({})) : null,
+    [me?.user],
+  );
   const showLms = me !== null;
+  const recipients = [
+    ...new Map(
+      [
+        ...(data ?? []).flatMap((conversation) => conversation.audience),
+        ...(addressable.data?.holders ?? []).filter(
+          (holder) => holder.kind === "group",
+        ),
+      ].map((holder) => [holder.holder, holder]),
+    ).values(),
+  ].sort(
+    (a, b) =>
+      a.label.localeCompare(b.label) ||
+      a.kind.localeCompare(b.kind) ||
+      a.holder.localeCompare(b.holder),
+  );
+  const visible = data?.filter((conversation) =>
+    matchesDiscussionAudience(
+      conversation.audience,
+      audienceFilter,
+      addressedTo,
+    ),
+  );
 
   return (
     <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_18rem] lg:py-10">
@@ -364,27 +343,78 @@ export default function HomePage() {
               </button>
             </div>
           </div>
-          <Button asChild size="sm" className="gap-1.5">
-            <Link href="/new">
-              <PenLine className="size-4" /> New discussion
-            </Link>
-          </Button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button asChild size="sm" variant="outline">
+              <Link href="/new?audience=staff">Ask staff privately</Link>
+            </Button>
+            <Button asChild size="sm" className="gap-1.5">
+              <Link href="/new">
+                <PenLine className="size-4" /> New discussion
+              </Link>
+            </Button>
+          </div>
+        </div>
+
+        <div
+          aria-label="Discussion audience filters"
+          className="mb-4 flex flex-wrap gap-2"
+        >
+          {(["all", "everyone", "private", "staff"] as const).map((filter) => (
+            <Button
+              key={filter}
+              size="sm"
+              variant={audienceFilter === filter ? "default" : "outline"}
+              aria-pressed={audienceFilter === filter}
+              onClick={() => {
+                setAudienceFilter(filter as typeof audienceFilter);
+                if (filter === "staff") setSort("activity");
+              }}
+            >
+              {
+                (
+                  {
+                    all: "All",
+                    everyone: "Course-wide",
+                    private: "Private",
+                    staff: "To Staff",
+                  } as Record<string, string>
+                )[filter]
+              }
+            </Button>
+          ))}
+          <AudienceFilter
+            options={recipients}
+            value={addressedTo}
+            onChange={selectRecipient}
+          />
         </div>
 
         {feedLoading && !data ? (
           <LoadingState label="Gathering the latest…" />
         ) : feedError ? (
           <ErrorState message={feedError} onRetry={refetch} />
-        ) : data && data.length > 0 ? (
-          <div className="-mx-3">
-            {data.map((summary, i) => (
-              <TopicRow
-                key={String(summary.conversation)}
-                summary={summary}
-                index={i}
-              />
-            ))}
-          </div>
+        ) : visible && visible.length > 0 ? (
+          <TopicList
+            key={JSON.stringify([me?.user, sort, audienceFilter, addressedTo])}
+            conversations={visible.map((row) => String(row.conversation))}
+          />
+        ) : addressedTo || audienceFilter !== "all" ? (
+          <EmptyState
+            icon={MessagesSquare}
+            title="No discussions match these filters"
+            description="Only discussions you can read appear here."
+            action={
+              <Button
+                variant="outline"
+                onClick={() => {
+                  selectRecipient("");
+                  setAudienceFilter("all");
+                }}
+              >
+                Reset filters
+              </Button>
+            }
+          />
         ) : (
           <EmptyState
             icon={MessagesSquare}

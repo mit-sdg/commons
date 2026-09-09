@@ -1,3 +1,38 @@
+import { ownsTaskScope } from "./computations/task-scopes.ts";
+import { validPostControlSelection } from "./computations/post-controls.ts";
+import {
+  validFeedOrder,
+  validThreadSelection,
+  metadataOpeningAuthor,
+  postPreview,
+} from "./computations/feed.ts";
+import { validProfileSelection } from "./computations/profile-display.ts";
+import {
+  hasStoredPosts,
+  threadPostIds,
+  visibleThreadPosts,
+  threadReplyCount,
+  threadLastActivity,
+  threadParticipants,
+} from "./computations/thread-statistics.ts";
+import {
+  staffQuestion,
+  forumMailKey,
+  visibleAnswer,
+  selectedSection,
+  currentAudienceMembership,
+  staffCapabilities,
+  holderCode,
+  completeAddressing,
+  holderKind,
+  holderSubject,
+  audienceLabel,
+  selectedIdentities,
+  addressingPeople,
+  currentAddressing,
+  previewHolders,
+} from "./computations/audiences.ts";
+import { accessing } from "./concepts/accessing/registry.ts";
 import {
   openingAuthorized,
   openingBrief,
@@ -196,6 +231,7 @@ import {
 } from "./computations/mail-content.ts";
 
 const registrations = {
+  Accessing: accessing,
   AdoptLinking: linking,
   Archiving: trashing,
   Assigning: assigning,
@@ -250,6 +286,34 @@ const registrations = {
 };
 
 export const learningConcepts = conceptSet(registrations, {
+  validPostControlSelection,
+  validProfileSelection,
+  validFeedOrder,
+  validThreadSelection,
+  metadataOpeningAuthor,
+  postPreview,
+  hasStoredPosts,
+  threadPostIds,
+  visibleThreadPosts,
+  threadReplyCount,
+  threadLastActivity,
+  threadParticipants,
+  staffQuestion,
+  forumMailKey,
+  visibleAnswer,
+  selectedSection,
+  ownsTaskScope,
+  currentAudienceMembership,
+  staffCapabilities,
+  holderCode,
+  completeAddressing,
+  holderKind,
+  holderSubject,
+  audienceLabel,
+  selectedIdentities,
+  addressingPeople,
+  currentAddressing,
+  previewHolders,
   openingAuthorized,
   openingBrief,
   openingAdmission,

@@ -12,25 +12,29 @@ export const theTags = former("the tags ()", (_inputs, { tag, name }) =>
 );
 
 /** Which tags are on this target? */
-export const theTagsOn = former("the tags on (target)", ({ target }, { tag, name }) =>
-  each(Tagging._getTags({ target }).is({ tag, name }))
-    .where(readable({ post: target }))
-    .form({ tag, name }),
+export const theTagsOn = former(
+  "the tags on (target) for (reader)",
+  ({ target, reader }, { tag, name }) =>
+    each(Tagging._getTags({ target }).is({ tag, name }))
+      .where(readable({ post: target, reader }))
+      .form({ tag, name }),
 );
 
 /** Which targets carry this tag? */
-export const theTargetsTagged = former("the targets tagged (tag)", ({ tag }, { target }) =>
-  each(Tagging._getTargets({ tag }).is({ target }))
-    .where(readable({ post: target }))
-    .form({ target }),
+export const theTargetsTagged = former(
+  "the targets tagged (tag) for (reader)",
+  ({ tag, reader }, { target }) =>
+    each(Tagging._getTargets({ tag }).is({ target }))
+      .where(readable({ post: target, reader }))
+      .form({ target }),
 );
 
 /** Which targets carry the tag with this name? */
 export const theTargetsTaggedWithName = former(
-  "the targets tagged with (name)",
-  ({ name }, { tag, target }) =>
+  "the targets tagged with (name) for (reader)",
+  ({ name, reader }, { tag, target }) =>
     each(Tagging._getByName({ name }).is({ tag }))
-      .where(Tagging._getTargets({ tag }).is({ target }), readable({ post: target }))
+      .where(Tagging._getTargets({ tag }).is({ target }), readable({ post: target, reader }))
       .form({ target }),
 );
 
@@ -48,49 +52,54 @@ export const CreateTag = endpoint(
   { input: { required: ["session", "name"] } },
 );
 
-export const AddTag = endpoint("/tags/add", ({ session, target, tag, tagged }) =>
+export const AddTag = endpoint("/tags/add", ({ session, target, tag, tagged, reader }) =>
   receive({ session, target, tag }).then(
-    where(activeUser({ session }), readable({ post: target }))
+    where(activeUser({ session }).is({ user: reader }), readable({ post: target, reader }))
       .then(Tagging.addTag({ target, tag }).responds({ target: tagged }))
       .then(respond({ target: tagged }))
       .named("success"),
-    where(activeUser({ session }), notReadable({ post: target }))
+    where(activeUser({ session }).is({ user: reader }), notReadable({ post: target, reader }))
       .then(respond({ error: "NOT_FOUND" }))
       .named("hidden"),
   ),
 );
 
-export const RemoveTag = endpoint("/tags/remove", ({ session, target, tag, untagged }) =>
+export const RemoveTag = endpoint("/tags/remove", ({ session, target, tag, untagged, reader }) =>
   receive({ session, target, tag }).then(
-    where(activeUser({ session }), readable({ post: target }))
+    where(activeUser({ session }).is({ user: reader }), readable({ post: target, reader }))
       .then(Tagging.removeTag({ target, tag }).responds({ target: untagged }))
       .then(respond({ target: untagged }))
       .named("success"),
-    where(activeUser({ session }), notReadable({ post: target }))
+    where(activeUser({ session }).is({ user: reader }), notReadable({ post: target, reader }))
       .then(respond({ error: "NOT_FOUND" }))
       .named("hidden"),
   ),
 );
 
-export const TagTargets = endpoint("/tags/targets", ({ tag }) =>
-  receive({ tag }).then(respond({ targets: theTargetsTagged({ tag }) })),
+export const TagTargets = endpoint("/tags/targets", ({ session, tag, reader }) =>
+  receive({ session, tag })
+    .where(activeUser({ session }).is({ user: reader }))
+    .then(respond({ targets: theTargetsTagged({ tag, reader }) })),
 );
-
-export const TagTargetsByName = endpoint("/tags/targetsByName", ({ name }) =>
-  receive({ name }).then(respond({ targets: theTargetsTaggedWithName({ name }) })),
+export const TagTargetsByName = endpoint("/tags/targetsByName", ({ session, name, reader }) =>
+  receive({ session, name })
+    .where(activeUser({ session }).is({ user: reader }))
+    .then(respond({ targets: theTargetsTaggedWithName({ name, reader }) })),
 );
-
-export const TagsForTarget = endpoint("/tags/forTarget", ({ target }) =>
-  receive({ target }).then(
-    where(readable({ post: target }))
-      .then(respond({ tags: theTagsOn({ target }) }))
-      .named("success"),
-    where(notReadable({ post: target }))
-      .then(respond({ error: "NOT_FOUND" }))
-      .named("hidden"),
-  ),
+export const TagsForTarget = endpoint("/tags/forTarget", ({ session, target, reader }) =>
+  receive({ session, target })
+    .where(activeUser({ session }).is({ user: reader }))
+    .then(
+      where(readable({ post: target, reader }))
+        .then(respond({ tags: theTagsOn({ target, reader }) }))
+        .named("success"),
+      where(notReadable({ post: target, reader }))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+    ),
 );
-
-export const ListTags = endpoint("/tags/list", () =>
-  receive({}).then(respond({ tags: theTags({}) })),
+export const ListTags = endpoint("/tags/list", ({ session }) =>
+  receive({ session })
+    .where(activeUser({ session }))
+    .then(respond({ tags: theTags({}) })),
 );

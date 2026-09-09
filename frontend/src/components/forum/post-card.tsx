@@ -16,6 +16,7 @@ import { BookmarkButton } from "@/components/forum/bookmark-button";
 import { Composer } from "@/components/forum/composer";
 import { FlagDialog } from "@/components/forum/flag-dialog";
 import { PinControl } from "@/components/forum/pin-control";
+import { usePostControls } from "@/components/forum/post-controls-provider";
 import { PostLinks } from "@/components/forum/post-links";
 import { ReactionBar } from "@/components/forum/reaction-bar";
 import { RenderedMarkdown } from "@/components/forum/rendered-markdown";
@@ -68,14 +69,20 @@ export function PostCard({
   const nodeId = String(node.node);
   const author = String(node.post.author);
   const myId = me ? String(me.user) : null;
+  const controls = usePostControls(postId);
+  const sharedControls = controls?.data
+    ? { data: controls.data, refetch: controls.refetch }
+    : undefined;
+  const controlsReady = !controls || !!sharedControls;
+  const canModerate = permissions.can("moderate");
   const isMine = myId === author;
   const canAcceptAnswers = !!myId && myId === rootAuthorId && !isRoot;
   const isAccepted = acceptedAnswer === postId;
   const edited = !!node.post.editedAt;
 
   const trashed = useQuery<{ trashed: boolean }>(
-    () => api.trash.isTrashed({ item: postId }),
-    [postId, session],
+    canModerate ? () => api.trash.isTrashed({ item: postId }) : null,
+    [postId, session, canModerate],
   );
   const isTrashed = trashed.data?.trashed ?? false;
   const highlightUnread = isUnread && !isTrashed && !isAccepted;
@@ -97,8 +104,11 @@ export function PostCard({
       parent: nodeId,
       content,
     });
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
+    if ("error" in result) {
+      const message = publicErrorMessage(result.error);
+      toast.error(message);
+      throw new Error(message);
+    } else {
       toast.success("Reply posted");
       setReplying(false);
       onChanged();
@@ -201,11 +211,24 @@ export function PostCard({
         />
       )}
 
-      {!editing ? <PostLinks post={postId} /> : null}
+      {!editing && controlsReady ? (
+        <PostLinks post={postId} controls={sharedControls} />
+      ) : null}
 
       {!editing ? (
         <footer className="mt-4 flex flex-wrap items-center justify-between gap-2">
-          <ReactionBar target={postId} />
+          {controlsReady ? (
+            <ReactionBar target={postId} controls={sharedControls} />
+          ) : (
+            <div className="text-sm text-muted-foreground" role="status">
+              {controls?.error ?? "Loading post controls…"}
+              {controls?.error ? (
+                <Button variant="ghost" size="sm" onClick={controls.refetch}>
+                  Retry
+                </Button>
+              ) : null}
+            </div>
+          )}
           <div className="flex items-center gap-0.5">
             {canAcceptAnswers ? (
               <Button
@@ -227,8 +250,17 @@ export function PostCard({
                 {isAccepted ? "Unmark" : "Accept"}
               </Button>
             ) : null}
-            <BookmarkButton item={postId} />
-            <PinControl item={postId} scope={scope} onChanged={onChanged} />
+            {controlsReady ? (
+              <BookmarkButton item={postId} controls={sharedControls} />
+            ) : null}
+            {controlsReady ? (
+              <PinControl
+                item={postId}
+                scope={scope}
+                onChanged={onChanged}
+                controls={sharedControls}
+              />
+            ) : null}
             {session && !locked ? (
               <Button
                 variant="ghost"
@@ -270,7 +302,7 @@ export function PostCard({
                     <FlagIcon className="size-4" />
                     Report
                   </DropdownMenuItem>
-                  {permissions.can("moderate") ? (
+                  {canModerate ? (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={moderatorTrash}>

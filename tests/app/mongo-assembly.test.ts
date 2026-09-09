@@ -13,12 +13,19 @@ async function mongoApp() {
       ? (result.value as Record<string, unknown>)
       : { error: result.error.kind === "domain" ? result.error.value : result.error.code };
   };
-  const signUp = async (username: string, email = `${username}@example.com`) => {
+  const signUp = async (username: string, email = `${username}@example.com`, enrol = false) => {
     const registered = await app.concepts.Authenticating.register({
       username,
       password: "password123",
       email,
     });
+    if (enrol)
+      await app.concepts.Rostering.enrol({
+        user: registered.user,
+        email: email,
+        kind: "STUDENT",
+        section: null,
+      });
     await app.concepts.Profiling.createProfile({
       user: registered.user,
       displayName: username,
@@ -35,16 +42,20 @@ async function mongoApp() {
 describe("Commons with every concept on MongoDB", () => {
   test("a thread renders, notifies a mention, refuses a locked reply, and appears in the feed", async () => {
     const { send, signUp } = await mongoApp();
-    const mod = await signUp("mod");
-    const mara = await signUp("mara");
+    const mod = await signUp("mod", undefined, true);
+    const mara = await signUp("mara", undefined, true);
 
     const thread = await send("/threads/create", {
+      holders: ["standing:everyone"],
       session: mod,
       content: "# Welcome\nSay hi to @mara",
     });
     expect(thread.conversation).toBeDefined();
 
-    const got = (await send("/threads/get", { conversation: thread.conversation })) as {
+    const got = (await send("/threads/get", {
+      session: mod,
+      conversation: thread.conversation,
+    })) as {
       thread: { rendered: string }[];
     };
     expect(got.thread[0].rendered).toContain("<h1>");
@@ -61,7 +72,7 @@ describe("Commons with every concept on MongoDB", () => {
       await send("/threads/reply", { session: mara, parent: thread.node, content: "hi!" }),
     ).toEqual({ error: "FORBIDDEN" });
 
-    const feed = (await send("/threads/activity", {})) as {
+    const feed = (await send("/threads/activity", { session: mod })) as {
       conversations: { conversation: string }[];
     };
     expect(feed.conversations).toHaveLength(1);

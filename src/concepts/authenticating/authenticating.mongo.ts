@@ -151,6 +151,13 @@ export class MongoAuthenticatingConcept {
     return { count: await this.users.countDocuments() };
   }
 
+  async _selectedUsers({ users }: { users: string[] }) {
+    const docs = await this.users
+      .find({ _id: { $in: users } }, { projection: { _id: 1 } })
+      .toArray();
+    return docs.map((doc) => ({ user: doc._id }));
+  }
+
   async _getUsers(_: Record<string, never>) {
     const docs = await this.users.find().sort({ username: 1 }).toArray();
     return docs.map((doc) => ({
@@ -191,5 +198,11 @@ export class MongoAuthenticatingConcept {
     const byName = await this.users.findOne({ username: ref });
     if (byName !== null) return { user: byName._id };
     return { user: ref };
+  }
+  async _knownUsers({ users }: { users: string[] }) {
+    const selected = [...new Set(users)];
+    return {
+      known: (await this.users.countDocuments({ _id: { $in: selected } })) === selected.length,
+    };
   }
 }

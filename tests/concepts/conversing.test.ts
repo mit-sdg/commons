@@ -27,6 +27,43 @@ for (const [floor, make] of floors) {
       expect(await conversing._parentOf({ node })).toEqual([]);
     });
 
+    test("node sequences preserve reply order and existence follows the conversation record", async () => {
+      const conversing = await make();
+      const at = new Date("2026-02-01T10:00:00Z");
+      const { conversation, node: root } = await conversing.start({ item: "opening", at });
+      const { node: reply } = await conversing.reply({ item: "reply", parent: root, at });
+      expect(await conversing._exists({ conversation })).toEqual({ exists: true });
+      expect(await conversing._threadNodes({ conversation })).toEqual({
+        nodes: [
+          { node: root, item: "opening", parent: null, depth: 0 },
+          { node: reply, item: "reply", parent: root, depth: 1 },
+        ],
+      });
+      await conversing.remove({ node: reply });
+      await conversing.remove({ node: root });
+      expect(await conversing._exists({ conversation })).toEqual({ exists: false });
+      expect(await conversing._threadNodes({ conversation })).toEqual({ nodes: [] });
+    });
+
+    test("conversation list ties retain creation order and follow reply removal", async () => {
+      const conversing = await make();
+      const at = new Date("2026-02-01T10:00:00Z");
+      const first = await conversing.start({ item: "first", at });
+      const second = await conversing.start({ item: "second", at });
+      const reply = await conversing.reply({ item: "reply", parent: first.node, at });
+      expect((await conversing._getConversations({})).map((row) => row.conversation)).toEqual([
+        second.conversation,
+        first.conversation,
+      ]);
+      expect(
+        (await conversing._getConversationsByLastActivity({})).map((row) => row.conversation),
+      ).toEqual([first.conversation, second.conversation]);
+      await conversing.remove({ node: reply.node });
+      expect(
+        (await conversing._getConversationsByLastActivity({})).map((row) => row.conversation),
+      ).toEqual([second.conversation, first.conversation]);
+    });
+
     test("reply hangs the item one level beneath its parent", async () => {
       const conversing = await make();
       const { conversation, node: root } = await conversing.start({

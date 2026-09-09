@@ -7,10 +7,10 @@ than the reply author, parent author, and anyone mentioned in the reply. Each
 recipient is notified by an independent action; a fault does not roll back inbox
 entries already stored for other recipients.
 
-When a root post is placed, the
+When a root audience is established, the
 [otherUsersMentionedIn view](view:Forum.notifications.otherUsersMentionedIn) resolves each distinct exact username
 mentioned in its content while excluding the author. [Forum.notifications.RootMentionsNotify](reaction:Forum.notifications.RootMentionsNotify)
-notifies each resulting account. For a reply,
+notifies each resulting account that currently belongs to the audience. For a reply,
 [Forum.notifications.ReplyMentionsNotify](reaction:Forum.notifications.ReplyMentionsNotify) applies the same rule, using
 [isNotMentionedIn](view:Forum.notifications.isNotMentionedIn) to suppress the parent author who receives the
 reply notification instead. [Forum.notifications.EditMentionsNotify](reaction:Forum.notifications.EditMentionsNotify)
@@ -22,7 +22,7 @@ Accepting an answer triggers
 [Forum.notifications.AcceptNotifiesAnswerAuthor](reaction:Forum.notifications.AcceptNotifiesAnswerAuthor) unless the accepting account
 also wrote the answer. Every successful Notifying action then triggers
 [Forum.notifications.NotificationQueuesEmail](reaction:Forum.notifications.NotificationQueuesEmail), which looks up the recipient's
-account email, renders the Commons message, and queues it in Mailing. The inbox
+account email, checks audience access, renders a content-free Commons message, and queues it in Mailing. The inbox
 entry is already stored; a missing account email, rendering fault, queue refusal,
 or later SMTP failure cannot retract it.
 
@@ -36,15 +36,11 @@ unread count. A body value cannot select another recipient.
 
 The recipient marks one owned inbox entry read through
 [Forum.notifications.MarkRead](reaction:Forum.notifications.MarkRead). [Forum.notifications.MarkAllRead](reaction:Forum.notifications.MarkAllRead) marks all
-of that recipient's entries read. [Forum.notifications.Dismiss](reaction:Forum.notifications.Dismiss) removes one inbox entry owned by that
+of that recipient's currently readable entries read. [Forum.notifications.Dismiss](reaction:Forum.notifications.Dismiss) removes one inbox entry owned by that
 recipient. Notifying checks ownership, so another account's
 identifier is refused as missing.
 
-Trash keeps both the notification and its retained post presentation because
-this inbox join does not apply public-readability filtering. Permanent purge
-triggers [Forum.notifications.PurgeClearsNotifications](reaction:Forum.notifications.PurgeClearsNotifications), which deletes every
-notification whose subject is that post. Ordinary author deletion can remove
-the post presentation but does not run this subject cleanup.
+Trash retains notifications while audience reads hide their content and metadata. Permanent purge triggers [Forum.notifications.PurgeClearsNotifications](reaction:Forum.notifications.PurgeClearsNotifications), deleting entries for that post. Residual entries after content deletion stay hidden.
 
 ```endpoints
 Forum.notifications.Dismiss at /notifications/dismiss
@@ -54,3 +50,23 @@ Forum.notifications.MarkRead at /notifications/markRead
 Forum.notifications.ReadInbox at /notifications/inbox
 Forum.notifications.UnreadCount at /notifications/unreadCount
 ```
+
+[Current notification admission](view:Forum.notifications.readableNotification) filters inbox actions and [unread counts](former:Forum.notifications.theUnreadCount). [Mail eligibility](former:Forum.notifications.theMailEligibility) checks the recipient’s current audience access and queued address before dispatch.
+
+```computations
+forumMailKey(notification: String, recipient: String, post: String) : String
+  Identifies a forum notification delivery with its recipient and source post for current audience checks.
+```
+
+[Starting a discussion notifies explicit account recipients](reaction:Forum.notifications.RootNotifiesAddressedAccounts), excluding the author and people already selected by the mention path. Group and section holders do not broadcast notifications to their members.
+
+Private openings that explicitly include Staff trigger [RootNotifiesStaff](reaction:Forum.notifications.RootNotifiesStaff).
+The [staff recipient rule](view:Forum.notifications.staffNotificationRecipient) uses the existing Staff audience membership and excludes [course-wide audiences](view:Forum.notifications.courseWideNotificationAudience).
+The author is excluded; mentioned staff receive the mention notification instead, and explicitly addressed staff receive only the staff notification.
+Current post access still gates notification creation, inbox visibility, and mail dispatch. This does not change who belongs to Staff or notify all staff for subsequent replies.
+
+The existing Notifying instance also retains assignment release notifications.
+[Subject admission](view:Forum.notifications.notificationSubjectReader) admits forum posts through postReader, or published assignments for their active student assignees whose accounts remain available.
+Inbox reads, unread counts, mark-read, dismissal, and queued mail eligibility use that same admission.
+[Assignment title lookup](view:Forum.notifications.assignmentNotificationTitle) provides the [assignment presentation](former:Forum.notifications.theAssignmentNotificationPresentation), with an assignment link rather than a forum-post link.
+Existing content-free mail is queued and rechecked at dispatch; an archived assignment or dropped student no longer admits its notification.

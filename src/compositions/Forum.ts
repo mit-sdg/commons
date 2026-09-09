@@ -1,11 +1,14 @@
+import * as audiences from "./forum/audiences.ts";
 import * as bookmarks from "./forum/bookmarks.ts";
 import * as categories from "./forum/categories.ts";
+import * as feedPages from "./forum/feed-pages.ts";
 import * as feed from "./forum/feed.ts";
 import * as links from "./forum/links.ts";
 import * as moderation from "./forum/moderation.ts";
 import * as notifications from "./forum/notifications.ts";
 import * as pins from "./forum/pins.ts";
 import * as posts from "./forum/posts.ts";
+import * as postControls from "./forum/post-controls.ts";
 import * as profiles from "./forum/profiles.ts";
 import * as purge from "./forum/purge.ts";
 import * as reactions from "./forum/reactions.ts";
@@ -17,13 +20,16 @@ import * as threads from "./forum/threads.ts";
 import * as unread from "./forum/unread.ts";
 
 export const compositions = {
+  audiences,
   threads,
   feed,
+  feedPages,
   moderation,
   categories,
   tags,
   resolutions,
   posts,
+  postControls,
   revisions,
   profiles,
   reactions,

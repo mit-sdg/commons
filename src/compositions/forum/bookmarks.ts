@@ -10,7 +10,10 @@ const { Bookmarking, Trashing } = concepts;
 export const readableBookmarksOf = view(
   "the readable bookmarks of (user)",
   ({ user }, { item, savedAt }, _bindings) =>
-    where(Bookmarking._getSaved({ user }).is({ item, savedAt }), readable({ post: item })),
+    where(
+      Bookmarking._getSaved({ user }).is({ item, savedAt }),
+      readable({ post: item, reader: user }),
+    ),
 ).many();
 
 /** Which items has this user bookmarked? */
@@ -25,7 +28,7 @@ export const theBookmarkedPostsOf = former(
     each(readableBookmarksOf({ user }).is({ item, savedAt })).form({
       item,
       savedAt,
-      post: thePostSummaryOf({ item }),
+      post: thePostSummaryOf({ item, reader: user }),
     }),
 );
 
@@ -35,11 +38,11 @@ export const PurgeClearsBookmarks = reaction(({ item }) =>
 
 export const SaveBookmark = endpoint("/bookmarks/save", ({ session, item, user, at, bookmark }) =>
   receive({ session, item }).then(
-    where(now(at), activeUser({ session }).is({ user }), readable({ post: item }))
+    where(now(at), activeUser({ session }).is({ user }), readable({ post: item, reader: user }))
       .then(Bookmarking.save({ user, item, at }).responds({ bookmark }))
       .then(respond({ bookmark }))
       .named("success"),
-    where(activeUser({ session }), notReadable({ post: item }))
+    where(activeUser({ session }).is({ user }), notReadable({ post: item, reader: user }))
       .then(respond({ error: "NOT_FOUND" }))
       .named("hidden"),
   ),
@@ -47,11 +50,11 @@ export const SaveBookmark = endpoint("/bookmarks/save", ({ session, item, user, 
 
 export const UnsaveBookmark = endpoint("/bookmarks/unsave", ({ session, item, user, bookmark }) =>
   receive({ session, item }).then(
-    where(activeUser({ session }).is({ user }), readable({ post: item }))
+    where(activeUser({ session }).is({ user }), readable({ post: item, reader: user }))
       .then(Bookmarking.unsave({ user, item }).responds({ bookmark }))
       .then(respond({ bookmark }))
       .named("success"),
-    where(activeUser({ session }), notReadable({ post: item }))
+    where(activeUser({ session }).is({ user }), notReadable({ post: item, reader: user }))
       .then(respond({ error: "NOT_FOUND" }))
       .named("hidden"),
   ),
@@ -67,12 +70,12 @@ export const IsSaved = endpoint("/bookmarks/isSaved", ({ session, item, user, sa
   receive({ session, item }).then(
     where(
       activeUser({ session }).is({ user }),
-      readable({ post: item }),
+      readable({ post: item, reader: user }),
       Bookmarking._isSaved({ user, item }).is({ saved }),
     )
       .then(respond({ saved }))
       .named("success"),
-    where(activeUser({ session }), notReadable({ post: item }))
+    where(activeUser({ session }).is({ user }), notReadable({ post: item, reader: user }))
       .then(respond({ error: "NOT_FOUND" }))
       .named("hidden"),
   ),
