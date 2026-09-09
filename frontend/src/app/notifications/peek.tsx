@@ -36,8 +36,8 @@ export function NotificationPeek({ onLeave }: { onLeave: () => void }) {
   }
 
   return (
-    <div className="flex flex-col">
-      <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
+    <div className="flex min-h-0 flex-col">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2">
         <p className="text-sm font-semibold">
           Notifications
           {unread > 0 ? (
@@ -83,7 +83,7 @@ export function NotificationPeek({ onLeave }: { onLeave: () => void }) {
         </ScrollArea>
       )}
 
-      <div className="border-t border-border p-1.5">
+      <div className="shrink-0 border-t border-border p-1.5">
         <Button
           asChild
           variant="ghost"

@@ -239,7 +239,7 @@ function TaskNotificationBody({
       <div className="min-w-0 flex-1">
         <p className={headlineClass(unread)}>{taskActionText(kind)}</p>
         {hasTaskPresentation(row) ? (
-          <Facts className="mt-0.5 flex-nowrap overflow-hidden text-xs text-muted-foreground">
+          <Facts className="mt-0.5 text-xs text-muted-foreground">
             {detail?.title ? (
               <span className="truncate">{detail.title}</span>
             ) : null}
@@ -247,12 +247,7 @@ function TaskNotificationBody({
               <Fact.Where className="truncate">{detail.list}</Fact.Where>
             ) : null}
             {detail?.due ? (
-              <Fact.Due
-                at={detail.due}
-                verb="due"
-                precision="day"
-                className="whitespace-nowrap"
-              />
+              <Fact.Due at={detail.due} verb="due" precision="day" />
             ) : null}
           </Facts>
         ) : (
@@ -350,7 +345,7 @@ export function NotificationEntry({
         </div>
         {children}
       </div>
-      <div className="flex shrink-0 items-center gap-0.5 pt-0.5">
+      <div className="flex shrink-0 flex-col items-end gap-0.5 pt-0.5">
         <Fact.When
           at={entry.createdAt}
           className="whitespace-nowrap text-right text-xs"

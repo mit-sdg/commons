@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * Browser evidence for the live-quiz loop against the real stack: temporary
+ * Browser evidence against the real stack: temporary
  * MongoDB, the HTTP edge, the Next.js frontend, and the scripted reasoner.
  */
 const EDGE_PORT = 4755;
@@ -18,7 +18,14 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${WEB_PORT}`,
     trace: "retain-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    {
+      name: "firefox-mobile",
+      testMatch: "mobile-*.spec.ts",
+      use: { ...devices["Desktop Firefox"] },
+    },
+  ],
   webServer: {
     command: "bun scripts/stack-mongo.ts",
     url: `http://127.0.0.1:${WEB_PORT}`,
