@@ -152,10 +152,17 @@ export function AssignmentForm({
           existingGradeItem.label === existing.title &&
           existing.title !== rawPayload.title
         ) {
-          await api.grades["configure-item"]({
-            item: existing.assignment,
-            label: rawPayload.title,
-          });
+          try {
+            const renamed = await api.grades["configure-item"]({
+              item: existing.assignment,
+              label: rawPayload.title,
+            });
+            if ("error" in renamed) throw new Error(renamed.error);
+          } catch {
+            toast.warning(
+              "Assignment saved, but its assessment label could not be updated. Review the label before retrying.",
+            );
+          }
         }
         toast.success(existing ? "Assignment updated" : "Assignment created");
         const savedAssignment =

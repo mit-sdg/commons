@@ -1,7 +1,7 @@
 "use client";
 
 import { Archive, ArrowLeft, Eye, Send } from "lucide-react";
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Fact, Facts } from "@/components/facts";
@@ -136,6 +136,7 @@ function StaffAssignmentDetailPageContent({
   const [editing, setEditing] = useState(false);
   const [gradingUser, setGradingUser] = useState<string | null>(null);
   const [gradingEvidence, setGradingEvidence] = useState<string | null>(null);
+  const [tab, setTab] = useState("overview");
 
   const {
     data: asgnData,
@@ -223,6 +224,27 @@ function StaffAssignmentDetailPageContent({
   const grades = gradesData?.grades ?? [];
   const lateUsers = lateData?.users ?? [];
   const draftCount = grades.filter((grade) => grade.status === "DRAFT").length;
+
+  useEffect(() => {
+    let frame = 0;
+    function followAttempt() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        if (!canGrade || !window.location.hash.startsWith("#attempt-")) return;
+        const target = document.getElementById(window.location.hash.slice(1));
+        if (!(target instanceof HTMLDetailsElement)) return;
+        setTab("submissions");
+        target.open = true;
+        frame = requestAnimationFrame(() => target.scrollIntoView());
+      });
+    }
+    followAttempt();
+    window.addEventListener("hashchange", followAttempt);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("hashchange", followAttempt);
+    };
+  }, [canGrade, loading, subsData]);
 
   const submittedIds = new Set(submissions.map((s) => s.submitter));
 
@@ -387,9 +409,10 @@ function StaffAssignmentDetailPageContent({
       </div>
 
       <Tabs
-        defaultValue="overview"
+        value={tab}
         className="gap-6"
         onValueChange={(value) => {
+          setTab(value);
           if (value === "preview") previewSkills.refetch();
         }}
       >
@@ -490,7 +513,12 @@ function StaffAssignmentDetailPageContent({
           </div>
         </TabsContent>
         {canGrade && (
-          <TabsContent value="submissions" className="space-y-6">
+          <TabsContent
+            value="submissions"
+            forceMount
+            hidden={tab !== "submissions"}
+            className="space-y-6"
+          >
             <Facts className="text-sm">
               <Fact.Count n={totalAssigned} noun="assigned" plural="assigned" />
               <Fact.Count
