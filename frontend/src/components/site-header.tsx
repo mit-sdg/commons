@@ -111,7 +111,7 @@ export function SiteHeader() {
     return null;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+    <header className="sticky top-0 z-40 border-b border-border bg-background lg:bg-background/90 lg:backdrop-blur lg:supports-[backdrop-filter]:bg-background/75">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
         <Link href="/" className="group flex items-center gap-2.5">
           <span className="flex size-9 items-center justify-center rounded-md bg-primary font-display text-lg font-semibold text-primary-foreground shadow-sm">
@@ -330,7 +330,7 @@ export function SiteHeader() {
         <nav
           id="mobile-navigation"
           aria-label="Mobile"
-          className="border-t border-border bg-background px-4 py-3 lg:hidden"
+          className="max-h-[calc(100dvh-4rem-1px)] overflow-y-auto overscroll-contain border-t border-border bg-background px-4 py-3 lg:hidden"
           onKeyDown={(event) => {
             if (event.key === "Escape") closeMobile();
           }}

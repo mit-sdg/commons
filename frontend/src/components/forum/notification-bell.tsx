@@ -35,7 +35,8 @@ export function NotificationBell() {
       <PopoverContent
         align="end"
         sideOffset={8}
-        className="w-[min(30rem,calc(100vw-2rem))] p-0"
+        collisionPadding={12}
+        className="flex max-h-(--radix-popover-content-available-height) w-[min(30rem,calc(100vw-2rem))] flex-col overflow-hidden p-0"
       >
         {/* Mounted only while open, so the bell reads both inboxes on demand
             rather than polling a second time behind the badge. */}
