@@ -14828,7 +14828,7 @@ then
 
 Authored path: `Forum.tags.AddTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 4.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 28.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 35.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/add", requestId, session, tag, target)
@@ -14843,7 +14843,7 @@ then
 
 Authored path: `Forum.tags.AddTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 4.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 28.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 35.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/add", requestId, session, tag, target)
@@ -14858,7 +14858,7 @@ then
 
 Authored path: `Forum.tags.AddTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 4.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 28.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 35.
 
 ```reaction
 when Tagging.addTag (tag, target, result.target: tagged), asked by Forum.tags.AddTag:success
@@ -14872,7 +14872,7 @@ then
 
 Authored path: `Forum.tags.CreateTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 4.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 29.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 36.
 
 ```reaction
 when RequestBoundary.request (name, path: "/tags/create", requestId, session)
@@ -14886,7 +14886,7 @@ then
 
 Authored path: `Forum.tags.CreateTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 4.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 29.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 36.
 
 ```reaction
 when Tagging.createTag (name, tag), asked by Forum.tags.CreateTag
@@ -14900,7 +14900,7 @@ then
 
 Authored path: `Forum.tags.ListTags`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 11.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 30.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 37.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/list", requestId, session)
@@ -14925,7 +14925,7 @@ then
 
 Authored path: `Forum.tags.RemoveTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 5.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 31.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 38.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/remove", requestId, session, tag, target)
@@ -14940,7 +14940,7 @@ then
 
 Authored path: `Forum.tags.RemoveTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 5.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 31.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 38.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/remove", requestId, session, tag, target)
@@ -14955,7 +14955,7 @@ then
 
 Authored path: `Forum.tags.RemoveTag`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 5.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 31.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 38.
 
 ```reaction
 when Tagging.removeTag (tag, target, result.target: untagged), asked by Forum.tags.RemoveTag:success
@@ -14969,7 +14969,7 @@ then
 
 Authored path: `Forum.tags.TagTargets`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 15.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 32.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 39.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/targets", requestId, session, tag)
@@ -14983,7 +14983,7 @@ then
 
 Authored path: `Forum.tags.TagTargetsByName`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 17.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 33.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 40.
 
 ```reaction
 when RequestBoundary.request (name, path: "/tags/targetsByName", requestId, session)
@@ -14997,7 +14997,7 @@ then
 
 Authored path: `Forum.tags.TagsForTarget`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 13.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 34.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 41.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/forTarget", requestId, session, target)
@@ -15012,7 +15012,7 @@ then
 
 Authored path: `Forum.tags.TagsForTarget`.
 - Covered by [Tags](../design/compositions/forum/tags.md), line 13.
-- Covered by [Tags](../design/compositions/forum/tags.md), line 34.
+- Covered by [Tags](../design/compositions/forum/tags.md), line 41.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/forTarget", requestId, session, target)
