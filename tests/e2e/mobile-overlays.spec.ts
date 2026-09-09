@@ -1,9 +1,10 @@
 import { expect, type Page } from "@playwright/test";
 import { authenticate, call, logIn, scrollToEdge, test, withinViewport } from "./support/browser";
 
-async function discussion(page: Page, cookie: string) {
+async function discussion(page: Page, cookie: string, user: string) {
   return call<{ post: string; conversation: string }>(page, cookie, "/threads/create", {
     content: "# Workshop discussion\n\nWhat should we cover in the next workshop?",
+    holders: [`account:${user}`],
   });
 }
 
@@ -11,8 +12,8 @@ for (const theme of ["light", "dark"]) {
   test(`long tag pickers scroll without moving the page (${theme})`, async ({ page }, testInfo) => {
     await page.addInitScript(`localStorage.setItem("theme", "${theme}")`);
     await page.setViewportSize({ width: 390, height: 700 });
-    const { cookie } = await authenticate(page);
-    const { conversation } = await discussion(page, cookie);
+    const { cookie, user } = await authenticate(page);
+    const { conversation } = await discussion(page, cookie, user);
     const prefix = `workshop-${crypto.randomUUID().slice(0, 6)}`;
     for (let index = 0; index < 18; index++) {
       await call(page, cookie, "/tags/create", { name: `${prefix}-${index + 1}` });
@@ -47,8 +48,8 @@ for (const theme of ["light", "dark"]) {
 }
 
 test("edit history stays reachable on phones and desktop", async ({ page }, testInfo) => {
-  const { cookie } = await authenticate(page);
-  const { post, conversation } = await discussion(page, cookie);
+  const { cookie, user } = await authenticate(page);
+  const { post, conversation } = await discussion(page, cookie, user);
   for (let index = 0; index < 12; index++) {
     await call(page, cookie, "/posts/edit", {
       post,
@@ -101,22 +102,20 @@ test("edit history stays reachable on phones and desktop", async ({ page }, test
   await expect(dialog).toBeHidden();
 });
 
-test("task-list dialogs scroll in landscape and keep every control reachable", async ({
+test("task dialogs scroll in landscape and keep every control reachable", async ({
   page,
 }, testInfo) => {
   await page.setViewportSize({ width: 667, height: 320 });
   await authenticate(page);
   await page.goto("/tasks");
-  await page.getByRole("button", { name: "New list", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "Create a task list", exact: true });
-  await dialog.getByRole("textbox", { name: "Members", exact: true }).fill("noah");
-  await dialog.getByRole("button", { name: "Find", exact: true }).click();
-  await expect(dialog.getByRole("button", { name: "noah", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "New task", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "New task", exact: true });
+  await dialog.getByRole("textbox", { name: "Title", exact: true }).fill("Workshop outline");
   await withinViewport(page, dialog);
   expect(await dialog.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
   const pageTop = await page.evaluate("window.scrollY");
   await scrollToEdge(page, dialog, 1);
-  await expect(dialog.getByRole("button", { name: "Create list", exact: true })).toBeInViewport({
+  await expect(dialog.getByRole("button", { name: "Add task", exact: true })).toBeInViewport({
     ratio: 1,
   });
   expect(await page.evaluate("window.scrollY")).toBe(pageTop);
@@ -125,12 +124,12 @@ test("task-list dialogs scroll in landscape and keep every control reachable", a
     animations: "disabled",
   });
   await scrollToEdge(page, dialog, -1);
-  await expect(dialog.getByRole("heading", { name: "Create a task list" })).toBeInViewport({
+  await expect(dialog.getByRole("heading", { name: "New task", exact: true })).toBeInViewport({
     ratio: 1,
   });
   await dialog.getByRole("button", { name: "Close", exact: true }).click();
   await expect(dialog).toBeHidden();
-  await expect(page.getByRole("button", { name: "New list", exact: true })).toBeFocused();
+  await expect(page.getByRole("button", { name: "New task", exact: true })).toBeFocused();
 });
 
 test("notification lists shrink to the available space while their footer stays visible", async ({
