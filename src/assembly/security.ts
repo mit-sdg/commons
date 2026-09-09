@@ -1,5 +1,34 @@
 const RESERVED_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 
+// These browser-supplied values are stored and later read as text. The endpoint
+// contracts check presence, not runtime types; reject bad values before writing.
+const TEXT_WRITE_FIELDS: Record<string, readonly string[]> = {
+  "/auth/accept-invitation": ["username", "displayName"],
+  "/setup/register-admin": ["username", "displayName"],
+  "/profiles/setDisplayName": ["displayName"],
+  "/profiles/setBio": ["bio"],
+  "/profiles/setAvatar": ["avatar"],
+  "/threads/create": ["content"],
+  "/threads/reply": ["content"],
+  "/posts/edit": ["content"],
+  "/assignments/submit": ["content"],
+  "/tags/create": ["name"],
+  "/reactions/add": ["kind"],
+  "/flags/raise": ["reason"],
+  "/tasklists/create": ["title"],
+  "/tasklists/rename": ["title"],
+  "/tasks/create": ["title", "details"],
+  "/tasks/describe": ["title", "details"],
+};
+
+export function hasTextWriteInputs(path: string, input: unknown): boolean {
+  if (input === null || typeof input !== "object" || Array.isArray(input)) return false;
+  const fields = TEXT_WRITE_FIELDS[path] ?? [];
+  const body = input as Record<string, unknown>;
+  // Missing fields still follow each endpoint's required/default rules.
+  return fields.every((field) => !(field in body) || typeof body[field] === "string");
+}
+
 /**
  * How deep a request body may nest. Commons' own bodies are a few levels; a
  * caller sending more is not describing an operation Commons has. The bound is
