@@ -50,7 +50,13 @@ export function audiencePresentation(
   return { label: `${label}${suffix}`, kind };
 }
 
-function RecipientName({ option }: { option: AudienceOption }) {
+function RecipientName({
+  option,
+  options,
+}: {
+  option: AudienceOption;
+  options: AudienceOption[];
+}) {
   const { me } = useAuth();
   const profile = useProfile(
     option.kind === "account" ? option.identity : null,
@@ -59,7 +65,7 @@ function RecipientName({ option }: { option: AudienceOption }) {
     <>
       {option.kind === "account" && option.identity === me?.user
         ? "You"
-        : profile?.displayName || option.label}
+        : profile?.displayName || audiencePresentation(option, options).label}
     </>
   );
 }
@@ -102,10 +108,10 @@ export function AudienceChips({
                   href={`/groups/${encodeURIComponent(option.identity)}?view=discussions`}
                   className="underline underline-offset-4"
                 >
-                  <RecipientName option={option} />
+                  <RecipientName option={option} options={options} />
                 </Link>
               ) : (
-                <RecipientName option={option} />
+                <RecipientName option={option} options={options} />
               )
             ) : (
               "selected recipients"
@@ -154,7 +160,7 @@ function RecipientResult({
     option.kind === "account" ? option.identity : null,
   );
   if (
-    !`${option.label} ${profile?.displayName ?? ""} ${option.kind}`
+    !`${audiencePresentation(option, options).label} ${profile?.displayName ?? ""} ${option.kind}`
       .toLowerCase()
       .includes(query.toLowerCase())
   )
@@ -168,7 +174,7 @@ function RecipientResult({
       className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-muted focus:bg-muted focus:outline-none"
     >
       <span className="min-w-0 flex-1">
-        <RecipientName option={option} />{" "}
+        <RecipientName option={option} options={options} />{" "}
         <span className="ml-2 text-xs text-muted-foreground">
           {option.kind === "account"
             ? `@${option.label}`
@@ -300,7 +306,7 @@ export function AudiencePicker({
                   <span key={holder}>
                     {index ? ", " : ""}
                     {option ? (
-                      <RecipientName option={option} />
+                      <RecipientName option={option} options={options} />
                     ) : (
                       "Unavailable recipient"
                     )}
@@ -416,7 +422,7 @@ export function AudienceFilter({
               <>
                 To:{" "}
                 {option ? (
-                  <RecipientName option={option} />
+                  <RecipientName option={option} options={options} />
                 ) : (
                   "Unavailable recipient"
                 )}
