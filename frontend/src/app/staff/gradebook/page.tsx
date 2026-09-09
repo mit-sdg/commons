@@ -59,6 +59,31 @@ function GradebookContent() {
         eyebrow={selected ? "Assessments" : "Course"}
         title={learner ? (learner.displayName ?? learner.email) : "Assessments"}
       />
+      {permissions.can("grade") && query.data && !query.error && (
+        <details className="mb-5 text-sm">
+          <summary className="cursor-pointer text-muted-foreground">
+            Assess an assignment
+          </summary>
+          {query.data.gradebook.items.length ? (
+            <ul className="mt-2 max-h-64 space-y-2 overflow-y-auto">
+              {query.data.gradebook.items.map((item) => (
+                <li key={item.item}>
+                  <Link
+                    className="underline underline-offset-4"
+                    href={`/staff/assignments/${item.item}`}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-muted-foreground">
+              No assessment items yet.
+            </p>
+          )}
+        </details>
+      )}
       {query.loading ? (
         <LoadingState label="Loading assessments..." />
       ) : query.error ? (

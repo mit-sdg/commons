@@ -182,6 +182,38 @@ test("overall and individual feedback can coexist in closed disclosures", () => 
   expect(html).not.toContain('open=""');
 });
 
+test("assessment details retain the fixed rubric reference and edition without descriptions", () => {
+  const html = renderToStaticMarkup(
+    <AssessmentCard
+      assessment={{
+        ...assessment,
+        criteria: [
+          {
+            ...rubric,
+            number: 2,
+            description: "",
+            deficient: "",
+            emergent: "",
+            competent: "",
+            expert: "",
+            referenceUrl: "https://example.edu/rubrics/edition-2",
+          },
+        ],
+        feedback: "",
+        judgments: [
+          { criterion: "criterion", rating: "COMPETENT", feedback: "" },
+        ],
+        history: [],
+      }}
+    />,
+  );
+  expect(html).toContain('href="https://example.edu/rubrics/edition-2"');
+  expect(html).toContain("Edition 2");
+  expect(html).toContain('rel="noopener noreferrer"');
+  expect(html.match(/<details/g)?.length).toBe(1);
+  expect(html).not.toContain('open=""');
+});
+
 test("skill grouping names the assignment without repeating the section skill", () => {
   const html = renderToStaticMarkup(
     <AssessmentCard

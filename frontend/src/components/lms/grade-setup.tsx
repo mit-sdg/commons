@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { ErrorState, LoadingState } from "@/components/states";
@@ -229,11 +229,40 @@ export function CreationSkills({
   disabled?: boolean;
 }) {
   const { session } = useAuth();
+  const known = useRef<Standard[]>([]);
   const query = useQuery(
-    session ? async () => unwrap(await api.grades.standards({})) : null,
+    session
+      ? async () => {
+          const result = unwrap(await api.grades.standards({}));
+          // A refresh must not silently replace a selected rubric edition.
+          const pinned = known.current.filter((r) =>
+            selected.includes(r.edition),
+          );
+          known.current = [
+            ...pinned,
+            ...result.standards.filter(
+              (r) => !pinned.some((p) => p.standard === r.standard),
+            ),
+          ];
+          return { ...result, standards: known.current };
+        }
+      : null,
     [session],
   );
   const [search, setSearch] = useState("");
+  const { refetch } = query;
+  useEffect(() => {
+    // The rubric manager opens in another tab; keep this draft's choices intact.
+    function refresh() {
+      if (document.visibilityState === "visible") refetch();
+    }
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [refetch]);
   return (
     <section className="space-y-3 border-t pt-6">
       <div className="flex items-baseline justify-between gap-3">

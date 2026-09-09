@@ -212,6 +212,14 @@ export function AssessmentCard({
             <Fact.When verb="Submitted" at={a.submittedAt} form="absolute" />
             <Fact.When verb="Released" at={a.releasedAt} form="absolute" />
           </Facts>
+          {criteria.map((c) => (
+            <div key={c.criterion} className="mt-3 space-y-2">
+              <p>
+                Rubric used{skill ? "" : `: ${c.name}`} · Edition {c.number}
+              </p>
+              <RubricDescription rubric={c} showEdition={false} />
+            </div>
+          ))}
         </details>
       </CardHeader>
       <CardContent>
