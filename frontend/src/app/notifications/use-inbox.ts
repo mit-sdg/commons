@@ -1,16 +1,22 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { notifyHashTargetNavigation } from "@/hooks/use-hash-target-highlight";
 import { useQuery } from "@/hooks/use-query";
-import { api, isApiError, publicErrorMessage } from "@/lib/api";
+import {
+  api,
+  isApiError,
+  publicErrorMessage,
+  requestErrorMessage,
+  withRequestErrors,
+} from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { forumRowHref } from "@/lib/forum-notifications";
 import { useNotificationCount } from "@/lib/notification-count";
 import {
   loadMergedInbox,
-  type MergedForumNotification,
   type MergedNotification,
   markAllReadBoth,
   taskRowHref,
@@ -50,9 +56,11 @@ export function useInbox(): Inbox {
   }>(
     session
       ? () =>
-          loadMergedInbox(
-            () => api.notifications.inbox({}),
-            () => api.tasknotifications.inbox({}),
+          withRequestErrors(() =>
+            loadMergedInbox(
+              () => api.notifications.inbox({}),
+              () => api.tasknotifications.inbox({}),
+            ),
           )
       : null,
     [session],
@@ -70,45 +78,12 @@ export function useInbox(): Inbox {
     setTaskCount(unread.task);
   }, [data, setForumCount, setTaskCount, unread]);
 
-  const [links, setLinks] = useState<Record<string, string | null>>({});
-
-  useEffect(() => {
-    // Only a forum row's link is a post. A task row's link is a task, and the
-    // list it belongs to travels with the row, so it needs no resolution.
-    const postRows = entries.filter(
-      (entry): entry is MergedForumNotification =>
-        entry.source === "forum" &&
-        entry.row.kind !== "assignment_released" &&
-        Boolean(entry.row.link),
-    );
-    const resolveLinks = async () => {
-      const resolved: Record<string, string | null> = {};
-      await Promise.all(
-        postRows.map(async (entry) => {
-          const postId = String(entry.row.link);
-          try {
-            const answer = await api.threads.forItem({ item: postId });
-            if (!isApiError(answer) && answer.conversation) {
-              resolved[entry.id] = `/t/${answer.conversation}#post-${postId}`;
-            }
-          } catch {
-            resolved[entry.id] = null;
-          }
-        }),
-      );
-      setLinks(resolved);
-    };
-    if (postRows.length > 0) resolveLinks();
-  }, [entries]);
-
   const hrefOf = useCallback(
     (entry: MergedNotification): string | null =>
       entry.source === "forum"
-        ? entry.row.kind === "assignment_released"
-          ? `/assignments/${entry.row.link}`
-          : (links[entry.id] ?? null)
+        ? forumRowHref(entry.row)
         : taskRowHref(entry.row),
-    [links],
+    [],
   );
 
   const markRead = useCallback(
@@ -116,7 +91,7 @@ export function useInbox(): Inbox {
       if (!session) return;
       const unreadTargets = targets.filter((entry) => !entry.read);
       if (unreadTargets.length === 0) return;
-      const results = await Promise.all(
+      const results = await Promise.allSettled(
         unreadTargets.map((entry) =>
           entry.source === "forum"
             ? api.notifications.markRead({ notification: entry.id })
@@ -124,8 +99,12 @@ export function useInbox(): Inbox {
         ),
       );
       for (const result of results) {
-        if (!isApiError(result)) continue;
-        toast.error(publicErrorMessage(result.error));
+        if (result.status === "rejected") {
+          toast.error(requestErrorMessage(result.reason));
+          break;
+        }
+        if (!isApiError(result.value)) continue;
+        toast.error(publicErrorMessage(result.value.error));
         break;
       }
       refetch();
@@ -137,12 +116,17 @@ export function useInbox(): Inbox {
     async (entry: MergedNotification) => {
       if (!session) return;
       const notification = entry.id;
-      const result =
-        entry.source === "forum"
-          ? await api.notifications.dismiss({ notification })
-          : await api.tasknotifications.dismiss({ notification });
-      if (isApiError(result)) toast.error(publicErrorMessage(result.error));
-      refetch();
+      try {
+        const result =
+          entry.source === "forum"
+            ? await api.notifications.dismiss({ notification })
+            : await api.tasknotifications.dismiss({ notification });
+        if (isApiError(result)) toast.error(publicErrorMessage(result.error));
+      } catch (error) {
+        toast.error(requestErrorMessage(error));
+      } finally {
+        refetch();
+      }
     },
     [session, refetch],
   );
@@ -176,7 +160,10 @@ export function useInbox(): Inbox {
       const href = hrefOf(entry);
       if (!href) return;
       router.push(href);
-      if (entry.source === "forum") {
+      if (
+        entry.source === "forum" &&
+        entry.row.kind !== "assignment_released"
+      ) {
         notifyHashTargetNavigation(`post-${String(entry.row.link)}`);
       }
     },

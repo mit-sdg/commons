@@ -23,6 +23,8 @@ const writes = [
   ["/tasklists/rename", ["title"]],
   ["/tasks/create", ["title", "details"]],
   ["/tasks/describe", ["title", "details"]],
+  ["/mail/save-template", ["subject", "body"]],
+  ["/mail/preview-template", ["subject", "body"]],
 ] as const;
 
 test("stored text inputs reject non-text values but preserve empty strings and defaults", () => {

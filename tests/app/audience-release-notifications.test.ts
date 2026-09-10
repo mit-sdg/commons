@@ -108,6 +108,12 @@ test("assignment release notifications target actual assignees and disappear whe
     assignment: draft.assignment,
   });
   const rows = await inbox(student.session);
+  const mail = (await app.concepts.Mailing._getPending({})).find(
+    (m) => m.recipient === student.email,
+  );
+  expect(mail?.subject).toBe("A new assignment is available: New exercise");
+  expect(mail?.text).toContain(`/assignments/${draft.assignment}`);
+  expect(`${mail?.text}${mail?.html}`).not.toContain("Private instructions");
   expect(rows).toEqual([
     expect.objectContaining({
       kind: "assignment_released",

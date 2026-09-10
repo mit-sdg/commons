@@ -49,6 +49,42 @@ filesystem; MongoDB data, credential rotation, and backups remain platform
 responsibilities. Route public traffic only to the declared application port.
 The backend loopback port is internal and must not be published.
 
+## Email delivery and invitation copy
+
+Set `SMTP_HOST` and `SMTP_FROM` together to enable delivery. `SMTP_PORT` defaults
+to `587`; port `465` or `SMTP_SECURE=true` selects implicit TLS. Other ports use
+STARTTLS. Supply `SMTP_USERNAME` and `SMTP_PASSWORD` together when the server
+requires authentication.
+
+The login and visible sender are independent. The SMTP provider must authorize
+the address or domain in `SMTP_FROM`; a different login alone does not grant
+permission to send from any address.
+
+```env
+SMTP_HOST=smtp.example.edu
+SMTP_PORT=587
+SMTP_USERNAME=your-smtp-login
+SMTP_PASSWORD=your-smtp-password
+SMTP_FROM="Course Team <course@example.edu>"
+SMTP_REPLY_TO="Teaching Staff <help@example.edu>"
+```
+
+`SMTP_REPLY_TO` is optional and accepts an address with an optional display name.
+Without it, replies go to `SMTP_FROM`. Restart the backend after changing SMTP
+environment variables; credentials are not exposed in the admin console.
+
+Under **Administration > Email**, edit and preview the invitation subject and
+plain-text body. Registration links, temporary passwords, and the lifetime notice
+are appended automatically. Preview uses sample credentials and sends no email.
+Saving affects subsequent invitations, including resends and roster imports;
+existing queued messages keep their rendered copy. **Reset to default** removes
+the saved override. Templates persist in MongoDB.
+
+The same admin tab shows delivery outcomes and on-demand plain-text message
+previews. Invitation passwords, password-reset codes, and their link tokens are
+hidden in those previews. Forum email includes the event and discussion title,
+not post text; recipients must sign in to read the discussion.
+
 ## Migrations on first start
 
 Startup runs the pending migrations under `src/migrations/` against the

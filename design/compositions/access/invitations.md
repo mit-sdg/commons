@@ -17,8 +17,10 @@ invitations untouched rather than resending them.
 
 Each successful email invitation triggers
 [Access.invitations.EmailInvitationQueuesMail](reaction:Access.invitations.EmailInvitationQueuesMail), which renders the
-Commons-specific text and HTML and queues them in Mailing under the invitation
-identity. Invitation state is already durable before this consequence runs, so a
+effective administrator-configured subject and plain-text body (or the default
+Commons copy), appends the registration link, temporary password, and lifetime
+notice, and queues the text and escaped HTML in Mailing under the invitation
+identity. The required footer cannot be removed by editing the template. Invitation state is already durable before this consequence runs, so a
 rendering or queueing failure does not retract it. Once enqueue succeeds, an
 SMTP failure leaves Mailing's message pending for a later attempt.
 

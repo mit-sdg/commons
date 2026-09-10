@@ -22,7 +22,12 @@ Accepting an answer triggers
 [Forum.notifications.AcceptNotifiesAnswerAuthor](reaction:Forum.notifications.AcceptNotifiesAnswerAuthor) unless the accepting account
 also wrote the answer. Every successful Notifying action then triggers
 [Forum.notifications.NotificationQueuesEmail](reaction:Forum.notifications.NotificationQueuesEmail), which looks up the recipient's
-account email, checks audience access, renders a content-free Commons message, and queues it in Mailing. The inbox
+account email, checks audience access, resolves the
+[current email context](view:Forum.notifications.notificationMailContext), and
+queues an event-specific subject and message in Mailing. Emails name the event
+and discussion title with a direct sign-in link, but contain no post-body excerpt.
+Titles are rendered snapshots at enqueue time; current recipient access and the
+queued account address are still checked before dispatch. The inbox
 entry is already stored; a missing account email, rendering fault, queue refusal,
 or later SMTP failure cannot retract it.
 
@@ -31,7 +36,14 @@ or later SMTP failure cannot retract it.
 [Forum.notifications.ReadInbox](reaction:Forum.notifications.ReadInbox) forms
 [that account's private inbox](former:Forum.notifications.theInboxOf), enriching each entry with
 [current post and public author presentation](former:Forum.notifications.theNotificationPresentationOf)
-when those facts still exist. [Forum.notifications.UnreadCount](reaction:Forum.notifications.UnreadCount) returns the same account's current
+when those facts still exist. The
+[discussion presentation](former:Forum.notifications.theDiscussionNotificationPresentation)
+adds a conversation identity and title for direct navigation. Its
+[context view](view:Forum.notifications.notificationDiscussion) uses only the
+[readable opening](view:Forum.notifications.readableDiscussionOpening): a trashed
+or purged opening cannot supply a title, even when a surviving reply is readable.
+Such replies use the title `Discussion`, not an excerpt of a reply.
+[Forum.notifications.UnreadCount](reaction:Forum.notifications.UnreadCount) returns the same account's current
 unread count. A body value cannot select another recipient.
 
 The recipient marks one owned inbox entry read through
@@ -69,4 +81,6 @@ The existing Notifying instance also retains assignment release notifications.
 [Subject admission](view:Forum.notifications.notificationSubjectReader) admits forum posts through postReader, or published assignments for their active student assignees whose accounts remain available.
 Inbox reads, unread counts, mark-read, dismissal, and queued mail eligibility use that same admission.
 [Assignment title lookup](view:Forum.notifications.assignmentNotificationTitle) provides the [assignment presentation](former:Forum.notifications.theAssignmentNotificationPresentation), with an assignment link rather than a forum-post link.
-Existing content-free mail is queued and rechecked at dispatch; an archived assignment or dropped student no longer admits its notification.
+Release email names the assignment and event and links directly to the assignment;
+it does not include assignment instructions. Mail is rechecked at dispatch; an
+archived assignment or dropped student no longer admits its notification.

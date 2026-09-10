@@ -23,6 +23,7 @@ import { Link } from "@/components/link";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { count, excerpt } from "@/lib/format";
+import { forumActionText, forumPresentation } from "@/lib/forum-notifications";
 import type { InboxNotification, TaskInboxNotification } from "@/lib/models";
 import {
   hasTaskPresentation,
@@ -34,28 +35,6 @@ import {
   withheldTaskNote,
 } from "@/lib/task-notifications";
 import { cn } from "@/lib/utils";
-
-/** The forum instance's four kinds, said exactly as they have always been. */
-export function actionText(kind: string): string {
-  switch (kind) {
-    case "staff_message":
-      return "sent a private message to staff";
-    case "addressed":
-      return "started a discussion with you";
-    case "assignment_released":
-      return "A new assignment is available";
-    case "reply":
-      return "replied to your post";
-    case "followed_reply":
-      return "replied in a topic you follow";
-    case "mention":
-      return "mentioned you";
-    case "accepted":
-      return "accepted your answer";
-    default:
-      return kind;
-  }
-}
 
 /** A glyph per task-domain kind, so the eight read apart at a glance. */
 const TASK_ICONS: Record<TaskNotificationKind, typeof ListChecks> = {
@@ -145,7 +124,7 @@ function headlineClass(unread: boolean): string {
   );
 }
 
-/** A forum row: the same wording, the same avatar, the same mentions. */
+/** Current discussion context first, then the event and a safe post excerpt. */
 function ForumNotificationBody({
   n,
   unread,
@@ -153,17 +132,15 @@ function ForumNotificationBody({
   n: InboxNotification;
   unread: boolean;
 }) {
-  const post = n.post;
-  const actor = n.actor;
-  const said = actionText(n.kind);
-  const capitalized = said.charAt(0).toUpperCase() + said.slice(1);
+  const presentation = forumPresentation(n);
+  const actor = presentation.actor;
 
   if (n.kind === "assignment_released") {
     return (
       <>
         <ClipboardList className="mt-0.5 size-7 shrink-0 text-primary" />
         <div className="min-w-0 flex-1">
-          <p className={headlineClass(unread)}>{said}</p>
+          <p className={headlineClass(unread)}>{forumActionText(n.kind)}</p>
           <p className="mt-0.5 truncate text-xs text-muted-foreground/80">
             {n.assignmentTitle}
           </p>
@@ -172,47 +149,49 @@ function ForumNotificationBody({
     );
   }
 
-  if (post && actor && n.kind !== "accepted") {
-    return (
-      <>
+  return (
+    <>
+      {actor ? (
         <UserAvatar
           user={String(actor.user)}
           name={actor.displayName || actor.username || undefined}
           avatar={actor.avatar || undefined}
           className="mt-0.5 size-7 shrink-0"
         />
-        <div className="min-w-0 flex-1">
-          <p className={cn("text-sm", unread && "font-semibold")}>
-            <Link
-              href={`/u/${String(actor.user)}`}
-              className="font-medium text-foreground hover:text-primary hover:underline underline-offset-2"
-            >
-              {actor.displayName || actor.username}
-            </Link>{" "}
-            <span className="text-muted-foreground">{said}</span>
-          </p>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground/80">
-            {renderExcerptWithMentions(post.content ?? "")}
-          </p>
-        </div>
-      </>
-    );
-  }
-
-  return (
-    <>
-      <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
-        {post ? (
-          <Check className="size-3.5 text-primary" />
-        ) : (
-          <MessageCircle className="size-3.5 text-primary" />
-        )}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className={headlineClass(unread)}>{capitalized}</p>
-        {post ? (
-          <p className="mt-0.5 truncate text-xs text-muted-foreground/80">
-            {renderExcerptWithMentions(post.content ?? "")}
+      ) : (
+        <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
+          {n.kind === "accepted" ? (
+            <Check className="size-3.5 text-primary" />
+          ) : (
+            <MessageCircle className="size-3.5 text-primary" />
+          )}
+        </span>
+      )}
+      <div className="min-w-0 flex-1 [overflow-wrap:anywhere]">
+        <p
+          className={cn(
+            "line-clamp-2 text-sm",
+            unread ? "font-semibold text-foreground" : "text-muted-foreground",
+          )}
+        >
+          {presentation.title}
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {actor ? (
+            <>
+              <Link
+                href={`/u/${encodeURIComponent(String(actor.user))}`}
+                className="font-medium text-foreground hover:text-primary hover:underline underline-offset-2"
+              >
+                {actor.displayName || actor.username}
+              </Link>{" "}
+            </>
+          ) : null}
+          {presentation.event}
+        </p>
+        {presentation.excerpt ? (
+          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground/80">
+            {renderExcerptWithMentions(presentation.excerpt)}
           </p>
         ) : null}
       </div>
