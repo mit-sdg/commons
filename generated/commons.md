@@ -127,15 +127,15 @@ Defined in [Banking](../design/concepts/Banking.md), line 1.
 
 - `setTerms(allowance: Number, perItemLimit: Number, unitHours: Number) : return (allowance: Number, perItemLimit: Number, unitHours: Number)`
 - `grant(learner: Learner, days: Number, reason: String, at: Date) : return (grant: Grant)`
-  - Refuses `LATE_DAYS_MUST_BE_POSITIVE`: A grant must be for a positive number of days.
+  - Refuses `LATE_DAYS_MUST_BE_POSITIVE`: A grant must be for a finite positive number of days.
 - `apply(learner: Learner, item: Item, days: Number, at: Date) : return (use: Use)`
-  - Refuses `LATE_DAYS_MUST_BE_POSITIVE`: Late days must be a positive number.
+  - Refuses `LATE_DAYS_MUST_BE_POSITIVE`: Late days must be a finite positive number.
   - Refuses `LATE_DAYS_EXCEED_MAX`: That is more late days than any one item may absorb.
   - Refuses `LATE_USE_ALREADY_EXISTS`: Late days already stand applied to this item.
   - Refuses `INSUFFICIENT_BALANCE`: The learner's balance is short of the days requested.
 - `change(learner: Learner, item: Item, days: Number) : return (use: Use)`
   - Refuses `LATE_USE_NOT_FOUND`: No late days stand applied to this item.
-  - Refuses `LATE_DAYS_NEGATIVE`: Late days cannot be negative.
+  - Refuses `LATE_DAYS_NEGATIVE`: Late days must be a finite non-negative number.
   - Refuses `LATE_DAYS_EXCEED_MAX`: That is more late days than any one item may absorb.
   - Refuses `INSUFFICIENT_BALANCE`: The learner's balance is short of the increase requested.
 - `cancel(learner: Learner, item: Item) : return (use: Use)`

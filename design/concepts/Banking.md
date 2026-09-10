@@ -65,25 +65,25 @@ setTerms(allowance: Number, perItemLimit: Number, unitHours: Number) : return (a
     set the terms' allowance, perItemLimit, and unitHours from the inputs
     return allowance, perItemLimit, unitHours
 grant(learner: Learner, days: Number, reason: String, at: Date) : return (grant: Grant)
-  where days is greater than zero
+  where days is a finite number greater than zero
   then
     add a new grant with learner, days, and reason
     set grant's grantedAt to at
     return grant
-  where days is not greater than zero
+  where days is not a finite number greater than zero
   then
-    refuse LATE_DAYS_MUST_BE_POSITIVE "A grant must be for a positive number of days."
+    refuse LATE_DAYS_MUST_BE_POSITIVE "A grant must be for a finite positive number of days."
 
 apply(learner: Learner, item: Item, days: Number, at: Date) : return (use: Use)
-  where days is greater than zero, days is at most the terms' perItemLimit, learner has no applied use for item, and days is at most the balance of learner
+  where days is a finite number greater than zero, days is at most the terms' perItemLimit, learner has no applied use for item, and days is at most the balance of learner
   then
     add a new use with learner, item, and days
     set use's appliedAt to at
     add use to applied
     return use
-  where days is not greater than zero
+  where days is not a finite number greater than zero
   then
-    refuse LATE_DAYS_MUST_BE_POSITIVE "Late days must be a positive number."
+    refuse LATE_DAYS_MUST_BE_POSITIVE "Late days must be a finite positive number."
   where days is greater than the terms' perItemLimit
   then
     refuse LATE_DAYS_EXCEED_MAX "That is more late days than any one item may absorb."
@@ -95,16 +95,16 @@ apply(learner: Learner, item: Item, days: Number, at: Date) : return (use: Use)
     refuse INSUFFICIENT_BALANCE "The learner's balance is short of the days requested."
 
 change(learner: Learner, item: Item, days: Number) : return (use: Use)
-  where the applied use of learner and item stands, days is at least zero, days is at most the terms' perItemLimit, and the increase over the use's days is at most the balance of learner
+  where the applied use of learner and item stands, days is a finite number at least zero, days is at most the terms' perItemLimit, and the increase over the use's days is at most the balance of learner
   then
     set use's days to days
     return use
   where learner has no applied use for item
   then
     refuse LATE_USE_NOT_FOUND "No late days stand applied to this item."
-  where days is less than zero
+  where days is not a finite number at least zero
   then
-    refuse LATE_DAYS_NEGATIVE "Late days cannot be negative."
+    refuse LATE_DAYS_NEGATIVE "Late days must be a finite non-negative number."
   where days is greater than the terms' perItemLimit
   then
     refuse LATE_DAYS_EXCEED_MAX "That is more late days than any one item may absorb."

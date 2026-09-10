@@ -191,6 +191,91 @@ for (const [floor, make] of floors) {
       );
     });
 
+    test("day values must be finite numbers and rejected writes leave the balance intact", async () => {
+      const c = await make();
+      await seat(c);
+      await c.apply({ learner: "ana", item: "essay", days: 1, at: T0 });
+      for (const value of [NaN, Infinity, -Infinity, "1", "", null, true, [], {}]) {
+        const days = value as number;
+        await expect(c.grant({ learner: "ana", days, reason: "", at: T0 })).rejects.toBeInstanceOf(
+          refusalErrors.LateDaysMustBePositive,
+        );
+        await expect(
+          c.apply({ learner: "ana", item: "pset", days, at: T0 }),
+        ).rejects.toBeInstanceOf(refusalErrors.LateDaysMustBePositive);
+        await expect(c.change({ learner: "ana", item: "essay", days })).rejects.toBeInstanceOf(
+          refusalErrors.LateDaysNegative,
+        );
+      }
+      expect(await c._getBalance({ learner: "ana" })).toEqual({
+        granted: 3,
+        used: 1,
+        remaining: 2,
+      });
+      // Fractional days and zero-day changes remain supported.
+      await c.change({ learner: "ana", item: "essay", days: 0.5 });
+      await c.change({ learner: "ana", item: "essay", days: 0 });
+      expect(await c._getBalance({ learner: "ana" })).toEqual({
+        granted: 3,
+        used: 0,
+        remaining: 3,
+      });
+    });
+
+    test("concurrent applications cannot spend the same balance or duplicate an item", async () => {
+      const c = await make();
+      await seat(c);
+      const spending = await Promise.allSettled([
+        c.apply({ learner: "ana", item: "essay", days: 2, at: T0 }),
+        c.apply({ learner: "ana", item: "pset", days: 2, at: T0 }),
+      ]);
+      expect(spending[0].status).toBe("fulfilled");
+      expect(spending[1]).toMatchObject({
+        status: "rejected",
+        reason: expect.any(refusalErrors.InsufficientBalance),
+      });
+      const duplicate = await Promise.allSettled([
+        c.apply({ learner: "ben", item: "essay", days: 1, at: T0 }),
+        c.apply({ learner: "ben", item: "essay", days: 1, at: T0 }),
+      ]);
+      expect(duplicate[0].status).toBe("fulfilled");
+      expect(duplicate[1]).toMatchObject({
+        status: "rejected",
+        reason: expect.any(refusalErrors.LateUseAlreadyExists),
+      });
+      expect(await c._getBalance({ learner: "ana" })).toEqual({
+        granted: 3,
+        used: 2,
+        remaining: 1,
+      });
+      expect(await c._getUses({ learner: "ben" })).toHaveLength(1);
+    });
+
+    test("changes, applications, and cancellations share the same spending order", async () => {
+      const c = await make();
+      await seat(c);
+      await c.apply({ learner: "ana", item: "essay", days: 1, at: T0 });
+      const changes = await Promise.allSettled([
+        c.change({ learner: "ana", item: "essay", days: 2 }),
+        c.apply({ learner: "ana", item: "pset", days: 2, at: T0 }),
+      ]);
+      expect(changes[0].status).toBe("fulfilled");
+      expect(changes[1]).toMatchObject({
+        status: "rejected",
+        reason: expect.any(refusalErrors.InsufficientBalance),
+      });
+      await Promise.all([
+        c.cancel({ learner: "ana", item: "essay" }),
+        c.apply({ learner: "ana", item: "pset", days: 2, at: T1 }),
+      ]);
+      expect(await c._getBalance({ learner: "ana" })).toEqual({
+        granted: 3,
+        used: 2,
+        remaining: 1,
+      });
+      expect(await c._getApplied({ learner: "ana", item: "essay" })).toEqual([]);
+    });
+
     test("_getUsesForItem lists only applied uses, in creation order", async () => {
       const c = await make();
       await c.setTerms({ allowance: 10, perItemLimit: 5, unitHours: 24 });
