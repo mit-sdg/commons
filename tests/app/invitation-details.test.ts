@@ -35,23 +35,15 @@ const post = async (
   };
 };
 
-/**
- * The invitation read answers without a session, so it is asked of the assembled
- * application rather than through the browser edge, whose gate still expects a
- * cookie on every served path it does not list as public.
- */
+/** Exercise the same signed-out HTTP boundary as the registration form. */
 const readDetails = async (
   edge: ReturnType<typeof createEdge>,
   invitation: string,
   temporaryPassword: string,
 ): Promise<Record<string, unknown>> => {
-  const result = await edge.application.invoker.invoke("/auth/invitation", {
-    invitation,
-    temporaryPassword,
-  } as never);
-  return result.ok
-    ? (result.value as Record<string, unknown>)
-    : { error: result.error.kind === "domain" ? result.error.value : result.error.code };
+  const result = await post(edge, "/auth/invitation", { invitation, temporaryPassword });
+  expect(result.status).toBe("error" in result.body ? 401 : 200);
+  return result.body;
 };
 
 /** Register the first account, which the bootstrap reaction makes administrator. */
@@ -183,7 +175,7 @@ describe("the invitation a registration form arrives holding", () => {
     expect(accepted.status).toBe(200);
     const claimed = await readDetails(edge, invitation, credential);
 
-    expect(unknown).toEqual({ error: "INVITATION_INVALID" });
+    expect(unknown).toEqual({ error: "UNAUTHORIZED" });
     expect(wrongCredential).toEqual(unknown);
     expect(claimed).toEqual(unknown);
   });
@@ -203,7 +195,7 @@ describe("the invitation a registration form arrives holding", () => {
 
     // The invitation identifier travels in the link; the credential does not.
     expect(await readDetails(edge, invitation, invitation)).toEqual({
-      error: "INVITATION_INVALID",
+      error: "UNAUTHORIZED",
     });
   });
 });

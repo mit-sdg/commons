@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@/components/link";
 import { Spinner } from "@/components/states";
@@ -57,7 +57,7 @@ export function AuthForm({
    * never shown and never blocks the form, which still succeeds on its own
    * terms.
    */
-  async function readInvitation() {
+  const readInvitation = useCallback(async () => {
     const credential = temporaryPassword.trim();
     if (!isRegister || invitation === "" || credential === "") return;
     const requestKey = `${invitation}:${credential}`;
@@ -92,7 +92,17 @@ export function AuthForm({
     } catch {
       if (askedFor.current === requestKey) askedFor.current = null;
     }
-  }
+  }, [invitation, isRegister, temporaryPassword]);
+
+  useEffect(() => {
+    // Pasting a password must start the lookup without another click or tab.
+    // Blur can still request it immediately; readInvitation deduplicates both.
+    const timer = setTimeout(() => void readInvitation(), 300);
+    return () => {
+      clearTimeout(timer);
+      askedFor.current = null;
+    };
+  }, [readInvitation]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
