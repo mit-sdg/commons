@@ -83,7 +83,7 @@ jobs:
         run: bun run build
 
   mobile-browsers:
-    name: Mobile browser tests (${{ matrix.browser }})
+    name: Browser tests (${{ matrix.browser }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -116,8 +116,8 @@ jobs:
       - name: Install browser
         run: bunx --no-install playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Run mobile browser tests
-        run: bun run e2e tests/e2e/mobile-navigation.spec.ts tests/e2e/mobile-overlays.spec.ts --project=${{ matrix.project }}
+      - name: Run browser tests
+        run: bun run e2e tests/e2e/mobile-navigation.spec.ts tests/e2e/mobile-overlays.spec.ts tests/e2e/post-deletion.spec.ts --project=${{ matrix.project }}
 
       - name: Upload screenshots and failure traces
         if: always()

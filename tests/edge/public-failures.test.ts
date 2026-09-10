@@ -12,6 +12,7 @@ describe("public failure contract", () => {
     expect(commonsPublicErrors.NOTE_NOT_FOUND).toBe("NOT_FOUND");
     expect(commonsPublicErrors.FORBIDDEN).toBe("FORBIDDEN");
     expect(commonsPublicErrors.USERNAME_TAKEN).toBe("CONFLICT");
+    expect(commonsPublicErrors.POST_HAS_REPLIES).toBe("CONFLICT");
   });
 
   test("the HTTP edge omits private details and rejects absent and invalid sessions alike", async () => {

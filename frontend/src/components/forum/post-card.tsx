@@ -119,8 +119,13 @@ export function PostCard({
   async function remove() {
     if (!session) return;
     const result = await api.posts.delete({ post: postId });
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
+    if ("error" in result) {
+      toast.error(
+        result.error === "CONFLICT"
+          ? "This post has replies and cannot be deleted."
+          : publicErrorMessage(result.error),
+      );
+    } else {
       toast.success("Post deleted");
       onChanged();
     }
