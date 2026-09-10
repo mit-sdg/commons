@@ -168,7 +168,8 @@ export const Login = endpoint(
         .named("archived"),
       where(now(at), no(theArchivedUserNamed({ username })))
         .then(Authenticating.authenticate({ username, password }).responds({ user }))
-        .then(Sessioning.start({ user, at }).responds({ session, expiresAt }))
+        // The browser retains the credential until the cap; Sessioning enforces idle expiry.
+        .then(Sessioning.start({ user, at }).responds({ session, absoluteExpiresAt: expiresAt }))
         .then(respond({ session, expiresAt, user }))
         .named("success"),
     ),

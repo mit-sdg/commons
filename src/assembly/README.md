@@ -32,7 +32,8 @@ replaces an application default; it does not define another deployment floor.
 
 Commons exposes logical endpoint paths below `/api`. The HTTP package binds the
 logical `session` input to the secure `__Host-commons-session` cookie. A
-successful `/auth/login` supplies the session value and expiry; the HTTP handler
+successful `/auth/login` supplies the session value and fixed four-month cap as
+its cookie expiry; the HTTP handler
 removes both from the browser response and issues the cookie. Successful
 `/auth/logout` and `/auth/changePassword` calls clear it. An unauthorized result
 on a protected route clears that route's cookie binding.
@@ -46,3 +47,8 @@ HTTP error unions agree.
 [`.env.example`](../../.env.example) defines process and origin settings. The
 sync-engine HTTP package documents cookie, origin, and handler guarantees; the
 host remains responsible for the listener, proxy, TLS, and shutdown.
+
+After successful protected HTTP requests, the edge refreshes the session's
+72-hour idle deadline without rewriting its fixed-cap cookie. Cookie-clearing
+routes do not refresh. A renewal database fault is logged without replacing the
+completed operation's response. Direct invocations do not renew sessions.

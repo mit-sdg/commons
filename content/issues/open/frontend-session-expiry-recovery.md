@@ -9,9 +9,11 @@ concepts:
 
 ## Current behavior
 
-Sessions expire one day after sign-in. Protected backend routes check the stored
-expiry and reject an expired session with HTTP 401, clear its cookie, and prevent
-the requested read or mutation. Activity does not extend that expiry.
+New sessions have a 72-hour sliding idle deadline and a four-calendar-month
+absolute cap. Successful protected HTTP use extends the idle deadline. Legacy
+sessions retain their original fixed expiry. Protected backend routes reject an
+expired session with HTTP 401, clear its cookie, and prevent the requested read
+or mutation.
 
 The general frontend retains its authenticated identity after these refusals.
 An expired grading save shows “Sign in and try again,” but leaves learner work,
@@ -30,9 +32,9 @@ flow that hides protected content and handles unsaved work without exposing it
 to another account. Decide how to retain and restore an account's unsaved editor
 state while maintaining the existing live-activity sign-in flows.
 
-Changing the fixed lifetime or adopting sliding expiry is a separate decision
-tracked in `session-expiry-is-fixed-not-sliding.md`; extending the lifetime alone
-does not fix recovery when access ends.
+The sliding lifetime decision is recorded in
+[the completed session issue](../done/session-expiry-is-fixed-not-sliding.md).
+Extending the lifetime does not fix recovery when access ends.
 
 ## Acceptance condition
 

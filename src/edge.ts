@@ -63,6 +63,7 @@ export function createEdge(
   const gateway = createGateway({ application });
   const policy = commonsHttpPolicy(origin);
   const handler = createHttpHandler({ application, gateway, policy });
+  const clearingPaths = new Set(policy.cookies?.session?.clear ?? []);
   const servedPaths = new Set(Object.keys(application.publicInterface.routes));
   const sessionPaths = new Set(
     Object.entries(application.publicInterface.routes)
@@ -99,6 +100,7 @@ export function createEdge(
           { status: 400, headers: { "Cache-Control": "private, no-store" } },
         );
     }
+    let authorizedSession: string | undefined;
     if (
       request.method === "POST" &&
       logicalPath !== undefined &&
@@ -108,7 +110,12 @@ export function createEdge(
       const session = sessionFrom(request);
       const active =
         session === undefined ? [] : await application.concepts.Sessioning._getUser({ session });
-      if (active.length === 0)
+      const user = active[0]?.user;
+      // Some edge-protected routes have no session input or activeUser condition.
+      if (
+        user === undefined ||
+        (await application.concepts.Archiving._isTrashed({ item: user })).trashed
+      )
         return Response.json(
           { error: "UNAUTHORIZED" },
           {
@@ -120,8 +127,24 @@ export function createEdge(
             },
           },
         );
+      authorizedSession = session;
     }
     const response = await handler(request);
+    if (
+      response.ok &&
+      authorizedSession !== undefined &&
+      logicalPath !== undefined &&
+      !clearingPaths.has(logicalPath)
+    ) {
+      try {
+        // Renewal is HTTP activity policy, not an identity-query side effect.
+        // The cookie already expires at the fixed cap and needs no rewrite.
+        await application.concepts.Sessioning.refresh({ session: authorizedSession });
+      } catch {
+        // The operation has completed; renewal failure must not invite a duplicate mutation.
+        console.error("session: could not refresh after successful use.");
+      }
+    }
     if (logicalPath !== undefined && !PUBLIC_PATHS.has(logicalPath)) {
       response.headers.set("Cache-Control", "private, no-store");
     }
