@@ -56,6 +56,11 @@ test("edit history stays reachable on phones and desktop", async ({ page }, test
       content: `# Workshop discussion\n\nRevision ${index + 1}\n\n${"Discuss a concrete example and compare possible designs.\n\n".repeat(30)}`,
     });
   }
+  // This test exercises history, not unread tracking. Clear the seeded edits
+  // before loading the page: otherwise auto-marking them read removes the
+  // unread banner during the first click and moves Edited out from under it
+  // (observed in the Firefox CI trace).
+  await call(page, cookie, "/unread/markAllSeen", { scope: conversation });
   await page.setViewportSize({ width: 390, height: 700 });
   await page.goto(`/t/${conversation}`);
   await page.getByRole("button", { name: "Edited", exact: true }).click();
