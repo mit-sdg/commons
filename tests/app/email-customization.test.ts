@@ -184,6 +184,18 @@ describe("administrator email customization", () => {
         },
       },
     });
+    // A non-text subject is refused at the edge, before any wording is read.
+    for (const path of ["/mail/save-template", "/mail/preview-template"]) {
+      const response = await edge.fetch(
+        new Request(`http://edge/api${path}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subject: { $ne: null }, body: 7 }),
+        }),
+      );
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: "INVALID_REQUEST" });
+    }
     expect(await call("/mail/template")).toMatchObject({ ok: true, value: { template: copy } });
     expect(await call("/mail/read", { message: "missing" })).toMatchObject({
       ok: false,

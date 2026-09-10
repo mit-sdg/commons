@@ -52,7 +52,9 @@ it is interpreted, so there is nothing in it for a template to expand. Subjects
 must be nonempty single lines of at most 200 characters; bodies must be nonempty
 and at most 20000 characters. Copy that breaks a rule is refused as
 `INVALID_WORDING`, and the wording already standing is left whole — a refused
-save never leaves a subject from one edit beside a body from another.
+save never leaves a subject from one edit beside a body from another. A subject
+or body that is not text at all is refused by the edge as `INVALID_REQUEST`
+before either endpoint runs, since both are stored and later read as text.
 
 [Access.mail.PreviewTemplate](reaction:Access.mail.PreviewTemplate) forms a
 [preview](former:Access.mail.theInvitationPreview) of unsaved copy through the
