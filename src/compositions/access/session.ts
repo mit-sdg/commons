@@ -2,10 +2,13 @@ import { receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { no, reaction, view, where, now } from "@mit-sdg/sync-engine/language";
 import { concepts } from "../../concepts.ts";
 
-const { Sessioning } = concepts;
+const { Sessioning, Archiving } = concepts;
 
 export const activeUser = view("the active user of (session)", ({ session }, { user }, _bindings) =>
-  where(Sessioning._getUser({ session }).is({ user })),
+  where(
+    Sessioning._getUser({ session }).is({ user }),
+    Archiving._isTrashed({ item: user }).is({ trashed: false }),
+  ),
 ).optional();
 
 export const InvalidSessionIsRejected = reaction(({ session, at }) =>

@@ -715,9 +715,13 @@ test("the HTTP edge rejects and clears a cookie at the server-side expiry bounda
   });
   const login = await post("/auth/login", { username: "expiring", password: "password123" });
   const cookie = login.headers.get("set-cookie")?.split(";")[0] as string;
-  now = new Date(startedAt + 24 * 60 * 60 * 1_000 - 1);
-  expect((await post("/auth/me", {}, cookie)).status).toBe(200);
-  now = new Date(startedAt + 24 * 60 * 60 * 1_000);
+  now = new Date(startedAt + 72 * 60 * 60 * 1_000 - 1);
+  // Identity reads do not count as HTTP activity or move the deadline.
+  const session = cookie!.slice(cookie!.indexOf("=") + 1);
+  expect(await edge.application.concepts.Sessioning._getUser({ session })).toEqual([
+    { user: expiring.user },
+  ]);
+  now = new Date(startedAt + 72 * 60 * 60 * 1_000);
   const expired = await post("/auth/me", {}, cookie);
   expect(expired.status).toBe(401);
   expect(await expired.json()).toEqual({ error: "UNAUTHORIZED" });

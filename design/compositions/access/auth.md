@@ -43,7 +43,9 @@ cannot hold a session, this read answers without one, and `src/edge.ts` lists it
 path among those its session gate lets through, beside the acceptance it precedes.
 
 [Access.auth.Login](reaction:Access.auth.Login) verifies a username and password, captures the current
-time, and starts a timed session. An archived account cannot sign in: the
+time, and starts a timed session. Login exposes its fixed absolute cap as
+`expiresAt` for the HTTP cookie; Sessioning separately enforces the sliding idle
+deadline. An archived account cannot sign in: the
 [theArchivedUserNamed view](view:Access.auth.theArchivedUserNamed) relates an exact username to an
 account that has been archived, and login still verifies the password before
 answering `FORBIDDEN`, so a wrong password stays indistinguishable from an
@@ -112,7 +114,9 @@ steps. Between the revocation and the archive the account holds no role while it
 can still sign in, so for that interval it reads as an ordinary member; if
 archiving then faults, that is where it stays, and the administrator archives it
 again or assigns a role back through Roles. If ending sessions faults, the account
-stays archived while its existing sessions live until they expire.
+stays archived and shared access checks reject its retained sessions. Cleanup
+still matters: restoring the account can make a retained, unexpired session
+usable again.
 [Access.auth.RestoreUser](reaction:Access.auth.RestoreUser) lifts the archive and lets that person sign
 in again; it does not give back the role the account held, because revoking it was
 a separate act, so an administrator assigns one again when the person needs it.

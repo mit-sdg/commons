@@ -6,8 +6,10 @@ Give a user a session that identifies them until it ends or expires.
 
 ## Principle
 
-Maya starts a session that expires one day later. Before expiry, it identifies
-her. Ending it removes the session. Ending the same session again is refused.
+Maya starts a session with a 72-hour idle deadline and a fixed cap four calendar
+months later. Refreshing it while live extends the idle deadline, never beyond
+the cap. Reads do not refresh it. Ending it removes the session; ending it again
+is refused.
 
 ## Types
 
@@ -23,18 +25,33 @@ external User
 a set of Sessions with
   a user User
   an expiresAt Date
+  an optional absoluteExpiresAt Date
 
+Rule: the cap preserves UTC time of day and clamps to the last day of the target month.
+Rule: legacy sessions without a cap retain their fixed expiry and cannot refresh.
 Rule: endAllForUser removes every session for the user and succeeds when none remain.
 ```
 
 ## Actions
 
 ```actions
-start(user: User, at?: Date) : return (session: Session, expiresAt: Date)
+start(user: User, at?: Date) : return (session: Session, expiresAt: Date, absoluteExpiresAt: Date)
   where true
   then
-    add a new session with user and expiresAt one day after at
-    return session, expiresAt
+    add a new session with user, expiresAt 72 hours after at, and absoluteExpiresAt four calendar months after at
+    return session, expiresAt, absoluteExpiresAt
+
+refresh(session: Session) : return (session: Session, refreshed: Boolean)
+  where session exists and the server clock at execution is before both deadlines
+  then
+    atomically extend expiresAt to the greater of its current value and the earlier of 72 hours from now or absoluteExpiresAt
+    set refreshed to true
+    return session, refreshed
+  where session is unknown, expired, or legacy without absoluteExpiresAt
+  then
+    leave state unchanged
+    set refreshed to false
+    return session, refreshed
 
 end(session: Session) : return (session: Session)
   where session in sessions
