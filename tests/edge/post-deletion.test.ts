@@ -67,14 +67,13 @@ test.each(["private", "everyone"] as const)(
     // Refusal preserves both the opening and the other person's reply.
     const thread = await call("/threads/get", { conversation: root.conversation });
     expect(thread.status).toBe(200);
-    expect(thread.body.thread.map((node: { item: string }) => node.item)).toEqual([
-      root.post,
-      reply.post,
-    ]);
-    expect((await call("/posts/get", { post: root.post })).body.post.content).toBe("Opening post");
-    expect((await call("/posts/get", { post: reply.post })).body.post.content).toBe(
-      "Another person's reply",
-    );
+    expect(thread.body).toMatchObject({ thread: [{ item: root.post }, { item: reply.post }] });
+    expect((await call("/posts/get", { post: root.post })).body).toMatchObject({
+      post: { content: "Opening post" },
+    });
+    expect((await call("/posts/get", { post: reply.post })).body).toMatchObject({
+      post: { content: "Another person's reply" },
+    });
 
     // Neither authorship of the topic nor audience access grants ownership of a reply.
     expect(await call("/posts/delete", { post: reply.post })).toEqual({
