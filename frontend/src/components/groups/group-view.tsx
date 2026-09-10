@@ -3,11 +3,15 @@
 import {
   ArrowLeft,
   CalendarClock,
+  ChevronDown,
   ListChecks,
   LogOut,
+  MessagesSquare,
   Pencil,
+  Settings2,
   UserMinus,
   UserPlus,
+  Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -17,6 +21,7 @@ import { GroupDiscussions } from "@/components/groups/group-discussions";
 import { Link } from "@/components/link";
 import { PageContainer, PageHeader } from "@/components/page";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
+import { Tag } from "@/components/tag";
 import { ExpandAllDetails } from "@/components/tasks/expand-all-details";
 import {
   MemberPicker,
@@ -24,7 +29,6 @@ import {
 } from "@/components/tasks/member-picker";
 import { NewTaskDialog } from "@/components/tasks/new-task";
 import { TaskCard } from "@/components/tasks/task-card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,30 +38,41 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { UserAvatar } from "@/components/user-avatar";
+import { UserName } from "@/components/user-name";
 import { useExpandedTasks } from "@/hooks/use-expanded-tasks";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { TaskListPage } from "@/lib/models";
 import { loadTaskListPage } from "@/lib/tasks";
+import { cn } from "@/lib/utils";
 
 interface Member {
   user: string;
   displayName: string;
 }
 
-function RenameListDialog({
+type GroupTab = "discussions" | "tasks" | "members";
+
+function RenameForm({
   list,
   currentTitle,
-  onRenamed,
+  onDone,
 }: {
   list: string;
   currentTitle: string;
-  onRenamed: () => void;
+  onDone: (renamed: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(currentTitle);
   const [busy, setBusy] = useState(false);
 
@@ -77,59 +92,109 @@ function RenameListDialog({
       return;
     }
     toast.success("Group renamed");
-    setOpen(false);
-    onRenamed();
+    onDone(true);
   }
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)}>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start"
-          aria-label="Rename group"
-          onClick={() => setTitle(currentTitle)}
-        >
-          <Pencil className="size-4" /> Rename group
+    <>
+      <div className="space-y-2">
+        <Label htmlFor="rename-list-title">Group name</Label>
+        <Input
+          id="rename-list-title"
+          value={title}
+          disabled={busy}
+          autoFocus
+          placeholder="e.g. Project team"
+          onChange={(event) => setTitle(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              void rename();
+            }
+          }}
+        />
+      </div>
+      <DialogFooter>
+        <Button variant="ghost" disabled={busy} onClick={() => onDone(false)}>
+          Cancel
         </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Rename group</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="rename-list-title">Group name</Label>
-            <Input
-              id="rename-list-title"
-              value={title}
-              disabled={busy}
-              placeholder="e.g. Project team"
-              onChange={(event) => setTitle(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  void rename();
-                }
-              }}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button
-            variant="ghost"
-            disabled={busy}
-            onClick={() => setOpen(false)}
+        <Button disabled={busy} onClick={() => void rename()}>
+          {busy ? "Saving…" : "Save name"}
+        </Button>
+      </DialogFooter>
+    </>
+  );
+}
+
+/**
+ * Everything that changes the group itself lives behind one menu, the same
+ * overflow pattern task cards and the header use. Each choice opens its own
+ * dialog, so the menu closes before the dialog takes focus.
+ */
+function GroupSettingsMenu({
+  list,
+  currentTitle,
+  onRenamed,
+  onLeave,
+}: {
+  list: string;
+  currentTitle: string;
+  onRenamed: () => void;
+  onLeave: () => Promise<void>;
+}) {
+  const [renaming, setRenaming] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-1.5">
+            <Settings2 className="size-4" />
+            Group settings
+            <ChevronDown className="size-3.5 opacity-60" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuItem onSelect={() => setRenaming(true)}>
+            <Pencil /> Rename group
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            onSelect={() => setLeaving(true)}
           >
-            Cancel
-          </Button>
-          <Button disabled={busy} onClick={() => void rename()}>
-            {busy ? "Saving…" : "Save name"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <LogOut /> Leave group
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={renaming} onOpenChange={setRenaming}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename group</DialogTitle>
+          </DialogHeader>
+          <RenameForm
+            list={list}
+            currentTitle={currentTitle}
+            onDone={(renamed) => {
+              setRenaming(false);
+              if (renamed) onRenamed();
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmAction
+        open={leaving}
+        onOpenChange={setLeaving}
+        title="Leave this group?"
+        description="Your open tasks will be released. Access to discussions through this group will end; another audience on a discussion may still give you access."
+        confirmLabel="Leave"
+        destructive
+        onConfirm={onLeave}
+      />
+    </>
   );
 }
 
@@ -177,7 +242,7 @@ function AddMemberDialog({
   return (
     <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5">
+        <Button size="sm" className="gap-1.5">
           <UserPlus className="size-4" /> Add member
         </Button>
       </DialogTrigger>
@@ -226,12 +291,160 @@ function AddMemberDialog({
   );
 }
 
+function GroupTabs({
+  list,
+  current,
+  counts,
+}: {
+  list: string;
+  current: GroupTab;
+  counts: Partial<Record<GroupTab, number>>;
+}) {
+  const tabs: { view: GroupTab; label: string; icon: typeof Users }[] = [
+    { view: "discussions", label: "Discussions", icon: MessagesSquare },
+    { view: "tasks", label: "Tasks", icon: ListChecks },
+    { view: "members", label: "Members", icon: Users },
+  ];
+  return (
+    <nav
+      aria-label="Group views"
+      className="-mx-4 flex gap-1 overflow-x-auto border-b border-border px-4 sm:mx-0 sm:px-0"
+    >
+      {tabs.map(({ view, label, icon: Icon }) => {
+        const active = current === view;
+        const count = counts[view];
+        return (
+          <Link
+            key={view}
+            href={`/groups/${list}?view=${view}`}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-colors",
+              active
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:border-border hover:text-foreground",
+            )}
+          >
+            <Icon className="size-4" aria-hidden="true" />
+            {label}
+            {count !== undefined ? (
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "rounded-full px-1.5 text-[0.7rem] tabular-nums",
+                  active
+                    ? "bg-primary/10 text-primary"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                {count}
+              </span>
+            ) : null}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+function MemberList({
+  list,
+  roster,
+  viewer,
+  onChanged,
+}: {
+  list: string;
+  roster: Member[];
+  viewer: string;
+  onChanged: () => void;
+}) {
+  async function removeMember(targetUser: string, targetName: string) {
+    const result = await api.tasklists["remove-member"]({
+      list,
+      target: targetUser,
+    });
+    if ("error" in result) {
+      toast.error(
+        result.error === "CONFLICT"
+          ? "Cannot remove the only member from the group."
+          : publicErrorMessage(result.error),
+      );
+      return;
+    }
+    toast.success(`${targetName} removed from group`);
+    onChanged();
+  }
+
+  const sorted = [...roster].sort((a, b) =>
+    a.user === viewer
+      ? -1
+      : b.user === viewer
+        ? 1
+        : a.displayName.localeCompare(b.displayName),
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-display text-lg font-semibold">Members</h2>
+        <AddMemberDialog list={list} members={roster} onChanged={onChanged} />
+      </div>
+      <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+        {sorted.map((member) => {
+          const isViewer = member.user === viewer;
+          return (
+            <li
+              key={member.user}
+              className="flex items-center gap-3 px-3 py-2.5 sm:px-4"
+            >
+              <UserAvatar
+                user={member.user}
+                name={member.displayName}
+                className="size-8"
+              />
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
+                <UserName
+                  user={member.user}
+                  name={member.displayName}
+                  className="truncate"
+                />
+                {isViewer ? <Tag>You</Tag> : null}
+              </div>
+              {isViewer ? null : (
+                <ConfirmAction
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={`Remove ${member.displayName}`}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <UserMinus className="size-4" />
+                    </Button>
+                  }
+                  title={`Remove ${member.displayName}?`}
+                  description={`${member.displayName}'s open tasks will be released. Their access to discussions through this group will end; another audience on a discussion may still give them access.`}
+                  confirmLabel="Remove"
+                  destructive
+                  onConfirm={() =>
+                    removeMember(member.user, member.displayName)
+                  }
+                />
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 export function GroupView({
   list,
   tab = "discussions",
 }: {
   list: string;
-  tab?: "discussions" | "tasks" | "members";
+  tab?: GroupTab;
 }) {
   const router = useRouter();
   const { me, session } = useAuth();
@@ -260,23 +473,6 @@ export function GroupView({
     }
     toast.success("You left the group");
     router.push("/groups");
-  }
-
-  async function removeMember(targetUser: string, targetName: string) {
-    const result = await api.tasklists["remove-member"]({
-      list,
-      target: targetUser,
-    });
-    if ("error" in result) {
-      toast.error(
-        result.error === "CONFLICT"
-          ? "Cannot remove the only member from the group."
-          : publicErrorMessage(result.error),
-      );
-      return;
-    }
-    toast.success(`${targetName} removed from group`);
-    page.refetch();
   }
 
   const allTasks = useMemo(() => page.data?.tasks ?? [], [page.data]);
@@ -315,6 +511,13 @@ export function GroupView({
         new Date(a.updatedAt ?? (a.createdAt as string)).getTime(),
     );
 
+  const title =
+    detail?.title ||
+    (roster.length === 1
+      ? "Untitled group"
+      : roster.map((member) => member.displayName).join(", ")) ||
+    "Group";
+
   return (
     <PageContainer>
       <PageHeader
@@ -326,49 +529,15 @@ export function GroupView({
             <ArrowLeft className="size-3.5" /> All groups
           </Link>
         }
-        title={
-          <div className="flex items-center gap-2">
-            <span>
-              {detail?.title ||
-                (roster.length === 1
-                  ? "Untitled group"
-                  : roster.map((member) => member.displayName).join(", ")) ||
-                "Group"}
-            </span>
-          </div>
-        }
+        title={title}
         actions={
           detail ? (
-            <details className="relative">
-              <summary className="cursor-pointer rounded-md border px-3 py-2 text-sm">
-                Group settings
-              </summary>
-              <div className="absolute right-0 z-20 mt-2 grid w-44 gap-1 rounded-md border bg-popover p-2 shadow-md">
-                {detail ? (
-                  <RenameListDialog
-                    list={list}
-                    currentTitle={detail.title || ""}
-                    onRenamed={page.refetch}
-                  />
-                ) : null}
-                <ConfirmAction
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-start gap-1.5"
-                    >
-                      <LogOut className="size-4" /> Leave group
-                    </Button>
-                  }
-                  title="Leave this group?"
-                  description="Your open tasks will be released. Access to discussions through this group will end; another audience on a discussion may still give you access."
-                  confirmLabel="Leave"
-                  destructive
-                  onConfirm={leave}
-                />
-              </div>
-            </details>
+            <GroupSettingsMenu
+              list={list}
+              currentTitle={detail.title || ""}
+              onRenamed={page.refetch}
+              onLeave={leave}
+            />
           ) : null
         }
       />
@@ -385,76 +554,24 @@ export function GroupView({
         />
       ) : (
         <div className="space-y-6">
-          <nav aria-label="Group views" className="flex gap-1 border-b pb-2">
-            {(["discussions", "tasks", "members"] as const).map((view) => (
-              <Button
-                asChild
-                key={view}
-                variant={tab === view ? "secondary" : "ghost"}
-                size="sm"
-              >
-                <Link
-                  aria-current={tab === view ? "page" : undefined}
-                  href={`/groups/${list}?view=${view}`}
-                >
-                  {view[0].toUpperCase() + view.slice(1)}
-                </Link>
-              </Button>
-            ))}
-          </nav>
+          <GroupTabs
+            list={list}
+            current={tab}
+            counts={{ tasks: openTasks.length, members: roster.length }}
+          />
           {tab === "discussions" ? (
             <GroupDiscussions group={list} />
           ) : tab === "members" ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-medium">Members</h2>
-                <AddMemberDialog
-                  list={list}
-                  members={roster}
-                  onChanged={page.refetch}
-                />
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Members:
-                </span>
-                {roster.map((member) => (
-                  <Badge
-                    key={member.user}
-                    variant="secondary"
-                    className="gap-1.5 py-1 pr-1.5 pl-2.5 text-xs"
-                  >
-                    <span>{member.displayName}</span>
-                    {member.user === viewer ? (
-                      <span className="text-muted-foreground">(you)</span>
-                    ) : (
-                      <ConfirmAction
-                        trigger={
-                          <button
-                            type="button"
-                            aria-label={`Remove ${member.displayName}`}
-                            className="rounded-full text-muted-foreground hover:text-destructive"
-                          >
-                            <UserMinus className="size-3" />
-                          </button>
-                        }
-                        title={`Remove ${member.displayName}?`}
-                        description={`${member.displayName}'s open tasks will be released. Their access to discussions through this group will end; another audience on a discussion may still give them access.`}
-                        confirmLabel="Remove"
-                        destructive
-                        onConfirm={() =>
-                          removeMember(member.user, member.displayName)
-                        }
-                      />
-                    )}
-                  </Badge>
-                ))}
-              </div>
-            </div>
+            <MemberList
+              list={list}
+              roster={roster}
+              viewer={viewer}
+              onChanged={page.refetch}
+            />
           ) : (
             <div className="space-y-5">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-medium">Tasks</h2>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="font-display text-lg font-semibold">Tasks</h2>
                 <NewTaskDialog
                   scope={list}
                   scopeLabel={detail.title || "this group"}

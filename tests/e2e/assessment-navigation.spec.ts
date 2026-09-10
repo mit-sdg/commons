@@ -61,7 +61,8 @@ test("attempt links reveal work, tabs retain edits, and label failures preserve 
     await page.getByRole("button", { name: "Start assessment", exact: true }).click();
     const feedback = page.getByRole("textbox", { name: "Overall feedback (optional)" });
     const rating = page.getByRole("combobox", { name: "Assessment", exact: true });
-    await rating.selectOption("COMPETENT");
+    await rating.click();
+    await page.getByRole("option", { name: "Competent", exact: true }).click();
     await feedback.fill("Unsaved feedback survives a rubric consultation");
     await page.getByRole("tab", { name: "Overview", exact: true }).click();
     await expect(feedback).toBeHidden();
@@ -69,7 +70,7 @@ test("attempt links reveal work, tabs retain edits, and label failures preserve 
     await expect(feedback).toBeHidden();
     await page.getByRole("tab", { name: "Submissions", exact: true }).click();
     await expect(feedback).toHaveValue("Unsaved feedback survives a rubric consultation");
-    await expect(rating).toHaveValue("COMPETENT");
+    await expect(rating).toHaveText("Competent");
 
     await page.route("**/api/grades/configure-item", (route) =>
       route.fulfill({ json: { error: "FORBIDDEN" } }),

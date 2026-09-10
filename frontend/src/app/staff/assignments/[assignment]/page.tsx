@@ -24,6 +24,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@/hooks/use-query";
@@ -37,6 +44,9 @@ import {
   loadLateDaysForAssignment,
   loadSubmissionsForAssignment,
 } from "@/lib/lms";
+
+/** The evidence menu needs a value for "no attempt"; a submission id never looks like this. */
+const EXCUSAL = "excusal";
 
 function DueDateOverride({
   assignment,
@@ -701,37 +711,48 @@ function StaffAssignmentDetailPageContent({
                             )}
 
                             {isGrading && (
-                              <label className="block space-y-1 text-sm">
-                                <span>Evidence being assessed</span>
-                                <select
-                                  className="h-10 w-full rounded-md border border-input bg-background px-3"
-                                  value={gradingEvidence ?? ""}
-                                  onChange={(e) =>
-                                    setGradingEvidence(e.target.value || null)
+                              <div className="space-y-2">
+                                <Label htmlFor={`evidence-${learnerId}`}>
+                                  Evidence being assessed
+                                </Label>
+                                <Select
+                                  value={gradingEvidence ?? EXCUSAL}
+                                  onValueChange={(value) =>
+                                    setGradingEvidence(
+                                      value === EXCUSAL ? null : value,
+                                    )
                                   }
                                 >
-                                  <option value="">
-                                    Assignment excusal (no attempt)
-                                  </option>
-                                  {attempts
-                                    .filter(
-                                      (a) =>
-                                        a.status === "SUBMITTED" ||
-                                        learnerGrades.some(
-                                          (g) => g.evidence === a.submission,
-                                        ),
-                                    )
-                                    .map((a) => (
-                                      <option
-                                        key={a.submission}
-                                        value={a.submission}
-                                      >
-                                        Attempt {a.number} (
-                                        {a.status.toLowerCase()})
-                                      </option>
-                                    ))}
-                                </select>
-                              </label>
+                                  <SelectTrigger
+                                    id={`evidence-${learnerId}`}
+                                    className="w-full"
+                                  >
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value={EXCUSAL}>
+                                      Assignment excusal (no attempt)
+                                    </SelectItem>
+                                    {attempts
+                                      .filter(
+                                        (a) =>
+                                          a.status === "SUBMITTED" ||
+                                          learnerGrades.some(
+                                            (g) => g.evidence === a.submission,
+                                          ),
+                                      )
+                                      .map((a) => (
+                                        <SelectItem
+                                          key={a.submission}
+                                          value={a.submission}
+                                        >
+                                          Attempt {a.number} (
+                                          {a.status.toLowerCase()})
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             )}
                             {isGrading ? (
                               <GradeInput
