@@ -4462,7 +4462,6 @@ Former "the discussion notification presentation of (post) for (reader)" — inp
 
 Authored path: `Access.roles.theRoleNameOf`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 100.
-- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
 
 ```former
 Former "the role name of (user) in (context)" — inputs (user, context); bindings (role, name); promises at most one record — forms:
