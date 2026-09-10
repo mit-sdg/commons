@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthGate } from "@/components/auth-gate";
@@ -26,7 +26,16 @@ const jetbrains = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: { default: "Commons", template: "%s — Commons" },
+  applicationName: "Commons",
   description: "Course work and discussion in Commons.",
+};
+
+/** The browser chrome around the page takes the paper colour in each theme. */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fcfaf6" },
+    { media: "(prefers-color-scheme: dark)", color: "#1e1b18" },
+  ],
 };
 
 export default function RootLayout({

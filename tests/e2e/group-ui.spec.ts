@@ -105,11 +105,9 @@ test("people dropdown scrolls and selects by keyboard; group discussion preserve
   await page.getByRole("link", { name: /Course Launch Tasks/ }).click();
   await page.waitForURL(/\/groups\/[^/?]+/);
   const groupUrl = page.url();
-  await page.getByText("Group settings", { exact: true }).click();
-  await expect(page.getByRole("button", { name: "Rename group", exact: true })).toHaveText(
-    "Rename group",
-  );
-  await page.getByRole("button", { name: "Rename group", exact: true }).click();
+  await page.getByRole("button", { name: "Group settings", exact: true }).click();
+  await expect(page.getByRole("menuitem", { name: "Rename group", exact: true })).toBeVisible();
+  await page.getByRole("menuitem", { name: "Rename group", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Group name", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Close", exact: true }).click();
   await page.getByRole("link", { name: "New discussion", exact: true }).last().click();

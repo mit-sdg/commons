@@ -12,6 +12,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api, publicErrorMessage } from "@/lib/api";
 import type { TaskList } from "@/lib/models";
@@ -155,19 +162,19 @@ export function NewTaskDialog({
         {groups ? (
           <div className="space-y-2">
             <Label htmlFor="task-scope">For</Label>
-            <select
-              id="task-scope"
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-              value={selectedScope}
-              onChange={(event) => setSelectedScope(event.target.value)}
-            >
-              <option value={scope}>Personal — only you</option>
-              {groups.map((group) => (
-                <option key={group.list} value={group.list}>
-                  {group.title || "Untitled group"}
-                </option>
-              ))}
-            </select>
+            <Select value={selectedScope} onValueChange={setSelectedScope}>
+              <SelectTrigger id="task-scope" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={scope}>Personal — only you</SelectItem>
+                {groups.map((group) => (
+                  <SelectItem key={group.list} value={String(group.list)}>
+                    {group.title || "Untitled group"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">For {scopeLabel}</p>

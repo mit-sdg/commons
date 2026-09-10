@@ -5,6 +5,13 @@ import { Fact, Facts } from "@/components/facts";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage, unwrap } from "@/lib/api";
@@ -218,20 +225,25 @@ function AssessmentEditor({
               <Label htmlFor={`${a.grade}-${c.criterion}-rating`}>
                 Assessment
               </Label>
-              <select
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                id={`${a.grade}-${c.criterion}-rating`}
+              <Select
                 value={j?.rating ?? ""}
                 disabled={busy}
-                onChange={(e) => update(c.criterion, "rating", e.target.value)}
+                onValueChange={(value) => update(c.criterion, "rating", value)}
               >
-                <option value="">Choose a level…</option>
-                {LEVELS.map((l) => (
-                  <option key={l} value={l}>
-                    {levelLabel(l)}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger
+                  id={`${a.grade}-${c.criterion}-rating`}
+                  className="w-full"
+                >
+                  <SelectValue placeholder="Choose a level…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LEVELS.map((l) => (
+                    <SelectItem key={l} value={l}>
+                      {levelLabel(l)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {j?.rating && levelDescription(c, j.rating).trim() && (
                 <p className="text-sm text-muted-foreground">
                   {levelDescription(c, j.rating)}

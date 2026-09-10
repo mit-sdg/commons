@@ -22,6 +22,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NotificationBell } from "@/components/forum/notification-bell";
 import { Link } from "@/components/link";
+import { CommonsLogo } from "@/components/logo";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -119,14 +120,9 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background lg:bg-background/90 lg:backdrop-blur lg:supports-[backdrop-filter]:bg-background/75">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
-        <Link href="/" className="group flex items-center gap-2.5">
-          <span className="flex size-9 items-center justify-center rounded-md bg-primary font-display text-lg font-semibold text-primary-foreground shadow-sm">
-            C
-          </span>
-          <span className="hidden font-display text-xl font-semibold tracking-tight sm:inline">
-            Commons
-          </span>
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 @container sm:px-6">
+        <Link href="/" aria-label="Commons home" className="group shrink-0">
+          <CommonsLogo />
         </Link>
 
         <nav
@@ -163,9 +159,15 @@ export function SiteHeader() {
         <div className="ml-auto flex items-center gap-1.5">
           {me ? (
             <Button asChild size="sm" className="hidden gap-1.5 sm:inline-flex">
-              <Link href="/new">
+              {/* The label yields to the row's own width, so a large text
+                  size or a narrow window keeps the pen and drops the words. */}
+              <Link
+                href="/new"
+                aria-label="New discussion"
+                title="New discussion"
+              >
                 <PenLine className="size-4" />
-                New discussion
+                <span className="hidden @3xl:inline">New discussion</span>
               </Link>
             </Button>
           ) : null}
