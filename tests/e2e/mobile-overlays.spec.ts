@@ -135,6 +135,9 @@ test("task dialogs scroll in landscape and keep every control reachable", async 
 test("notification lists shrink to the available space while their footer stays visible", async ({
   page,
 }, testInfo) => {
+  // Seven assignments, then four viewport passes that each poll, scroll both
+  // edges and photograph: more than the default budget on a loaded runner.
+  test.setTimeout(120_000);
   const { cookie, user } = await authenticate(page);
   const other = await logIn(page, "noah");
   const { list } = await call<{ list: string }>(page, cookie, "/tasklists/create", {

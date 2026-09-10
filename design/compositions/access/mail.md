@@ -62,8 +62,7 @@ same renderers an invitation uses, with sample credentials, saving no wording
 and queuing no message. A preview renders; it does not decide. It passes the
 draft through the same fallback and bounds the effective copy meets, so it shows
 at most what a save would accept and a blank draft previews the words Commons
-would fall back to; only [SaveTemplate](reaction:Access.mail.SaveTemplate)
-accepts or refuses copy. Both the text and the escaped HTML preview carry the
+would fall back to; only saving accepts or refuses copy. Both the text and the escaped HTML preview carry the
 mandatory registration footer.
 
 Wording changes affect subsequent invitation enqueues, including resends and

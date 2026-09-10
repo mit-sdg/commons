@@ -7173,7 +7173,7 @@ then
 
 Authored path: `Access.mail.List`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 18.
-- Covered by [Mail](../design/compositions/access/mail.md), line 74.
+- Covered by [Mail](../design/compositions/access/mail.md), line 73.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/list", requestId, session)
@@ -7188,7 +7188,7 @@ then
 
 Authored path: `Access.mail.List`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 18.
-- Covered by [Mail](../design/compositions/access/mail.md), line 74.
+- Covered by [Mail](../design/compositions/access/mail.md), line 73.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/list", requestId, session)
@@ -7203,7 +7203,7 @@ then
 
 Authored path: `Access.mail.PreviewTemplate`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 59.
-- Covered by [Mail](../design/compositions/access/mail.md), line 79.
+- Covered by [Mail](../design/compositions/access/mail.md), line 78.
 
 ```reaction
 when RequestBoundary.request (body, path: "/mail/preview-template", requestId, session, subject)
@@ -7218,7 +7218,7 @@ then
 
 Authored path: `Access.mail.PreviewTemplate`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 59.
-- Covered by [Mail](../design/compositions/access/mail.md), line 79.
+- Covered by [Mail](../design/compositions/access/mail.md), line 78.
 
 ```reaction
 when RequestBoundary.request (body, path: "/mail/preview-template", requestId, session, subject)
@@ -7233,7 +7233,7 @@ then
 
 Authored path: `Access.mail.Read`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 24.
-- Covered by [Mail](../design/compositions/access/mail.md), line 75.
+- Covered by [Mail](../design/compositions/access/mail.md), line 74.
 
 ```reaction
 when RequestBoundary.request (message, path: "/mail/read", requestId, session)
@@ -7248,7 +7248,7 @@ then
 
 Authored path: `Access.mail.Read`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 24.
-- Covered by [Mail](../design/compositions/access/mail.md), line 75.
+- Covered by [Mail](../design/compositions/access/mail.md), line 74.
 
 ```reaction
 when RequestBoundary.request (message, path: "/mail/read", requestId, session)
@@ -7264,7 +7264,7 @@ then
 
 Authored path: `Access.mail.Read`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 24.
-- Covered by [Mail](../design/compositions/access/mail.md), line 75.
+- Covered by [Mail](../design/compositions/access/mail.md), line 74.
 
 ```reaction
 when RequestBoundary.request (message, path: "/mail/read", requestId, session)
@@ -7281,7 +7281,7 @@ then
 
 Authored path: `Access.mail.ResetTemplate`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 47.
-- Covered by [Mail](../design/compositions/access/mail.md), line 78.
+- Covered by [Mail](../design/compositions/access/mail.md), line 77.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/reset-template", requestId, session)
@@ -7296,7 +7296,7 @@ then
 
 Authored path: `Access.mail.ResetTemplate`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 47.
-- Covered by [Mail](../design/compositions/access/mail.md), line 78.
+- Covered by [Mail](../design/compositions/access/mail.md), line 77.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/reset-template", requestId, session)
@@ -7311,7 +7311,7 @@ then
 
 Authored path: `Access.mail.ResetTemplate`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 47.
-- Covered by [Mail](../design/compositions/access/mail.md), line 78.
+- Covered by [Mail](../design/compositions/access/mail.md), line 77.
 
 ```reaction
 when Wording.withdraw (place: "invitation"), asked by Access.mail.ResetTemplate:success
@@ -7325,8 +7325,7 @@ then
 
 Authored path: `Access.mail.SaveTemplate`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 45.
-- Covered by [Mail](../design/compositions/access/mail.md), line 65.
-- Covered by [Mail](../design/compositions/access/mail.md), line 77.
+- Covered by [Mail](../design/compositions/access/mail.md), line 76.
 
 ```reaction
 when RequestBoundary.request (body, path: "/mail/save-template", requestId, session, subject)
@@ -7341,8 +7340,7 @@ then
 
 Authored path: `Access.mail.SaveTemplate`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 45.
-- Covered by [Mail](../design/compositions/access/mail.md), line 65.
-- Covered by [Mail](../design/compositions/access/mail.md), line 77.
+- Covered by [Mail](../design/compositions/access/mail.md), line 76.
 
 ```reaction
 when RequestBoundary.request (body, path: "/mail/save-template", requestId, session, subject)
@@ -7357,8 +7355,7 @@ then
 
 Authored path: `Access.mail.SaveTemplate`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 45.
-- Covered by [Mail](../design/compositions/access/mail.md), line 65.
-- Covered by [Mail](../design/compositions/access/mail.md), line 77.
+- Covered by [Mail](../design/compositions/access/mail.md), line 76.
 
 ```reaction
 when Wording.word (heading: subject, passage: body, place: "invitation", result.heading: savedSubject, result.passage: savedBody), asked by Access.mail.SaveTemplate:success
@@ -7372,7 +7369,7 @@ then
 
 Authored path: `Access.mail.Template`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 38.
-- Covered by [Mail](../design/compositions/access/mail.md), line 76.
+- Covered by [Mail](../design/compositions/access/mail.md), line 75.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/template", requestId, session)
@@ -7388,7 +7385,7 @@ then
 
 Authored path: `Access.mail.Template`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 38.
-- Covered by [Mail](../design/compositions/access/mail.md), line 76.
+- Covered by [Mail](../design/compositions/access/mail.md), line 75.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/template", requestId, session)
@@ -7403,7 +7400,7 @@ then
 
 Authored path: `Access.mail.Template`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 38.
-- Covered by [Mail](../design/compositions/access/mail.md), line 76.
+- Covered by [Mail](../design/compositions/access/mail.md), line 75.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/template", requestId, session)
