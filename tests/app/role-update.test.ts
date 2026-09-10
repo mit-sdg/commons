@@ -83,7 +83,10 @@ test("an administrator changes what a role carries and every holder gains it at 
   expect(
     (await post(edge, "/roles/forUser", { user: "hana", context: "commons" }, admin.cookie)).body,
   ).toMatchObject({ role, name: "teaching assistant", capabilities: ["grade", "moderate"] });
-  expect(
-    (await post(edge, "/roles/list", {}, admin.cookie)).body,
-  ).toMatchObject({ roles: [{ name: "administrator", capabilities: ["administer"] }, { role, capabilities: ["grade", "moderate"] }] });
+  expect((await post(edge, "/roles/list", {}, admin.cookie)).body).toMatchObject({
+    roles: [
+      { name: "administrator", capabilities: ["administer"] },
+      { role, capabilities: ["grade", "moderate"] },
+    ],
+  });
 });

@@ -161,7 +161,9 @@ export const UpdateRole = endpoint(
           compute(computations.carriesAdminister, { capabilities: current }, wildcard),
           is.among(wildcard, [false]),
         )
-          .then(Roling.setCapabilities({ role: resolved, capabilities }).responds({ role: resolved }))
+          .then(
+            Roling.setCapabilities({ role: resolved, capabilities }).responds({ role: resolved }),
+          )
           .then(respond({ role: resolved }))
           .named("success"),
       ),
