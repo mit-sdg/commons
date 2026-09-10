@@ -107,7 +107,7 @@ test("a failed establishment leaves placed content closed to every reader", asyn
   expect(await instances.Mailing._getPending({})).toEqual([]);
 });
 
-test("queued group mail is withheld after departure and remains content-free", async () => {
+test("queued group mail is withheld after departure and includes only the title, not the body", async () => {
   const {
     instances,
     people: [author, reader],
@@ -119,12 +119,13 @@ test("queued group mail is withheld after departure and remains content-free", a
   expect(
     await app.invoker.invoke("/threads/create", {
       session: author.session,
-      content: "SECRET homework question for @reader",
+      content: "# Homework question\n\nSECRET homework question for @reader",
       holders: [`group:${group}`],
     }),
   ).toMatchObject({ ok: true });
   const [queued] = await instances.Mailing._getPending({});
   expect(queued).toBeDefined();
+  expect(queued.subject).toBe("You were mentioned in a discussion: Homework question");
   expect(queued.text + queued.html).not.toContain("SECRET");
   await app.concepts.Grouping.leave({ group, member: reader.user, at });
   const { deliverPendingMail } = await import("../../src/email/worker.ts");

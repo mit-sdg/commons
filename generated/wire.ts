@@ -2863,7 +2863,6 @@ export type CommonsWire = {
       "messages": {
         "attempts": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessages"]>>>, ["attempts"]>>;
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessages"]>>>, ["createdAt"]>>;
-        "key": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessages"]>>>, ["key"]>>;
         "lastAttemptAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessages"]>>>, ["lastAttemptAt"]>>;
         "lastError": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessages"]>>>, ["lastError"]>>;
         "message": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessages"]>>>, ["message"]>>;
@@ -2871,6 +2870,81 @@ export type CommonsWire = {
         "sentAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessages"]>>>, ["sentAt"]>>;
         "subject": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessages"]>>>, ["subject"]>>;
       }[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/mail/preview-template": {
+    input: {
+      "body": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["invitationTemplateBody"]["fn"]>[0], ["body"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "subject": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["invitationTemplateSubject"]["fn"]>[0], ["subject"]>>;
+    };
+    output: {
+      "preview": {
+        "html": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationMailHtml"]["fn"]>>, []>>;
+        "subject": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationTemplateSubject"]["fn"]>>, []>>;
+        "text": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationMailText"]["fn"]>>, []>>;
+      };
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/mail/read": {
+    input: {
+      "message": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessage"]>[0], ["message"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "message": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessage"]>[0], ["message"]>>;
+      "recipient": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessage"]>>>, ["recipient"]>>;
+      "subject": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessage"]>>>, ["subject"]>>;
+      "text": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["mailPreviewText"]["fn"]>>, []>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "NOT_FOUND" };
+  };
+  "/mail/reset-template": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "template": {
+        "body": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationTemplateBody"]["fn"]>>, []>>;
+        "subject": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationTemplateSubject"]["fn"]>>, []>>;
+      };
+      "worded": false;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/mail/save-template": {
+    input: {
+      "body": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Wording"]["word"]>[0], ["passage"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "subject": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Wording"]["word"]>[0], ["heading"]>>;
+    };
+    output: {
+      "template": {
+        "body": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Wording"]["word"]>>, ["passage"]>>;
+        "subject": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Wording"]["word"]>>, ["heading"]>>;
+      };
+      "worded": true;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_WORDING" };
+  };
+  "/mail/template": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "template": {
+        "body": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationTemplateBody"]["fn"]>>, []>>;
+        "subject": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationTemplateSubject"]["fn"]>>, []>>;
+      };
+      "worded": false;
+    } | {
+      "template": {
+        "body": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationTemplateBody"]["fn"]>>, []>>;
+        "subject": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationTemplateSubject"]["fn"]>>, []>>;
+      };
+      "worded": true;
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
   };
@@ -2957,7 +3031,9 @@ export type CommonsWire = {
           "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>> | null;
         };
         "assignmentTitle": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignments"]>>>, ["title"]>> | null;
+        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getRoot"]>[0], ["conversation"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>]>> | null;
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["createdAt"]>>;
+        "discussionTitle": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["notificationDiscussionTitle"]["fn"]>>, []>> | null;
         "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["kind"]>>;
         "link": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["link"]>>;
         "notification": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["notification"]>>;
@@ -7406,7 +7482,6 @@ export type CommonsWireHttp = {
       "messages": {
         "attempts": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessages"]>>>, ["attempts"]>>;
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessages"]>>>, ["createdAt"]>>;
-        "key": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessages"]>>>, ["key"]>>;
         "lastAttemptAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessages"]>>>, ["lastAttemptAt"]>>;
         "lastError": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessages"]>>>, ["lastError"]>>;
         "message": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessages"]>>>, ["message"]>>;
@@ -7414,6 +7489,74 @@ export type CommonsWireHttp = {
         "sentAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessages"]>>>, ["sentAt"]>>;
         "subject": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessages"]>>>, ["subject"]>>;
       }[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/mail/preview-template": {
+    input: {
+      "body": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["invitationTemplateBody"]["fn"]>[0], ["body"]>>;
+      "subject": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["invitationTemplateSubject"]["fn"]>[0], ["subject"]>>;
+    };
+    output: {
+      "preview": {
+        "html": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationMailHtml"]["fn"]>>, []>>;
+        "subject": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationTemplateSubject"]["fn"]>>, []>>;
+        "text": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationMailText"]["fn"]>>, []>>;
+      };
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/mail/read": {
+    input: {
+      "message": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessage"]>[0], ["message"]>>;
+    };
+    output: {
+      "message": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessage"]>[0], ["message"]>>;
+      "recipient": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessage"]>>>, ["recipient"]>>;
+      "subject": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Mailing"]["_getMessage"]>>>, ["subject"]>>;
+      "text": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["mailPreviewText"]["fn"]>>, []>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/mail/reset-template": {
+    input: Record<string, never>;
+    output: {
+      "template": {
+        "body": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationTemplateBody"]["fn"]>>, []>>;
+        "subject": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationTemplateSubject"]["fn"]>>, []>>;
+      };
+      "worded": false;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/mail/save-template": {
+    input: {
+      "body": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Wording"]["word"]>[0], ["passage"]>>;
+      "subject": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Wording"]["word"]>[0], ["heading"]>>;
+    };
+    output: {
+      "template": {
+        "body": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Wording"]["word"]>>, ["passage"]>>;
+        "subject": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Wording"]["word"]>>, ["heading"]>>;
+      };
+      "worded": true;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/mail/template": {
+    input: Record<string, never>;
+    output: {
+      "template": {
+        "body": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationTemplateBody"]["fn"]>>, []>>;
+        "subject": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationTemplateSubject"]["fn"]>>, []>>;
+      };
+      "worded": false;
+    } | {
+      "template": {
+        "body": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationTemplateBody"]["fn"]>>, []>>;
+        "subject": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["invitationTemplateSubject"]["fn"]>>, []>>;
+      };
+      "worded": true;
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
   };
@@ -7493,7 +7636,9 @@ export type CommonsWireHttp = {
           "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>> | null;
         };
         "assignmentTitle": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignments"]>>>, ["title"]>> | null;
+        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getRoot"]>[0], ["conversation"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>]>> | null;
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["createdAt"]>>;
+        "discussionTitle": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["notificationDiscussionTitle"]["fn"]>>, []>> | null;
         "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["kind"]>>;
         "link": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["link"]>>;
         "notification": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getInbox"]>>>, ["notification"]>>;

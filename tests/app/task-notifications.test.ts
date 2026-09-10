@@ -654,7 +654,7 @@ describe("the task inbox", () => {
 });
 
 describe("the two notification instances stay apart", () => {
-  test("a task notification queues its own mail and never the forum's generic one", async () => {
+  test("a task notification queues its own mail and never the forum's one", async () => {
     const app = await newApp();
     const mara = await actor(app, "mara_apart");
     const noah = await actor(app, "noah_apart");
@@ -701,7 +701,7 @@ describe("the two notification instances stay apart", () => {
       message.key.includes(forumNotification.notification),
     );
     expect(forumMail).toHaveLength(1);
-    expect(forumMail[0].subject).toBe("New Commons notification");
+    expect(forumMail[0].subject).toBe("New reply to your post: Forum notice");
     // and the forum entry never reaches the task inbox
     expect(await inbox(app, noah.session)).toHaveLength(1);
   });

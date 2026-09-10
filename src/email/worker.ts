@@ -4,6 +4,7 @@ import type { MailConfiguration } from "./configuration.ts";
 export interface MailSender {
   sendMail(message: {
     from: string;
+    replyTo?: string;
     to: string;
     subject: string;
     text: string;
@@ -15,6 +16,7 @@ export interface MailSender {
 export interface PendingMail {
   key: string;
   message: string;
+  generation: string | null;
   recipient: string;
   subject: string;
   text: string;
@@ -27,8 +29,13 @@ type Awaitable<Value> = Value | PromiseLike<Value>;
 
 export interface MailOutbox {
   _getPending(input: Record<string, never>): Awaitable<PendingMail[]>;
-  markSent(input: { message: string; at: Date }): Awaitable<unknown>;
-  markFailed(input: { message: string; error: string; at: Date }): Awaitable<unknown>;
+  markSent(input: { message: string; generation: string | null; at: Date }): Awaitable<unknown>;
+  markFailed(input: {
+    message: string;
+    generation: string | null;
+    error: string;
+    at: Date;
+  }): Awaitable<unknown>;
 }
 
 /** Keep the outbox reason short and free of the transport's stack trace. */
@@ -71,19 +78,21 @@ export async function deliverPendingMail(
       if (!(await eligible(mail))) continue;
       await sender.sendMail({
         from: configuration.from,
+        ...(configuration.replyTo === undefined ? {} : { replyTo: configuration.replyTo }),
         to: mail.recipient,
         subject: mail.subject,
         text: mail.text,
         html: mail.html,
-        messageId: `<${mail.message}@${configuration.host}>`,
+        messageId: `<${mail.message}.${mail.generation ?? "legacy"}@${configuration.host}>`,
       });
-      await outbox.markSent({ message: mail.message, at: new Date() });
+      await outbox.markSent({ message: mail.message, generation: mail.generation, at: new Date() });
       delivered += 1;
     } catch (error) {
       console.error("email: delivery failed; the message remains queued.");
       try {
         await outbox.markFailed({
           message: mail.message,
+          generation: mail.generation,
           error: deliveryFailureReason(error),
           at: new Date(),
         });

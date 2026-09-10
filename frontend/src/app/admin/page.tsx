@@ -12,13 +12,14 @@ import {
   Search,
   Shield,
   Trash2,
-  TriangleAlert,
   UserCog,
   Users,
   X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { InvitationTemplateEditor } from "@/components/admin/invitation-template-editor";
+import { MailOutbox } from "@/components/admin/mail-outbox";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Fact, Facts } from "@/components/facts";
 import { PageContainer, PageHeader } from "@/components/page";
@@ -39,9 +40,10 @@ import { UserAvatar } from "@/components/user-avatar";
 import { UserName } from "@/components/user-name";
 import type { QueryState } from "@/hooks/use-query";
 import { useQuery } from "@/hooks/use-query";
-import { api, publicErrorMessage } from "@/lib/api";
+import { api, publicErrorMessage, withRequestErrors } from "@/lib/api";
 import { COMMONS_CONTEXT, useAuth } from "@/lib/auth";
 import { count } from "@/lib/format";
+import { isFailing } from "@/lib/mail-ui";
 import type {
   Invitation,
   MailMessage,
@@ -1088,151 +1090,6 @@ function RoleAdmin({
   );
 }
 
-/** A queued message is failing when it has an error recorded and never landed. */
-function isFailing(m: MailMessage): boolean {
-  return m.sentAt === null && m.lastError !== null;
-}
-
-function MailStatusBadge({ message }: { message: MailMessage }) {
-  if (message.sentAt !== null) {
-    return (
-      <Badge
-        variant="outline"
-        className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium"
-      >
-        Sent
-      </Badge>
-    );
-  }
-  if (message.lastError !== null) {
-    return (
-      <Badge
-        variant="outline"
-        className="border-destructive/30 bg-destructive/10 text-destructive text-xs font-medium"
-      >
-        Failing
-      </Badge>
-    );
-  }
-  return (
-    <Badge
-      variant="outline"
-      className="border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-medium"
-    >
-      Queued
-    </Badge>
-  );
-}
-
-function MailAdmin({
-  mailQuery,
-}: {
-  mailQuery: QueryState<{ messages: MailMessage[] }>;
-}) {
-  const [onlyFailing, setOnlyFailing] = useState(false);
-
-  const messages = useMemo(
-    () => mailQuery.data?.messages ?? [],
-    [mailQuery.data],
-  );
-  const failing = useMemo(() => messages.filter(isFailing), [messages]);
-  const shown = onlyFailing ? failing : messages;
-
-  if (mailQuery.loading) return <LoadingState />;
-  if (mailQuery.error) {
-    return (
-      <EmptyState
-        icon={Mail}
-        title="Failed to load the outbox"
-        description={mailQuery.error}
-      />
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-sm text-muted-foreground">
-          Every email Commons has queued, newest first.{" "}
-          {failing.length > 0 ? (
-            <span className="text-destructive font-medium">
-              {failing.length}{" "}
-              {failing.length === 1 ? "message is" : "messages are"} not getting
-              through.
-            </span>
-          ) : (
-            <span>Nothing is currently failing.</span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant={onlyFailing ? "default" : "outline"}
-            size="sm"
-            className="gap-1.5 text-xs"
-            disabled={failing.length === 0 && !onlyFailing}
-            onClick={() => setOnlyFailing((prev) => !prev)}
-          >
-            <TriangleAlert className="size-3.5" />
-            {onlyFailing ? "Showing failures" : "Only failures"}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 text-xs"
-            onClick={() => mailQuery.refetch()}
-          >
-            <RefreshCw className="size-3.5" />
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      {shown.length === 0 ? (
-        <EmptyState
-          icon={Mail}
-          title={onlyFailing ? "No failing messages" : "No email yet"}
-          description={
-            onlyFailing
-              ? "Every queued message has been delivered."
-              : "Commons has not queued any email yet."
-          }
-        />
-      ) : (
-        <div className="divide-y divide-border rounded-xl border border-border bg-card overflow-hidden">
-          {shown.map((m) => (
-            <div key={String(m.message)} className="flex flex-col gap-2 p-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="font-medium text-foreground">{m.subject}</p>
-                <MailStatusBadge message={m} />
-                {m.attempts > 1 ? (
-                  <span className="text-xs text-muted-foreground">
-                    {m.attempts} attempts
-                  </span>
-                ) : null}
-              </div>
-              <Facts className="text-muted-foreground text-xs">
-                <span>To {m.recipient}</span>
-                <Fact.When verb="Queued" at={m.createdAt} />
-                {m.sentAt !== null ? (
-                  <Fact.When verb="Sent" at={m.sentAt} />
-                ) : null}
-                {m.sentAt === null && m.lastAttemptAt !== null ? (
-                  <Fact.When verb="Last tried" at={m.lastAttemptAt} />
-                ) : null}
-              </Facts>
-              {m.lastError !== null && m.sentAt === null ? (
-                <p className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 font-mono text-xs text-destructive break-words">
-                  {m.lastError}
-                </p>
-              ) : null}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function AdminPage() {
   const { loading, permissions, me } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("users");
@@ -1243,8 +1100,10 @@ export default function AdminPage() {
     [],
   );
   const mailQuery = useQuery<{ messages: MailMessage[] }>(
-    () => api.mail.list({}),
-    [],
+    !loading && permissions.can("administer")
+      ? () => withRequestErrors(() => api.mail.list({}))
+      : null,
+    [me?.user],
   );
   const usersQuery = useQuery<{ users: RegisteredUser[] }>(
     () => api.users.list({}),
@@ -1332,8 +1191,15 @@ export default function AdminPage() {
             usersQuery={usersQuery}
           />
         </TabsContent>
-        <TabsContent value="mail" className="mt-6">
-          <MailAdmin mailQuery={mailQuery} />
+        <TabsContent
+          value="mail"
+          forceMount
+          className="mt-6 data-[state=inactive]:hidden"
+        >
+          <div key={me?.user} className="space-y-8">
+            <InvitationTemplateEditor />
+            <MailOutbox mailQuery={mailQuery} />
+          </div>
         </TabsContent>
       </Tabs>
     </PageContainer>

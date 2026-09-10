@@ -153,6 +153,7 @@ describe("application-owned design integration", () => {
       "Grading.Criterion is Itemizing.Criterion",
       "Grading.Evidence is Submitting.Submission",
       "Mailing.Key is MailKey",
+      "Wording.Place is MailPlace",
       "Submitting.Artifact is Posting.Post",
       "Bookmarking.Item is Posting.Post",
       "Commissioning.Subject is Publishing.Edition",

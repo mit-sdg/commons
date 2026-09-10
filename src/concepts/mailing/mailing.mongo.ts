@@ -5,6 +5,7 @@ import { normalizeMailRecipient } from "./recipient.ts";
 interface MailDoc {
   _id: string;
   key: string;
+  generation?: string | null;
   recipient: string;
   subject: string;
   text: string;
@@ -44,12 +45,14 @@ export class MongoMailingConcept {
     at: Date;
   }) {
     const normalizedRecipient = normalizeMailRecipient(recipient);
+    const generation = crypto.randomUUID();
     await (this.index ??= this.messages.createIndex({ key: 1 }, { unique: true }));
     const replace = async (existing: MailDoc) => {
       await this.messages.updateOne(
         { _id: existing._id },
         {
           $set: {
+            generation,
             recipient: normalizedRecipient,
             subject,
             text,
@@ -73,6 +76,7 @@ export class MongoMailingConcept {
       await this.messages.insertOne({
         _id: message,
         key,
+        generation,
         recipient: normalizedRecipient,
         subject,
         text,
@@ -99,21 +103,43 @@ export class MongoMailingConcept {
     return { message };
   }
 
-  async markSent({ message, at }: { message: string; at: Date }) {
+  async markSent({
+    message,
+    generation,
+    at,
+  }: {
+    message: string;
+    generation: string | null;
+    at: Date;
+  }) {
     const result = await this.messages.updateOne(
-      { _id: message },
+      { _id: message, generation },
       { $set: { sentAt: at, lastError: null } },
     );
-    if (result.matchedCount === 0) throw new MailNotFound(message);
+    if (result.matchedCount === 0 && !(await this.messages.findOne({ _id: message }))) {
+      throw new MailNotFound(message);
+    }
     return { message };
   }
 
-  async markFailed({ message, error, at }: { message: string; error: string; at: Date }) {
+  async markFailed({
+    message,
+    generation,
+    error,
+    at,
+  }: {
+    message: string;
+    generation: string | null;
+    error: string;
+    at: Date;
+  }) {
     const result = await this.messages.updateOne(
-      { _id: message },
+      { _id: message, generation },
       { $set: { lastAttemptAt: at, lastError: error }, $inc: { attempts: 1 } },
     );
-    if (result.matchedCount === 0) throw new MailNotFound(message);
+    if (result.matchedCount === 0 && !(await this.messages.findOne({ _id: message }))) {
+      throw new MailNotFound(message);
+    }
     return { message };
   }
 
@@ -122,6 +148,7 @@ export class MongoMailingConcept {
       (doc) => ({
         message: doc._id,
         key: doc.key,
+        generation: doc.generation ?? null,
         recipient: doc.recipient,
         subject: doc.subject,
         text: doc.text,
@@ -134,6 +161,11 @@ export class MongoMailingConcept {
   async _getStatus({ message }: { message: string }) {
     const doc = await this.messages.findOne({ _id: message });
     return doc === null ? [] : [{ sentAt: doc.sentAt }];
+  }
+
+  async _getMessage({ message }: { message: string }) {
+    const doc = await this.messages.findOne({ _id: message });
+    return doc === null ? [] : [{ subject: doc.subject, recipient: doc.recipient, text: doc.text }];
   }
 
   async _getMessages(_: Record<string, never>) {

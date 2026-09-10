@@ -18,6 +18,9 @@ concrete AudienceHolder
 concrete MailKey
   A stable deduplication key supplied by an application workflow.
 
+concrete MailPlace
+  A place in Commons' outgoing mail whose words an administrator may replace.
+
 concrete Lockable
   A post or conversation identity that moderation may lock, or a Publishing
   edition that is a relay run, locked while one of its rounds is open, or a
@@ -313,6 +316,9 @@ instantiate Trashing with
 
 instantiate Vouching as PasswordResetVouching with
   Subject is Authenticating.User
+
+instantiate Wording with
+  Place is MailPlace
 ```
 
 Authenticating owns the application's person identity. Rostering, profiles,
@@ -323,7 +329,7 @@ Assigning owns assignment identities. Grade items, grades, late-day uses, and
 submissions refer to an assignment rather than creating another copy of it.
 Rostering owns section identities; an assignment's target list contains those
 sections. A grade may cite a Submitting submission as evidence, and a submission
-uses a Posting post as its artifact. Invitation, notification, and password-reset workflows supply the concrete `MailKey` used to deduplicate queued email messages. PasswordResetVouching is the single registered instance of the generic Vouching concept; it binds its subject to the account identity, so one of its vouchers entitles its bearer to set that one account's password once. Naming the instance for its errand keeps a later second instance — an address confirmation, say — from inheriting the password-reset mail.
+uses a Posting post as its artifact. Invitation, notification, and password-reset workflows supply the concrete `MailKey` used to deduplicate queued email messages. PasswordResetVouching is the single registered instance of the generic Vouching concept; it binds its subject to the account identity, so one of its vouchers entitles its bearer to set that one account's password once. Naming the instance for its errand keeps a later second instance — an address confirmation, say — from inheriting the password-reset mail. Wording holds only the words an administrator put in a `MailPlace`; the words Commons falls back to when a place stands empty are the application's, kept in its computations rather than seeded into the concept.
 
 Posting owns post identities. Forum features attach their own state to a post
 without taking ownership of it. Conversing separately owns conversation
@@ -448,17 +454,38 @@ selectedSection(section: Any) : Strings
 visibleAnswer(answer: Any) : Bool
   Reports resolution only when a currently visible accepted answer was found.
 
-invitationMailText(invitation: String, credential: String) : String
-  Renders the plain-text invitation message.
+invitationTemplateSubject(subject: Any) : String
+  Answers the worded subject as one bounded line, or Commons' own invitation subject where none is worded.
 
-invitationMailHtml(invitation: String, credential: String) : String
-  Renders the HTML invitation message.
+invitationTemplateBody(body: Any) : String
+  Answers the worded plain-text body within the length a saved wording may reach, or Commons' own invitation copy where none is worded.
 
-notificationMailText(notification: String) : String
-  Renders the plain-text notification message.
+invitationMailText(invitation: String, credential: String, body: String) : String
+  Appends the mandatory registration link, temporary password, and lifetime notice to the invitation copy.
 
-notificationMailHtml(notification: String) : String
-  Renders the HTML notification message.
+invitationMailHtml(invitation: String, credential: String, body: String) : String
+  Escapes the invitation copy, preserving line breaks, and appends the mandatory registration link, password, and lifetime notice.
+
+mailPreviewText(text: String) : String
+  Redacts invitation passwords, reset codes, and their link tokens from plain-text outbox previews.
+
+notificationDiscussionTitle(content: Any) : String
+  Extracts at most 160 characters of the opening's first-line title; absent readable content becomes Discussion, never a reply excerpt.
+
+forumNotificationUrl(conversation: String, post: String) : String
+  Forms a direct discussion link anchored at the notified post.
+
+assignmentNotificationUrl(assignment: String) : String
+  Forms a direct link to the released assignment.
+
+notificationMailSubject(kind: String, title: String) : String
+  Names the notification event and a bounded single-line discussion or assignment title.
+
+notificationMailText(kind: String, title: String, url: String) : String
+  Names the event and title with a sign-in link, without post text.
+
+notificationMailHtml(kind: String, title: String, url: String) : String
+  Escapes the event and title and supplies a sign-in link, without post text.
 
 capabilitiesAreKnown(capabilities: Strings) : Bool
   Reports whether every named capability appears in the application's registry,

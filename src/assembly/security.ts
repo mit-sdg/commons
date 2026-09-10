@@ -19,6 +19,8 @@ const TEXT_WRITE_FIELDS: Record<string, readonly string[]> = {
   "/tasklists/rename": ["title"],
   "/tasks/create": ["title", "details"],
   "/tasks/describe": ["title", "details"],
+  "/mail/save-template": ["subject", "body"],
+  "/mail/preview-template": ["subject", "body"],
 };
 
 export function hasTextWriteInputs(path: string, input: unknown): boolean {

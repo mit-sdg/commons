@@ -5,6 +5,7 @@ export interface MailConfiguration {
   user?: string;
   password?: string;
   from: string;
+  replyTo?: string;
 }
 
 const configured = (value: string | undefined) =>
@@ -31,11 +32,16 @@ export function mailConfigurationFromEnv(
   if ((user === undefined) !== (password === undefined)) {
     throw new Error("email: SMTP_USERNAME and SMTP_PASSWORD must be configured together.");
   }
+  const replyTo = configured(env.SMTP_REPLY_TO);
+  if (replyTo !== undefined && /[\p{Cc}\u2028\u2029]/u.test(replyTo)) {
+    throw new Error("email: SMTP_REPLY_TO must be a single-line email address.");
+  }
   return {
     host,
     port,
     secure: env.SMTP_SECURE === "true" || port === 465,
     ...(user === undefined ? {} : { user, password }),
     from,
+    ...(replyTo === undefined ? {} : { replyTo: replyTo.trim() }),
   };
 }

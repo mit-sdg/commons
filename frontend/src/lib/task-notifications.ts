@@ -55,9 +55,11 @@ export const TASK_ACTION_TEXT: Record<TaskNotificationKind, string> = {
   "task-completed": "A task assigned to you was completed",
 };
 
-/** A kind's sentence. An unrecognized kind shows itself rather than a guess. */
+/** A kind's sentence, without exposing machine identifiers for unknown events. */
 export function taskActionText(kind: string): string {
-  return TASK_ACTION_TEXT[kind as TaskNotificationKind] ?? kind;
+  return Object.hasOwn(TASK_ACTION_TEXT, kind)
+    ? TASK_ACTION_TEXT[kind as TaskNotificationKind]
+    : "You have a task update";
 }
 
 /**
@@ -339,7 +341,7 @@ export async function loadMergedInbox(
 
 /** What became of each half of a two-instance mark-all-read. */
 export interface MarkAllOutcome {
-  /** The refusal code for that half, or null when it applied. */
+  /** The refusal or client-fault code for that half, or null when confirmed. */
   forumError: string | null;
   taskError: string | null;
 }
@@ -347,7 +349,7 @@ export interface MarkAllOutcome {
 function refusalOf(
   result: PromiseSettledResult<unknown | ApiError>,
 ): string | null {
-  if (result.status === "rejected") return "INTERNAL_ERROR";
+  if (result.status === "rejected") return "TRANSPORT_ERROR";
   return isApiError(result.value) ? result.value.error : null;
 }
 

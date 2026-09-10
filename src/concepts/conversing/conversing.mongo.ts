@@ -118,6 +118,13 @@ export class MongoConversingConcept {
     }));
   }
 
+  async _getRoot({ conversation }: { conversation: string }) {
+    const doc = await this.conversations.findOne({ _id: conversation });
+    if (doc === null) return [];
+    const root = await this.nodes.findOne({ _id: doc.root });
+    return root === null ? [] : [{ item: root.item }];
+  }
+
   async _getConversation({ node }: { node: string }) {
     const doc = await this.nodes.findOne({ _id: node });
     return doc === null ? [] : [{ conversation: doc.conversation }];

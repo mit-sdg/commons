@@ -24,9 +24,7 @@ import {
 } from "./task-notifications.ts";
 
 /** A forum inbox row, shaped as the forum endpoint answers one. */
-function forumRow(
-  over: Partial<Record<string, unknown>> = {},
-): InboxNotification {
+function forumRow(over: Partial<InboxNotification> = {}): InboxNotification {
   return {
     notification: "forum-1",
     kind: "reply",
@@ -35,8 +33,11 @@ function forumRow(
     read: false,
     post: { author: null, content: null, createdAt: null, editedAt: null },
     actor: { user: null, username: null, displayName: null, avatar: null },
+    assignmentTitle: null,
+    conversation: null,
+    discussionTitle: null,
     ...over,
-  } as unknown as InboxNotification;
+  };
 }
 
 /** A task inbox row whose presentation was spliced in. */
@@ -94,8 +95,10 @@ describe("task notification wording", () => {
     for (const sentence of said) expect(sentence.length).toBeGreaterThan(0);
   });
 
-  test("an unrecognized kind shows itself rather than a guess", () => {
-    expect(taskActionText("task-teleported")).toBe("task-teleported");
+  test("an unrecognized kind has a readable fallback", () => {
+    expect(taskActionText("task-teleported")).toBe("You have a task update");
+    expect(taskActionText("unexpected_event")).toBe("You have a task update");
+    expect(taskActionText("constructor")).toBe("You have a task update");
   });
 
   test("membership kinds are the two the list events mint", () => {
@@ -302,7 +305,18 @@ describe("marking everything read across two instances", () => {
       () => Promise.resolve({ recipient: "user-1" }),
       () => Promise.reject(new Error("offline")),
     );
-    expect(outcome).toEqual({ forumError: null, taskError: "INTERNAL_ERROR" });
+    expect(outcome).toEqual({ forumError: null, taskError: "TRANSPORT_ERROR" });
+  });
+
+  test("resolved client failures retain their code instead of confirming mark-all", async () => {
+    for (const error of ["NETWORK_ERROR", "TIMED_OUT", "ABORTED", "BAD_JSON"]) {
+      expect(
+        await markAllReadBoth(
+          () => Promise.resolve({ recipient: "user-1" }),
+          () => Promise.resolve({ error }),
+        ),
+      ).toEqual({ forumError: null, taskError: error });
+    }
   });
 });
 
@@ -345,6 +359,24 @@ describe("the badge over two instances", () => {
       forum: 3,
       task: 6,
     });
+  });
+
+  test("a resolved client failure leaves that half of the badge stale, not zero", async () => {
+    for (const error of [
+      "NETWORK_ERROR",
+      "TIMED_OUT",
+      "ABORTED",
+      "BAD_STATUS",
+    ]) {
+      const update = await readUnreadCounts(
+        () => Promise.resolve({ error }),
+        () => Promise.resolve({ count: 2 }),
+      );
+      expect(applyUnreadCounts({ forum: 4, task: 7 }, update)).toEqual({
+        forum: 4,
+        task: 2,
+      });
+    }
   });
 
   test("a zero from an instance is applied, not mistaken for a failure", async () => {

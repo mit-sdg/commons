@@ -1,4 +1,4 @@
-import { postReader, staff, usableUser } from "./audience-policy.ts";
+import { postConversation, postReader, staff, usableUser } from "./audience-policy.ts";
 import { activeUser } from "../access/session.ts";
 import {
   compute,
@@ -67,21 +67,86 @@ export const PurgeClearsNotifications = reaction(({ item }) =>
   when(Trashing.purge({}).responds({ item })).then(Notifying.clearSubject({ subject: item })),
 );
 
+/** An unavailable opening is not a source of title text, even when replies survive. */
+export const readableDiscussionOpening = view(
+  "the readable opening of (conversation) for (reader)",
+  ({ conversation, reader }, { content }, { item }) =>
+    where(
+      Conversing._getRoot({ conversation }).is({ item }),
+      postReader({ user: reader, post: item }),
+      Posting._getPost({ post: item }).is({ content }),
+    ),
+).optional();
+
+export const notificationDiscussion = view(
+  "the discussion context of (post) for (reader)",
+  ({ post, reader }, { conversation, discussionTitle }, { content }) =>
+    where(
+      postReader({ user: reader, post }),
+      postConversation({ post }).is({ conversation }),
+      whether(readableDiscussionOpening({ conversation, reader }).is({ content })),
+      compute(computations.notificationDiscussionTitle, { content }, discussionTitle),
+    ),
+).optional();
+
+export const theDiscussionNotificationPresentation = former(
+  "the discussion notification presentation of (post) for (reader)",
+  ({ post, reader }, { conversation, discussionTitle }) =>
+    where(notificationDiscussion({ post, reader }).is({ conversation, discussionTitle })).form({
+      conversation,
+      discussionTitle,
+    }),
+).optional();
+
+export const notificationMailContext = view(
+  "the email context of notification subject (subject) for (user)",
+  ({ subject, user }, { title, url }, { conversation }) => [
+    where(
+      notificationDiscussion({ post: subject, reader: user }).is({
+        conversation,
+        discussionTitle: title,
+      }),
+      compute(computations.forumNotificationUrl, { conversation, post: subject }, url),
+    ),
+    where(
+      notificationSubjectReader({ user, subject }),
+      assignmentNotificationTitle({ assignment: subject }).is({ assignmentTitle: title }),
+      compute(computations.assignmentNotificationUrl, { assignment: subject }, url),
+    ),
+  ],
+).optional();
+
 export const NotificationQueuesEmail = reaction(
-  ({ notification, recipient, kind, subject, email, at, text, html, message, key }) =>
+  ({
+    notification,
+    recipient,
+    kind,
+    subject,
+    email,
+    at,
+    title,
+    url,
+    mailSubject,
+    text,
+    html,
+    message,
+    key,
+  }) =>
     when(Notifying.notify({ recipient, kind, subject, at }).responds({ notification }))
       .where(
         notificationSubjectReader({ user: recipient, subject }),
         Authenticating._getById({ user: recipient }).is({ email }),
         compute(computations.forumMailKey, { notification, recipient, post: subject }, key),
-        compute(computations.notificationMailText, { notification }, text),
-        compute(computations.notificationMailHtml, { notification }, html),
+        notificationMailContext({ subject, user: recipient }).is({ title, url }),
+        compute(computations.notificationMailSubject, { kind, title }, mailSubject),
+        compute(computations.notificationMailText, { kind, title, url }, text),
+        compute(computations.notificationMailHtml, { kind, title, url }, html),
       )
       .then(
         Mailing.enqueue({
           key,
           recipient: email,
-          subject: "New Commons notification",
+          subject: mailSubject,
           text,
           html,
           at,
@@ -286,6 +351,7 @@ export const theInboxOf = former(
       .where(readableNotification({ notification, user }))
       .form({ notification, kind, link, createdAt, read })
       .splicing(whether(theNotificationPresentationOf({ item: link, reader: user })))
+      .splicing(whether(theDiscussionNotificationPresentation({ post: link, reader: user })))
       .splicing(whether(theAssignmentNotificationPresentation({ assignment: link, user }))),
 );
 

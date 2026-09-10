@@ -5,3 +5,4 @@ paseo.json
 test-results/
 playwright-report/
 .playwright-cli/
+tests/visual/*-snapshots/

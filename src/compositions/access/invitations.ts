@@ -1,4 +1,5 @@
 import { activeUser } from "./session.ts";
+import { invitationCopy } from "./mail.ts";
 import { mayAdminister, mayNotAdminister } from "./policy.ts";
 import {
   compute,
@@ -59,7 +60,7 @@ export const Invite = endpoint(
 );
 
 export const EmailInvitationQueuesMail = reaction(
-  ({ invitation, address, credential, created, at, text, html, message }) =>
+  ({ invitation, address, credential, created, at, subject, body, text, html, message }) =>
     when(
       Inviting.invite({ channel: "email", address, at }).responds({
         invitation,
@@ -68,14 +69,15 @@ export const EmailInvitationQueuesMail = reaction(
       }),
     )
       .where(
-        compute(computations.invitationMailText, { invitation, credential }, text),
-        compute(computations.invitationMailHtml, { invitation, credential }, html),
+        invitationCopy({}).is({ subject, body }),
+        compute(computations.invitationMailText, { invitation, credential, body }, text),
+        compute(computations.invitationMailHtml, { invitation, credential, body }, html),
       )
       .then(
         Mailing.enqueue({
           key: invitation,
           recipient: address,
-          subject: "Your Commons invitation",
+          subject,
           text,
           html,
           at,

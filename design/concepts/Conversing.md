@@ -96,6 +96,10 @@ _getThread (conversation: String) : many (node: String, item: String, parent: St
   answers the Conversation's Nodes in creation order
   answers no rows when the Conversation has no Nodes or does not exist
 
+_getRoot (conversation: String) : optional (item: Item)
+  answers the item at the conversation's original root node
+  answers no row when the conversation or its root node no longer exists
+
 _getConversation (node: String) : optional (conversation: String)
   answers the Conversation containing the Node
   answers no row when the Node does not exist

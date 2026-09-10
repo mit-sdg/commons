@@ -23,6 +23,8 @@ for (const [floor, make] of floors) {
         { node, item: "question", parent: null, depth: 0 },
       ]);
       expect(await conversing._getConversation({ node })).toEqual([{ conversation }]);
+      expect(await conversing._getRoot({ conversation })).toEqual([{ item: "question" }]);
+      expect(await conversing._getRoot({ conversation: "missing" })).toEqual([]);
       expect(await conversing._getNodeByItem({ item: "question" })).toEqual([{ node }]);
       expect(await conversing._parentOf({ node })).toEqual([]);
     });
@@ -42,6 +44,7 @@ for (const [floor, make] of floors) {
       await conversing.remove({ node: reply });
       await conversing.remove({ node: root });
       expect(await conversing._exists({ conversation })).toEqual({ exists: false });
+      expect(await conversing._getRoot({ conversation })).toEqual([]);
       expect(await conversing._threadNodes({ conversation })).toEqual({ nodes: [] });
     });
 
