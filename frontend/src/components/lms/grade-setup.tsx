@@ -7,6 +7,14 @@ import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@/hooks/use-query";
 import { api, type Output, publicErrorMessage, unwrap } from "@/lib/api";
@@ -484,27 +492,41 @@ export function GradeSetup({
                 />
               ) : (
                 <div className="flex gap-2">
-                  <select
-                    aria-label="Add a skill"
-                    className="h-9 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm"
+                  <Select
                     value={basis}
                     disabled={busy || standards.loading}
-                    onChange={(e) => setBasis(e.target.value)}
+                    onValueChange={setBasis}
                   >
-                    <option value="">Select a skill…</option>
-                    {standards.data?.standards
-                      .filter(
-                        (r) =>
-                          !query.data?.criteria.some(
-                            (c) => c.standard === r.standard,
-                          ),
-                      )
-                      .map((r) => (
-                        <option key={r.edition} value={r.edition}>
-                          {r.name}
-                        </option>
-                      ))}
-                  </select>
+                    <SelectTrigger
+                      aria-label="Add a skill"
+                      className="min-w-0 flex-1"
+                    >
+                      <SelectValue placeholder="Select a skill…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(() => {
+                        const available = (
+                          standards.data?.standards ?? []
+                        ).filter(
+                          (r) =>
+                            !query.data?.criteria.some(
+                              (c) => c.standard === r.standard,
+                            ),
+                        );
+                        return available.length === 0 ? (
+                          <SelectLabel>
+                            Every course skill is selected
+                          </SelectLabel>
+                        ) : (
+                          available.map((r) => (
+                            <SelectItem key={r.edition} value={r.edition}>
+                              {r.name}
+                            </SelectItem>
+                          ))
+                        );
+                      })()}
+                    </SelectContent>
+                  </Select>
                   <Button
                     size="sm"
                     disabled={!basis || busy}

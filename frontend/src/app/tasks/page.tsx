@@ -1,5 +1,5 @@
 "use client";
-import { CalendarClock, ListChecks } from "lucide-react";
+import { CalendarClock, ListChecks, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "@/components/link";
 import { PageContainer, PageHeader } from "@/components/page";
@@ -12,6 +12,7 @@ import { useExpandedTasks } from "@/hooks/use-expanded-tasks";
 import { useQuery } from "@/hooks/use-query";
 import { api, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { count } from "@/lib/format";
 import type { TaskList } from "@/lib/models";
 import { loadMyLists, loadMyTasks } from "@/lib/tasks";
 
@@ -227,13 +228,28 @@ function Tasks() {
               View all
             </Link>
           </div>
+          {lists.data?.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              You are not in any group yet.
+            </p>
+          ) : null}
           {lists.data?.map((group) => (
             <Link
               key={group.list}
               href={`/groups/${group.list}?view=tasks`}
-              className="block rounded-lg border p-3 text-sm"
+              className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5 text-sm transition-colors hover:border-primary/40 hover:bg-muted/40"
             >
-              {group.title || "Untitled group"}
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                <Users className="size-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium">
+                  {group.title || "Untitled group"}
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  {count(group.openTasks ?? 0, "open task")}
+                </span>
+              </span>
             </Link>
           ))}
         </aside>

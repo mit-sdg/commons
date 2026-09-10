@@ -311,7 +311,7 @@ export default function HomePage() {
           </div>
         )}
 
-        <div className="mb-5 flex items-end justify-between border-b border-border pb-4">
+        <div className="mb-5 flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
               Discussions
@@ -320,7 +320,7 @@ export default function HomePage() {
               <button
                 type="button"
                 aria-pressed={sort === "latest"}
-                className={`rounded-[6px] px-3 py-1.5 text-xs font-semibold transition-all ${
+                className={`rounded-[6px] px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
                   sort === "latest"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -332,7 +332,7 @@ export default function HomePage() {
               <button
                 type="button"
                 aria-pressed={sort === "activity"}
-                className={`rounded-[6px] px-3 py-1.5 text-xs font-semibold transition-all ${
+                className={`rounded-[6px] px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
                   sort === "activity"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -343,7 +343,7 @@ export default function HomePage() {
               </button>
             </div>
           </div>
-          <div className="flex flex-wrap justify-end gap-2">
+          <div className="flex flex-wrap gap-2 sm:justify-end">
             <Button asChild size="sm" variant="outline">
               <Link href="/new?audience=staff">Ask staff privately</Link>
             </Button>
