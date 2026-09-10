@@ -11,7 +11,9 @@ A course defines an instructor role with grade and publish capabilities. A
 second role with the same name is refused. Maya is assigned the role in the
 course; assigning her a different role there replaces the first, so she holds
 exactly one. Revoking her role succeeds once and is refused when she holds
-none. A role still assigned to someone cannot be deleted. Reading the course's
+none. The instructor role's capabilities are later changed to add publish; everyone
+holding it gains publish at once, and a role that does not exist cannot be
+changed. A role still assigned to someone cannot be deleted. Reading the course's
 instructors, or the courses in which Maya is one, follows the same assignments.
 
 ## Types
@@ -59,6 +61,15 @@ ensureRole(name: String, capabilities: Strings) : return (role: Role)
   then
     add a new role with name and capabilities
     return role
+
+setCapabilities(role: Role, capabilities: Strings) : return (role: Role)
+  where role in roles
+  then
+    replace that role's capabilities with capabilities
+    return role
+  where role not in roles
+  then
+    refuse ROLE_NOT_FOUND "No such role exists."
 
 deleteRole(role: Role) : return (role: Role)
   where role in roles and no assignment has role

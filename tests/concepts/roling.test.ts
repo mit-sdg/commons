@@ -47,6 +47,25 @@ for (const [floor, make] of floors) {
       ]);
     });
 
+    test("setCapabilities replaces a role's capabilities and refuses an unknown role", async () => {
+      const roling = await make();
+      const { role } = await roling.defineRole({ name: "instructor", capabilities: ["grade"] });
+      await roling.assign({ user: "maya", context: "course", role });
+      expect(await roling.setCapabilities({ role, capabilities: ["grade", "publish"] })).toEqual({
+        role,
+      });
+      expect(await roling._getRoleDetail({ role })).toEqual([
+        { name: "instructor", capabilities: ["grade", "publish"] },
+      ]);
+      expect(
+        await roling._hasCapability({ user: "maya", context: "course", capability: "publish" }),
+      ).toEqual({ allowed: true });
+      await expectRefusal(
+        () => roling.setCapabilities({ role: "missing", capabilities: [] }),
+        refusalErrors.RoleNotFound,
+      );
+    });
+
     test("deleteRole removes an unheld role and refuses one still assigned", async () => {
       const roling = await make();
       const { role } = await roling.defineRole({ name: "instructor", capabilities: ["grade"] });

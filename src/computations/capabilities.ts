@@ -22,6 +22,22 @@ export async function capabilitiesAreKnown({
 }
 
 /**
+ * Does this stored capability set carry the `administer` wildcard?
+ *
+ * Role editing runs this on the role's current capabilities: the built-in
+ * administrator role is the only one that holds the wildcard, and rewriting it
+ * through the registry-checked path would strip the wildcard and lock every
+ * administrator out.
+ */
+export async function carriesAdminister({
+  capabilities,
+}: {
+  capabilities: string[];
+}): Promise<boolean> {
+  return Array.isArray(capabilities) && capabilities.includes(ADMINISTER);
+}
+
+/**
  * Expand a role's stored capabilities into everything it actually reaches.
  *
  * `administer` is a wildcard, so an administrator's effective set is the whole

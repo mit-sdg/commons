@@ -491,6 +491,12 @@ capabilitiesAreKnown(capabilities: Strings) : Bool
   Reports whether every named capability appears in the application's registry,
   which holds the four granted capabilities and not the administer wildcard.
 
+carriesAdminister(capabilities: Strings) : Bool
+  Reports whether a role's stored capabilities include the administer wildcard.
+  Role editing checks the current role with it, so the built-in administrator
+  role, the only one carrying the wildcard, is refused rather than rewritten
+  through the registry-checked path that could only strip it.
+
 effectiveCapabilities(capabilities: Strings) : Strings
   Expands a role's stored capabilities for presentation, answering the whole
   registry when the role carries the administer wildcard. Enforcement does not use

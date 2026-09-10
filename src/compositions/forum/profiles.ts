@@ -13,7 +13,7 @@ import {
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { COMMONS } from "../access/capabilities.ts";
 import { isActiveCourseMember, mayManageCourse, mayNotManageCourse } from "../access/policy.ts";
-import { theRoleFaceOf } from "../access/roles.ts";
+import { theRoleFaceOf, theRoleNameOf } from "../access/roles.ts";
 import { concepts, computations } from "../../concepts.ts";
 import { thePostSummaryOf, thePrivateProfileOf, theProfileFaceOf } from "./fragments.ts";
 import { postReader } from "./audience-policy.ts";
@@ -29,13 +29,22 @@ export const profileDisplayReader = view(
   ],
 ).holds();
 
-/** Which display identities may this reader see? */
+/**
+ * Which display identities may this reader see? Each carries the name of the
+ * role its person holds in the course, if any, so a forum can mark staff next
+ * to their names without a second read per author.
+ */
 export const theProfileDisplays = former(
   "the display identities of (users) for (session)",
   ({ users, session }, { user, displayName, avatar }) =>
     each(Profiling._getProfilesOf({ users }).is({ user, displayName, avatar }))
       .where(profileDisplayReader({ session, user }))
-      .form({ user, displayName, avatar }),
+      .form({
+        user,
+        displayName,
+        avatar,
+        role: whether(theRoleNameOf({ user, context: COMMONS })),
+      }),
 );
 
 export const GetProfileDisplays = endpoint(

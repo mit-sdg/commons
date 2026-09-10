@@ -3206,11 +3206,14 @@ export type CommonsWire = {
       "users": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validProfileSelection"]["fn"]>[0], ["users"]>>;
     };
     output: {
-      "profiles": {
+      "profiles": ({
         "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["avatar"]>>;
         "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["displayName"]>>;
+        "role": {
+          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["_getRoleDetail"]>>>, ["name"]>> | null;
+        };
         "user": Jsonify<OneOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["user"]>]>>;
-      }[];
+      })[];
     };
     error: { error: AppWideError | "INVALID_INPUT" | "INVALID_REQUEST" };
   };
@@ -3476,6 +3479,17 @@ export type CommonsWire = {
       "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["revoke"]>>, ["assignment"]>>;
     };
     error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" | "LAST_ADMINISTRATOR" | "SUBJECT_NOT_FOUND" };
+  };
+  "/roles/update": {
+    input: {
+      "capabilities": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["capabilitiesAreKnown"]["fn"]>[0], ["capabilities"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["setCapabilities"]>[0], ["capabilities"]>]>>;
+      "role": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["_denotedRole"]>[0], ["ref"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "role": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["setCapabilities"]>[0], ["role"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["setCapabilities"]>>, ["role"]>]>>;
+    };
+    error: { error: AppWideError | "ADMINISTRATOR_ROLE" | "FORBIDDEN" | "INVALID_INPUT" | "ROLE_NOT_FOUND" | "UNKNOWN_CAPABILITY" };
   };
   "/roster/add-person": {
     input: {
@@ -7780,11 +7794,14 @@ export type CommonsWireHttp = {
       "users": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validProfileSelection"]["fn"]>[0], ["users"]>>;
     };
     output: {
-      "profiles": {
+      "profiles": ({
         "avatar": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["avatar"]>>;
         "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["displayName"]>>;
+        "role": {
+          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["_getRoleDetail"]>>>, ["name"]>> | null;
+        };
         "user": Jsonify<OneOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfilesOf"]>>>, ["user"]>]>>;
-      }[];
+      })[];
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" };
   };
@@ -8030,6 +8047,16 @@ export type CommonsWireHttp = {
       "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["revoke"]>>, ["assignment"]>>;
     } | {
       "assignment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["revoke"]>>, ["assignment"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/roles/update": {
+    input: {
+      "capabilities": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["capabilitiesAreKnown"]["fn"]>[0], ["capabilities"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["setCapabilities"]>[0], ["capabilities"]>]>>;
+      "role": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["_denotedRole"]>[0], ["ref"]>>;
+    };
+    output: {
+      "role": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["setCapabilities"]>[0], ["role"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["setCapabilities"]>>, ["role"]>]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };

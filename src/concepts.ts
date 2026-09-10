@@ -96,7 +96,11 @@ import { trashing } from "./concepts/trashing/registry.ts";
 import { vouching } from "./concepts/vouching/registry.ts";
 import { wording } from "./concepts/wording/registry.ts";
 import { setupSecretMatches } from "./computations/admin-setup.ts";
-import { capabilitiesAreKnown, effectiveCapabilities } from "./computations/capabilities.ts";
+import {
+  capabilitiesAreKnown,
+  carriesAdminister,
+  effectiveCapabilities,
+} from "./computations/capabilities.ts";
 import { subjectIsAddress } from "./computations/role-subject.ts";
 import { singleImportRow } from "./computations/roster-import.ts";
 import {
@@ -337,6 +341,7 @@ export const learningConcepts = conceptSet(registrations, {
   answerReceipt,
   boardQuestions,
   capabilitiesAreKnown,
+  carriesAdminister,
   cardId,
   clarifiedPassage,
   draftTitle,

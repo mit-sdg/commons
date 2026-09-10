@@ -43,15 +43,25 @@ test("display batches preserve profile access and expose only names and avatars"
     const edge = createEdge(floor, "https://commons.test");
     const app = edge.application;
     const users = [outside.user, member.user, "missing", outside.user];
-    const display = (person: (typeof people)[number]) => ({
+    const display = (person: (typeof people)[number], roleName: string | null = null) => ({
       user: person.user,
       displayName: person.username,
       avatar: "",
+      role: { name: roleName },
     });
     for (const actor of [member, manager]) {
       expect(
         await app.invoker.invoke("/profiles/displays", { session: actor.session, users }),
       ).toMatchObject({ ok: true, value: { profiles: [display(outside), display(member)] } });
+      const withStaff = await app.invoker.invoke("/profiles/displays", {
+        session: actor.session,
+        users: [manager.user, member.user],
+      });
+      expect(withStaff).toMatchObject({
+        ok: true,
+        value: { profiles: [display(manager, "Course manager"), display(member)] },
+      });
+      expect(JSON.stringify(withStaff)).not.toContain("course:manage");
       const result = await app.invoker.invoke("/profiles/displays", {
         session: actor.session,
         users,

@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { UserAvatar } from "@/components/user-avatar";
 import { UserName } from "@/components/user-name";
+import { UserRole } from "@/components/user-role";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -173,11 +174,14 @@ export function PostCard({
           Removed by a moderator
         </p>
       ) : null}
-      <header className="mb-3 flex items-start gap-3">
+      <header className="mb-3 flex items-center gap-3">
         <UserAvatar user={author} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm">
-            <UserName user={author} />
+            <span className="inline-flex items-center gap-1.5">
+              <UserName user={author} />
+              <UserRole user={author} />
+            </span>
             <Fact.When at={node.post.createdAt} />
             {highlightUnread ? (
               <span className="inline-flex items-center rounded-full bg-primary/10 px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-primary">
