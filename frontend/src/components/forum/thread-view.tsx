@@ -1,6 +1,17 @@
 "use client";
 
-import { Lock, LockOpen, MessageSquare, Pin, Users } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  Lock,
+  LockOpen,
+  MessageSquare,
+  Pin,
+  Users,
+} from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { AudienceChips } from "@/components/forum/audience-picker";
 import { CategoryBadge } from "@/components/forum/badges";
@@ -23,42 +34,16 @@ import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { count, titleFromContent } from "@/lib/format";
 import { loadThreadPage, type ThreadPage } from "@/lib/loaders";
-import type { ThreadNode } from "@/lib/models";
 import { loadMyLists } from "@/lib/tasks";
+import {
+  ancestorNodes,
+  type BranchSummary,
+  buildThreadTree,
+  postAnchorItem,
+  summarizeBranches,
+  type ThreadBranch,
+} from "@/lib/thread-tree";
 import { cn } from "@/lib/utils";
-
-interface ThreadBranch {
-  node: ThreadNode | null;
-  position: ThreadPage["structure"][number];
-  children: ThreadBranch[];
-}
-
-function buildThreadTree(
-  nodes: ThreadNode[],
-  structure: ThreadPage["structure"],
-): ThreadBranch[] {
-  const visible = new Map(nodes.map((node) => [node.node, node]));
-  const branches = new Map(
-    structure.map((position) => [
-      position.node,
-      {
-        node: visible.get(position.node) ?? null,
-        position,
-        children: [] as ThreadBranch[],
-      },
-    ]),
-  );
-  const roots: ThreadBranch[] = [];
-  for (const branch of branches.values()) {
-    const parent =
-      branch.position.parent == null
-        ? null
-        : branches.get(branch.position.parent);
-    if (parent) parent.children.push(branch);
-    else roots.push(branch);
-  }
-  return roots;
-}
 
 export function ThreadView({
   conversation,
@@ -86,12 +71,28 @@ export function ThreadView({
   );
   const hashTargetVersion =
     data?.nodes.map((node) => String(node.item)).join("\u0000") ?? "";
+  const [collapsedNodes, setCollapsedNodes] = useState<ReadonlySet<string>>(
+    () => new Set<string>(),
+  );
 
   const unread = useUnread(conversation, data ? data.questionId : "");
 
   useHashTargetHighlight({
     enabled: !!data,
     deps: [conversation, hashTargetVersion],
+    // A notification or pinned-post jump may land on a reply that someone
+    // collapsed out of sight, so open the branches above it first.
+    onTarget: (targetId) => {
+      const item = postAnchorItem(targetId);
+      if (!data || !item) return;
+      const ancestors = ancestorNodes(data.structure, item);
+      setCollapsedNodes((current) => {
+        if (!ancestors.some((node) => current.has(node))) return current;
+        const next = new Set(current);
+        for (const node of ancestors) next.delete(node);
+        return next;
+      });
+    },
   });
 
   if (loading && !data) return <LoadingState label="Loading discussion…" />;
@@ -116,6 +117,23 @@ export function ThreadView({
   const subscriberCount = subscribers.data?.subscribers.length ?? 0;
   const pinnedItems = pinned.data?.pinned ?? [];
   const threadTree = buildThreadTree(nodes, data.structure);
+  const summaries = summarizeBranches(threadTree, unread.unreadItems);
+  const collapsible = [...summaries]
+    .filter(([, summary]) => summary.replies > 0)
+    .map(([node]) => node);
+  const allCollapsed =
+    collapsible.length > 0 &&
+    collapsible.every((node) => collapsedNodes.has(node));
+
+  function setBranchCollapsed(node: string, collapsed: boolean) {
+    setCollapsedNodes((current) => {
+      if (current.has(node) === collapsed) return current;
+      const next = new Set(current);
+      if (collapsed) next.add(node);
+      else next.delete(node);
+      return next;
+    });
+  }
 
   function refetchAll() {
     refetch();
@@ -200,6 +218,25 @@ export function ThreadView({
             ) : null}
           </div>
           <div className="flex items-center gap-2">
+            {collapsible.length > 0 ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() =>
+                  setCollapsedNodes(
+                    allCollapsed ? new Set() : new Set(collapsible),
+                  )
+                }
+              >
+                {allCollapsed ? (
+                  <ChevronsUpDown className="size-4" />
+                ) : (
+                  <ChevronsDownUp className="size-4" />
+                )}
+                {allCollapsed ? "Expand all" : "Collapse all"}
+              </Button>
+            ) : null}
             <SubscribeButton
               key={hashTargetVersion}
               conversation={conversation}
@@ -278,6 +315,9 @@ export function ThreadView({
               locked={locked}
               scope={conversation}
               unreadItems={unread.unreadItems}
+              summaries={summaries}
+              collapsedNodes={collapsedNodes}
+              onCollapsedChange={setBranchCollapsed}
               onChanged={refetchAll}
             />
           ))}
@@ -329,6 +369,9 @@ function ThreadBranchView({
   locked,
   scope,
   unreadItems,
+  summaries,
+  collapsedNodes,
+  onCollapsedChange,
   onChanged,
 }: {
   branch: ThreadBranch;
@@ -340,10 +383,17 @@ function ThreadBranchView({
   locked: boolean;
   scope: string;
   unreadItems: Set<string>;
+  summaries: Map<string, BranchSummary>;
+  collapsedNodes: ReadonlySet<string>;
+  onCollapsedChange: (node: string, collapsed: boolean) => void;
   onChanged: () => void;
 }) {
+  const nodeId = String(branch.position.node);
   const isRoot = branch.position.node === rootNodeId;
   const hasChildren = branch.children.length > 0;
+  const summary = summaries.get(nodeId) ?? { replies: 0, unread: 0 };
+  const collapsed = hasChildren && collapsedNodes.has(nodeId);
+  const childrenId = `thread-children-${nodeId}`;
 
   return (
     <li className={cn("thread-branch", level > 0 && "thread-branch--child")}>
@@ -359,6 +409,7 @@ function ThreadBranchView({
             scope={scope}
             isUnread={unreadItems.has(String(branch.node.item))}
             onChanged={onChanged}
+            onReplied={() => onCollapsedChange(nodeId, false)}
           />
         ) : (
           <p
@@ -368,13 +419,42 @@ function ThreadBranchView({
             {isRoot ? "Opening post unavailable" : "Post unavailable"}
           </p>
         )}
+        {hasChildren ? (
+          <div className="mt-2">
+            <Button
+              variant="ghost"
+              size="xs"
+              className="gap-1.5 text-muted-foreground"
+              aria-expanded={!collapsed}
+              aria-controls={childrenId}
+              onClick={() => onCollapsedChange(nodeId, !collapsed)}
+            >
+              {collapsed ? (
+                <ChevronRight className="size-3.5" />
+              ) : (
+                <ChevronDown className="size-3.5" />
+              )}
+              {collapsed ? "Show" : "Hide"}{" "}
+              {count(summary.replies, "reply", "replies")}
+              {collapsed && summary.unread > 0 ? (
+                <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-primary">
+                  {summary.unread} new
+                </span>
+              ) : null}
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       {hasChildren ? (
         <ol
+          id={childrenId}
+          hidden={collapsed}
           className={cn(
             "thread-children",
             level >= 5 && "thread-children--compact",
+            // The `hidden` attribute alone loses to the list's own display.
+            collapsed && "hidden",
           )}
         >
           {branch.children.map((child) => (
@@ -389,6 +469,9 @@ function ThreadBranchView({
               locked={locked}
               scope={scope}
               unreadItems={unreadItems}
+              summaries={summaries}
+              collapsedNodes={collapsedNodes}
+              onCollapsedChange={onCollapsedChange}
               onChanged={onChanged}
             />
           ))}

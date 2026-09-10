@@ -48,6 +48,8 @@ interface PostCardProps {
   scope: string;
   isUnread?: boolean;
   onChanged: () => void;
+  /** Lets the thread reveal replies it is collapsing before one is added. */
+  onReplied?: () => void;
 }
 
 export function PostCard({
@@ -60,6 +62,7 @@ export function PostCard({
   scope,
   isUnread = false,
   onChanged,
+  onReplied,
 }: PostCardProps) {
   const { session, me, permissions } = useAuth();
   const [editing, setEditing] = useState(false);
@@ -112,6 +115,7 @@ export function PostCard({
     } else {
       toast.success("Reply posted");
       setReplying(false);
+      onReplied?.();
       onChanged();
     }
   }
