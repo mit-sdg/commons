@@ -25,6 +25,7 @@ external Key
 ```state
 a set of Messages with
   a key       Key
+  an optional generation String
   a recipient String
   a subject   String
   a text      String
@@ -38,6 +39,7 @@ a set of Messages with
 Rule: a key identifies one logical message.
 Rule: enqueuing the same key coalesces pending copies; enqueuing it after delivery deliberately queues that logical message again with its latest content.
 Rule: email recipients are compared after trimming and lower-casing.
+Rule: each enqueue creates a fresh generation; a delivery outcome changes only that generation. Messages queued before generation tracking use null until enqueued again.
 ```
 
 ## Actions
@@ -54,30 +56,38 @@ normalizeRecipient(recipient: String) : return (recipient: String)
 enqueue(key: Key, recipient: String, subject: String, text: String, html: String, at: Date) : return (message: Message)
   where recipient looks like an email address and no message has key
   then
-    add the message with its normalized recipient, no sentAt, and no attempts
+    add the message with a fresh generation, its normalized recipient, no sentAt, and no attempts
     return message
   where recipient looks like an email address and a message already has key
   then
-    clear its sentAt, attempts, and failure, and replace its delivery content using the normalized recipient
+    atomically assign a fresh generation, clear its sentAt, attempts, and failure, and replace its delivery content using the normalized recipient
     return message
   where recipient does not look like an email address
   then
     refuse MAIL_RECIPIENT_INVALID "The mail recipient is not well formed."
 
-markSent(message: Message, at: Date) : return (message: Message)
-  where message exists
+markSent(message: Message, generation: String|Null, at: Date) : return (message: Message)
+  where message exists and generation is current
   then
-    set sentAt to at and clear lastError
+    atomically set sentAt to at and clear lastError for that generation
+    return message
+  where message exists and generation is no longer current
+  then
+    leave the newer enqueue and its delivery outcome unchanged
     return message
   where message does not exist
   then
     refuse MAIL_NOT_FOUND "There is no such mail message."
 
-markFailed(message: Message, error: String, at: Date) : return (message: Message)
-  where message exists
+markFailed(message: Message, generation: String|Null, error: String, at: Date) : return (message: Message)
+  where message exists and generation is current
   then
-    count one more attempt, set lastAttemptAt to at, and set lastError to error
+    atomically count one more failed attempt, set lastAttemptAt to at, and set lastError to error for that generation
     leave sentAt alone so the message stays queued for a later attempt
+    return message
+  where message exists and generation is no longer current
+  then
+    leave the newer enqueue and its delivery outcome unchanged
     return message
   where message does not exist
   then
@@ -87,14 +97,18 @@ markFailed(message: Message, error: String, at: Date) : return (message: Message
 ## Queries
 
 ```queries
-_getPending () : many (message: String, key: Key, recipient: String, subject: String, text: String, html: String, createdAt: Date)
-  answers every Message not marked sent
+_getPending () : many (message: String, key: Key, generation: String|Null, recipient: String, subject: String, text: String, html: String, createdAt: Date)
+  answers every Message not marked sent with its current generation for conditional delivery acknowledgement
   orders rows by creation
   answers no rows when none match
 
 _getStatus (message: String) : optional (sentAt: Date|Null)
   answers the Message's sent time, or null while it is pending
   answers no row when the Message does not exist
+
+_getMessage (message: String) : optional (subject: String, recipient: String, text: String)
+  answers one Message's subject, recipient, and rendered plain text for inspection
+  answers no row when that Message does not exist
 
 _getMessages () : many (message: String, key: Key, recipient: String, subject: String, createdAt: Date, sentAt: Date|Null, attempts: Number, lastAttemptAt: Date|Null, lastError: String|Null)
   answers every Message with its delivery outcome, newest first

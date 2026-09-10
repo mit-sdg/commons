@@ -13,7 +13,12 @@ const root = resolve(import.meta.dirname, "../..");
 export default defineConfig({
   testDir: ".",
   timeout: 900_000,
-  expect: { timeout: 20_000 },
+  expect: {
+    timeout: 20_000,
+    // Pixel baselines are per platform and per browser; regenerate with
+    // `bun run shots --update-snapshots` after an intended visual change.
+    toHaveScreenshot: { maxDiffPixelRatio: 0.01, animations: "disabled" },
+  },
   workers: 1,
   retries: 0,
   reporter: [["list"]],

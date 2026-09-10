@@ -32,8 +32,13 @@ for (const [floor, make] of floors) {
       const first = await mailing.enqueue(input);
       expect(await mailing.enqueue(input)).toEqual(first);
       expect(await mailing._getPending({})).toMatchObject([{ recipient: "member@example.edu" }]);
-      await mailing.markSent({ message: first.message, at: new Date() });
+      const [{ generation }] = await mailing._getPending({});
+      await mailing.markSent({ message: first.message, generation, at: new Date() });
       expect(await mailing._getPending({})).toEqual([]);
+      expect(await mailing._getMessage({ message: first.message })).toEqual([
+        { subject: input.subject, recipient: "member@example.edu", text: input.text },
+      ]);
+      expect(await mailing._getMessage({ message: "missing" })).toEqual([]);
       expect(await mailing.enqueue({ ...input, at: new Date() })).toEqual(first);
       expect(await mailing._getPending({})).toHaveLength(1);
     });
@@ -55,9 +60,16 @@ for (const [floor, make] of floors) {
       ]);
 
       const firstFailure = new Date("2026-01-01T00:01:00Z");
-      await mailing.markFailed({ message, error: "connection refused", at: firstFailure });
+      const [{ generation }] = await mailing._getPending({});
       await mailing.markFailed({
         message,
+        generation,
+        error: "connection refused",
+        at: firstFailure,
+      });
+      await mailing.markFailed({
+        message,
+        generation,
         error: "mailbox unavailable",
         at: new Date("2026-01-01T00:02:00Z"),
       });
@@ -74,7 +86,7 @@ for (const [floor, make] of floors) {
       // A failure must not take the message out of the delivery queue.
       expect(await mailing._getPending({})).toHaveLength(1);
 
-      await mailing.markSent({ message, at: new Date("2026-01-01T00:03:00Z") });
+      await mailing.markSent({ message, generation, at: new Date("2026-01-01T00:03:00Z") });
       expect(await mailing._getMessages({})).toMatchObject([
         { message, attempts: 2, lastError: null },
       ]);
@@ -85,7 +97,7 @@ for (const [floor, make] of floors) {
       const mailing = await make();
       expect(
         await caughtError(() =>
-          mailing.markFailed({ message: "nope", error: "boom", at: new Date() }),
+          mailing.markFailed({ message: "nope", generation: null, error: "boom", at: new Date() }),
         ),
       ).toBeInstanceOf(refusalErrors.MailNotFound);
     });

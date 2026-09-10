@@ -24,8 +24,8 @@ type App = ReturnType<typeof assembleCommons>;
 const WINDOW = { startsAt: "2026-08-19T16:00:00.000Z", endsAt: "2026-08-19T17:00:00.000Z" };
 const LATER = { startsAt: "2026-09-01T09:00:00.000Z", endsAt: "2026-09-02T17:00:00.000Z" };
 
-/** The forum instance's one generic subject line, from `Forum.notifications`. */
-const GENERIC_SUBJECT = "New Commons notification";
+/** The forum subject for the genuine reply fixture below. */
+const FORUM_SUBJECT = "New reply to your post: Hello forum";
 
 async function actor(app: App, username: string) {
   const email = `${username}@example.edu`;
@@ -95,8 +95,8 @@ async function newApp() {
 
 afterAll(stopTestDb);
 
-describe("the forum path is unchanged, proved through the forum's own boundary", () => {
-  test("a real forum reply queues exactly one generic email, and a task event queues only its own", async () => {
+describe("the forum path stays separate, proved through the forum's own boundary", () => {
+  test("a real forum reply queues exactly one contextual email, and a task event queues only its own", async () => {
     const app = await newApp();
     const alice = await actor(app, "alice_forumpath");
     const bob = await actor(app, "bob_forumpath");
@@ -123,13 +123,13 @@ describe("the forum path is unchanged, proved through the forum's own boundary",
       count: 1,
     });
 
-    // Exactly one email, and it is the forum's generic one.
+    // Exactly one email, and it is the forum's reply notice.
     const afterReply = await pending(app);
     expect(afterReply).toHaveLength(1);
     expect(afterReply[0]).toMatchObject({
       key: expect.stringContaining(forumRows[0].notification),
       recipient: alice.email,
-      subject: GENERIC_SUBJECT,
+      subject: FORUM_SUBJECT,
     });
 
     // No task declaration fired for it: the task inbox and count are untouched.
@@ -156,16 +156,16 @@ describe("the forum path is unchanged, proved through the forum's own boundary",
     expect(taskRows).toHaveLength(1);
     expect(taskRows[0]).toMatchObject({ kind: "task-list-added", subject: list, read: false });
 
-    // One further message, and it is not the forum's generic one.
+    // One further message, and it is not the forum's reply notice.
     const afterTask = await pending(app);
     expect(afterTask).toHaveLength(2);
     const taskMail = afterTask.filter((message) => message.key === taskRows[0].notification);
     expect(taskMail).toHaveLength(1);
     expect(taskMail[0].recipient).toBe(bob.email);
-    expect(taskMail[0].subject).not.toBe(GENERIC_SUBJECT);
+    expect(taskMail[0].subject).not.toBe(FORUM_SUBJECT);
     expect(taskMail[0].subject).toContain("Reading Group");
-    // and the forum's generic email was queued once in the whole run, for the reply alone
-    expect(afterTask.filter((message) => message.subject === GENERIC_SUBJECT)).toHaveLength(1);
+    // The forum reply email was queued once in the whole run, for the reply alone.
+    expect(afterTask.filter((message) => message.subject === FORUM_SUBJECT)).toHaveLength(1);
 
     // No forum declaration fired for the task notification: Bob's forum inbox
     // and count stay empty, and Alice's forum inbox is exactly as it was.
@@ -249,7 +249,7 @@ describe("the mail distinguishes the kinds", () => {
     expect(new Set(queued.map((message) => message.html)).size).toBe(7);
 
     for (const message of queued) {
-      expect(message.subject).not.toBe(GENERIC_SUBJECT);
+      expect(message.subject).not.toBe(FORUM_SUBJECT);
       expect(message.text).toContain("Distinct Ops");
     }
 
@@ -340,7 +340,11 @@ describe("notification and mail state outlive the process", () => {
     const mailAfter = await pending(app2);
     expect(mailAfter).toHaveLength(3);
     expect(new Set(mailAfter.map((message) => message.key))).toEqual(keysBefore);
-    expect(mailAfter.filter((message) => message.subject === GENERIC_SUBJECT)).toHaveLength(1);
+    expect(
+      mailAfter.filter(
+        (message) => message.subject === "New reply to your post: A thread of my own",
+      ),
+    ).toHaveLength(1);
     expect(
       mailAfter.filter((message) => message.key === assignment?.notification)[0]?.text,
     ).toContain("Durable Task");

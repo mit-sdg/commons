@@ -87,9 +87,9 @@ describe("invitations and email", () => {
     expect(pending[0]).toMatchObject({
       key: expect.stringContaining(notified.notification),
       recipient: "member@example.edu",
-      subject: "New Commons notification",
+      subject: "New reply to your post: Forum notice",
     });
-    expect(pending[0].text).toContain("/notifications");
+    expect(pending[0].text).toContain(`/t/${conversation}#post-${forumPost}`);
   });
 
   test("an invalid invitation is rejected explicitly", async () => {
