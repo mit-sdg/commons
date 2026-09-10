@@ -83,6 +83,13 @@ test("login fixes cookie expiry at the cap; successful reads slide only the serv
   const renewed = (await f.records.findOne({ _id: f.session }))!;
   expect(renewed.expiresAt.getTime()).toBe(f.startedAt.getTime() + 143 * HOUR);
   expect(renewed.absoluteExpiresAt).toEqual(initial.absoluteExpiresAt);
+  // Both the gate's direct query and a new engine invocation must see raw renewal
+  // after the original deadline, even though the preceding request cached reads.
+  f.atHour(73);
+  expect(await f.edge.application.concepts.Sessioning._getUser({ session: f.session })).toEqual([
+    { user: f.user },
+  ]);
+  expect((await f.edge.gateway.invoke("/auth/me", { session: f.session })).ok).toBe(true);
   f.atHour(143);
   const expired = await f.request("/auth/me");
   expect(expired.status).toBe(401);
@@ -212,6 +219,71 @@ test("revocation between response creation and renewal cannot restore a cookie o
   expect(response.status).toBe(200);
   expect(response.headers.get("set-cookie")).toBeNull();
   expect(await f.records.findOne({ _id: f.session })).toBeNull();
+  expect((await f.request("/auth/me")).status).toBe(401);
+});
+
+test("stalled HTTP renewals overlap without blocking login or engine-managed revocation", async () => {
+  const f = await fixture();
+  const other = await f.instances.Authenticating.register({
+    username: "other",
+    password: "password123",
+    email: "other@example.test",
+  });
+  const otherSession = await f.edge.application.concepts.Sessioning.start({ user: other.user });
+  const cookies = [
+    f.cookie,
+    f.cookie,
+    ...Array<string>(2).fill(`__Host-commons-session=${otherSession.session}`),
+  ];
+  const held = Promise.withResolvers<void>();
+  let entered = 0;
+  f.refresh.mockImplementation(async (input) => {
+    entered++;
+    await held.promise;
+    return f.realRefresh(input);
+  });
+  let completed = 0;
+  const reads = cookies.map((Cookie) =>
+    f.request("/auth/resolve", { username: "maya" }, { Cookie }).then((response) => {
+      completed++;
+      return response;
+    }),
+  );
+  const controls: PromiseLike<unknown>[] = [];
+  try {
+    // A barrier tests overlap without depending on a latency threshold. With the
+    // old serialized path only the first renewal can enter until it is released.
+    await vi.waitFor(() => expect(entered).toBe(cookies.length));
+    expect(completed).toBe(0); // HTTP completion still owns renewal.
+    let controlsCompleted = 0;
+    controls.push(
+      f.request("/auth/logout").then((response) => {
+        expect(response.status).toBe(200);
+        controlsCompleted++;
+      }),
+      f.edge.application.concepts.Sessioning.endAllForUser({ user: other.user }).then(() => {
+        controlsCompleted++;
+      }),
+      f.request("/auth/login", { username: "maya", password: "password123" }).then((response) => {
+        expect(response.status).toBe(200);
+        controlsCompleted++;
+      }),
+    );
+    await vi.waitFor(() => expect(controlsCompleted).toBe(3));
+    expect(completed).toBe(0);
+  } finally {
+    held.resolve();
+    await Promise.allSettled([...reads, ...controls]);
+  }
+  await Promise.all(controls);
+  for (const response of await Promise.all(reads)) {
+    expect(response.status).toBe(200);
+    expect(response.headers.get("set-cookie")).toBeNull();
+  }
+  for (const session of [f.session, otherSession.session]) {
+    expect(await f.records.findOne({ _id: session })).toBeNull();
+    expect((await f.edge.gateway.invoke("/auth/me", { session })).ok).toBe(false);
+  }
   expect((await f.request("/auth/me")).status).toBe(401);
 });
 

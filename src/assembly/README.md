@@ -52,3 +52,9 @@ After successful protected HTTP requests, the edge refreshes the session's
 72-hour idle deadline without rewriting its fixed-cap cookie. Cookie-clearing
 routes do not refresh. A renewal database fault is logged without replacing the
 completed operation's response. Direct invocations do not renew sessions.
+Renewal uses the supplied Sessioning implementation's atomic update outside the
+engine action queue, so unrelated requests and revocation do not wait behind it.
+It has no reaction consumers or engine occurrence; the awaited HTTP request owns
+completion, failure reporting, and shutdown. New invocations and direct gate reads
+already refresh their caches. This is a narrow boundary-maintenance exception,
+not a general path for application mutations.

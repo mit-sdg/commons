@@ -137,9 +137,11 @@ export function createEdge(
       !clearingPaths.has(logicalPath)
     ) {
       try {
-        // Renewal is HTTP activity policy, not an identity-query side effect.
-        // The cookie already expires at the fixed cap and needs no rewrite.
-        await application.concepts.Sessioning.refresh({ session: authorizedSession });
+        // HTTP maintenance uses the implementation's atomic update directly:
+        // the engine serializes actions across users, including revocation.
+        // No reaction consumes refresh; each new request reads fresh session state.
+        // Keep this awaited so the HTTP lifecycle owns completion and failures.
+        await instances.Sessioning.refresh({ session: authorizedSession });
       } catch {
         // The operation has completed; renewal failure must not invite a duplicate mutation.
         console.error("session: could not refresh after successful use.");

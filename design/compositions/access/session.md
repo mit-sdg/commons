@@ -28,6 +28,18 @@ A failed renewal leaves the completed response intact and emits a redacted error
 the MongoDB renewal operation has a one-second timeout. Renewal is awaited, not
 queued as detached work.
 
+Renewal calls the supplied Sessioning implementation directly, outside the
+engine's per-concept action queue. Its atomic update can overlap other renewals
+and engine-managed revocation without restoring deleted sessions. It emits no
+engine action occurrence and has no downstream reactions. The HTTP request owns
+its completion and error reporting; engine-only idle/drain tracking does not
+include it. The process stops the HTTP server before closing the database.
+Direct gate queries and new application invocations already refresh their query
+caches, so subsequent requests observe renewal without an extra global cache
+flush on every write. Already-running requests retain their existing read semantics.
+This exception relies on renewal only extending a live deadline, never changing
+identity, creating sessions, or granting access to expired sessions.
+
 New sessions expire after 72 hours without successful HTTP use and always end at
 their four-calendar-month cap. Months are measured in UTC, preserving time of day
 and clamping to the last day of the target month. Polling counts as activity.
