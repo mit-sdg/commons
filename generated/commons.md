@@ -1127,6 +1127,8 @@ Defined in [Roling](../design/concepts/Roling.md), line 1.
 - `defineRole(name: String, capabilities: Strings) : return (role: Role)`
   - Refuses `ROLE_ALREADY_EXISTS`: A role with this name already exists.
 - `ensureRole(name: String, capabilities: Strings) : return (role: Role)`
+- `setCapabilities(role: Role, capabilities: Strings) : return (role: Role)`
+  - Refuses `ROLE_NOT_FOUND`: No such role exists.
 - `deleteRole(role: Role) : return (role: Role)`
   - Refuses `ROLE_NOT_FOUND`: No such role exists.
   - Refuses `ROLE_IN_USE`: The role is still assigned to a user.
@@ -1607,8 +1609,9 @@ Concrete types:
 - `cardGiven(card: String) : String` — [The wall](../design/compositions/live/walls.md), line 114.
 - `cardId(response: String, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 86.
 - `cardStanding(card: String, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 78.
+- `carriesAdminister(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 467.
 - `carryUses() : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 88.
-- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 531.
+- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 537.
 - `cleanupAdmission(authorized: Json, openRun: Json, unlocked: Json, applied: Json, standing: Json) : String` — [The wall](../design/compositions/live/walls.md), line 40.
 - `cleanupBrief(account: String, candidates: Seq) : String` — [The wall](../design/compositions/live/walls.md), line 43.
 - `cleanupCategories(brief: String) : Seq` — [The wall](../design/compositions/live/walls.md), line 46.
@@ -1622,8 +1625,8 @@ Concrete types:
 - `draftContext(references: Strings, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 134.
 - `draftReferences(context: String) : Strings` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 137.
 - `draftRequest(request: String, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 140.
-- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 517.
-- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 521.
+- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 523.
+- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 527.
 - `editApplied(kind: String, target: String, value: String, title: Json, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Boolean` — [Edits the model proposes](../design/compositions/live/edits.md), line 69.
 - `editCap(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 121.
 - `editChoices(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 124.
@@ -1644,7 +1647,7 @@ Concrete types:
 - `editRoundTakesUse(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 96.
 - `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 103.
 - `editUse(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 130.
-- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 467.
+- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 473.
 - `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 137.
 - `failureStanding(failedAt: Date, at: Date) : String` — [The wall](../design/compositions/live/walls.md), line 73.
 - `forumMailKey(notification: String, recipient: String, post: String) : String` — [Notifications](../design/compositions/forum/notifications.md), line 57.
@@ -1676,19 +1679,19 @@ Concrete types:
 - `openingMaterial(brief: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 69.
 - `openingPresentation(brief: String) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 72.
 - `ownsTaskScope(user: String, scope: String) : Boolean` — [Tasks](../design/compositions/tasks/tasks.md), line 116.
-- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 541.
-- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 545.
-- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 548.
-- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 552.
-- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 556.
+- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 547.
+- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 551.
+- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 554.
+- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 558.
+- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 562.
 - `partLabel(value: Json, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 157.
 - `participantAnswers(reply: String, value: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 149.
 - `participantPassage(value: Json, participant: String) : String` — [The wall](../design/compositions/live/walls.md), line 142.
 - `participantQuestions(value: LiveRunSnapshot) : Seq` — [Live runs](../design/compositions/live/runs.md), line 126.
-- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 472.
-- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 477.
-- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 483.
-- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 480.
+- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 478.
+- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 483.
+- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 489.
+- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 486.
 - `pickPriority(count: Number) : Number` — [The wall](../design/compositions/live/walls.md), line 82.
 - `pileCards(pile: String, categories: Json, values: Json, value: Json) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 103.
 - `placingLines(reply: String, categories: Json, values: Json, removed: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 124.
@@ -1696,19 +1699,19 @@ Concrete types:
 - `placingReading(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 118.
 - `placingReason(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 129.
 - `placingRepairPassage(value: Json, categories: Json, values: Json, removed: Json, notes: String, offering: String, account: String) : String` — [The wall](../design/compositions/live/walls.md), line 110.
-- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 564.
-- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 569.
+- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 570.
+- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 575.
 - `postPreview(content: String) : Record` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 40.
 - `previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings` — [Commons application](../design/application.md), line 412.
-- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 573.
+- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 579.
 - `relayDraftPassage(request: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json, classDocuments: Json, relayDocuments: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 36.
 - `relayDraftReading(reply: String, passage: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 54.
 - `relayDraftReason(reply: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 59.
 - `relayDraftRepairPassage(passage: String, offering: String, account: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 50.
 - `relayEditLines(reply: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 63.
 - `relayGiven(relay: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 143.
-- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 536.
-- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 526.
+- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 542.
+- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 532.
 - `roundMaterialIsValid(title: String, prompt: String, choices: Strings, parts: Strings, cap: Number) : Boolean` — [Relays and their runs](../design/compositions/live/relays.md), line 158.
 - `sampledAnswers(reply: String) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 34.
 - `sampledGroups(reply: String, kind: String, choices: Json, use: String, carried?: Json) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 39.
@@ -1722,14 +1725,14 @@ Concrete types:
 - `samplingResolvedStanding(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 53.
 - `selectedIdentities(holders: Strings, kind: String) : Strings` — [Commons application](../design/application.md), line 421.
 - `selectedSection(section: Any) : Strings` — [Commons application](../design/application.md), line 445.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 486.
-- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 489.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 492.
+- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 495.
 - `snapshotForm(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 112.
 - `snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 115.
 - `snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 122.
 - `snapshotRequirements(value: Json) : Seq` — [Live runs](../design/compositions/live/runs.md), line 119.
 - `snapshotTitle(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 109.
-- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 560.
+- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 566.
 - `sorterNotes(relay: String, run: String) : String` — [The wall](../design/compositions/live/walls.md), line 93.
 - `sortingAdmission(mode: String, authorized: Boolean|Null, live: Boolean|Null, openRun: Boolean|Null, waiting: Boolean|Null, unlocked: Boolean|Null, answered: Boolean|Null, applied: Boolean|Null, ready: Boolean|Null, value: Json) : String` — [The wall](../design/compositions/live/walls.md), line 60.
 - `sortingBrief(account: String, value: Json, categories: Json, values: Json, removed: Json, notes: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 63.
@@ -1737,15 +1740,15 @@ Concrete types:
 - `sortingPileSubjects(categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 209.
 - `staffCapabilities(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 439.
 - `staffQuestion(holders: Seq, nonStaffAuthor: Any) : Boolean` — [Feeds and thread context](../design/compositions/forum/feed.md), line 31.
-- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 495.
+- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 501.
 - `submissionAllowed(detail: Json, section: String, at: Date) : Bool` — [Commons application](../design/application.md), line 388.
 - `summaryAdmission(items: Number) : String` — [The wall](../design/compositions/live/walls.md), line 50.
-- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 505.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 499.
-- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 502.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 514.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 508.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 511.
+- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 511.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 505.
+- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 508.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 520.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 514.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 517.
 - `threadLastActivity(posts: Rows) : Any` — [Commons application](../design/application.md), line 406.
 - `threadParticipants(posts: Rows) : Strings` — [Commons application](../design/application.md), line 409.
 - `threadPostIds(nodes: Rows) : Strings` — [Commons application](../design/application.md), line 397.
@@ -3089,7 +3092,7 @@ the account at (email) — inputs (email); outputs (user); bindings () — answe
 ### the account for (address)
 
 Authored path: `Access.roles.theAccountForAddress`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 41.
+- Covered by [Roles](../design/compositions/access/roles.md), line 46.
 
 ```view
 the account for (address) — inputs (address); outputs (user); bindings () — answers at most one (user)
@@ -3193,6 +3196,16 @@ the background document rows of (relay) — inputs (relay); outputs (document, t
     named is relayGiven (relay)
     named is among ["none"]
     Guiding._guidanceFor (subject: "commons", use: "drafting") has (body, guidance: document, title)
+```
+
+### the capabilities of (role)
+
+Authored path: `Access.roles.theCapabilitiesOfRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 30.
+
+```view
+the capabilities of (role) — inputs (role); outputs (capabilities); bindings () — answers at most one (capabilities)
+  where Roling._getRoleDetail (role) has (capabilities)
 ```
 
 ### the class configuration ()
@@ -3451,7 +3464,7 @@ the retained name of (identity) as (kind) — inputs (kind, identity); outputs (
 ### the role of (user) in (context)
 
 Authored path: `Access.roles.theRoleOf`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 100.
+- Covered by [Roles](../design/compositions/access/roles.md), line 108.
 
 ```view
 the role of (user) in (context) — inputs (user, context); outputs (role, name, capabilities); bindings () — answers at most one (role, name, capabilities)
@@ -4336,7 +4349,7 @@ Former "the dashboard seat of (user)" — inputs (user); bindings (seat, holder,
 ### the defined roles ()
 
 Authored path: `Access.roles.theDefinedRoles`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 97.
+- Covered by [Roles](../design/compositions/access/roles.md), line 105.
 
 ```former
 Former "the defined roles ()" — inputs (); bindings (role, name, capabilities); promises exactly one record — forms:
@@ -4345,6 +4358,20 @@ Former "the defined roles ()" — inputs (); bindings (role, name, capabilities)
       capabilities
       name
       role
+```
+
+### the role name of (user) in (context)
+
+Authored path: `Access.roles.theRoleNameOf`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 100.
+- Covered by [Profiles and public identity](../design/compositions/forum/profiles.md), line 3.
+
+```former
+Former "the role name of (user) in (context)" — inputs (user, context); bindings (role, name); promises at most one record — forms:
+  a record of
+    where Roling._getRole (context, user) has (role)
+    where Roling._getRoleDetail (role) has (name)
+    name
 ```
 
 ### the display identities of (users) for (session)
@@ -4359,6 +4386,7 @@ Former "the display identities of (users) for (session)" — inputs (users, sess
     form a record of
       avatar
       displayName
+      role: whether former "the role name of (user) in (context)" with (context: "commons", user)
       user
 ```
 
@@ -5234,7 +5262,7 @@ Former "the reactions on (target) for (reader)" — inputs (target, reader); bin
 ### the role face of (user) in (context)
 
 Authored path: `Access.roles.theRoleFaceOf`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 93.
+- Covered by [Roles](../design/compositions/access/roles.md), line 98.
 
 ```former
 Former "the role face of (user) in (context)" — inputs (user, context); bindings (role, name, capabilities); promises at most one record — forms:
@@ -7204,8 +7232,8 @@ then
 ### Access.roles.AssignRole:forbidden
 
 Authored path: `Access.roles.AssignRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 30.
-- Covered by [Roles](../design/compositions/access/roles.md), line 107.
+- Covered by [Roles](../design/compositions/access/roles.md), line 35.
+- Covered by [Roles](../design/compositions/access/roles.md), line 116.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
@@ -7220,8 +7248,8 @@ then
 ### Access.roles.AssignRole:last-administrator
 
 Authored path: `Access.roles.AssignRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 30.
-- Covered by [Roles](../design/compositions/access/roles.md), line 107.
+- Covered by [Roles](../design/compositions/access/roles.md), line 35.
+- Covered by [Roles](../design/compositions/access/roles.md), line 116.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
@@ -7239,8 +7267,8 @@ then
 ### Access.roles.AssignRole:last-administrator-by-address
 
 Authored path: `Access.roles.AssignRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 30.
-- Covered by [Roles](../design/compositions/access/roles.md), line 107.
+- Covered by [Roles](../design/compositions/access/roles.md), line 35.
+- Covered by [Roles](../design/compositions/access/roles.md), line 116.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
@@ -7258,8 +7286,8 @@ then
 ### Access.roles.AssignRole:subject-not-found
 
 Authored path: `Access.roles.AssignRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 30.
-- Covered by [Roles](../design/compositions/access/roles.md), line 107.
+- Covered by [Roles](../design/compositions/access/roles.md), line 35.
+- Covered by [Roles](../design/compositions/access/roles.md), line 116.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
@@ -7276,8 +7304,8 @@ then
 ### Access.roles.AssignRole:success
 
 Authored path: `Access.roles.AssignRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 30.
-- Covered by [Roles](../design/compositions/access/roles.md), line 107.
+- Covered by [Roles](../design/compositions/access/roles.md), line 35.
+- Covered by [Roles](../design/compositions/access/roles.md), line 116.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
@@ -7296,8 +7324,8 @@ then
 ### Access.roles.AssignRole:success#2
 
 Authored path: `Access.roles.AssignRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 30.
-- Covered by [Roles](../design/compositions/access/roles.md), line 107.
+- Covered by [Roles](../design/compositions/access/roles.md), line 35.
+- Covered by [Roles](../design/compositions/access/roles.md), line 116.
 
 ```reaction
 when Roling.assign (context, role: resolved, user: subject, assignment), asked by Access.roles.AssignRole:success
@@ -7310,8 +7338,8 @@ then
 ### Access.roles.AssignRole:success-by-address
 
 Authored path: `Access.roles.AssignRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 30.
-- Covered by [Roles](../design/compositions/access/roles.md), line 107.
+- Covered by [Roles](../design/compositions/access/roles.md), line 35.
+- Covered by [Roles](../design/compositions/access/roles.md), line 116.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/assign", requestId, role, session, user)
@@ -7330,8 +7358,8 @@ then
 ### Access.roles.AssignRole:success-by-address#2
 
 Authored path: `Access.roles.AssignRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 30.
-- Covered by [Roles](../design/compositions/access/roles.md), line 107.
+- Covered by [Roles](../design/compositions/access/roles.md), line 35.
+- Covered by [Roles](../design/compositions/access/roles.md), line 116.
 
 ```reaction
 when Roling.assign (context, role: resolved, user: subject, assignment), asked by Access.roles.AssignRole:success-by-address
@@ -7345,7 +7373,7 @@ then
 
 Authored path: `Access.roles.DefineRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 20.
-- Covered by [Roles](../design/compositions/access/roles.md), line 105.
+- Covered by [Roles](../design/compositions/access/roles.md), line 113.
 
 ```reaction
 when RequestBoundary.request (capabilities, name, path: "/roles/define", requestId, session)
@@ -7361,7 +7389,7 @@ then
 
 Authored path: `Access.roles.DefineRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 20.
-- Covered by [Roles](../design/compositions/access/roles.md), line 105.
+- Covered by [Roles](../design/compositions/access/roles.md), line 113.
 
 ```reaction
 when RequestBoundary.request (capabilities, name, path: "/roles/define", requestId, session)
@@ -7378,7 +7406,7 @@ then
 
 Authored path: `Access.roles.DefineRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 20.
-- Covered by [Roles](../design/compositions/access/roles.md), line 105.
+- Covered by [Roles](../design/compositions/access/roles.md), line 113.
 
 ```reaction
 when Roling.defineRole (capabilities, name, role), asked by Access.roles.DefineRole:success
@@ -7392,7 +7420,7 @@ then
 
 Authored path: `Access.roles.DefineRole`.
 - Covered by [Roles](../design/compositions/access/roles.md), line 20.
-- Covered by [Roles](../design/compositions/access/roles.md), line 105.
+- Covered by [Roles](../design/compositions/access/roles.md), line 113.
 
 ```reaction
 when RequestBoundary.request (capabilities, name, path: "/roles/define", requestId, session)
@@ -7408,8 +7436,8 @@ then
 ### Access.roles.DeleteRole:forbidden
 
 Authored path: `Access.roles.DeleteRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 27.
-- Covered by [Roles](../design/compositions/access/roles.md), line 106.
+- Covered by [Roles](../design/compositions/access/roles.md), line 32.
+- Covered by [Roles](../design/compositions/access/roles.md), line 115.
 
 ```reaction
 when RequestBoundary.request (path: "/roles/delete", requestId, role, session)
@@ -7423,8 +7451,8 @@ then
 ### Access.roles.DeleteRole:success
 
 Authored path: `Access.roles.DeleteRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 27.
-- Covered by [Roles](../design/compositions/access/roles.md), line 106.
+- Covered by [Roles](../design/compositions/access/roles.md), line 32.
+- Covered by [Roles](../design/compositions/access/roles.md), line 115.
 
 ```reaction
 when RequestBoundary.request (path: "/roles/delete", requestId, role, session)
@@ -7439,8 +7467,8 @@ then
 ### Access.roles.DeleteRole:success#2
 
 Authored path: `Access.roles.DeleteRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 27.
-- Covered by [Roles](../design/compositions/access/roles.md), line 106.
+- Covered by [Roles](../design/compositions/access/roles.md), line 32.
+- Covered by [Roles](../design/compositions/access/roles.md), line 115.
 
 ```reaction
 when Roling.deleteRole (role: resolved), asked by Access.roles.DeleteRole:success
@@ -7453,8 +7481,8 @@ then
 ### Access.roles.RevokeRole:forbidden
 
 Authored path: `Access.roles.RevokeRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 33.
-- Covered by [Roles](../design/compositions/access/roles.md), line 108.
+- Covered by [Roles](../design/compositions/access/roles.md), line 38.
+- Covered by [Roles](../design/compositions/access/roles.md), line 117.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/revoke", requestId, session, user)
@@ -7469,8 +7497,8 @@ then
 ### Access.roles.RevokeRole:last-administrator
 
 Authored path: `Access.roles.RevokeRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 33.
-- Covered by [Roles](../design/compositions/access/roles.md), line 108.
+- Covered by [Roles](../design/compositions/access/roles.md), line 38.
+- Covered by [Roles](../design/compositions/access/roles.md), line 117.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/revoke", requestId, session, user)
@@ -7488,8 +7516,8 @@ then
 ### Access.roles.RevokeRole:last-administrator-by-address
 
 Authored path: `Access.roles.RevokeRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 33.
-- Covered by [Roles](../design/compositions/access/roles.md), line 108.
+- Covered by [Roles](../design/compositions/access/roles.md), line 38.
+- Covered by [Roles](../design/compositions/access/roles.md), line 117.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/revoke", requestId, session, user)
@@ -7507,8 +7535,8 @@ then
 ### Access.roles.RevokeRole:subject-not-found
 
 Authored path: `Access.roles.RevokeRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 33.
-- Covered by [Roles](../design/compositions/access/roles.md), line 108.
+- Covered by [Roles](../design/compositions/access/roles.md), line 38.
+- Covered by [Roles](../design/compositions/access/roles.md), line 117.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/revoke", requestId, session, user)
@@ -7525,8 +7553,8 @@ then
 ### Access.roles.RevokeRole:success
 
 Authored path: `Access.roles.RevokeRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 33.
-- Covered by [Roles](../design/compositions/access/roles.md), line 108.
+- Covered by [Roles](../design/compositions/access/roles.md), line 38.
+- Covered by [Roles](../design/compositions/access/roles.md), line 117.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/revoke", requestId, session, user)
@@ -7544,8 +7572,8 @@ then
 ### Access.roles.RevokeRole:success#2
 
 Authored path: `Access.roles.RevokeRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 33.
-- Covered by [Roles](../design/compositions/access/roles.md), line 108.
+- Covered by [Roles](../design/compositions/access/roles.md), line 38.
+- Covered by [Roles](../design/compositions/access/roles.md), line 117.
 
 ```reaction
 when Roling.revoke (context, user: subject, assignment), asked by Access.roles.RevokeRole:success
@@ -7558,8 +7586,8 @@ then
 ### Access.roles.RevokeRole:success-by-address
 
 Authored path: `Access.roles.RevokeRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 33.
-- Covered by [Roles](../design/compositions/access/roles.md), line 108.
+- Covered by [Roles](../design/compositions/access/roles.md), line 38.
+- Covered by [Roles](../design/compositions/access/roles.md), line 117.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/revoke", requestId, session, user)
@@ -7577,8 +7605,8 @@ then
 ### Access.roles.RevokeRole:success-by-address#2
 
 Authored path: `Access.roles.RevokeRole`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 33.
-- Covered by [Roles](../design/compositions/access/roles.md), line 108.
+- Covered by [Roles](../design/compositions/access/roles.md), line 38.
+- Covered by [Roles](../design/compositions/access/roles.md), line 117.
 
 ```reaction
 when Roling.revoke (context, user: subject, assignment), asked by Access.roles.RevokeRole:success-by-address
@@ -7591,8 +7619,8 @@ then
 ### Access.roles.RoleForUser:held
 
 Authored path: `Access.roles.RoleForUser`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 92.
-- Covered by [Roles](../design/compositions/access/roles.md), line 109.
+- Covered by [Roles](../design/compositions/access/roles.md), line 97.
+- Covered by [Roles](../design/compositions/access/roles.md), line 118.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/forUser", requestId, user)
@@ -7606,8 +7634,8 @@ then
 ### Access.roles.RoleForUser:none
 
 Authored path: `Access.roles.RoleForUser`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 92.
-- Covered by [Roles](../design/compositions/access/roles.md), line 109.
+- Covered by [Roles](../design/compositions/access/roles.md), line 97.
+- Covered by [Roles](../design/compositions/access/roles.md), line 118.
 
 ```reaction
 when RequestBoundary.request (context, path: "/roles/forUser", requestId, user)
@@ -7621,8 +7649,8 @@ then
 ### Access.roles.RoleGet
 
 Authored path: `Access.roles.RoleGet`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 95.
-- Covered by [Roles](../design/compositions/access/roles.md), line 110.
+- Covered by [Roles](../design/compositions/access/roles.md), line 103.
+- Covered by [Roles](../design/compositions/access/roles.md), line 119.
 
 ```reaction
 when RequestBoundary.request (path: "/roles/get", requestId, role)
@@ -7635,13 +7663,121 @@ then
 ### Access.roles.RoleList
 
 Authored path: `Access.roles.RoleList`.
-- Covered by [Roles](../design/compositions/access/roles.md), line 96.
-- Covered by [Roles](../design/compositions/access/roles.md), line 111.
+- Covered by [Roles](../design/compositions/access/roles.md), line 104.
+- Covered by [Roles](../design/compositions/access/roles.md), line 120.
 
 ```reaction
 when RequestBoundary.request (path: "/roles/list", requestId)
 then
   RequestBoundary.respond (requestId, roles: former "the defined roles ()")
+```
+
+### Access.roles.UpdateRole:administrator-role
+
+Authored path: `Access.roles.UpdateRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 27.
+- Covered by [Roles](../design/compositions/access/roles.md), line 114.
+
+```reaction
+when RequestBoundary.request (capabilities, path: "/roles/update", requestId, role, session)
+where
+  known is capabilitiesAreKnown (capabilities)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may administer" with (user)
+  known is among [true]
+  Roling._denotedRole (ref: role) has (role: resolved)
+  view "the capabilities of (role)" with (role: resolved) has (capabilities: current)
+  wildcard is carriesAdminister (capabilities: current)
+  wildcard is among [true]
+then
+  RequestBoundary.respond (error: "ADMINISTRATOR_ROLE", requestId)
+```
+
+### Access.roles.UpdateRole:forbidden
+
+Authored path: `Access.roles.UpdateRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 27.
+- Covered by [Roles](../design/compositions/access/roles.md), line 114.
+
+```reaction
+when RequestBoundary.request (capabilities, path: "/roles/update", requestId, role, session)
+where
+  known is capabilitiesAreKnown (capabilities)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not administer" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Access.roles.UpdateRole:not-found
+
+Authored path: `Access.roles.UpdateRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 27.
+- Covered by [Roles](../design/compositions/access/roles.md), line 114.
+
+```reaction
+when RequestBoundary.request (capabilities, path: "/roles/update", requestId, role, session)
+where
+  known is capabilitiesAreKnown (capabilities)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may administer" with (user)
+  known is among [true]
+  Roling._denotedRole (ref: role) has (role: resolved)
+  no view "the capabilities of (role)" with (role: resolved)
+then
+  RequestBoundary.respond (error: "ROLE_NOT_FOUND", requestId)
+```
+
+### Access.roles.UpdateRole:success
+
+Authored path: `Access.roles.UpdateRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 27.
+- Covered by [Roles](../design/compositions/access/roles.md), line 114.
+
+```reaction
+when RequestBoundary.request (capabilities, path: "/roles/update", requestId, role, session)
+where
+  known is capabilitiesAreKnown (capabilities)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may administer" with (user)
+  known is among [true]
+  Roling._denotedRole (ref: role) has (role: resolved)
+  view "the capabilities of (role)" with (role: resolved) has (capabilities: current)
+  wildcard is carriesAdminister (capabilities: current)
+  wildcard is among [false]
+then
+  Roling.setCapabilities (capabilities, role: resolved)
+```
+
+### Access.roles.UpdateRole:success#2
+
+Authored path: `Access.roles.UpdateRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 27.
+- Covered by [Roles](../design/compositions/access/roles.md), line 114.
+
+```reaction
+when Roling.setCapabilities (capabilities, role: resolved), asked by Access.roles.UpdateRole:success
+where
+  earlier, RequestBoundary.request (capabilities, path: "/roles/update", requestId, role, session)
+then
+  RequestBoundary.respond (requestId, role: resolved)
+```
+
+### Access.roles.UpdateRole:unknown-capability
+
+Authored path: `Access.roles.UpdateRole`.
+- Covered by [Roles](../design/compositions/access/roles.md), line 27.
+- Covered by [Roles](../design/compositions/access/roles.md), line 114.
+
+```reaction
+when RequestBoundary.request (capabilities, path: "/roles/update", requestId, role, session)
+where
+  known is capabilitiesAreKnown (capabilities)
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may administer" with (user)
+  known is among [false]
+then
+  RequestBoundary.respond (error: "UNKNOWN_CAPABILITY", requestId)
 ```
 
 ### Access.session.InvalidSessionIsRejected:expired-session
@@ -28026,6 +28162,7 @@ not listed here have no explicit input contract.
 - `/roles/forUser` — requires `context`, `user`
 - `/roles/get` — requires `role`
 - `/roles/revoke` — requires `context`, `session`, `user`
+- `/roles/update` — requires `capabilities`, `role`, `session`
 - `/roster/add-person` — requires `session`, `email`; fills `displayName` with "" when absent; fills `kind` with "STUDENT" when absent; fills `section` with "" when absent
 - `/roster/class` — requires `session`
 - `/roster/configure-class` — requires `code`, `session`, `term`, `timezone`, `title`

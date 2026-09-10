@@ -35,6 +35,20 @@ export const theRoleFaceOf = former(
     ).form({ role, name, capabilities }),
 ).optional();
 
+/**
+ * The name alone, for readers that show who someone is without learning what
+ * they may do. Display identities carry it to every course member, so the
+ * capabilities stay behind the fuller role face.
+ */
+export const theRoleNameOf = former(
+  "the role name of (user) in (context)",
+  ({ user, context }, { role, name }) =>
+    where(
+      Roling._getRole({ user, context }).is({ role }),
+      Roling._getRoleDetail({ role }).is({ name }),
+    ).form({ name }),
+).optional();
+
 export const theRoleOf = view(
   "the role of (user) in (context)",
   ({ user, context }, { role, name, capabilities }, _bindings) =>
@@ -85,6 +99,71 @@ export const DefineRole = endpoint(
         where(activeUser({ session }).is({ user }), mayNotAdminister({ user }))
           .then(respond({ error: "FORBIDDEN" }))
           .named("forbidden"),
+      ),
+);
+
+/** What does this role currently carry? */
+export const theCapabilitiesOfRole = view(
+  "the capabilities of (role)",
+  ({ role }, { capabilities }, _bindings) =>
+    where(Roling._getRoleDetail({ role }).is({ capabilities })),
+).optional();
+
+/**
+ * Changing what a role carries reaches everyone holding it at once, which is
+ * the point: a course adds a capability to its TAs without reassigning each.
+ * The same registry check as definition applies, and the built-in administrator
+ * role is refused outright, since the wildcard it carries is not in the
+ * registry and rewriting it would strip the wildcard from every administrator.
+ */
+export const UpdateRole = endpoint(
+  "/roles/update",
+  ({ session, role, capabilities, user, known, resolved, current, wildcard }) =>
+    receive({ session, role, capabilities })
+      .where(compute(computations.capabilitiesAreKnown, { capabilities }, known))
+      .then(
+        where(activeUser({ session }).is({ user }), mayNotAdminister({ user }))
+          .then(respond({ error: "FORBIDDEN" }))
+          .named("forbidden"),
+        where(
+          activeUser({ session }).is({ user }),
+          mayAdminister({ user }),
+          is.among(known, [false]),
+        )
+          .then(respond({ error: "UNKNOWN_CAPABILITY" }))
+          .named("unknown-capability"),
+        where(
+          activeUser({ session }).is({ user }),
+          mayAdminister({ user }),
+          is.among(known, [true]),
+          Roling._denotedRole({ ref: role }).is({ role: resolved }),
+          no(theCapabilitiesOfRole({ role: resolved })),
+        )
+          .then(respond({ error: "ROLE_NOT_FOUND" }))
+          .named("not-found"),
+        where(
+          activeUser({ session }).is({ user }),
+          mayAdminister({ user }),
+          is.among(known, [true]),
+          Roling._denotedRole({ ref: role }).is({ role: resolved }),
+          theCapabilitiesOfRole({ role: resolved }).is({ capabilities: current }),
+          compute(computations.carriesAdminister, { capabilities: current }, wildcard),
+          is.among(wildcard, [true]),
+        )
+          .then(respond({ error: "ADMINISTRATOR_ROLE" }))
+          .named("administrator-role"),
+        where(
+          activeUser({ session }).is({ user }),
+          mayAdminister({ user }),
+          is.among(known, [true]),
+          Roling._denotedRole({ ref: role }).is({ role: resolved }),
+          theCapabilitiesOfRole({ role: resolved }).is({ capabilities: current }),
+          compute(computations.carriesAdminister, { capabilities: current }, wildcard),
+          is.among(wildcard, [false]),
+        )
+          .then(Roling.setCapabilities({ role: resolved, capabilities }).responds({ role: resolved }))
+          .then(respond({ role: resolved }))
+          .named("success"),
       ),
 );
 

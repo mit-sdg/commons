@@ -24,6 +24,11 @@ permanently inert string. `administer` is not in that registry, so it is refused
 here exactly like a mistyped name: no role defined through this endpoint can carry
 the wildcard, and only the built-in administrator role established at registration
 holds it.
+[Access.roles.UpdateRole](reaction:Access.roles.UpdateRole) replaces what an existing role carries, which
+reaches everyone holding it at once; the same registry check applies, an unknown
+role is refused `ROLE_NOT_FOUND`, and the built-in administrator role is refused
+`ADMINISTRATOR_ROLE`, because [the capabilities it carries](view:Access.roles.theCapabilitiesOfRole)
+include the wildcard that the registry-checked path could only strip.
 [Access.roles.DeleteRole](reaction:Access.roles.DeleteRole) removes a role that nobody currently holds and
 refuses one that is still assigned.
 
@@ -92,6 +97,9 @@ Public role reads expose authorization structure but do not authorize a caller.
 [Access.roles.RoleForUser](reaction:Access.roles.RoleForUser) resolves an account and answers
 [the role it holds](former:Access.roles.theRoleFaceOf) in one context, together with that role's name
 and capabilities, so a reader never has to follow up with a second request.
+[The role name held](former:Access.roles.theRoleNameOf) is the narrower answer for readers that only
+show who someone is, such as the display identities the forum batches; it carries the
+name and nothing of what the role permits.
 [Access.roles.RoleGet](reaction:Access.roles.RoleGet) returns the name and capabilities of one known role.
 [Access.roles.RoleList](reaction:Access.roles.RoleList) forms
 [the complete role catalog](former:Access.roles.theDefinedRoles) with each role's capabilities. None of
@@ -103,6 +111,7 @@ Authentication owns what that read answers the browser.
 
 ```endpoints
 Access.roles.DefineRole at /roles/define
+Access.roles.UpdateRole at /roles/update
 Access.roles.DeleteRole at /roles/delete
 Access.roles.AssignRole at /roles/assign
 Access.roles.RevokeRole at /roles/revoke

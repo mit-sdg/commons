@@ -7,6 +7,7 @@ import {
   List,
   Mail,
   MailPlus,
+  Pencil,
   RefreshCw,
   Search,
   Shield,
@@ -47,6 +48,7 @@ import type {
   RegisteredUser,
   RoleSummary,
 } from "@/lib/models";
+import { useProfilesRefresh } from "@/lib/profiles";
 import type { RoleSubjectAccount } from "@/lib/role-subjects";
 import {
   isLastAdministrator,
@@ -573,18 +575,16 @@ function RoleAdmin({
   usersQuery: QueryState<{ users: RegisteredUser[] }>;
 }) {
   const { session } = useAuth();
+  const refreshProfiles = useProfilesRefresh();
   const [roleName, setRoleName] = useState("");
   const [caps, setCaps] = useState<string[]>([]);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editCaps, setEditCaps] = useState<string[]>([]);
   const [typedUser, setTypedUser] = useState<string | null>(null);
   const [suggesting, setSuggesting] = useState(false);
   const [cursor, setCursor] = useState(0);
   const [assignRole, setAssignRole] = useState("");
   const [busy, setBusy] = useState(false);
-
-  // `administer` is a wildcard the built-in administrator role carries, not a
-  // registry entry: the server refuses a role defined with it, so it is
-  // described here rather than offered as a choice.
-  const CAPABILITIES = CAPABILITY_NAMES;
 
   // This one list answers what the named person holds, how many people hold
   // each role, and who the administrators are, so a role change has to refresh
@@ -703,6 +703,8 @@ function RoleAdmin({
     else {
       toast.success(`Role assigned to ${selected?.username ?? subject}`);
       usersQuery.refetch();
+      // Any badge already showing this person must not outlive the change.
+      refreshProfiles(selected ? { users: [selected.user] } : {});
       onDone();
     }
   }
@@ -724,7 +726,33 @@ function RoleAdmin({
     else {
       toast.success("Role removed");
       usersQuery.refetch();
+      refreshProfiles(selected ? { users: [selected.user] } : {});
       onDone();
+    }
+  }
+
+  function startEditing(role: string, capabilities: string[]) {
+    setEditing(role);
+    setEditCaps(capabilities);
+  }
+
+  function toggleEditCap(cap: string) {
+    setEditCaps((prev) =>
+      prev.includes(cap) ? prev.filter((c) => c !== cap) : [...prev, cap],
+    );
+  }
+
+  async function update(role: string, name: string) {
+    if (!session) return;
+    setBusy(true);
+    const result = await api.roles.update({ role, capabilities: editCaps });
+    setBusy(false);
+    if ("error" in result) toast.error(publicErrorMessage(result.error));
+    else {
+      toast.success(`Role "${name}" updated`);
+      setEditing(null);
+      roleList.refetch();
+      usersQuery.refetch();
     }
   }
 
@@ -914,12 +942,15 @@ function RoleAdmin({
           <div className="space-y-2">
             {roles.map((r) => {
               const held = holdersOf.get(String(r.name)) ?? 0;
+              const id = String(r.role);
+              const builtIn = r.capabilities.includes("administer");
+              const isEditing = editing === id;
               return (
                 <div
-                  key={String(r.role)}
+                  key={id}
                   className="flex items-start justify-between gap-3 rounded-lg border border-border px-4 py-3"
                 >
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="font-medium capitalize">{r.name}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       {held === 0
@@ -928,54 +959,94 @@ function RoleAdmin({
                           ? "Held by 1 person"
                           : `Held by ${held} people`}
                     </p>
-                    <div className="mt-1.5 flex flex-wrap gap-1">
-                      {r.capabilities.length === 0 ? (
-                        <span className="text-xs text-muted-foreground">
-                          No capabilities — a label only
-                        </span>
-                      ) : (
-                        r.capabilities.map((cap: string) => (
-                          <Badge
-                            key={cap}
-                            variant="secondary"
-                            className="text-xs"
+                    {isEditing ? (
+                      <div className="mt-3 space-y-3">
+                        <CapabilityPicker
+                          selected={editCaps}
+                          onToggle={toggleEditCap}
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => update(id, String(r.name))}
+                            disabled={busy}
                           >
-                            {cap}
-                          </Badge>
-                        ))
-                      )}
-                    </div>
+                            Save changes
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditing(null)}
+                            disabled={busy}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {r.capabilities.length === 0 ? (
+                          <span className="text-xs text-muted-foreground">
+                            No capabilities — a label only
+                          </span>
+                        ) : (
+                          r.capabilities.map((cap: string) => (
+                            <Badge
+                              key={cap}
+                              variant="secondary"
+                              className="text-xs"
+                            >
+                              {cap}
+                            </Badge>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </div>
-                  {held > 0 ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-muted-foreground shrink-0"
-                      disabled
-                      title="Assign these people another role before deleting this one."
-                      aria-label={`Cannot delete ${r.name} while somebody holds it`}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  ) : (
-                    <ConfirmAction
-                      trigger={
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-destructive shrink-0"
-                          aria-label={`Delete ${r.name}`}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      }
-                      title={`Delete "${r.name}"?`}
-                      description="Nobody holds this role, so deleting it changes what no one can do."
-                      confirmLabel="Delete role"
-                      destructive
-                      onConfirm={() => remove(String(r.role))}
-                    />
-                  )}
+                  <div className="flex shrink-0 items-center gap-1">
+                    {builtIn || isEditing ? null : (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-muted-foreground"
+                        aria-label={`Edit ${r.name}`}
+                        title="Change what this role can do"
+                        onClick={() => startEditing(id, r.capabilities)}
+                      >
+                        <Pencil className="size-4" />
+                      </Button>
+                    )}
+                    {held > 0 ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-muted-foreground shrink-0"
+                        disabled
+                        title="Assign these people another role before deleting this one."
+                        aria-label={`Cannot delete ${r.name} while somebody holds it`}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    ) : (
+                      <ConfirmAction
+                        trigger={
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive shrink-0"
+                            aria-label={`Delete ${r.name}`}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        }
+                        title={`Delete "${r.name}"?`}
+                        description="Nobody holds this role, so deleting it changes what no one can do."
+                        confirmLabel="Delete role"
+                        destructive
+                        onConfirm={() => remove(id)}
+                      />
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -1003,37 +1074,7 @@ function RoleAdmin({
             <span className="font-mono">administer</span> is a wildcard the
             built-in administrator role carries. It cannot be added here.
           </p>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {CAPABILITIES.map((cap) => {
-              const isSelected = caps.includes(cap);
-              return (
-                <button
-                  key={cap}
-                  type="button"
-                  onClick={() => toggleCap(cap)}
-                  aria-pressed={isSelected}
-                  className={
-                    "rounded-lg border p-3 text-left transition-colors " +
-                    (isSelected
-                      ? "border-primary bg-primary/10 text-foreground"
-                      : "border-border text-muted-foreground hover:bg-muted")
-                  }
-                >
-                  <p className="flex items-center gap-1.5 text-sm font-medium">
-                    {isSelected ? (
-                      <Check className="size-4 shrink-0 text-primary" />
-                    ) : (
-                      <span className="size-4 shrink-0 rounded-sm border border-current opacity-40" />
-                    )}
-                    {cap}
-                  </p>
-                  <p className="mt-0.5 text-xs leading-relaxed opacity-70">
-                    {CAPABILITY_INFO[cap]}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
+          <CapabilityPicker selected={caps} onToggle={toggleCap} />
         </div>
         <Button
           className="mt-4"
@@ -1296,5 +1337,52 @@ export default function AdminPage() {
         </TabsContent>
       </Tabs>
     </PageContainer>
+  );
+}
+
+/**
+ * The registry, one choice per capability. `administer` is a wildcard the
+ * built-in administrator role carries, not a registry entry: the server refuses
+ * a role defined or edited with it, so it is described rather than offered.
+ */
+function CapabilityPicker({
+  selected,
+  onToggle,
+}: {
+  selected: string[];
+  onToggle: (cap: string) => void;
+}) {
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      {CAPABILITY_NAMES.map((cap) => {
+        const isSelected = selected.includes(cap);
+        return (
+          <button
+            key={cap}
+            type="button"
+            onClick={() => onToggle(cap)}
+            aria-pressed={isSelected}
+            className={
+              "rounded-lg border p-3 text-left transition-colors " +
+              (isSelected
+                ? "border-primary bg-primary/10 text-foreground"
+                : "border-border text-muted-foreground hover:bg-muted")
+            }
+          >
+            <p className="flex items-center gap-1.5 text-sm font-medium">
+              {isSelected ? (
+                <Check className="size-4 shrink-0 text-primary" />
+              ) : (
+                <span className="size-4 shrink-0 rounded-sm border border-current opacity-40" />
+              )}
+              {cap}
+            </p>
+            <p className="mt-0.5 text-xs leading-relaxed opacity-70">
+              {CAPABILITY_INFO[cap]}
+            </p>
+          </button>
+        );
+      })}
+    </div>
   );
 }

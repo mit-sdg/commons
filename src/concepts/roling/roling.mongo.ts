@@ -71,6 +71,17 @@ export class MongoRolingConcept {
     return { role };
   }
 
+  async setCapabilities({ role, capabilities }: { role: string; capabilities: string[] }) {
+    const updated = await this.roles.updateOne(
+      { _id: role },
+      { $set: { capabilities: [...capabilities] } },
+    );
+    if (updated.matchedCount === 0) {
+      throw new RoleNotFound(`No role named ${role}`);
+    }
+    return { role };
+  }
+
   async deleteRole({ role }: { role: string }) {
     const doc = await this.roles.findOne({ _id: role });
     if (doc === null) {
