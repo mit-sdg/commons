@@ -3,7 +3,7 @@ import { createHttpHandler } from "@mit-sdg/sync-engine-http/handler";
 import type { CommonsImplementations } from "./assembly/application.ts";
 import { assembleCommons } from "./assembly/application.ts";
 import { commonsHttpPolicy } from "./assembly/http-policy.ts";
-import { hasSafeKeys } from "./assembly/security.ts";
+import { hasSafeKeys, hasTextWriteInputs } from "./assembly/security.ts";
 import { configuredPublicOrigin } from "./deployment.ts";
 
 const PUBLIC_PATHS = new Set([
@@ -41,13 +41,14 @@ const MAX_BODY_CHARS = 1_000_000;
 
 type InputVerdict = "ok" | "too-large" | "unsafe";
 
-async function inspectRequestInput(request: Request): Promise<InputVerdict> {
+async function inspectRequestInput(request: Request, path: string): Promise<InputVerdict> {
   const declared = Number(request.headers.get("content-length"));
   if (Number.isFinite(declared) && declared > MAX_BODY_CHARS) return "too-large";
   try {
     const text = await request.clone().text();
     if (text.length > MAX_BODY_CHARS) return "too-large";
-    return hasSafeKeys(JSON.parse(text)) ? "ok" : "unsafe";
+    const input: unknown = JSON.parse(text);
+    return hasSafeKeys(input) && hasTextWriteInputs(path, input) ? "ok" : "unsafe";
   } catch {
     return "unsafe";
   }
@@ -86,7 +87,7 @@ export function createEdge(
     }
     const logicalPath = path.startsWith("/api/") ? path.slice(4) : undefined;
     if (request.method === "POST" && logicalPath !== undefined) {
-      const verdict = await inspectRequestInput(request);
+      const verdict = await inspectRequestInput(request, logicalPath);
       if (verdict === "too-large")
         return Response.json(
           { error: "REQUEST_TOO_LARGE" },
