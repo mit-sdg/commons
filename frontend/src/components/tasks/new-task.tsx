@@ -89,7 +89,7 @@ export function NewTaskForm({
           value={details}
           disabled={busy}
           rows={2}
-          placeholder="Optional notes, checklist, or instructions..."
+          placeholder="Optional notes, checklist, or instructions…"
           onChange={(event) => setDetails(event.target.value)}
         />
       </div>

@@ -545,7 +545,11 @@ export function GroupView({
       {page.loading && !page.data ? (
         <LoadingState />
       ) : page.error ? (
-        <ErrorState message={page.error} onRetry={page.refetch} />
+        <ErrorState
+          message={page.error}
+          refused={page.refused}
+          onRetry={page.refetch}
+        />
       ) : !detail ? (
         <EmptyState
           icon={ListChecks}
@@ -595,7 +599,7 @@ export function GroupView({
                       aria-label="Active and overdue"
                     >
                       <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                        Active &amp; Overdue ({activeAndOverdue.length})
+                        Active and overdue ({activeAndOverdue.length})
                       </h2>
                       {activeAndOverdue.map((task) => (
                         <TaskCard

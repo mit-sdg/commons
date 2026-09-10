@@ -156,6 +156,14 @@
     @apply border-border outline-ring/50;
   }
 
+  /* Native controls borrow the ember accent rather than the browser blue. */
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="range"],
+  progress {
+    accent-color: var(--primary);
+  }
+
   html {
     scroll-behavior: smooth;
     scroll-padding-top: 7rem;
@@ -189,6 +197,39 @@
   h4 {
     font-family: var(--font-display);
     font-optical-sizing: auto;
+  }
+
+  /*
+    One mark for "there is more here". Browsers draw a filled triangle whose
+    size and colour are theirs, not ours, so a summary that did not hide it
+    read differently from the few that drew their own chevron. A summary that
+    still wants its own mark opts out by carrying `list-none`, which is what
+    those already say.
+  */
+  summary:not(.list-none) {
+    list-style: none;
+  }
+
+  summary:not(.list-none)::-webkit-details-marker {
+    display: none;
+  }
+
+  summary:not(.list-none)::before {
+    border-bottom: 1.5px solid currentColor;
+    border-right: 1.5px solid currentColor;
+    content: "";
+    display: inline-block;
+    height: 0.34em;
+    margin-right: 0.55em;
+    opacity: 0.55;
+    transform: translateY(-0.1em) rotate(-45deg);
+    transition: transform 150ms ease;
+    vertical-align: middle;
+    width: 0.34em;
+  }
+
+  details[open] > summary:not(.list-none)::before {
+    transform: translateY(-0.18em) rotate(45deg);
   }
 }
 

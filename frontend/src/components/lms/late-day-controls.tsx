@@ -96,7 +96,7 @@ export function LateDayControls({
       )}
     >
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">Late Days</p>
+        <p className="text-sm font-medium">Late days</p>
         {balance && (
           <p className="text-sm text-muted-foreground">
             Balance: {balance.remaining} remaining of {balance.granted}
@@ -178,7 +178,7 @@ export function LateDayControls({
                 variant="outline"
                 disabled={loading || !balance || balance.remaining < days}
               >
-                Apply Late Days
+                Apply late days
               </Button>
             }
           />

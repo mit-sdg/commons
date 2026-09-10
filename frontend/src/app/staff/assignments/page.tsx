@@ -88,7 +88,7 @@ function StaffAssignmentsPageContent() {
       </div>
 
       {loading ? (
-        <LoadingState label="Loading assignments..." />
+        <LoadingState label="Loading assignments…" />
       ) : error ? (
         <ErrorState message={error} onRetry={refetch} />
       ) : filtered.length === 0 ? (
@@ -132,7 +132,7 @@ function StaffAssignmentsPageContent() {
                   <Fact.Due verb="Due" at={a.dueAt} />
                   <Fact.Where preposition="for">
                     {a.audience === "EVERYONE"
-                      ? "All students"
+                      ? "all students"
                       : a.targets
                           .map(
                             (target) =>

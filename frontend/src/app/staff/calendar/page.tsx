@@ -9,6 +9,7 @@ import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@/hooks/use-query";
 import { api } from "@/lib/api";
+import { assignmentTypeLabel } from "@/lib/assignment-types";
 import { useAuth } from "@/lib/auth";
 import { loadCalendarStaff } from "@/lib/lms";
 
@@ -88,7 +89,7 @@ function StaffCalendarPageContent() {
               date: d.dueAt,
               label: `Due: ${name}`,
               kind: "due",
-              detail: d.kind,
+              detail: assignmentTypeLabel(d.kind),
               href: `/staff/assignments/${e.assignment}`,
             }
           : null,
@@ -97,7 +98,7 @@ function StaffCalendarPageContent() {
               date: d.closeAt,
               label: `Closes: ${name}`,
               kind: "close",
-              detail: d.kind,
+              detail: assignmentTypeLabel(d.kind),
               href: `/staff/assignments/${e.assignment}`,
             }
           : null,
@@ -147,7 +148,7 @@ function StaffCalendarPageContent() {
       </div>
 
       {loading ? (
-        <LoadingState label="Loading calendar..." />
+        <LoadingState label="Loading calendar…" />
       ) : error ? (
         <ErrorState message={error} onRetry={refetch} />
       ) : (

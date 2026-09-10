@@ -1,15 +1,15 @@
 "use client";
 
-import { Settings, Shield } from "lucide-react";
+import { Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { use, useEffect } from "react";
 import { PostPreview } from "@/components/forum/post-preview";
 import { Link } from "@/components/link";
 import { PageContainer } from "@/components/page";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
+import { UserRole } from "@/components/user-role";
 import { useQuery } from "@/hooks/use-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -151,12 +151,11 @@ export default function UserPage({
               No bio yet.
             </p>
           )}
+          {/* The same pill a post prints beside this name, not a second
+              form for the same fact. */}
           {role.data?.name ? (
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              <Badge variant="secondary" className="gap-1 capitalize">
-                <Shield className="size-3" />
-                {role.data.name}
-              </Badge>
+            <div className="mt-3">
+              <UserRole user={userId} />
             </div>
           ) : null}
           <p className="mt-2 text-sm text-muted-foreground">

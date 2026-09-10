@@ -1,13 +1,13 @@
 "use client";
 
-import { ArrowLeft, BookOpen, Clock, GraduationCap, User } from "lucide-react";
+import { BookOpen, Clock, GraduationCap, User } from "lucide-react";
 import { use } from "react";
 import { Fact, Facts } from "@/components/facts";
 import { Link } from "@/components/link";
 import { AssessmentHistory } from "@/components/lms/assessment-history";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { StudentNotes } from "@/components/lms/student-notes";
-import { PageContainer } from "@/components/page";
+import { BackLink, PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Tag } from "@/components/tag";
@@ -117,7 +117,7 @@ function StudentDetailPageContent({
   if (loading)
     return (
       <PageContainer>
-        <LoadingState label="Loading student..." />
+        <LoadingState label="Loading student…" />
       </PageContainer>
     );
   if (error)
@@ -130,12 +130,7 @@ function StudentDetailPageContent({
   return (
     <PageContainer>
       <div className="mb-4">
-        <Link
-          href="/staff/roster"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" /> Back to roster
-        </Link>
+        <BackLink href="/staff/roster">Back to roster</BackLink>
       </div>
 
       <div className="mb-6">
@@ -229,7 +224,7 @@ function StudentDetailPageContent({
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <Clock className="size-4" /> Late Days
+                <Clock className="size-4" /> Late days
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">

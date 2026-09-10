@@ -219,7 +219,7 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
             <p className="text-xs text-muted-foreground">released</p>
           </Link>
           <div className="rounded-lg border border-border bg-card p-3">
-            <p className="text-xs text-muted-foreground">Late Days</p>
+            <p className="text-xs text-muted-foreground">Late days</p>
             <p className="text-2xl font-semibold">
               {lateBalance?.balance?.remaining ?? "—"}
             </p>
@@ -232,7 +232,7 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <StickyNote className="size-4" /> Unacknowledged Notes
+              <StickyNote className="size-4" /> Unacknowledged notes
             </CardTitle>
           </CardHeader>
           <CardContent>

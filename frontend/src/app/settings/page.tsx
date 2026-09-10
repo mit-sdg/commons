@@ -48,7 +48,7 @@ function ProfileSettings() {
           className="size-16"
         />
         <div className="text-sm text-muted-foreground">
-          Your avatar is shown across the forum. Paste an image URL below.
+          Your avatar stands beside your name everywhere you post.
         </div>
       </div>
       <div className="mt-5 space-y-4">
@@ -60,11 +60,13 @@ function ProfileSettings() {
             onChange={(e) => setDisplayName(e.target.value)}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" value={me?.email ?? ""} disabled />
+        {/* An address that cannot be typed over is not a field. Shown as a
+            box, its greyed value read as a hint about what to enter. */}
+        <div className="space-y-1.5">
+          <p className="text-sm font-medium leading-none">Email</p>
+          <p className="text-sm">{me?.email ?? "—"}</p>
           <p className="text-xs text-muted-foreground">
-            Email is set during registration and cannot be changed here yet.
+            Your email was set when your account was created.
           </p>
         </div>
         <div className="space-y-2">
@@ -83,7 +85,7 @@ function ProfileSettings() {
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             rows={4}
-            placeholder="Tell the community a little about yourself."
+            placeholder="A line about yourself, for the people in this course."
           />
         </div>
         <Button onClick={save} disabled={busy}>

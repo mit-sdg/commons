@@ -60,7 +60,7 @@ export function CategoryAssign({
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <FolderCog className="size-4" />
-          Category
+          File under
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">

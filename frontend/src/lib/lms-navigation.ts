@@ -55,13 +55,13 @@ const STAFF_NAV: {
   },
   {
     href: "/staff/skills",
-    label: "Skills & rubrics",
+    label: "Skills and rubrics",
     icon: GraduationCap,
     needs: ["grade"],
   },
   {
     href: "/staff/late-days",
-    label: "Late Days",
+    label: "Late days",
     icon: Clock,
     needs: ["student-records"],
   },

@@ -527,7 +527,7 @@ function UsersAndInvitationsAdmin({
               <span className="sm:hidden" aria-hidden="true">
                 Users
               </span>
-              <span className="hidden sm:inline">Registered Users</span>
+              <span className="hidden sm:inline">Registered users</span>
               <Badge
                 variant="secondary"
                 className="ml-1 px-1.5 py-0.5 text-xs font-semibold shrink-0"
@@ -540,7 +540,7 @@ function UsersAndInvitationsAdmin({
               <span className="sm:hidden" aria-hidden="true">
                 Invitations
               </span>
-              <span className="hidden sm:inline">Pending Invitations</span>
+              <span className="hidden sm:inline">Pending invitations</span>
               <Badge
                 variant="secondary"
                 className="ml-1 px-1.5 py-0.5 text-xs font-semibold shrink-0"
@@ -937,9 +937,7 @@ function RoleAdmin({
         {roleList.loading ? (
           <LoadingState />
         ) : roles.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No roles yet. Create one below.
-          </p>
+          <p className="text-sm text-muted-foreground">No roles yet.</p>
         ) : (
           <div className="space-y-2">
             {roles.map((r) => {
@@ -1155,7 +1153,7 @@ export default function AdminPage() {
             <span className="sm:hidden" aria-hidden="true">
               Users
             </span>
-            <span className="hidden sm:inline">Users & Invitations</span>
+            <span className="hidden sm:inline">Users & invitations</span>
           </TabsTrigger>
           <TabsTrigger
             value="roles"

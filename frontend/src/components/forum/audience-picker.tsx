@@ -428,7 +428,7 @@ export function AudienceFilter({
                 )}
               </>
             ) : (
-              "To…"
+              "Addressed to…"
             )}
             <ChevronDown className="size-3.5" />
           </Button>

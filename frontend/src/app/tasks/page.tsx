@@ -119,7 +119,7 @@ function Tasks() {
               {activeAndOverdue.length > 0 ? (
                 <div className="space-y-3">
                   <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                    Active &amp; Overdue ({activeAndOverdue.length})
+                    Active and overdue ({activeAndOverdue.length})
                   </h2>
                   {activeAndOverdue.map((task) => (
                     <TaskCard

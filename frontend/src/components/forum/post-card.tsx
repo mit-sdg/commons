@@ -216,7 +216,12 @@ export function PostCard({
       ) : (
         <RenderedMarkdown
           html={node.rendered}
-          className={isRoot ? "[&>h1:first-child]:hidden" : undefined}
+          // The page prints the opening post's first line as its heading, so
+          // the body drops it. Any level, not only h1: an author who edits the
+          // post is free to change the hashes, and did.
+          className={
+            isRoot ? "[&>:is(h1,h2,h3,h4,h5,h6):first-child]:hidden" : undefined
+          }
         />
       )}
 

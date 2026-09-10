@@ -13,7 +13,7 @@ import { SubscribeButton } from "@/components/forum/subscribe-button";
 import { TagEditor } from "@/components/forum/tag-editor";
 import { UnreadBanner } from "@/components/forum/unread-banner";
 import { Link } from "@/components/link";
-import { PageContainer } from "@/components/page";
+import { BackLink, PageContainer } from "@/components/page";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { useHashTargetHighlight } from "@/hooks/use-hash-target-highlight";
@@ -70,7 +70,7 @@ export function ThreadView({
   fromGroup?: string;
 }) {
   const { session, permissions } = useAuth();
-  const { data, error, loading, refetch } = useQuery<ThreadPage>(
+  const { data, error, refused, loading, refetch } = useQuery<ThreadPage>(
     () => loadThreadPage(conversation),
     [conversation],
   );
@@ -95,7 +95,8 @@ export function ThreadView({
   });
 
   if (loading && !data) return <LoadingState label="Loading discussion…" />;
-  if (error) return <ErrorState message={error} onRetry={refetch} />;
+  if (error)
+    return <ErrorState message={error} refused={refused} onRetry={refetch} />;
   if (!data) return null;
 
   const {
@@ -152,18 +153,15 @@ export function ThreadView({
 
   return (
     <PageContainer>
-      <div className="mb-4">
-        <Link
-          href={
-            origin
-              ? `/groups/${encodeURIComponent(origin.list)}?view=discussions`
-              : "/"
-          }
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
-          ← {origin ? origin.title || "Group discussions" : "All discussions"}
-        </Link>
-      </div>
+      <BackLink
+        href={
+          origin
+            ? `/groups/${encodeURIComponent(origin.list)}?view=discussions`
+            : "/"
+        }
+      >
+        {origin ? origin.title || "Group discussions" : "All discussions"}
+      </BackLink>
 
       <header className="mb-6 border-b border-border pb-5">
         <div className="mb-2 flex flex-wrap items-center gap-2">

@@ -7,21 +7,21 @@ import { useAuth } from "@/lib/auth";
 import { loadGradesForMe } from "@/lib/lms";
 export default function GradesPage() {
   const { session } = useAuth();
-  const { data, loading, error, refetch } = useQuery(
+  const { data, loading, error, refused, refetch } = useQuery(
     session ? () => loadGradesForMe() : null,
     [session],
   );
   return (
     <PageContainer>
       <PageHeader
-        eyebrow="Your learning"
+        eyebrow="Course"
         title="Assessments"
         description="The skills demonstrated in your work, with the evidence and feedback behind each assessment."
       />
       {loading ? (
-        <LoadingState label="Loading assessments..." />
+        <LoadingState label="Loading assessments…" />
       ) : error ? (
-        <ErrorState message={error} onRetry={refetch} />
+        <ErrorState message={error} refused={refused} onRetry={refetch} />
       ) : (
         <AssessmentHistory assessments={data?.grades ?? []} />
       )}

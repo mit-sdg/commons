@@ -9,6 +9,14 @@ import { Link } from "@/components/link";
 import { PageContainer, PageHeader } from "@/components/page";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQuery } from "@/hooks/use-query";
@@ -25,6 +33,7 @@ export default function CategoriesPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [creating, setCreating] = useState(false);
+  const [open, setOpen] = useState(false);
 
   // Creation and deletion are the same power: `administer` is what the
   // endpoints behind both controls enforce.
@@ -43,6 +52,7 @@ export default function CategoriesPage() {
       toast.success("Category created");
       setName("");
       setDescription("");
+      setOpen(false);
       refetch();
     }
   }
@@ -59,48 +69,61 @@ export default function CategoriesPage() {
 
   return (
     <PageContainer>
+      {/* Making a category is rare and administering is rarer, so the form
+          waits behind the header's action, the way a new group does, rather
+          than standing above the list every reader came for. */}
       <PageHeader
         eyebrow="Browse"
         title="Categories"
         description="Topics grouped by the spaces they belong to."
+        actions={
+          canAdminister ? (
+            <Dialog
+              open={open}
+              onOpenChange={(next) => !creating && setOpen(next)}
+            >
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-1.5">
+                  <FolderPlus className="size-4" /> New category
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>New category</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cat-name">Name</Label>
+                    <Input
+                      id="cat-name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. Announcements"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cat-desc">Description</Label>
+                    <Input
+                      id="cat-desc"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="What belongs here?"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={create} disabled={creating || !name.trim()}>
+                    {creating ? (
+                      <Loader2 className="size-4 mr-2 animate-spin" />
+                    ) : null}
+                    Create category
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          ) : null
+        }
       />
-
-      {canAdminister ? (
-        <section className="mb-6 rounded-xl border border-border bg-card p-5">
-          <h3 className="mb-4 flex items-center gap-2 font-display text-lg font-semibold">
-            <FolderPlus className="size-5" />
-            New category
-          </h3>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="cat-name">Name</Label>
-              <Input
-                id="cat-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Announcements"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cat-desc">Description</Label>
-              <Input
-                id="cat-desc"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="What belongs here?"
-              />
-            </div>
-          </div>
-          <Button
-            className="mt-4"
-            onClick={create}
-            disabled={creating || !name.trim()}
-          >
-            {creating ? <Loader2 className="size-4 mr-2 animate-spin" /> : null}
-            Create category
-          </Button>
-        </section>
-      ) : null}
 
       {loading && !data ? (
         <LoadingState />
@@ -129,9 +152,11 @@ export default function CategoriesPage() {
                     {category.name}
                   </h2>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {category.description || "No description provided."}
-                </p>
+                {category.description ? (
+                  <p className="text-sm text-muted-foreground">
+                    {category.description}
+                  </p>
+                ) : null}
               </Link>
               {canAdminister ? (
                 <ConfirmAction
@@ -144,7 +169,7 @@ export default function CategoriesPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="absolute right-3 top-3 size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      className="absolute right-3 top-3 size-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:text-destructive"
                       aria-label={`Delete ${category.name}`}
                     >
                       <Trash2 className="size-4" />

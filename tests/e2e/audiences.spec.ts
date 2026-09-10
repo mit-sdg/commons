@@ -61,7 +61,7 @@ test("private Staff preview, explicit recipient filter, and account switching", 
   await expect(
     page.getByRole("link", { name: "A private Staff question", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "To…", exact: true }).click();
+  await page.getByRole("button", { name: "Addressed to…", exact: true }).click();
   await page.getByRole("option", { name: "Staff Course audience", exact: true }).click();
   await expect(
     page.getByRole("link", { name: "A private Staff question", exact: true }),
@@ -74,7 +74,7 @@ test("private Staff preview, explicit recipient filter, and account switching", 
     page.getByText("Only my final audience should see this opening.", { exact: true }),
   ).toHaveCount(0);
   await signIn(page, "priya");
-  await expect(page.getByRole("button", { name: "To…", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Addressed to…", exact: true })).toBeVisible();
   await expect(
     page.getByRole("link", { name: "A private Staff question", exact: true }),
   ).toHaveCount(0);

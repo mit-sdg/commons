@@ -126,14 +126,14 @@ test("people dropdown scrolls and selects by keyboard; group discussion preserve
   await page.getByRole("button", { name: "Post discussion", exact: true }).click();
   await page.waitForURL(/\/t\/.*fromGroup=/);
   const threadUrl = page.url();
-  await page.getByRole("link", { name: "← Course Launch Tasks", exact: true }).click();
+  await page.getByRole("link", { name: "Course Launch Tasks", exact: true }).first().click();
   await expect(page).toHaveURL(`${groupUrl.split("?")[0]}?view=discussions`);
   await page.getByRole("link", { name: "Context navigation check", exact: true }).click();
   await expect(
-    page.getByRole("link", { name: "← Course Launch Tasks", exact: true }),
+    page.getByRole("link", { name: "Course Launch Tasks", exact: true }).first(),
   ).toBeVisible();
   await page.goto(threadUrl.split("?")[0]!);
-  await expect(page.getByRole("link", { name: "← All discussions", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "All discussions", exact: true })).toBeVisible();
 });
 
 test("role editor includes live hosting from the shared registry; global composer stays flexible", async ({
