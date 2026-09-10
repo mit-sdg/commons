@@ -132,18 +132,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       username: string,
       displayName: string,
     ) => {
+      // Match invitation preview when a copied credential has surrounding space.
+      // Only invitation credentials are trimmed, never ordinary sign-in passwords.
+      const credential = temporaryPassword.trim();
       const attempt = clearIdentity();
       unwrap(
         await api.auth["accept-invitation"]({
           invitation,
-          temporaryPassword,
+          temporaryPassword: credential,
           username,
-          password: temporaryPassword,
+          password: credential,
           displayName,
         }),
       );
       if (attempt !== hydration.current) return;
-      unwrap(await api.auth.login({ username, password: temporaryPassword }));
+      unwrap(await api.auth.login({ username, password: credential }));
       if (attempt === hydration.current) await hydrate();
     },
     [hydrate, clearIdentity],
