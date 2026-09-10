@@ -6,6 +6,7 @@ import { renderSVG } from "uqr";
 import { QuestionCard } from "@/components/live/phone-question";
 import { RoundToken } from "@/components/live/round-token";
 import { Button } from "@/components/ui/button";
+import { count } from "@/lib/format";
 
 function Pile({
   name,
@@ -76,7 +77,7 @@ function SortingExample() {
       </div>
       <div className="space-y-2 border-y py-3">
         <span className="text-xs text-muted-foreground">
-          Unsorted · {moved ? 0 : 1}
+          {count(moved ? 0 : 1, "card")} unsorted
         </span>
         {moved ? (
           <Button size="sm" variant="ghost" onClick={() => setMoved(false)}>

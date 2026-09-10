@@ -29,7 +29,7 @@ test("skills refresh without clearing a draft, and graders can open unassessed a
     await page.goto("http://127.0.0.1:3755/staff/assignments/new");
     await page.getByRole("textbox", { name: "Title", exact: true }).fill("Unassessed work");
     const popup = staff.waitForEvent("page");
-    await page.getByRole("link", { name: "Manage skills & rubrics" }).click();
+    await page.getByRole("link", { name: "Manage skills and rubrics" }).click();
     const skills = await popup;
     await skills.getByRole("button", { name: "New skill", exact: true }).click();
     await skills

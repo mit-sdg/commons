@@ -199,15 +199,20 @@ export function initials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+/**
+ * Eight hues at even distance around the wheel, so two categories or two
+ * people that land next to each other are told apart at the size of a dot.
+ * The earlier set held 12° and 32°, which read as one colour beside a name.
+ */
 const ACCENTS = [
-  "oklch(0.62 0.15 32)",
-  "oklch(0.58 0.1 150)",
-  "oklch(0.55 0.11 250)",
-  "oklch(0.6 0.13 330)",
-  "oklch(0.62 0.12 95)",
-  "oklch(0.55 0.09 200)",
-  "oklch(0.58 0.14 12)",
-  "oklch(0.5 0.09 285)",
+  "oklch(0.6 0.15 25)",
+  "oklch(0.63 0.13 65)",
+  "oklch(0.62 0.12 110)",
+  "oklch(0.58 0.1 155)",
+  "oklch(0.56 0.09 200)",
+  "oklch(0.55 0.11 245)",
+  "oklch(0.54 0.11 290)",
+  "oklch(0.6 0.13 335)",
 ];
 
 export function accentFor(seed: string): string {
@@ -228,6 +233,14 @@ export {
   titleFromContent,
 } from "../../../src/presentation/post-text.ts";
 
-export function count(n: number, noun: string, plural?: string): string {
-  return `${n} ${n === 1 ? noun : (plural ?? `${noun}s`)}`;
+/**
+ * The noun alone, agreeing with `n`. For a place that prints the number apart
+ * from its noun, such as a stat tile whose figure stands above its unit.
+ */
+export function noun(n: number, singular: string, plural?: string): string {
+  return n === 1 ? singular : (plural ?? `${singular}s`);
+}
+
+export function count(n: number, singular: string, plural?: string): string {
+  return `${n} ${noun(n, singular, plural)}`;
 }

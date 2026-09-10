@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, GraduationCap, Send } from "lucide-react";
+import { ArrowLeft, ChevronRight, GraduationCap, Send } from "lucide-react";
 import { use, useState } from "react";
 import { toast } from "sonner";
 import { Fact, Facts } from "@/components/facts";
@@ -46,6 +46,7 @@ export default function AssignmentDetailPage({
     data: asgnData,
     loading,
     error,
+    refused,
     refetch,
   } = useQuery(session ? () => loadAssignmentDetail(assignment) : null, [
     session,
@@ -171,13 +172,13 @@ export default function AssignmentDetailPage({
   if (loading)
     return (
       <PageContainer>
-        <LoadingState label="Loading assignment..." />
+        <LoadingState label="Loading assignment…" />
       </PageContainer>
     );
   if (error)
     return (
       <PageContainer>
-        <ErrorState message={error} onRetry={refetch} />
+        <ErrorState message={error} refused={refused} onRetry={refetch} />
       </PageContainer>
     );
   if (!detail)
@@ -254,7 +255,7 @@ export default function AssignmentDetailPage({
                 <Textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  placeholder="Write your submission..."
+                  placeholder="Write your submission…"
                   rows={8}
                   disabled={submitting}
                 />
@@ -265,7 +266,7 @@ export default function AssignmentDetailPage({
                     className="gap-1.5"
                   >
                     <Send className="size-4" />
-                    {submitting ? "Submitting..." : "Submit"}
+                    {submitting ? "Submitting…" : "Submit"}
                   </Button>
                   {latest && (
                     <Fact.When
@@ -295,8 +296,11 @@ export default function AssignmentDetailPage({
                         attempt.status === "WITHDRAWN" && "opacity-60",
                       )}
                     >
-                      <summary className="flex cursor-pointer items-center justify-between gap-3">
-                        <span>
+                      {/* Its own chevron, because `justify-between` would
+                          otherwise push the label to the middle of the row. */}
+                      <summary className="group flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+                        <span className="inline-flex items-center gap-1.5">
+                          <ChevronRight className="size-3.5 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
                           <span className="font-medium">
                             Attempt #{attempt.number}
                           </span>

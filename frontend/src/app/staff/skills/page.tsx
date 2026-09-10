@@ -6,7 +6,11 @@ export default function SkillsPage() {
   return (
     <RequireCapability capability="grade">
       <PageContainer>
-        <PageHeader title="Skills & rubrics" />
+        <PageHeader
+          eyebrow="Staff"
+          title="Skills and rubrics"
+          description="The skills this course assesses, and the rubric edition each one is judged by."
+        />
         <StandardManager />
       </PageContainer>
     </RequireCapability>

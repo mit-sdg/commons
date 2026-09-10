@@ -218,7 +218,7 @@ export function AssignmentForm({
           onChange={(e) => setInstructions(e.target.value)}
           rows={10}
           className="min-h-56"
-          placeholder="Assignment instructions (Markdown supported)..."
+          placeholder="Assignment instructions (Markdown supported)…"
           disabled={loading}
         />
       </div>

@@ -64,6 +64,11 @@ export function SiteHeader() {
   const { me, loading, permissions, logout, session } = useAuth();
   const course = useCourse();
   const pathname = usePathname();
+  // The shortcut is for pages that have no way to start a discussion of their
+  // own. The discussion list carries the same button beside its filters, and
+  // the composer is already the thing, so on those two the header stands down
+  // rather than showing a second identical button.
+  const offersItsOwnComposer = pathname === "/" || pathname.startsWith("/new");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [resolvedLmsAccess, setResolvedLmsAccess] = useState({
     user: null as string | null,
@@ -157,7 +162,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5">
-          {me ? (
+          {me && !offersItsOwnComposer ? (
             <Button asChild size="sm" className="hidden gap-1.5 sm:inline-flex">
               {/* The label yields to the row's own width, so a large text
                   size or a narrow window keeps the pen and drops the words. */}

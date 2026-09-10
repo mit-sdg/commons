@@ -43,6 +43,12 @@ export function TopicRow({
 
   const title = summary.post?.preview?.title ?? "Opening post unavailable";
   const preview = summary.post?.preview?.excerpt ?? "";
+  // A line on a row says what the reader cannot see. Course-wide is what a
+  // discussion is unless it says otherwise, so only a narrower audience is
+  // news; printing it on every row buried the two rows that were private.
+  const narrowed = !summary.audience.some(
+    (holder) => holder.holder === "standing:everyone",
+  );
 
   return (
     <article
@@ -82,12 +88,14 @@ export function TopicRow({
             ) : null}
           </div>
 
-          <div className="mt-2">
-            <AudienceChips
-              holders={summary.audience.map((holder) => holder.holder)}
-              options={summary.audience}
-            />
-          </div>
+          {narrowed ? (
+            <div className="mt-2">
+              <AudienceChips
+                holders={summary.audience.map((holder) => holder.holder)}
+                options={summary.audience}
+              />
+            </div>
+          ) : null}
           {preview ? (
             <p className="mt-2 line-clamp-2 border-l border-primary/30 pl-3 text-[0.925rem] leading-6 text-foreground/70">
               {preview}

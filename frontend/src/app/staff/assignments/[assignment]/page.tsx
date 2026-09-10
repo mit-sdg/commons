@@ -1,12 +1,11 @@
 "use client";
 
-import { Archive, ArrowLeft, Eye, Send } from "lucide-react";
+import { Archive, Eye, Send } from "lucide-react";
 import { use, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Fact, Facts } from "@/components/facts";
 import { RenderedMarkdown } from "@/components/forum/rendered-markdown";
-import { Link } from "@/components/link";
 import { AssignmentForm } from "@/components/lms/assignment-form";
 import {
   AssignmentDates,
@@ -16,7 +15,7 @@ import {
 import { GradeInput } from "@/components/lms/grade-input";
 import { GradeSetup } from "@/components/lms/grade-setup";
 import { StatusBadge } from "@/components/lms/status-badge";
-import { PageContainer } from "@/components/page";
+import { BackLink, PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { ErrorState, LoadingState } from "@/components/states";
 import { TaskMarkdown } from "@/components/tasks/task-markdown";
@@ -300,7 +299,7 @@ function StaffAssignmentDetailPageContent({
   if (loading)
     return (
       <PageContainer>
-        <LoadingState label="Loading assignment..." />
+        <LoadingState label="Loading assignment…" />
       </PageContainer>
     );
   if (error)
@@ -341,15 +340,9 @@ function StaffAssignmentDetailPageContent({
 
   return (
     <PageContainer>
-      <div className="mb-4">
-        <Link
-          href={canManage ? "/staff/assignments" : "/staff/gradebook"}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" />{" "}
-          {canManage ? "Back to assignments" : "Back to assessment book"}
-        </Link>
-      </div>
+      <BackLink href={canManage ? "/staff/assignments" : "/staff/gradebook"}>
+        {canManage ? "Back to assignments" : "Back to assessment book"}
+      </BackLink>
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -445,7 +438,7 @@ function StaffAssignmentDetailPageContent({
             )}
           </section>
           <section className="space-y-3 border-t pt-6">
-            <h2 className="font-medium">Schedule & recipients</h2>
+            <h2 className="font-medium">Schedule and recipients</h2>
             <dl className="grid gap-4 text-sm sm:grid-cols-2">
               <div>
                 <dt className="text-muted-foreground">Available from</dt>
@@ -465,7 +458,7 @@ function StaffAssignmentDetailPageContent({
                 <dt className="text-muted-foreground">Assigned to</dt>
                 <dd>
                   {detail.audience === "EVERYONE"
-                    ? "All students"
+                    ? "all students"
                     : `${detail.targets.length} selected sections`}
                 </dd>
               </div>

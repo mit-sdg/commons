@@ -7,6 +7,7 @@ import { PageContainer, PageHeader } from "@/components/page";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@/hooks/use-query";
+import { assignmentTypeLabel } from "@/lib/assignment-types";
 import { useAuth } from "@/lib/auth";
 import { loadCalendarMe, loadRosterMe } from "@/lib/lms";
 
@@ -40,6 +41,7 @@ export default function CalendarPage() {
     data: calendarData,
     loading,
     error,
+    refused,
     refetch,
   } = useQuery<{
     events: {
@@ -66,14 +68,14 @@ export default function CalendarPage() {
           date: event.availableAt,
           label: `Available: ${event.title}`,
           kind: "available",
-          detail: event.kind,
+          detail: assignmentTypeLabel(event.kind),
           href: `/assignments/${event.assignment}`,
         },
         {
           date: dueAt,
           label: `Due: ${event.title}`,
           kind: "due",
-          detail: event.kind,
+          detail: assignmentTypeLabel(event.kind),
           note: event.dueOverride ? "individual due date" : undefined,
           href: `/assignments/${event.assignment}`,
         },
@@ -82,7 +84,7 @@ export default function CalendarPage() {
               date: event.closeAt,
               label: `Closes: ${event.title}`,
               kind: "close",
-              detail: event.kind,
+              detail: assignmentTypeLabel(event.kind),
               href: `/assignments/${event.assignment}`,
             }
           : null,
@@ -102,7 +104,7 @@ export default function CalendarPage() {
   return (
     <PageContainer>
       <PageHeader
-        eyebrow="Commons"
+        eyebrow="Course"
         title="Calendar"
         description="Assignment availability, due dates, and close dates."
       />
@@ -135,9 +137,9 @@ export default function CalendarPage() {
       </div>
 
       {loading ? (
-        <LoadingState label="Loading calendar..." />
+        <LoadingState label="Loading calendar…" />
       ) : error ? (
-        <ErrorState message={error} onRetry={refetch} />
+        <ErrorState message={error} refused={refused} onRetry={refetch} />
       ) : (
         <div className="rounded-xl border border-border bg-card">
           <CalendarView events={events} />

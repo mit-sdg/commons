@@ -1,11 +1,12 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Fact, Facts } from "@/components/facts";
 import { StatusBadge } from "@/components/lms/status-badge";
+import { EmptyState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Output } from "@/lib/api";
@@ -215,7 +216,7 @@ export function AssessmentCard({
           {criteria.map((c) => (
             <div key={c.criterion} className="mt-3 space-y-2">
               <p>
-                Rubric used{skill ? "" : `: ${c.name}`} · Edition {c.number}
+                Rubric used{skill ? "" : `: ${c.name}`}, edition {c.number}
               </p>
               <RubricDescription rubric={c} showEdition={false} />
             </div>
@@ -371,9 +372,11 @@ export function AssessmentHistory({
         </div>
       )}
       {sorted.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">
-          No assessments yet. Released feedback will appear here.
-        </p>
+        <EmptyState
+          icon={GraduationCap}
+          title="No assessments yet"
+          description="Released feedback on your work appears here."
+        />
       ) : view === "assignment" || !toggle ? (
         <div className="space-y-4">
           {sorted.map((a) => (

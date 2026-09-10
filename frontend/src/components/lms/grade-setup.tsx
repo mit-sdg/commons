@@ -77,7 +77,7 @@ export function StandardManager({ onChanged }: { onChanged?: () => void }) {
         />
       )}
       {query.loading && !query.data ? (
-        <LoadingState label="Loading rubrics..." />
+        <LoadingState label="Loading rubrics…" />
       ) : query.data?.standards.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           Add a skill, optionally link to its rubric, then select it on an
@@ -280,7 +280,7 @@ export function CreationSkills({
           target="_blank"
           className="text-xs text-muted-foreground underline"
         >
-          Manage skills & rubrics
+          Manage skills and rubrics
         </Link>
       </div>
       {query.error ? (
@@ -467,7 +467,7 @@ export function GradeSetup({
                   <p className="text-xs text-muted-foreground">
                     A newer rubric is available in{" "}
                     <Link className="underline" href="/staff/skills">
-                      Skills & rubrics
+                      Skills and rubrics
                     </Link>
                     .
                     {editing
@@ -540,7 +540,7 @@ export function GradeSetup({
                 className="text-xs text-muted-foreground underline"
                 href="/staff/skills"
               >
-                Manage skills & rubrics
+                Manage skills and rubrics
               </Link>
             </div>
           )}

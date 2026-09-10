@@ -1,22 +1,22 @@
 "use client";
 
 import {
-  AlertTriangle,
   BookOpen,
   Clock,
   FileText,
   Radio,
   Settings,
   Users,
+  Zap,
 } from "lucide-react";
 import { Link } from "@/components/link";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { ErrorState, LoadingState } from "@/components/states";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@/hooks/use-query";
 import { useAuth } from "@/lib/auth";
+import { noun } from "@/lib/format";
 import { loadStaffDashboard } from "@/lib/lms";
 
 function StaffDashboardPageContent() {
@@ -32,7 +32,7 @@ function StaffDashboardPageContent() {
   if (loading)
     return (
       <PageContainer>
-        <LoadingState label="Loading staff dashboard..." />
+        <LoadingState label="Loading staff dashboard…" />
       </PageContainer>
     );
   if (error)
@@ -94,7 +94,9 @@ function StaffDashboardPageContent() {
             <p className="text-xs text-muted-foreground">Assessments</p>
           </div>
           <p className="text-3xl font-semibold">{counts.gradeItems}</p>
-          <p className="text-xs text-muted-foreground mt-1">items</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {noun(counts.gradeItems, "item")}
+          </p>
         </Link>
 
         <Link
@@ -103,10 +105,12 @@ function StaffDashboardPageContent() {
         >
           <div className="flex items-center gap-2 mb-1">
             <Clock className="size-4 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">Late Days</p>
+            <p className="text-xs text-muted-foreground">Late days</p>
           </div>
           <p className="text-3xl font-semibold">{counts.lateDayUses}</p>
-          <p className="text-xs text-muted-foreground mt-1">active uses</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            active {noun(counts.lateDayUses, "use")}
+          </p>
         </Link>
       </div>
 
@@ -118,31 +122,31 @@ function StaffDashboardPageContent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span>Students</span>
-                <Badge variant="secondary">{students.length}</Badge>
+            {/* Counts, not statuses: a figure in tabular numerals rather than
+                a badge, so the only filled thing on a page stays a state. */}
+            <dl className="space-y-2 text-sm">
+              {[
+                ["Students", students.length],
+                ["Staff", staff.length],
+                ["Auditors", auditors.length],
+              ].map(([label, n]) => (
+                <div className="flex justify-between" key={label}>
+                  <dt>{label}</dt>
+                  <dd className="tabular-nums text-muted-foreground">{n}</dd>
+                </div>
+              ))}
+              <div className="flex justify-between border-t border-border pt-2 font-medium">
+                <dt>Total active</dt>
+                <dd className="tabular-nums">{members.length}</dd>
               </div>
-              <div className="flex justify-between">
-                <span>Staff</span>
-                <Badge variant="secondary">{staff.length}</Badge>
-              </div>
-              <div className="flex justify-between">
-                <span>Auditors</span>
-                <Badge variant="secondary">{auditors.length}</Badge>
-              </div>
-              <div className="flex justify-between">
-                <span>Total active</span>
-                <Badge>{members.length}</Badge>
-              </div>
-            </div>
+            </dl>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <AlertTriangle className="size-4" /> Quick actions
+              <Zap className="size-4" /> Quick actions
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -150,13 +154,13 @@ function StaffDashboardPageContent() {
               href="/staff/assignments"
               className="flex items-center gap-2 text-sm hover:text-primary"
             >
-              <BookOpen className="size-4" /> Create / manage assignments
+              <BookOpen className="size-4" /> Manage assignments
             </Link>
             <Link
               href="/staff/roster"
               className="flex items-center gap-2 text-sm hover:text-primary"
             >
-              <Users className="size-4" /> Manage roster & sections
+              <Users className="size-4" /> Manage the roster and sections
             </Link>
             <Link
               href="/staff/gradebook"
@@ -174,15 +178,14 @@ function StaffDashboardPageContent() {
               href="/staff/class"
               className="flex items-center gap-2 text-sm hover:text-primary"
             >
-              <Settings className="size-4" /> Class settings
+              <Settings className="size-4" /> Open class settings
             </Link>
             {permissions.can("live:host") ? (
               <Link
                 href="/staff/live"
                 className="flex items-center gap-2 text-sm hover:text-primary"
               >
-                <Radio className="size-4" /> Run quizzes, surveys &amp; relays
-                in the room
+                <Radio className="size-4" /> Run quizzes, surveys, and relays
               </Link>
             ) : null}
           </CardContent>

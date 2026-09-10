@@ -510,7 +510,7 @@ export function TaskCard({
               value={editDetails}
               disabled={busy}
               rows={3}
-              placeholder="Add details in Markdown..."
+              placeholder="Add details in Markdown…"
               onChange={(event) => setEditDetails(event.target.value)}
             />
           </div>

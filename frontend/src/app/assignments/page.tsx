@@ -38,6 +38,7 @@ export default function AssignmentsPage() {
     data: asgnData,
     loading,
     error,
+    refused,
     refetch,
   } = useQuery(session && rosterData?.seat ? () => loadAssignments() : null, [
     session,
@@ -166,20 +167,20 @@ export default function AssignmentsPage() {
   if (loading)
     return (
       <PageContainer>
-        <LoadingState label="Loading assignments..." />
+        <LoadingState label="Loading assignments…" />
       </PageContainer>
     );
   if (error)
     return (
       <PageContainer>
-        <ErrorState message={error} onRetry={refetch} />
+        <ErrorState message={error} refused={refused} onRetry={refetch} />
       </PageContainer>
     );
 
   return (
     <PageContainer>
       <PageHeader
-        eyebrow="Commons"
+        eyebrow="Course"
         title="Assignments"
         description="Your current assignments, submissions, and grades."
       />
@@ -200,7 +201,7 @@ export default function AssignmentsPage() {
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search..."
+              placeholder="Search…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-8 w-48"

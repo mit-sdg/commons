@@ -111,7 +111,7 @@ export function CsvImport({ onComplete }: CsvImportProps) {
           onClick={preview}
           disabled={loading || !csv.trim()}
         >
-          {loading ? "Parsing..." : "Preview"}
+          {loading ? "Parsing…" : "Preview"}
         </Button>
       </div>
 
@@ -138,7 +138,7 @@ export function CsvImport({ onComplete }: CsvImportProps) {
             >
               <Upload className="size-4 mr-1" />
               {importing
-                ? "Importing..."
+                ? "Importing…"
                 : `Import ${rows.length} ${rows.length === 1 ? "seat" : "seats"}`}
             </Button>
           </div>

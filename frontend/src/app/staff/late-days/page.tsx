@@ -314,9 +314,9 @@ function LateDaysAdminPageContent() {
   );
 
   return (
-    <PageContainer width="wide">
+    <PageContainer>
       <PageHeader
-        eyebrow="Course staff"
+        eyebrow="Staff"
         title="Late days"
         description="Configure the policy, review active uses, and adjust learner balances."
       />
@@ -405,28 +405,33 @@ function LateDaysAdminPageContent() {
                         </p>
                       </div>
                       <div className="flex flex-wrap items-center gap-3">
+                        {/* Granted, used, remaining: the order the three
+                            figures make an arithmetic in, and the order the
+                            student page prints them in. */}
                         {balance ? (
                           <dl className="flex gap-3 text-sm">
                             <div>
                               <dt className="text-xs text-muted-foreground">
-                                Remaining
+                                Granted
                               </dt>
-                              <dd className="font-semibold">
-                                {balance.remaining}
+                              <dd className="font-semibold tabular-nums">
+                                {balance.granted}
                               </dd>
                             </div>
                             <div>
                               <dt className="text-xs text-muted-foreground">
                                 Used
                               </dt>
-                              <dd className="font-semibold">{balance.used}</dd>
+                              <dd className="font-semibold tabular-nums">
+                                {balance.used}
+                              </dd>
                             </div>
                             <div>
                               <dt className="text-xs text-muted-foreground">
-                                Granted
+                                Remaining
                               </dt>
-                              <dd className="font-semibold">
-                                {balance.granted}
+                              <dd className="font-semibold tabular-nums">
+                                {balance.remaining}
                               </dd>
                             </div>
                           </dl>

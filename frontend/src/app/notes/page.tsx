@@ -25,6 +25,7 @@ export default function NotesPage() {
     data: notesData,
     loading,
     error,
+    refused,
     refetch,
   } = useQuery(session && rosterData?.seat ? () => loadVisibleNotes() : null, [
     session,
@@ -34,7 +35,7 @@ export default function NotesPage() {
   if (!session)
     return (
       <PageContainer>
-        <PageHeader eyebrow="Commons" title="Notes" />
+        <PageHeader eyebrow="Course" title="Notes" />
         <EmptyState
           icon={StickyNote}
           title="Sign in required"
@@ -46,13 +47,13 @@ export default function NotesPage() {
   if (loading)
     return (
       <PageContainer>
-        <LoadingState label="Loading notes..." />
+        <LoadingState label="Loading notes…" />
       </PageContainer>
     );
   if (error)
     return (
       <PageContainer>
-        <ErrorState message={error} onRetry={refetch} />
+        <ErrorState message={error} refused={refused} onRetry={refetch} />
       </PageContainer>
     );
 
@@ -74,7 +75,7 @@ export default function NotesPage() {
   return (
     <PageContainer>
       <PageHeader
-        eyebrow="Commons"
+        eyebrow="Course"
         title="Notes"
         description="Notes from your instructors that are visible to you."
       />

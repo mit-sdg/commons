@@ -150,7 +150,9 @@ function Groups() {
   return (
     <PageContainer>
       <PageHeader
+        eyebrow="Your work"
         title="Groups"
+        description="The people you share task lists with."
         actions={
           me ? (
             <NewGroupDialog

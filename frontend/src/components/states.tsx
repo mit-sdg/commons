@@ -1,4 +1,4 @@
-import { AlertTriangle, Inbox, Loader2 } from "lucide-react";
+import { AlertTriangle, Inbox, Loader2, Lock, SearchX } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Spinner({ className }: { className?: string }) {
@@ -52,13 +52,39 @@ export function EmptyState({
   );
 }
 
+/**
+ * A refusal is not a fault. A reader who asks for a page that is not theirs
+ * has met a boundary the deployment meant to hold, so it is reported the way
+ * an empty shelf is, without the alarm colour or an offer to try again.
+ */
+const boundaries: Record<
+  string,
+  { title: string; icon: React.ComponentType<{ className?: string }> }
+> = {
+  FORBIDDEN: { title: "Not yours to open", icon: Lock },
+  UNAUTHORIZED: { title: "Not yours to open", icon: Lock },
+  NOT_FOUND: { title: "Nothing here", icon: SearchX },
+};
+
 export function ErrorState({
   message,
+  refused,
   onRetry,
 }: {
   message: string;
+  refused?: string | null;
   onRetry?: () => void;
 }) {
+  const boundary = refused ? boundaries[refused] : undefined;
+  if (boundary) {
+    return (
+      <EmptyState
+        icon={boundary.icon}
+        title={boundary.title}
+        description={message}
+      />
+    );
+  }
   return (
     <div
       role="alert"

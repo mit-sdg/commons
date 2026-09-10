@@ -1,3 +1,6 @@
+import { ArrowLeft } from "lucide-react";
+import type { ComponentProps, ReactNode } from "react";
+import { Link } from "@/components/link";
 import { cn } from "@/lib/utils";
 
 export function PageContainer({
@@ -54,8 +57,39 @@ export function PageHeader({
         ) : null}
       </div>
       {actions ? (
-        <div className="flex items-center gap-2">{actions}</div>
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          {actions}
+        </div>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * The way back out of a detail page. One arrow, one weight, one gap: before
+ * this, four pages drew their own and one wrote the arrow as a character.
+ */
+export function BackLink({
+  href,
+  children,
+  className,
+  ...props
+}: {
+  href: ComponentProps<typeof Link>["href"];
+  children: ReactNode;
+  className?: string;
+} & Omit<ComponentProps<typeof Link>, "href" | "children" | "className">) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground",
+        className,
+      )}
+      {...props}
+    >
+      <ArrowLeft className="size-4" />
+      {children}
+    </Link>
   );
 }

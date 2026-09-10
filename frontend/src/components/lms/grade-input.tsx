@@ -68,7 +68,7 @@ export function GradeInput({
     }
   }
   if (query.loading && !query.data)
-    return <LoadingState label="Loading assessment..." />;
+    return <LoadingState label="Loading assessment…" />;
   if (query.error)
     return <ErrorState message={query.error} onRetry={query.refetch} />;
   return (

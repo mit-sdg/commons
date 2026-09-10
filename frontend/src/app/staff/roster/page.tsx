@@ -153,12 +153,12 @@ function SectionManager({
           </div>
         </div>
         <Button size="sm" onClick={create} disabled={loading || !name.trim()}>
-          <Plus className="size-4 mr-1" /> Create Section
+          <Plus className="size-4 mr-1" /> Create section
         </Button>
 
         {activeSections.length > 0 && (
           <div className="mt-3 space-y-2">
-            <p className="text-sm text-muted-foreground">Active sections:</p>
+            <p className="text-sm text-muted-foreground">Active sections</p>
             {activeSections.map((section) =>
               editing === section.section ? (
                 <div
@@ -555,10 +555,9 @@ function RosterPageContent() {
       />
 
       <Tabs value={tab} onValueChange={setTab}>
-        <p className="mb-2 text-xs text-muted-foreground sm:hidden">
-          Scroll tabs sideways for more roster views →
-        </p>
-        <div className="overflow-x-auto pb-1">
+        {/* A narrow screen cannot hold every tab, so the strip fades at the
+            edge it continues past rather than saying so in a sentence. */}
+        <div className="overflow-x-auto pb-1 [mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] sm:[mask-image:none]">
           <TabsList className="w-max min-w-full">
             <TabsTrigger value="sections">Sections</TabsTrigger>
             <TabsTrigger value="active">
@@ -583,7 +582,7 @@ function RosterPageContent() {
 
         <TabsContent value="active" className="mt-6">
           {loading ? (
-            <LoadingState label="Loading roster..." />
+            <LoadingState label="Loading roster…" />
           ) : error ? (
             <ErrorState message={error} onRetry={refetch} />
           ) : activeMembers.length === 0 ? (

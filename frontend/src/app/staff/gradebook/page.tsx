@@ -1,11 +1,11 @@
 "use client";
-import { ArrowLeft, ArrowUpRight, ChevronRight, Search } from "lucide-react";
+import { ArrowUpRight, ChevronRight, Search } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Fact, Facts } from "@/components/facts";
 import { AssessmentHistory } from "@/components/lms/assessment-history";
-import { PageContainer, PageHeader } from "@/components/page";
+import { BackLink, PageContainer, PageHeader } from "@/components/page";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@/hooks/use-query";
@@ -17,7 +17,7 @@ export default function GradebookPage() {
     <Suspense
       fallback={
         <PageContainer>
-          <LoadingState label="Loading assessments..." />
+          <LoadingState label="Loading assessments…" />
         </PageContainer>
       }
     >
@@ -46,18 +46,18 @@ function GradebookContent() {
   return (
     <PageContainer>
       {selected && (
-        <Link
-          href={listHref}
-          onClick={() => setDraftSearch(null)}
-          className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" />
+        <BackLink href={listHref} onClick={() => setDraftSearch(null)}>
           Back to learners
-        </Link>
+        </BackLink>
       )}
       <PageHeader
-        eyebrow={selected ? "Assessments" : "Course"}
+        eyebrow="Staff"
         title={learner ? (learner.displayName ?? learner.email) : "Assessments"}
+        description={
+          learner
+            ? undefined
+            : "The skills each learner has demonstrated, and the work behind them."
+        }
       />
       {permissions.can("grade") && query.data && !query.error && (
         <details className="mb-5 text-sm">
@@ -85,7 +85,7 @@ function GradebookContent() {
         </details>
       )}
       {query.loading ? (
-        <LoadingState label="Loading assessments..." />
+        <LoadingState label="Loading assessments…" />
       ) : query.error ? (
         <ErrorState message={query.error} onRetry={query.refetch} />
       ) : selected ? (

@@ -208,7 +208,7 @@ test("assessment details retain the fixed rubric reference and edition without d
     />,
   );
   expect(html).toContain('href="https://example.edu/rubrics/edition-2"');
-  expect(html).toContain("Edition 2");
+  expect(html).toContain("edition 2");
   expect(html).toContain('rel="noopener noreferrer"');
   expect(html.match(/<details/g)?.length).toBe(1);
   expect(html).not.toContain('open=""');

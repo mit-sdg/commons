@@ -16,7 +16,7 @@ import { LiveRow, RoomCode } from "@/components/live/relay-row";
 import { Figure, RoundStrip } from "@/components/live/round-token";
 import { launchRefusal, NO_ROUNDS, standingOf } from "@/components/live/rounds";
 import { RunLaunchButton } from "@/components/live/run-launch-button";
-import { PageContainer } from "@/components/page";
+import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -182,45 +182,47 @@ function LiveListContent() {
 
   return (
     <PageContainer width="wide">
-      <header className="mb-5 flex items-end justify-between gap-6">
-        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-          Live
-        </h1>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/staff/live/background">
-              <BookOpen /> Documents
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/staff/live/draft">
-              <Sparkles /> Draft with AI
-            </Link>
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="bg-foreground text-background hover:bg-foreground/90">
-                New <ChevronDown />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {KINDS.map((entry) => (
-                <DropdownMenuItem key={entry.kind} asChild>
-                  <Link
-                    href={`/staff/live/new?kind=${entry.kind}`}
-                    className="flex flex-col items-start gap-0.5"
-                  >
-                    {entry.label}
-                    <span className="text-muted-foreground text-xs">
-                      {KIND_PHRASES[entry.kind]}
-                    </span>
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow="Staff"
+        title="Live"
+        description="Quizzes, surveys, and relays the room answers together."
+        actions={
+          <>
+            <Button variant="outline" asChild>
+              <Link href="/staff/live/background">
+                <BookOpen /> Documents
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/staff/live/draft">
+                <Sparkles /> Draft with AI
+              </Link>
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button>
+                  New <ChevronDown />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {KINDS.map((entry) => (
+                  <DropdownMenuItem key={entry.kind} asChild>
+                    <Link
+                      href={`/staff/live/new?kind=${entry.kind}`}
+                      className="flex flex-col items-start gap-0.5"
+                    >
+                      {entry.label}
+                      <span className="text-muted-foreground text-xs">
+                        {KIND_PHRASES[entry.kind]}
+                      </span>
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        }
+      />
 
       {loading ? (
         <LoadingState />
@@ -230,6 +232,7 @@ function LiveListContent() {
         <EmptyState
           icon={Radio}
           title="Nothing yet"
+          description="A quiz asks one question at a time, a survey collects answers, and a relay carries one round into the next."
           action={
             <div className="flex flex-wrap items-center justify-center gap-2">
               {KINDS.map((entry) => (

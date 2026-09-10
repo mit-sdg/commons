@@ -9,7 +9,7 @@ import { RequireCapability } from "@/components/require-capability";
 export default function BackgroundPage() {
   return (
     <RequireCapability capability="live:host">
-      <PageContainer>
+      <PageContainer width="wide">
         <PageHeader
           eyebrow={
             <Link
