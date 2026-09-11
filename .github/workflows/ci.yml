@@ -85,7 +85,7 @@ jobs:
   mobile-browsers:
     name: Browser tests (${{ matrix.browser }})
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -117,13 +117,13 @@ jobs:
         run: bunx --no-install playwright install --with-deps ${{ matrix.browser }}
 
       - name: Run browser tests
-        run: bun run e2e tests/e2e/mobile-navigation.spec.ts tests/e2e/mobile-overlays.spec.ts tests/e2e/post-deletion.spec.ts tests/e2e/invitation-prefill.spec.ts --project=${{ matrix.project }}
+        run: bun run e2e --project=${{ matrix.project }}
 
       - name: Upload screenshots and failure traces
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: mobile-browser-${{ matrix.browser }}
+          name: browser-tests-${{ matrix.browser }}
           path: test-results/
           retention-days: 7
           if-no-files-found: ignore
