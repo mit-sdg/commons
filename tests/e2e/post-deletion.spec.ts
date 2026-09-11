@@ -51,6 +51,7 @@ test("deleting a private topic with replies explains the refusal without losing 
   await page.goto(`/t/${root.conversation}`);
   await expect(page.getByRole("heading", { name: "Private deletion regression" })).toBeVisible();
   await page.locator(`#post-${root.post}`).getByRole("button", { name: "Post actions" }).click();
+  await expect(page.getByRole("menuitem", { name: /trash/i })).toHaveCount(0);
   const refused = page.waitForResponse((response) => response.url().endsWith("/api/posts/delete"));
   await page.getByRole("menuitem", { name: "Delete", exact: true }).click();
   const refusal = await refused;
@@ -78,4 +79,20 @@ test("deleting a private topic with replies explains the refusal without losing 
   await expect(page.locator(`#post-${reply.post}`)).toContainText(
     "Keep this other person's reply.",
   );
+
+  const emptyResponse = await page.request.post("/api/threads/create", {
+    headers: authorHeaders,
+    data: { content: "# Empty deletion regression", holders: [`account:${author.user}`] },
+  });
+  expect(emptyResponse.ok()).toBe(true);
+  const empty = await emptyResponse.json();
+  await page.goto(`/t/${empty.conversation}`);
+  await expect(
+    page.getByRole("heading", { name: "Empty deletion regression", exact: true }),
+  ).toBeVisible();
+  await page.locator(`#post-${empty.post}`).getByRole("button", { name: "Post actions" }).click();
+  await page.getByRole("menuitem", { name: "Delete", exact: true }).click();
+  await page.waitForURL("**/");
+  await expect(page.getByText("Thread deleted", { exact: true })).toBeVisible();
+  await expect(page.getByText("Opening post unavailable", { exact: true })).toHaveCount(0);
 });

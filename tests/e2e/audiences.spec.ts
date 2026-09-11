@@ -86,10 +86,10 @@ test("private Staff preview, explicit recipient filter, and account switching", 
   await expect(page.getByRole("heading", { name: "A private Staff question" })).toHaveCount(0);
 });
 
-test("opening trash, restore and purge preserve nested replies, feed and following", async ({
+test("reply trash leaves a removed position; thread trash, restore and purge act on the whole discussion", async ({
   browser,
 }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(150_000);
   const accounts = await Promise.all(
     ["mara", "noah", "priya"].map(async (username) => {
       const context = await browser.newContext({ baseURL: "http://127.0.0.1:3755" });
@@ -164,46 +164,109 @@ test("opening trash, restore and purge preserve nested replies, feed and followi
     await expect(nestedSubmit).toBeEnabled();
     await expect(nestedDraft).toHaveValue("Keep this nested reply after refusal");
     await noah.page.unroute("**/api/threads/reply");
-    await mara.call("/trash/trash", { item: root.post });
-    await mara.call("/trash/trash", { item: middle.post });
-    for (const purged of [false, true]) {
-      if (purged) {
-        await mara.call("/trash/restore", { item: root.post });
-        await noah.page.goto(url);
-        await noah.page.reload();
-        await expect(
-          noah.page.getByRole("heading", { name: "Survivor discussion", exact: true }),
-        ).toBeVisible();
-        await mara.call("/trash/trash", { item: root.post });
-        await mara.call("/trash/purge", { item: root.post });
-        await mara.call("/trash/purge", { item: middle.post });
-      }
-      await noah.page.goto(url);
-      await noah.page.reload();
-      await expect(
-        noah.page.getByRole("heading", { name: "Opening post unavailable", exact: true }),
-      ).toBeVisible();
-      await expect(noah.page.getByText("SECRET opening text", { exact: true })).toHaveCount(0);
-      await expect(noah.page.getByText("SECRET intermediate text", { exact: true })).toHaveCount(0);
-      await expect(noah.page.locator(`#post-${middle.post}`)).toHaveText("Post unavailable");
-      const middleBranch = noah.page.locator(`#post-${middle.post}`).locator("../..");
-      await expect(
-        middleBranch.getByText("A surviving nested reply", { exact: true }),
-      ).toBeVisible();
-      for (const path of ["/", "/subscriptions"]) {
-        await noah.page.goto(path);
-        await expect(noah.page.locator(`a[href="/t/${root.conversation}"]`)).toHaveText(
-          "Opening post unavailable",
-        );
-      }
-      await priya.page.goto(url);
-      await expect(
-        priya.page.getByText("That item is not available.", { exact: true }),
-      ).toBeVisible();
-      await expect(priya.page.getByText("A surviving nested reply", { exact: true })).toHaveCount(
-        0,
-      );
+
+    // A moderator removes the middle reply from its own menu; the nested reply stays in place.
+    await mara.page.goto(`/t/${root.conversation}`);
+    await mara.page
+      .locator(`#post-${middle.post}`)
+      .getByRole("button", { name: "Post actions" })
+      .click();
+    await mara.page.getByRole("menuitem", { name: "Move to trash", exact: true }).click();
+    const replyConfirmation = mara.page.getByRole("dialog", { name: "Move this reply to trash?" });
+    await expect(replyConfirmation).toContainText("Replies to it stay visible");
+    await expect(replyConfirmation.getByRole("checkbox")).not.toBeChecked();
+    await replyConfirmation.getByRole("button", { name: "Move to trash", exact: true }).click();
+    await expect(mara.page.getByText("Reply moved to trash", { exact: true })).toBeVisible();
+    await expect(mara.page.locator(`#post-${middle.post}`)).toContainText(
+      "This reply was removed by a moderator.",
+    );
+    await expect(
+      mara.page.locator(`#post-${middle.post}`).getByRole("button", { name: "Restore" }),
+    ).toBeVisible();
+    await noah.page.goto(url);
+    await noah.page.reload();
+    await expect(noah.page.getByText("SECRET intermediate text", { exact: true })).toHaveCount(0);
+    await expect(noah.page.locator(`#post-${middle.post}`)).toContainText(
+      "This reply was removed by a moderator.",
+    );
+    await expect(
+      noah.page.locator(`#post-${middle.post}`).getByRole("button", { name: "Restore" }),
+    ).toHaveCount(0);
+    const middleBranch = noah.page.locator(`#post-${middle.post}`).locator("../..");
+    await expect(middleBranch.getByText("A surviving nested reply", { exact: true })).toBeVisible();
+
+    // The opening post's menu offers the whole thread, and the home page loses it.
+    await mara.page
+      .locator(`#post-${root.post}`)
+      .getByRole("button", { name: "Post actions" })
+      .click();
+    await mara.page.getByRole("menuitem", { name: "Move thread to trash", exact: true }).click();
+    const threadConfirmation = mara.page.getByRole("dialog", {
+      name: "Move this thread to trash?",
+    });
+    await expect(threadConfirmation).toContainText("including every reply");
+    await threadConfirmation
+      .getByRole("button", { name: "Move thread to trash", exact: true })
+      .click();
+    await mara.page.waitForURL("**/");
+    await expect(mara.page.getByText("Thread moved to trash", { exact: true })).toBeVisible();
+    for (const path of ["/", "/subscriptions"]) {
+      await noah.page.goto(path);
+      await expect(noah.page.locator(`a[href="/t/${root.conversation}"]`)).toHaveCount(0);
     }
+    await noah.page.goto(url);
+    await expect(noah.page.getByText("That item is not available.", { exact: true })).toBeVisible();
+    await expect(noah.page.getByText("SECRET opening text", { exact: true })).toHaveCount(0);
+
+    // The bin shows the thread by its title and restores it whole.
+    await mara.page.goto("/moderation");
+    await mara.page.getByRole("tab", { name: /Trash/ }).click();
+    const threadEntry = mara.page
+      .locator("article")
+      .filter({ has: mara.page.getByText("Whole thread", { exact: true }) })
+      .filter({ hasText: "Survivor discussion" });
+    await expect(threadEntry).toBeVisible();
+    // Every card loads its post separately; let the list settle so the click lands on this card.
+    await mara.page.waitForLoadState("networkidle");
+    await threadEntry.getByRole("button", { name: "Restore", exact: true }).click();
+    await expect(mara.page.getByText("Thread restored", { exact: true })).toBeVisible();
+    await noah.page.goto(url);
+    await noah.page.reload();
+    await expect(
+      noah.page.getByRole("heading", { name: "Survivor discussion", exact: true }),
+    ).toBeVisible();
+    await expect(noah.page.getByRole("button", { name: "Following", exact: true })).toBeVisible();
+    await expect(noah.page.locator(`#post-${middle.post}`)).toContainText(
+      "This reply was removed by a moderator.",
+    );
+
+    // Purging the thread from the bin removes everything for good.
+    await mara.call("/trash/trash", { item: root.conversation });
+    await mara.page.goto("/moderation");
+    await mara.page.getByRole("tab", { name: /Trash/ }).click();
+    const doomed = mara.page
+      .locator("article")
+      .filter({ has: mara.page.getByText("Whole thread", { exact: true }) })
+      .filter({ hasText: "Survivor discussion" });
+    await expect(doomed).toBeVisible();
+    await mara.page.waitForLoadState("networkidle");
+    await doomed.getByRole("button", { name: "Delete permanently", exact: true }).click();
+    const purgeConfirmation = mara.page.getByRole("dialog", {
+      name: "Permanently delete this thread?",
+    });
+    await expect(purgeConfirmation).toContainText("Every post in the thread is deleted");
+    await purgeConfirmation
+      .getByRole("button", { name: "Delete permanently", exact: true })
+      .click();
+    await expect(mara.page.getByText("Thread permanently deleted", { exact: true })).toBeVisible();
+    await noah.page.goto(url);
+    await noah.page.reload();
+    await expect(noah.page.getByText("That item is not available.", { exact: true })).toBeVisible();
+    await priya.page.goto(url);
+    await expect(
+      priya.page.getByText("That item is not available.", { exact: true }),
+    ).toBeVisible();
+    await expect(priya.page.getByText("A surviving nested reply", { exact: true })).toHaveCount(0);
   } finally {
     for (const account of accounts) await account.context.close();
   }

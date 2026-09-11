@@ -42,7 +42,8 @@ adds a conversation identity and title for direct navigation. Its
 [context view](view:Forum.notifications.notificationDiscussion) uses only the
 [readable opening](view:Forum.notifications.readableDiscussionOpening): a trashed
 or purged opening cannot supply a title, even when a surviving reply is readable.
-Such replies use the title `Discussion`, not an excerpt of a reply.
+Such replies use the title `Discussion`, not an excerpt of a reply. A trashed
+conversation hides its notifications, unread counts, and mail until it is restored.
 [Forum.notifications.UnreadCount](reaction:Forum.notifications.UnreadCount) returns the same account's current
 unread count. A body value cannot select another recipient.
 

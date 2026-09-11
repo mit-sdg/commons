@@ -1,4 +1,10 @@
-import { storedPostReader } from "./audience-policy.ts";
+import {
+  admittedConversation,
+  hiddenPost,
+  moderationTarget,
+  openingPost,
+  storedPostReader,
+} from "./audience-policy.ts";
 import { activeUser } from "../access/session.ts";
 import { each, form, former, no, whether, where, now } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
@@ -10,12 +16,17 @@ import { publicTarget } from "./threads.ts";
 const { Conversing, Flagging, Formatting, Locking, Posting, Trashing } = concepts;
 
 /** Which forum posts are in the trash? Trashing holds other kinds too, and they are not the forum's. */
+/** Thread entries carry their opening so the bin can show a title without a live read. */
 export const theTrashBin = former(
   "the trash bin ()",
-  ({ reader }, { item, trashedBy, trashedAt }) =>
+  ({ reader }, { item, trashedBy, trashedAt, thread, opening }) =>
     each(Trashing._getTrashed({}).is({ item, trashedBy, trashedAt }))
-      .where(storedPostReader({ post: item, user: reader }))
-      .form({ item, trashedBy, trashedAt }),
+      .where(
+        moderationTarget({ user: reader, item }),
+        Conversing._exists({ conversation: item }).is({ exists: thread }),
+        whether(Conversing._getRoot({ conversation: item }).is({ item: opening })),
+      )
+      .form({ item, thread, opening, trashedBy, trashedAt }),
 );
 
 /** Which targets are locked? */
@@ -112,18 +123,36 @@ export const TrashItem = endpoint("/trash/trash", ({ session, item, user, at }) 
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
       storedPostReader({ post: item, user }),
+      no(openingPost({ post: item })),
     )
       .then(Trashing.trash({ item, by: user, at }))
       .then(respond({ item }))
-      .named("success"),
+      .named("post"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayModerate({ user }),
+      storedPostReader({ post: item, user }),
+      openingPost({ post: item }),
+    )
+      .then(respond({ error: "THREAD_OPENING" }))
+      .named("opening"),
+    where(
+      now(at),
+      activeUser({ session }).is({ user }),
+      mayModerate({ user }),
+      admittedConversation({ user, conversation: item }),
+    )
+      .then(Trashing.trash({ item, by: user, at }))
+      .then(respond({ item }))
+      .named("thread"),
     where(
       activeUser({ session }).is({ user }),
       mayNotModerate({ user }),
-      storedPostReader({ post: item, user }),
+      moderationTarget({ user, item }),
     )
       .then(respond({ error: "FORBIDDEN" }))
       .named("forbidden"),
-    where(activeUser({ session }).is({ user }), no(storedPostReader({ post: item, user })))
+    where(activeUser({ session }).is({ user }), no(moderationTarget({ user, item })))
       .then(respond({ error: "NOT_FOUND" }))
       .named("missing"),
   ),
@@ -134,7 +163,7 @@ export const RestoreItem = endpoint("/trash/restore", ({ session, item, user }) 
     where(
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
-      storedPostReader({ post: item, user }),
+      moderationTarget({ user, item }),
     )
       .then(Trashing.restore({ item }))
       .then(respond({ item }))
@@ -142,17 +171,18 @@ export const RestoreItem = endpoint("/trash/restore", ({ session, item, user }) 
     where(
       activeUser({ session }).is({ user }),
       mayNotModerate({ user }),
-      storedPostReader({ post: item, user }),
+      moderationTarget({ user, item }),
     )
       .then(respond({ error: "FORBIDDEN" }))
       .named("forbidden"),
-    where(activeUser({ session }).is({ user }), no(storedPostReader({ post: item, user })))
+    where(activeUser({ session }).is({ user }), no(moderationTarget({ user, item })))
       .then(respond({ error: "NOT_FOUND" }))
       .named("hidden"),
   ),
 );
 
-export const PurgeItem = endpoint("/trash/purge", ({ session, item, user }) =>
+/** Purging a thread purges each stored post through the ordinary post path, then the conversation. */
+export const PurgeItem = endpoint("/trash/purge", ({ session, item, user, at, post }) =>
   receive({ session, item }).then(
     where(
       activeUser({ session }).is({ user }),
@@ -163,20 +193,55 @@ export const PurgeItem = endpoint("/trash/purge", ({ session, item, user }) =>
       .then(Posting.delete({ post: item }))
       .then(Trashing.purge({ item }))
       .then(respond({ item }))
-      .named("success"),
+      .named("post"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayModerate({ user }),
+      admittedConversation({ user, conversation: item }),
+      Trashing._isTrashed({ item }).is({ trashed: true }),
+    )
+      .then(Trashing.purge({ item }))
+      .then(respond({ item }))
+      .named("thread"),
+    where(
+      activeUser({ session }).is({ user }),
+      mayModerate({ user }),
+      admittedConversation({ user, conversation: item }),
+      Trashing._isTrashed({ item }).is({ trashed: true }),
+      Conversing._getThread({ conversation: item }).is({ item: post }),
+      Posting._getPost({ post }),
+      Trashing._isTrashed({ item: post }).is({ trashed: true }),
+    )
+      .then(Posting.delete({ post }))
+      .then(Trashing.purge({ item: post }))
+      .named("trashed-posts"),
+    where(
+      now(at),
+      activeUser({ session }).is({ user }),
+      mayModerate({ user }),
+      admittedConversation({ user, conversation: item }),
+      Trashing._isTrashed({ item }).is({ trashed: true }),
+      Conversing._getThread({ conversation: item }).is({ item: post }),
+      Posting._getPost({ post }),
+      Trashing._isTrashed({ item: post }).is({ trashed: false }),
+    )
+      .then(Trashing.trash({ item: post, by: user, at }))
+      .then(Posting.delete({ post }))
+      .then(Trashing.purge({ item: post }))
+      .named("live-posts"),
     where(
       activeUser({ session }).is({ user }),
       mayNotModerate({ user }),
-      storedPostReader({ post: item, user }),
+      moderationTarget({ user, item }),
     )
       .then(respond({ error: "FORBIDDEN" }))
       .named("forbidden"),
-    where(activeUser({ session }).is({ user }), no(storedPostReader({ post: item, user })))
+    where(activeUser({ session }).is({ user }), no(moderationTarget({ user, item })))
       .then(respond({ error: "NOT_FOUND" }))
       .named("hidden"),
     where(
       activeUser({ session }).is({ user }),
-      storedPostReader({ post: item, user }),
+      moderationTarget({ user, item }),
       mayModerate({ user }),
       Trashing._isTrashed({ item }).is({ trashed: false }),
     )
@@ -225,7 +290,7 @@ export const GetTrashedPost = endpoint("/moderation/posts/get", ({ session, item
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
       storedPostReader({ post: item, user }),
-      Trashing._isTrashed({ item }).is({ trashed: true }),
+      hiddenPost({ post: item }),
     )
       .then(respond({ post: theStoredPost({ post: item, reader: user }) }))
       .named("success"),
@@ -243,7 +308,7 @@ export const GetTrashedPost = endpoint("/moderation/posts/get", ({ session, item
       activeUser({ session }).is({ user }),
       mayModerate({ user }),
       storedPostReader({ post: item, user }),
-      Trashing._isTrashed({ item }).is({ trashed: false }),
+      no(hiddenPost({ post: item })),
     )
       .then(respond({ error: "NOT_FOUND" }))
       .named("live"),

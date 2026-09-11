@@ -150,6 +150,13 @@ export const PurgeClearsConversationSubscriptions = reaction(({ item, node, conv
     .then(Subscribing.clearTarget({ target: conversation })),
 );
 
+/** Purging a whole thread ends every follow of it. */
+export const PurgeClearsThreadSubscriptions = reaction(({ item }) =>
+  when(Trashing.purge({}).responds({ item }))
+    .where(Conversing._exists({ conversation: item }).is({ exists: true }))
+    .then(Subscribing.clearTarget({ target: item })),
+);
+
 export const StartingFollowsConversation = reaction(({ resource, user, item, at }) =>
   when(Accessing.establish({ resource }).responds())
     .where(

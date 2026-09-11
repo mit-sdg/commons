@@ -260,6 +260,8 @@
         "trashed": [
           {
             "item": "uuid#10",
+            "thread": false,
+            "opening": null,
             "trashedBy": "uuid#1",
             "trashedAt": "<date>"
           }
@@ -950,7 +952,7 @@
       }
     },
     {
-      "id": "trashRoot",
+      "id": "trashOpeningRefused",
       "phase": "assert",
       "kind": "send",
       "target": "/trash/trash",
@@ -959,7 +961,20 @@
         "item": "$createT1.post"
       },
       "response": {
-        "item": "uuid#7"
+        "error": "THREAD_OPENING"
+      }
+    },
+    {
+      "id": "trashRoot",
+      "phase": "assert",
+      "kind": "send",
+      "target": "/trash/trash",
+      "body": {
+        "session": "$loginAdmin.session",
+        "item": "$createT1.conversation"
+      },
+      "response": {
+        "item": "uuid#8"
       }
     },
     {
@@ -999,34 +1014,6 @@
             "replyCount": 0,
             "lastActivityAt": "<date>",
             "participants": ["uuid#1"]
-          },
-          {
-            "conversation": "uuid#8",
-            "root": "uuid#9",
-            "item": "uuid#7",
-            "createdAt": "<date>",
-            "audience": [
-              {
-                "holder": "standing:everyone",
-                "kind": "standing",
-                "identity": "everyone",
-                "label": "Everyone"
-              }
-            ],
-            "staffQuestion": false,
-            "category": null,
-            "tags": [],
-            "locked": false,
-            "resolved": false,
-            "post": {
-              "author": null,
-              "content": null,
-              "createdAt": null,
-              "editedAt": null
-            },
-            "replyCount": 1,
-            "lastActivityAt": "<date>",
-            "participants": ["uuid#4"]
           }
         ]
       }
@@ -1038,10 +1025,10 @@
       "target": "/trash/purge",
       "body": {
         "session": "$loginAdmin.session",
-        "item": "$createT1.post"
+        "item": "$createT1.conversation"
       },
       "response": {
-        "item": "uuid#7"
+        "item": "uuid#8"
       }
     },
     {
@@ -1054,56 +1041,7 @@
         "session": "$loginAdmin.session"
       },
       "response": {
-        "thread": [
-          {
-            "node": "uuid#11",
-            "item": "uuid#10",
-            "parent": "uuid#9",
-            "depth": 1,
-            "post": {
-              "author": "uuid#4",
-              "content": "A reply",
-              "createdAt": "<date>",
-              "editedAt": null
-            },
-            "rendered": "<p>A reply</p>\n"
-          }
-        ],
-        "context": [
-          {
-            "item": "uuid#7",
-            "root": "uuid#9",
-            "structure": [
-              {
-                "node": "uuid#9",
-                "item": "uuid#7",
-                "parent": null,
-                "depth": 0
-              },
-              {
-                "node": "uuid#11",
-                "item": "uuid#10",
-                "parent": "uuid#9",
-                "depth": 1
-              }
-            ],
-            "audience": [
-              {
-                "holder": "standing:everyone",
-                "kind": "standing",
-                "identity": "everyone",
-                "label": "Everyone"
-              }
-            ],
-            "category": null,
-            "tags": [],
-            "locked": false,
-            "acceptedAnswer": null,
-            "replyCount": 1,
-            "lastActivityAt": "<date>",
-            "participants": ["uuid#4"]
-          }
-        ]
+        "error": "NOT_FOUND"
       }
     },
     {
@@ -1143,34 +1081,6 @@
             "replyCount": 0,
             "lastActivityAt": "<date>",
             "participants": ["uuid#1"]
-          },
-          {
-            "conversation": "uuid#8",
-            "root": "uuid#9",
-            "item": "uuid#7",
-            "createdAt": "<date>",
-            "audience": [
-              {
-                "holder": "standing:everyone",
-                "kind": "standing",
-                "identity": "everyone",
-                "label": "Everyone"
-              }
-            ],
-            "staffQuestion": false,
-            "category": null,
-            "tags": [],
-            "locked": false,
-            "resolved": false,
-            "post": {
-              "author": null,
-              "content": null,
-              "createdAt": null,
-              "editedAt": null
-            },
-            "replyCount": 1,
-            "lastActivityAt": "<date>",
-            "participants": ["uuid#4"]
           }
         ]
       }
@@ -1185,7 +1095,7 @@
         "session": "$loginAdmin.session"
       },
       "response": {
-        "conversation": "uuid#8"
+        "conversation": null
       }
     },
     {

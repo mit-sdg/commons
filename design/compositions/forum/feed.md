@@ -11,8 +11,9 @@ activity, and distinct visible participants.
 [Forum.feed.GetThread](reaction:Forum.feed.GetThread) returns each placed post that still has Posting,
 rendering, and non-trash state, beside
 [the separately formed root context](former:Forum.feed.theThreadContext). Trashing
-the root omits its content but retains structural context and intact replies.
-Purging a root with children likewise leaves admitted replies readable through the thread endpoint and frontend.
+a reply omits its content but retains structural context and its intact replies.
+A trashed conversation is absent from every feed and its thread endpoint answers
+`NOT_FOUND` until a moderator restores it.
 
 These audience-authorized reads assemble current state from its owners. Category, tag, lock,
 resolution, post, or conversation changes therefore affect the next read
@@ -32,10 +33,10 @@ staffQuestion(holders: Seq, nonStaffAuthor: Any) : Boolean
   Identifies an explicit Staff question opened by someone outside Staff.
 ```
 
-Conversation context and feed inclusion require audience admission independently
-of opening content. Context includes the structural outline, so unavailable
-openings and intermediate posts can be shown as placeholders around surviving
-readable replies. Post summaries, category, tags and opening-author classification
+Conversation context and feed inclusion require audience admission to an
+untrashed conversation, independently of opening content. Context includes the
+structural outline, so removed intermediate posts can be shown as placeholders
+around surviving readable replies. Post summaries, category, tags and opening-author classification
 require a readable opening; [readableHome](view:Forum.feed.readableHome) prevents
 retained category metadata appearing for unavailable content. No underlying
 conversation or stored posts means no conversation context.

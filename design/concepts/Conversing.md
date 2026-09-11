@@ -80,6 +80,16 @@ remove(node: Node) : return (node: Node)
     delete node
     delete its conversation
     return node
+
+dissolve(conversation: Conversation) : return (conversation: Conversation)
+  where conversation not in conversations
+  then
+    refuse CONVERSATION_NOT_FOUND "There is no such conversation."
+  where conversation in conversations
+  then
+    delete every node of conversation
+    delete conversation
+    return conversation
 ```
 
 ## Queries

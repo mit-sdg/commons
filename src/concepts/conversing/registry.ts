@@ -3,6 +3,7 @@ import type { Db } from "mongodb";
 import spec from "@design/concepts/Conversing.md" with { type: "text" };
 import { MongoConversingConcept } from "./conversing.mongo.ts";
 import {
+  ConversationNotFound,
   ItemAlreadyInConversation,
   NodeHasChildren,
   NodeNotFound,
@@ -17,6 +18,7 @@ export const conversing = registerConcept({
     PARENT_NODE_NOT_FOUND: ParentNodeNotFound,
     NODE_NOT_FOUND: NodeNotFound,
     NODE_HAS_CHILDREN: NodeHasChildren,
+    CONVERSATION_NOT_FOUND: ConversationNotFound,
   },
   floors: { mongo: ({ database }: { database: Db }) => new MongoConversingConcept(database) },
 });

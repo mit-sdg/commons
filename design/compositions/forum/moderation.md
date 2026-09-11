@@ -1,17 +1,34 @@
 # Moderation
 
-A caller holding `moderate` moves an existing forum-conversation post into trash through
-[Forum.moderation.TrashItem](reaction:Forum.moderation.TrashItem). [Forum.moderation.RestoreItem](reaction:Forum.moderation.RestoreItem) restores a
+A caller holding `moderate` moves one forum post or one whole conversation into
+trash through [Forum.moderation.TrashItem](reaction:Forum.moderation.TrashItem);
+the same identity field names either. Trashing a reply hides that post's content
+and leaves its replies in place as a removed position. The opening post is never
+trashed on its own: selecting it answers `THREAD_OPENING`, and the thread is
+trashed by its conversation identity instead. A trashed conversation closes every
+ordinary read, listing, notification, mail, and reply path for the whole thread at
+once, while each post keeps its own trash state.
+[Forum.moderation.RestoreItem](reaction:Forum.moderation.RestoreItem) restores a
 trashed identity without recreating attached state. [Forum.moderation.PurgeItem](reaction:Forum.moderation.PurgeItem)
-removes the trash record permanently and thereby triggers Forum-wide cleanup. These routes reject unplaced Posting records, including assignment submission artifacts.
+removes a trashed post permanently and thereby triggers Forum-wide cleanup.
+Purging a trashed conversation purges each stored post through that same path and
+then the conversation record; permanent cleanup then dissolves the structure and
+ends its follows.
+These routes reject unplaced Posting records, including assignment submission artifacts.
 Trash and restore retain Posting and attached state; purge cleanup is
 cross-concept and can be only partially complete if a later effect faults.
 
+Trash, restore, and purge remain moderator-only and require current audience
+membership; authors cannot use them merely because they own a post. Ordinary
+Delete remains author-only and refuses posts with replies. Removing a reply
+together with the replies beneath it is a sequence of single trash requests
+issued by the interface, each independently restorable.
+
 [Forum.moderation.TrashList](reaction:Forum.moderation.TrashList) gives moderators
-[the retained trash bin](former:Forum.moderation.theTrashBin), including each record's timestamp. [Forum.moderation.IsTrashed](reaction:Forum.moderation.IsTrashed) lets moderators test one identity without
+[the retained trash bin](former:Forum.moderation.theTrashBin), including each record's timestamp. Each entry says whether it names a conversation and, when it does, which post opens it, so the bin can show a title without a live read. [Forum.moderation.IsTrashed](reaction:Forum.moderation.IsTrashed) lets moderators test one identity without
 reading its content.
 [Forum.moderation.GetTrashedPost](reaction:Forum.moderation.GetTrashedPost) returns retained post content only while the
-post is trashed. These operations return `NOT_FOUND` to non-moderators so hidden
+post is trashed or its conversation is. These operations return `NOT_FOUND` to non-moderators so hidden
 content and moderation state are not disclosed; the content read also hides
 live and missing posts.
 
@@ -52,4 +69,4 @@ Forum.moderation.TrashList at /trash/list
 Forum.moderation.UnlockTarget at /locks/unlock
 ```
 
-[Stored post presentation](former:Forum.moderation.theStoredPost) requires the moderator to belong to the post’s audience, including while the post is trashed.
+[Stored post presentation](former:Forum.moderation.theStoredPost) requires the moderator to belong to the post’s audience, including while the post or its conversation is trashed.

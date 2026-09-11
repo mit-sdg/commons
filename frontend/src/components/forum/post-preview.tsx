@@ -120,15 +120,19 @@ export function PostPreview({
         {action}
       </div>
 
-      {href && showTitle ? (
+      {showTitle ? (
         <h3 className="mb-1.5 font-display text-lg font-semibold leading-snug">
-          <Link
-            href={href}
-            className="inline-flex items-center gap-1 text-foreground hover:text-primary"
-          >
-            {title}
-            <ArrowUpRight className="size-4 shrink-0 text-muted-foreground" />
-          </Link>
+          {href ? (
+            <Link
+              href={href}
+              className="inline-flex items-center gap-1 text-foreground hover:text-primary"
+            >
+              {title}
+              <ArrowUpRight className="size-4 shrink-0 text-muted-foreground" />
+            </Link>
+          ) : (
+            title
+          )}
         </h3>
       ) : null}
 

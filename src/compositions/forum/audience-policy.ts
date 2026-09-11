@@ -1,4 +1,4 @@
-import { compute, is, view, where, whether } from "@mit-sdg/sync-engine/language";
+import { compute, is, no, view, where, whether } from "@mit-sdg/sync-engine/language";
 import { concepts, computations as c } from "../../concepts.ts";
 import { STAFF_CAPABILITIES } from "../../computations/audiences.ts";
 const {
@@ -86,14 +86,24 @@ export const audienceMember = view(
       is.among(allowed, [true]),
     ),
 ).holds();
-export const establishedConversationReader = view(
-  "(user) belongs to the established audience of (conversation)",
+/** Audience admission alone; moderation reads keep it while a thread is in trash. */
+export const admittedConversation = view(
+  "(user) belongs to the audience of (conversation)",
   ({ user, conversation }, _out, { holders }) =>
     where(
       usableUser({ user }),
       Accessing._holders({ resource: conversation }).is({ holders }),
       audienceMember({ user, holders }),
       Conversing._exists({ conversation }).is({ exists: true }),
+    ),
+).holds();
+/** A trashed conversation closes every ordinary read of its thread at once. */
+export const establishedConversationReader = view(
+  "(user) belongs to the established audience of (conversation)",
+  ({ user, conversation }, _out, _vars) =>
+    where(
+      admittedConversation({ user, conversation }),
+      Trashing._isTrashed({ item: conversation }).is({ trashed: false }),
     ),
 ).holds();
 export const conversationPosts = view(
@@ -129,9 +139,32 @@ export const storedPostReader = view(
   ({ user, post }, _out, { conversation }) =>
     where(
       postConversation({ post }).is({ conversation }),
-      establishedConversationReader({ user, conversation }),
+      admittedConversation({ user, conversation }),
       Posting._getPost({ post }),
     ),
+).holds();
+/** Trashed content, or live content inside a trashed thread, is open to moderator inspection. */
+export const hiddenPost = view(
+  "(post) is trashed or sits in a trashed conversation",
+  ({ post }, _out, { conversation }) => [
+    where(Trashing._isTrashed({ item: post }).is({ trashed: true })),
+    where(
+      postConversation({ post }).is({ conversation }),
+      Trashing._isTrashed({ item: conversation }).is({ trashed: true }),
+    ),
+  ],
+).holds();
+/** The opening post leaves only with its thread, never on its own. */
+export const openingPost = view("(post) opens its conversation", ({ post }, _out, { node }) =>
+  where(Conversing._getNodeByItem({ item: post }).is({ node }), no(Conversing._parentOf({ node }))),
+).holds();
+/** One identity names either a stored post or a whole conversation for moderation. */
+export const moderationTarget = view(
+  "(user) may moderate forum target (item)",
+  ({ user, item }, _out, _vars) => [
+    where(storedPostReader({ user, post: item })),
+    where(admittedConversation({ user, conversation: item })),
+  ],
 ).holds();
 export const postReader = view(
   "(user) may read forum post (post)",

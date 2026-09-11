@@ -1,4 +1,4 @@
-import { storedPostReader } from "./audience-policy.ts";
+import { hiddenPost, storedPostReader } from "./audience-policy.ts";
 import { activeUser } from "../access/session.ts";
 import { each, former, no, reaction, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
@@ -120,7 +120,7 @@ export const ModeratorListRevisions = endpoint(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         storedPostReader({ post: item, user }),
-        Trashing._isTrashed({ item }).is({ trashed: true }),
+        hiddenPost({ post: item }),
       )
         .then(respond({ revisions: theRevisionHistoryOf({ item, reader: user }) }))
         .named("revisions"),
@@ -152,7 +152,7 @@ export const ModeratorGetRevision = endpoint(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         storedPostReader({ post: item, user }),
-        Trashing._isTrashed({ item }).is({ trashed: true }),
+        hiddenPost({ post: item }),
       )
         .then(respond({ revision: theRevisionNumberedOf({ number, item, reader: user }) }))
         .named("revision"),
@@ -184,7 +184,7 @@ export const ModeratorLatestRevision = endpoint(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         storedPostReader({ post: item, user }),
-        Trashing._isTrashed({ item }).is({ trashed: true }),
+        hiddenPost({ post: item }),
       )
         .then(respond({ revision: theLatestRevisionOf({ item, reader: user }) }))
         .named("revision"),

@@ -48,6 +48,26 @@ for (const [floor, make] of floors) {
       expect(await conversing._threadNodes({ conversation })).toEqual({ nodes: [] });
     });
 
+    test("dissolve removes every node and the conversation in one step", async () => {
+      const conversing = await make();
+      const at = new Date("2026-02-01T10:00:00Z");
+      const { conversation, node: root } = await conversing.start({ item: "opening", at });
+      const { node: middle } = await conversing.reply({ item: "middle", parent: root, at });
+      await conversing.reply({ item: "leaf", parent: middle, at });
+      const other = await conversing.start({ item: "other", at });
+      expect(await conversing.dissolve({ conversation })).toEqual({ conversation });
+      expect(await conversing._exists({ conversation })).toEqual({ exists: false });
+      expect(await conversing._threadNodes({ conversation })).toEqual({ nodes: [] });
+      for (const item of ["opening", "middle", "leaf"])
+        expect(await conversing._getNodeByItem({ item })).toEqual([]);
+      expect(await conversing._exists({ conversation: other.conversation })).toEqual({
+        exists: true,
+      });
+      expect(await refusal(() => conversing.dissolve({ conversation }))).toBeInstanceOf(
+        refusalErrors.ConversationNotFound,
+      );
+    });
+
     test("conversation list ties retain creation order and follow reply removal", async () => {
       const conversing = await make();
       const at = new Date("2026-02-01T10:00:00Z");

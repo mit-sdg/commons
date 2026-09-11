@@ -1,8 +1,17 @@
 import { no, reaction, when, where } from "@mit-sdg/sync-engine/language";
 import { concepts } from "../../concepts.ts";
 
-const { Conversing, Flagging, Formatting, Linking, Locking, Posting, Tracking, Trashing } =
-  concepts;
+const {
+  Accessing,
+  Conversing,
+  Flagging,
+  Formatting,
+  Linking,
+  Locking,
+  Posting,
+  Tracking,
+  Trashing,
+} = concepts;
 
 export const PurgeClearsCoreForumState = reaction(({ item, node, conversation }) =>
   when(Trashing.purge({ item }).responds()).then(
@@ -32,5 +41,23 @@ export const PurgeClearsCoreForumState = reaction(({ item, node, conversation })
     )
       .then(Conversing.remove({ node }))
       .named("leaf-node"),
+  ),
+);
+
+/** A purged conversation takes its structure, its lock, and its audience grant with it. */
+export const PurgeDissolvesConversation = reaction(({ item }) =>
+  when(Trashing.purge({ item }).responds()).then(
+    where(Conversing._exists({ conversation: item }).is({ exists: true }))
+      .then(Conversing.dissolve({ conversation: item }))
+      .named("structure"),
+    where(
+      Conversing._exists({ conversation: item }).is({ exists: true }),
+      Locking._isLocked({ target: item }).is({ locked: true }),
+    )
+      .then(Locking.unlock({ target: item }))
+      .named("lock"),
+    where(Conversing._exists({ conversation: item }).is({ exists: true }))
+      .then(Accessing.retire({ resource: item }))
+      .named("access"),
   ),
 );

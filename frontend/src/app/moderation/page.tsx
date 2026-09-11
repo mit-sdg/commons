@@ -9,6 +9,7 @@ import { RevisionsDialog } from "@/components/forum/revisions-dialog";
 import { Link } from "@/components/link";
 import { PageContainer, PageHeader } from "@/components/page";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserName } from "@/components/user-name";
@@ -73,7 +74,12 @@ function FlagsQueue() {
   async function trash(item: string) {
     if (!session) return;
     const result = await api.trash.trash({ item });
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
+    if ("error" in result)
+      toast.error(
+        result.error === "CONFLICT"
+          ? "This is a thread's opening post. Move the whole thread to trash from its page."
+          : publicErrorMessage(result.error),
+      );
     else {
       toast.success("Post moved to trash");
       refetch();
@@ -124,15 +130,23 @@ function FlagsQueue() {
                   >
                     Dismiss
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="gap-1.5 text-destructive"
-                    onClick={() => trash(item)}
-                  >
-                    <Trash2 className="size-4" />
-                    Move to trash
-                  </Button>
+                  <ConfirmAction
+                    title="Move this post to trash?"
+                    description="Its text is hidden and its place in the discussion shows as removed. Replies to it stay visible. A thread's opening post is moved to trash with its whole thread from the thread page."
+                    confirmLabel="Move to trash"
+                    destructive
+                    onConfirm={() => trash(item)}
+                    trigger={
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="gap-1.5 text-destructive"
+                      >
+                        <Trash2 className="size-4" />
+                        Move to trash
+                      </Button>
+                    }
+                  />
                 </div>
               </div>
             }
@@ -208,22 +222,26 @@ function TrashBin() {
     trashed: TrashedItem[];
   }>(() => api.trash.list({}), [session]);
 
-  async function restore(item: string) {
+  async function restore(entry: TrashedItem) {
     if (!session) return;
-    const result = await api.trash.restore({ item });
+    const result = await api.trash.restore({ item: String(entry.item) });
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
-      toast.success("Post restored");
+      toast.success(entry.thread ? "Thread restored" : "Reply restored");
       refetch();
     }
   }
 
-  async function purge(item: string) {
+  async function purge(entry: TrashedItem) {
     if (!session) return;
-    const result = await api.trash.purge({ item });
+    const result = await api.trash.purge({ item: String(entry.item) });
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
-      toast.success("Post permanently deleted");
+      toast.success(
+        entry.thread
+          ? "Thread permanently deleted"
+          : "Reply permanently deleted",
+      );
       refetch();
     }
   }
@@ -235,7 +253,7 @@ function TrashBin() {
       <EmptyState
         icon={Trash2}
         title="Trash is empty"
-        description="Posts in trash can be restored or purged from here."
+        description="Threads and replies in trash can be restored or permanently deleted from here."
       />
     );
 
@@ -243,13 +261,20 @@ function TrashBin() {
     <div className="space-y-4">
       {data.trashed.map((entry) => {
         const item = String(entry.item);
+        // A thread entry previews its opening post; the actions still target the thread.
+        const preview = entry.thread ? String(entry.opening ?? item) : item;
         return (
           <PostPreview
             key={item}
-            item={item}
+            item={preview}
             moderator
             meta={
               <span>
+                {entry.thread ? (
+                  <Badge variant="secondary" className="mr-2">
+                    Whole thread
+                  </Badge>
+                ) : null}
                 Trashed by{" "}
                 <UserName
                   user={String(entry.trashedBy)}
@@ -259,28 +284,36 @@ function TrashBin() {
               </span>
             }
             action={
-              <div className="flex items-center gap-2">
-                <RevisionsDialog item={item} moderator />
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <RevisionsDialog item={preview} moderator />
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => restore(item)}
+                  onClick={() => restore(entry)}
                 >
                   Restore
                 </Button>
                 <ConfirmAction
-                  title="Permanently delete this post?"
-                  description="This removes the post and cannot be undone."
+                  title={
+                    entry.thread
+                      ? "Permanently delete this thread?"
+                      : "Permanently delete this reply?"
+                  }
+                  description={
+                    entry.thread
+                      ? "Every post in the thread is deleted. This cannot be undone."
+                      : "The reply's text is deleted and its place in the discussion stays marked as removed. Replies to it stay visible. This cannot be undone."
+                  }
                   confirmLabel="Delete permanently"
                   destructive
-                  onConfirm={() => purge(item)}
+                  onConfirm={() => purge(entry)}
                   trigger={
                     <Button
                       size="sm"
                       variant="ghost"
                       className="text-destructive"
                     >
-                      Purge
+                      Delete permanently
                     </Button>
                   }
                 />

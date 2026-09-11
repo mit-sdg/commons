@@ -120,7 +120,7 @@ for (const kind of ["people", "staff", "group"]) {
   });
 }
 
-test("trash, restore and purge retain authorized context and nested replies without unavailable post metadata", async () => {
+test("reply trash and purge leave a removed position; thread trash, restore and purge act on the whole conversation", async () => {
   const {
     instances,
     app,
@@ -133,7 +133,7 @@ test("trash, restore and purge retain authorized context and nested replies with
   });
   await instances.Roling.assign({ user: a.user, context: "commons", role });
   const root = await call("/threads/create", a.session, {
-    content: "SECRET opening",
+    content: "Opening",
     holders: [`account:${a.user}`, `account:${b.user}`],
   });
   const middle = await call("/threads/reply", b.session, {
@@ -145,20 +145,26 @@ test("trash, restore and purge retain authorized context and nested replies with
     parent: middle.node,
     content: "Surviving reply",
   });
-  await call("/trash/trash", a.session, { item: root.post });
+  // The opening never leaves on its own.
+  expect(
+    await app.invoker.invoke("/trash/trash", { session: a.session, item: root.post }),
+  ).toMatchObject({ ok: false, error: { value: "THREAD_OPENING" } });
+
   await call("/trash/trash", a.session, { item: middle.post });
   for (const purged of [false, true]) {
     if (purged) {
-      await call("/trash/restore", a.session, { item: root.post });
+      await call("/trash/restore", a.session, { item: middle.post });
       expect(
         JSON.stringify(await call("/threads/get", b.session, { conversation: root.conversation })),
-      ).toContain("SECRET opening");
-      await call("/trash/trash", a.session, { item: root.post });
-      await call("/trash/purge", a.session, { item: root.post });
+      ).toContain("SECRET intermediate");
+      await call("/trash/trash", a.session, { item: middle.post });
       await call("/trash/purge", a.session, { item: middle.post });
     }
     const thread = await call("/threads/get", b.session, { conversation: root.conversation });
-    expect(thread.thread).toHaveLength(1);
+    expect(thread.thread.map((post: { item: string }) => post.item)).toEqual([
+      root.post,
+      leaf.post,
+    ]);
     expect(thread.context).toHaveLength(1);
     expect(thread.context[0]).toMatchObject({
       root: root.node,
@@ -167,6 +173,10 @@ test("trash, restore and purge retain authorized context and nested replies with
       category: null,
       tags: [],
     });
+    // The removed reply keeps its structural position so the survivor stays nested.
+    expect(thread.context[0].structure).toContainEqual(
+      expect.objectContaining({ node: middle.node, parent: root.node }),
+    );
     expect(thread.context[0].structure).toContainEqual(
       expect.objectContaining({ node: leaf.node, parent: middle.node }),
     );
@@ -175,34 +185,68 @@ test("trash, restore and purge retain authorized context and nested replies with
     expect(feed.conversations).toContainEqual(
       expect.objectContaining({
         conversation: root.conversation,
-        post: { author: null, content: null, createdAt: null, editedAt: null },
+        post: expect.objectContaining({ author: a.user, content: "Opening" }),
         replyCount: 1,
       }),
     );
-    expect(await call("/subscriptions/mine", b.session)).toMatchObject({
-      subscriptions: [expect.objectContaining({ target: root.conversation })],
-    });
     expect(await call("/threads/forItem", b.session, { item: leaf.post })).toEqual({
       conversation: root.conversation,
     });
-    expect(
-      await app.invoker.invoke("/threads/get", {
-        session: outsider.session,
-        conversation: root.conversation,
-      }),
-    ).toEqual(
-      await app.invoker.invoke("/threads/get", {
-        session: outsider.session,
-        conversation: "absent",
-      }),
-    );
+    expect(await call("/threads/forItem", b.session, { item: middle.post })).toEqual({
+      conversation: null,
+    });
   }
-  await call("/trash/trash", a.session, { item: leaf.post });
-  await call("/trash/purge", a.session, { item: leaf.post });
+
+  const missing = await app.invoker.invoke("/threads/get", {
+    session: b.session,
+    conversation: "absent",
+  });
+  await call("/trash/trash", a.session, { item: root.conversation });
+  for (const session of [a.session, b.session, outsider.session]) {
+    expect(
+      await app.invoker.invoke("/threads/get", { session, conversation: root.conversation }),
+    ).toEqual(missing);
+    for (const post of [root.post, leaf.post])
+      expect(await app.invoker.invoke("/posts/get", { session, post })).toMatchObject({
+        ok: false,
+      });
+  }
+  expect((await call("/threads/activity", b.session)).conversations).toEqual([]);
+  expect(await call("/subscriptions/mine", b.session)).toEqual({ subscriptions: [] });
+  expect(await call("/trash/list", a.session)).toMatchObject({
+    trashed: [
+      expect.objectContaining({ item: root.conversation, thread: true, opening: root.post }),
+    ],
+  });
+  // A moderator can still inspect the hidden opening from the bin.
+  expect((await call("/moderation/posts/get", a.session, { item: root.post })).post.content).toBe(
+    "Opening",
+  );
+
+  await call("/trash/restore", a.session, { item: root.conversation });
+  expect(
+    (await call("/threads/get", b.session, { conversation: root.conversation })).thread,
+  ).toHaveLength(2);
+  expect(await call("/subscriptions/mine", b.session)).toMatchObject({
+    subscriptions: [expect.objectContaining({ target: root.conversation })],
+  });
+
+  await call("/trash/trash", a.session, { item: root.conversation });
+  await call("/trash/purge", a.session, { item: root.conversation });
+  await app.whenIdle();
   expect(
     await app.invoker.invoke("/threads/get", {
       session: b.session,
       conversation: root.conversation,
     }),
-  ).toMatchObject({ ok: false });
+  ).toEqual(missing);
+  expect(await instances.Conversing._exists({ conversation: root.conversation })).toEqual({
+    exists: false,
+  });
+  for (const post of [root.post, middle.post, leaf.post])
+    expect(await instances.Posting._getPost({ post })).toEqual([]);
+  expect(await instances.Subscribing._getSubscribers({ target: root.conversation })).toEqual([]);
+  expect(await instances.Accessing._holders({ resource: root.conversation })).toEqual([]);
+  expect(await call("/trash/list", a.session)).toEqual({ trashed: [] });
+  expect(await call("/subscriptions/mine", b.session)).toEqual({ subscriptions: [] });
 });
