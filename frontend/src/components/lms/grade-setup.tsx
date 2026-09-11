@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectLabel,
   SelectTrigger,
@@ -423,7 +424,7 @@ export function GradeSetup({
           <Button
             size="sm"
             variant="ghost"
-            disabled={busy}
+            disabled={busy || standards.loading}
             onClick={() => setEditing(!editing)}
           >
             {editing ? "Done" : "Edit skills"}
@@ -514,9 +515,11 @@ export function GradeSetup({
                             ),
                         );
                         return available.length === 0 ? (
-                          <SelectLabel>
-                            Every course skill is selected
-                          </SelectLabel>
+                          <SelectGroup>
+                            <SelectLabel>
+                              Every course skill is selected
+                            </SelectLabel>
+                          </SelectGroup>
                         ) : (
                           available.map((r) => (
                             <SelectItem key={r.edition} value={r.edition}>
