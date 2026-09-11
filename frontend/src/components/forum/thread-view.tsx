@@ -32,6 +32,7 @@ import { useQuery } from "@/hooks/use-query";
 import { useUnread } from "@/hooks/use-unread";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { replyScope } from "@/lib/drafts";
 import { count, titleFromContent } from "@/lib/format";
 import { loadThreadPage, type ThreadPage } from "@/lib/loaders";
 import { loadMyLists } from "@/lib/tasks";
@@ -340,6 +341,7 @@ export function ThreadView({
               session={session ?? undefined}
               placeholder="Write your reply… Markdown supported."
               submitLabel="Post reply"
+              draft={replyScope(conversation)}
               onSubmit={postRootReply}
             />
           </>

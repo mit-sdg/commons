@@ -11,6 +11,25 @@ const HOST = { username: "mara", password: "password123" };
 const NOAH = { username: "noah", password: "password123" };
 const PRIYA = { username: "priya", password: "password123" };
 
+/**
+ * Compile every route this loop visits before it is clicked through: Next dev
+ * reloads a page the first time it compiles a route, and a reload that lands
+ * between a click and its navigation is lost.
+ */
+async function warmRoutes(page: Page) {
+  for (const route of [
+    "/login",
+    "/",
+    "/join",
+    "/q/warmup",
+    "/staff/live",
+    "/staff/live/draft",
+    "/staff/live/warmup/edit",
+    "/staff/live/run/warmup",
+  ])
+    await page.request.get(route);
+}
+
 async function signIn(page: Page, account = HOST) {
   await page.goto("/login");
   await page.getByRole("textbox", { name: "Username" }).fill(account.username);
@@ -35,6 +54,10 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
   page,
   browser,
 }) => {
+  // The longest loop in the suite: two participants, a dropped hand-in, and a
+  // closed run.
+  test.setTimeout(180_000);
+  await warmRoutes(page);
   await signIn(page);
 
   // Draft with the scripted reasoner and adopt into an editable questionnaire.
