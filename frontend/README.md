@@ -58,6 +58,22 @@ Two rules every screen follows, so the next screen has one place to read.
   that may hold commas quiet chips. A card's part and its value are a label
   and its text, never one string.
 
+## Unfinished posts
+
+A composer that names a draft slot keeps what its author typed, so leaving a
+half-written post to read the discussion that prompted it does not throw the
+writing away. Every draft is local: it is held in this browser's own local
+storage, under the account that typed it, and never reaches the server, so
+nobody else can read it and it does not follow its author to another machine.
+`src/lib/drafts.ts` owns the slots — one per account and composer, holding a
+reply's body, or a new discussion's body, title, and audience together — and
+no draft outlives two weeks untouched.
+
+The composer restores a draft once the account that wrote it is known and
+never over writing already in the box; posting and cancelling retire it, and
+`Discard draft` drops it on demand. An unfinished reply reopens its own
+composer when its discussion is opened again.
+
 ## Application contract
 
 `src/lib/api.ts` is the UI's one Commons client boundary. Its `Input<P>` and

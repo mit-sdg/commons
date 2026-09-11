@@ -9,7 +9,7 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Fact } from "@/components/facts";
 import { BookmarkButton } from "@/components/forum/bookmark-button";
@@ -35,6 +35,7 @@ import { UserRole } from "@/components/user-role";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { hasDraft, replyScope } from "@/lib/drafts";
 import type { ThreadNode } from "@/lib/models";
 import { cn } from "@/lib/utils";
 
@@ -64,12 +65,14 @@ export function PostCard({
   const { session, me, permissions } = useAuth();
   const [editing, setEditing] = useState(false);
   const [replying, setReplying] = useState(false);
+  const [resumedReply, setResumedReply] = useState(false);
   const [flagOpen, setFlagOpen] = useState(false);
 
   const postId = String(node.item);
   const nodeId = String(node.node);
   const author = String(node.post.author);
   const myId = me ? String(me.user) : null;
+  const replyDraft = replyScope(scope, nodeId);
   const controls = usePostControls(postId);
   const sharedControls = controls?.data
     ? { data: controls.data, refetch: controls.refetch }
@@ -80,6 +83,17 @@ export function PostCard({
   const canAcceptAnswers = !!myId && myId === rootAuthorId && !isRoot;
   const isAccepted = acceptedAnswer === postId;
   const edited = !!node.post.editedAt;
+
+  // A reply left unfinished on this post opens itself again, so returning to
+  // the discussion returns to the writing. It does not take the caret with it:
+  // the reader came back to the discussion, not to this box.
+  useEffect(() => {
+    if (myId === null || locked || !hasDraft(myId, replyDraft)) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- an unfinished reply opens once its author is known */
+    setReplying(true);
+    setResumedReply(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [locked, myId, replyDraft]);
 
   const trashed = useQuery<{ trashed: boolean }>(
     canModerate ? () => api.trash.isTrashed({ item: postId }) : null,
@@ -279,7 +293,10 @@ export function PostCard({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setReplying((v) => !v)}
+                onClick={() => {
+                  setResumedReply(false);
+                  setReplying((v) => !v);
+                }}
                 className="gap-1.5 text-muted-foreground"
               >
                 <CornerUpLeft className="size-4" />
@@ -339,7 +356,8 @@ export function PostCard({
             placeholder="Write a reply…"
             submitLabel="Post reply"
             minRows={4}
-            autoFocus
+            autoFocus={!resumedReply}
+            draft={replyDraft}
             onSubmit={submitReply}
             onCancel={() => setReplying(false)}
           />
