@@ -107,7 +107,7 @@ test("a failed establishment leaves placed content closed to every reader", asyn
   expect(await instances.Mailing._getPending({})).toEqual([]);
 });
 
-test("queued group mail is withheld after departure and includes only the title, not the body", async () => {
+test("queued group mail includes the message but is withheld after departure", async () => {
   const {
     instances,
     people: [author, reader],
@@ -126,14 +126,18 @@ test("queued group mail is withheld after departure and includes only the title,
   const [queued] = await instances.Mailing._getPending({});
   expect(queued).toBeDefined();
   expect(queued.subject).toBe("You were mentioned in a discussion: Homework question");
-  expect(queued.text + queued.html).not.toContain("SECRET");
+  expect(queued.text).toContain("SECRET homework question for @reader");
+  expect(queued.html).toContain("SECRET homework question for @reader");
+  expect(queued.text).toContain("Author: @author");
   await app.concepts.Grouping.leave({ group, member: reader.user, at });
   const { deliverPendingMail } = await import("../../src/email/worker.ts");
   const { forumMailEligibility } = await import("../../src/email/forum-policy.ts");
   let sends = 0;
+  const deliveredText: string[] = [];
   const sender = {
-    sendMail: async () => {
+    sendMail: async (mail: { text: string }) => {
       sends += 1;
+      deliveredText.push(mail.text);
     },
   };
   const configuration = {
@@ -164,6 +168,7 @@ test("queued group mail is withheld after departure and includes only the title,
     ),
   ).toBe(2);
   expect(sends).toBe(2);
+  expect(deliveredText).toContain(queued.text);
 });
 
 test("ordinary reports require audience membership even for a moderator", async () => {

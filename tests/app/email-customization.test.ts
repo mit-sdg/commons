@@ -233,9 +233,10 @@ describe("administrator email customization", () => {
     expect(JSON.stringify(listing)).not.toContain("reset-voucher");
   });
 
-  test("forum emails name the event and opening title, inbox adds navigation, never email post bodies", async () => {
+  test("forum emails include the notified message and author, not other posts in the discussion", async () => {
     const { app, admin, member, memberSession, call } = await setup();
     const at = new Date();
+    await app.concepts.Profiling.createProfile({ user: admin.user, displayName: "Alice Lecturer" });
     const root = await app.concepts.Posting.create({
       author: admin.user,
       content: "# Study & planning\n\nROOT SECRET BODY",
@@ -266,8 +267,12 @@ describe("administrator email customization", () => {
     expect(mail?.subject).toBe("You were mentioned in a discussion: Study & planning");
     expect(mail?.text).toContain(`/t/${thread.conversation}#post-${reply.post}`);
     expect(mail?.html).toContain("Study &amp; planning");
-    for (const secret of ["ROOT SECRET BODY", "REPLY SECRET BODY"])
-      expect(`${mail?.text}${mail?.html}`).not.toContain(secret);
+    expect(`${mail?.text}${mail?.html}`).not.toContain("ROOT SECRET BODY");
+    expect(mail?.text).toContain("REPLY SECRET BODY");
+    expect(mail?.html).toContain("REPLY SECRET BODY");
+    expect(mail?.text).toContain("Author: Alice Lecturer (@admin)");
+    expect(mail?.html).toContain("Alice Lecturer (@admin)");
+    expect(mail?.text).not.toContain("admin@example.edu");
     const inbox = await call("/notifications/inbox", {}, memberSession.session);
     expect(inbox).toMatchObject({
       ok: true,
@@ -311,5 +316,73 @@ describe("administrator email customization", () => {
       m.key.includes(next.notification),
     );
     expect(nextMail?.subject).toBe("Your answer was accepted: Discussion");
+    expect(nextMail?.text).toContain("Author: Alice Lecturer (@admin)");
+    expect(nextMail?.text).toContain("REPLY SECRET BODY");
+    await app.concepts.Posting.edit({ post: reply.post, content: "Edited reply", at: new Date() });
+    await app.whenIdle();
+    const originalMail = (await app.concepts.Mailing._getPending({})).find(
+      (m) => m.message === mail!.message,
+    );
+    expect(originalMail?.text).toBe(mail?.text);
+  });
+
+  test("outbox previews do not grant administrators access to private message bodies", async () => {
+    const { app, admin, member, call } = await setup();
+    const at = new Date();
+    const { group } = await app.concepts.Grouping.create({
+      creator: member.user,
+      title: "Private study group",
+      at,
+    });
+    const { post } = await app.concepts.Posting.create({
+      author: member.user,
+      content: "Private group message",
+      at,
+    });
+    const { conversation } = await app.concepts.Conversing.start({ item: post, at });
+    await app.concepts.Accessing.establish({ resource: conversation, holders: [`group:${group}`] });
+    const { notification } = await app.concepts.Notifying.notify({
+      recipient: member.user,
+      kind: "mention",
+      subject: post,
+      link: post,
+      at,
+    });
+    await app.whenIdle();
+    const mail = (await app.concepts.Mailing._getPending({})).find((m) =>
+      m.key.includes(notification),
+    );
+    expect(mail).toBeDefined();
+    const input = { message: mail!.message };
+    expect(await call("/mail/read", input)).toMatchObject({
+      ok: false,
+      error: { value: "NOT_FOUND" },
+    });
+    await app.concepts.Grouping.addMember({
+      group,
+      member: member.user,
+      candidate: admin.user,
+      at,
+    });
+    expect(await call("/mail/read", input)).toMatchObject({
+      ok: true,
+      value: { text: expect.stringContaining("Private group message") },
+    });
+    await app.concepts.Grouping.leave({ group, member: admin.user, at });
+    expect(await call("/mail/read", input)).toMatchObject({
+      ok: false,
+      error: { value: "NOT_FOUND" },
+    });
+    await app.concepts.Grouping.addMember({
+      group,
+      member: member.user,
+      candidate: admin.user,
+      at,
+    });
+    await app.concepts.Trashing.trash({ item: post, by: member.user, at });
+    expect(await call("/mail/read", input)).toMatchObject({
+      ok: false,
+      error: { value: "NOT_FOUND" },
+    });
   });
 });

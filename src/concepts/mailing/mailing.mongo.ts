@@ -165,7 +165,9 @@ export class MongoMailingConcept {
 
   async _getMessage({ message }: { message: string }) {
     const doc = await this.messages.findOne({ _id: message });
-    return doc === null ? [] : [{ subject: doc.subject, recipient: doc.recipient, text: doc.text }];
+    return doc === null
+      ? []
+      : [{ key: doc.key, subject: doc.subject, recipient: doc.recipient, text: doc.text }];
   }
 
   async _getMessages(_: Record<string, never>) {

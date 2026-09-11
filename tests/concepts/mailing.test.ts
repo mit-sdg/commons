@@ -36,7 +36,12 @@ for (const [floor, make] of floors) {
       await mailing.markSent({ message: first.message, generation, at: new Date() });
       expect(await mailing._getPending({})).toEqual([]);
       expect(await mailing._getMessage({ message: first.message })).toEqual([
-        { subject: input.subject, recipient: "member@example.edu", text: input.text },
+        {
+          key: input.key,
+          subject: input.subject,
+          recipient: "member@example.edu",
+          text: input.text,
+        },
       ]);
       expect(await mailing._getMessage({ message: "missing" })).toEqual([]);
       expect(await mailing.enqueue({ ...input, at: new Date() })).toEqual(first);
