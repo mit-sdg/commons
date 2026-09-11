@@ -8,6 +8,8 @@ import {
   notificationMailText,
   notificationMailHtml,
   forumNotificationUrl,
+  notificationMailSource,
+  notificationMailAuthor,
 } from "../../src/computations/mail-content.ts";
 
 describe("email presentation", () => {
@@ -39,12 +41,57 @@ describe("email presentation", () => {
     ["__proto__", "New Commons notification"],
     ["toString", "New Commons notification"],
   ])("%s names what happened without machine-kind wording", (kind, phrase) => {
-    const input = { kind, title: "<Planning> & review", url: "https://example.edu/t/123#post-456" };
+    const input = {
+      kind,
+      title: "<Planning> & review",
+      url: "https://example.edu/t/123#post-456",
+      content: null,
+      authorName: null,
+    };
     expect(notificationMailSubject(input)).toBe(`${phrase}: ${input.title}`);
     expect(notificationMailText(input)).toContain(`${phrase}.`);
     expect(notificationMailHtml(input)).toContain("&lt;Planning&gt; &amp; review");
     expect(notificationMailHtml(input)).not.toContain("<Planning>");
     expect(notificationMailText(input)).toContain(input.url);
+  });
+
+  test("notification emails include the full message and public author identity as escaped text", () => {
+    const input = {
+      kind: "reply",
+      title: "Homework planning",
+      url: "https://example.edu/t/123#post-456",
+      authorName: notificationMailAuthor({ username: "alice", displayName: "Alice <A> & Bob" }),
+      content:
+        "First line\nSecond line\n\nA <b>literal HTML example</b>.\n\n" +
+        "Full message. ".repeat(100),
+    };
+    expect(notificationMailText(input)).toContain("Author: Alice <A> & Bob (@alice)");
+    expect(notificationMailText(input)).toContain(input.content);
+    const html = notificationMailHtml(input);
+    expect(html).toContain("Alice &lt;A&gt; &amp; Bob (@alice)");
+    expect(html).toContain("<p>First line<br>Second line</p>");
+    expect(html).toContain("&lt;b&gt;literal HTML example&lt;/b&gt;");
+    expect(html).not.toContain("<b>");
+    expect(html).toContain("Full message. ".repeat(100));
+    expect(html).toContain(input.url);
+    expect(notificationMailAuthor({ username: "alice", displayName: null })).toBe("@alice");
+    expect(notificationMailAuthor({ username: "alice", displayName: "  " })).toBe("@alice");
+    const assignment = {
+      ...input,
+      kind: "assignment_released",
+      content: null,
+      authorName: null,
+    };
+    expect(notificationMailText(assignment)).not.toContain("Author:");
+    expect(notificationMailHtml(assignment)).not.toContain("<blockquote>");
+  });
+
+  test("mail preview access distinguishes other mail from malformed notification keys", () => {
+    expect(notificationMailSource({ key: "invitation-123" })).toBeNull();
+    expect(notificationMailSource({ key: 'forum:{"post":"post-123"}' })).toBe("post-123");
+    for (const key of ["forum:", "forum:null", "forum:{}", 'forum:{"post":12}']) {
+      expect(notificationMailSource({ key })).toBe("");
+    }
   });
 
   test("discussion titles come only from the first line and are bounded; URLs encode opaque IDs", () => {

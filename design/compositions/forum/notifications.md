@@ -25,8 +25,8 @@ also wrote the answer. Every successful Notifying action then triggers
 account email, checks audience access, resolves the
 [current email context](view:Forum.notifications.notificationMailContext), and
 queues an event-specific subject and message in Mailing. Emails name the event
-and discussion title with a direct sign-in link, but contain no post-body excerpt.
-Titles are rendered snapshots at enqueue time; current recipient access and the
+and discussion title with a direct link, plus the author and full notified message.
+These details are rendered snapshots at enqueue time; current recipient access and the
 queued account address are still checked before dispatch. The inbox
 entry is already stored; a missing account email, rendering fault, queue refusal,
 or later SMTP failure cannot retract it.
@@ -84,3 +84,17 @@ Inbox reads, unread counts, mark-read, dismissal, and queued mail eligibility us
 Release email names the assignment and event and links directly to the assignment;
 it does not include assignment instructions. Mail is rechecked at dispatch; an
 archived assignment or dropped student no longer admits its notification.
+
+## Message content in email
+
+The [post details](view:Forum.notifications.notificationMailPost) add the notified
+post's author (display name with username, falling back to username) and full text,
+not the parent post or the rest of the discussion. Accepted-answer emails identify
+the answer's author, not the person who accepted it. HTML mail escapes the text
+and preserves paragraphs and line breaks; it does not interpret post HTML or
+embed images. Assignment-release emails keep their existing title and link.
+
+Once delivered, an email copy cannot be recalled when the source is edited,
+deleted, or its recipient loses access. This changes email content, not which
+events produce notifications or who receives them. Previously queued mail is
+not rewritten.

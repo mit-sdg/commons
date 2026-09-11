@@ -66,7 +66,12 @@ test("private Staff openings notify current staff once, excluding author and cou
   ]);
   expect(await inbox(student.session)).toEqual([]);
   expect(await inbox(other.session)).toEqual([]);
-  expect(await app.concepts.Mailing._getPending({})).toHaveLength(2);
+  const staffMail = await app.concepts.Mailing._getPending({});
+  expect(staffMail).toHaveLength(2);
+  for (const mail of staffMail) {
+    expect(mail.text).toContain("Author: @student");
+    expect(mail.text).toContain("Private question @tutor");
+  }
   await invoke(app, "/threads/create", {
     session: student.session,
     content: "Public",
@@ -114,6 +119,12 @@ test("assignment release notifications target actual assignees and disappear whe
   expect(mail?.subject).toBe("A new assignment is available: New exercise");
   expect(mail?.text).toContain(`/assignments/${draft.assignment}`);
   expect(`${mail?.text}${mail?.html}`).not.toContain("Private instructions");
+  expect(mail?.text).not.toContain("Author:");
+  expect(
+    await invoke(app, "/mail/read", { session: admin.session, message: mail!.message }),
+  ).toMatchObject({
+    text: expect.stringContaining("Assignment: New exercise"),
+  });
   expect(rows).toEqual([
     expect.objectContaining({
       kind: "assignment_released",

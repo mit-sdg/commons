@@ -106,8 +106,8 @@ _getStatus (message: String) : optional (sentAt: Date|Null)
   answers the Message's sent time, or null while it is pending
   answers no row when the Message does not exist
 
-_getMessage (message: String) : optional (subject: String, recipient: String, text: String)
-  answers one Message's subject, recipient, and rendered plain text for inspection
+_getMessage (message: String) : optional (key: Key, subject: String, recipient: String, text: String)
+  answers one Message's key, subject, recipient, and rendered plain text for inspection and source access checks
   answers no row when that Message does not exist
 
 _getMessages () : many (message: String, key: Key, recipient: String, subject: String, createdAt: Date, sentAt: Date|Null, attempts: Number, lastAttemptAt: Date|Null, lastError: String|Null)

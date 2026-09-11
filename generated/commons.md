@@ -680,7 +680,7 @@ Defined in [Mailing](../design/concepts/Mailing.md), line 1.
 
 - `_getPending() : many (message: String, key: Key, generation: String | Null, recipient: String, subject: String, text: String, html: String, createdAt: Date)`
 - `_getStatus(message: String) : optional (sentAt: Date | Null)`
-- `_getMessage(message: String) : optional (subject: String, recipient: String, text: String)`
+- `_getMessage(message: String) : optional (key: Key, subject: String, recipient: String, text: String)`
 - `_getMessages() : many (message: String, key: Key, recipient: String, subject: String, createdAt: Date, sentAt: Date | Null, attempts: Number, lastAttemptAt: Date | Null, lastError: String | Null)`
 
 #### Instances
@@ -1698,9 +1698,11 @@ Concrete types:
 - `mailPreviewText(text: String) : String` — [Commons application](../design/application.md), line 469.
 - `metadataOpeningAuthor(item: String, posts: Seq) : Any` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 38.
 - `notificationDiscussionTitle(content: Any) : String` — [Commons application](../design/application.md), line 472.
-- `notificationMailHtml(kind: String, title: String, url: String) : String` — [Commons application](../design/application.md), line 487.
+- `notificationMailAuthor(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 613.
+- `notificationMailHtml(kind: String, title: String, url: String, content: Any, authorName: Any) : String` — [Commons application](../design/application.md), line 487.
+- `notificationMailSource(key: String) : String|Null` — [Commons application](../design/application.md), line 610.
 - `notificationMailSubject(kind: String, title: String) : String` — [Commons application](../design/application.md), line 481.
-- `notificationMailText(kind: String, title: String, url: String) : String` — [Commons application](../design/application.md), line 484.
+- `notificationMailText(kind: String, title: String, url: String, content: Any, authorName: Any) : String` — [Commons application](../design/application.md), line 484.
 - `openingAdmission(authorized: Json, relay: Json, legRelay: Json, open: Json, openRound: Json, ran: Json, source: Json, sourceRound: Json, sourceOpen: Json, groups: Json, content: Json) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 57.
 - `openingAuthor(brief: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 66.
 - `openingAuthorized() : Boolean` — [Relays and their runs](../design/compositions/live/relays.md), line 54.
@@ -2837,6 +2839,28 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
     Roling._hasCapability (capability: "moderate", context: "commons", user) has (allowed: false)
 ```
 
+### (user) may preview mail (message)
+
+Authored path: `Access.mail.mailContentReader`.
+- Covered by [Mail](../design/compositions/access/mail.md), line 81.
+
+```view
+(user) may preview mail (message) — inputs (user, message); outputs (); bindings (key, post)
+  where
+    Mailing._getMessage (message) has (key)
+    post is notificationMailSource (key)
+    post is among [null]
+  where
+    Mailing._getMessage (message) has (key)
+    post is notificationMailSource (key)
+    view "(user) may read notification subject (subject)" with (subject: post, user)
+  where
+    Mailing._getMessage (message) has (key)
+    post is notificationMailSource (key)
+    view "(user) may administer" with (user)
+    Assigning._getDetail (assignment: post)
+```
+
 ### (user) may read (artifact) submitted by (submitter) for (assignment)
 
 Authored path: `Course.submissions.mayReadSubmissionArtifact`.
@@ -3344,6 +3368,21 @@ the email context of notification subject (subject) for (user) — inputs (subje
     view "(user) may read notification subject (subject)" with (subject, user)
     view "the notification title of (assignment)" with (assignment: subject) has (assignmentTitle: title)
     url is assignmentNotificationUrl (assignment: subject)
+```
+
+### the email post content and author of (post) for (reader)
+
+Authored path: `Forum.notifications.notificationMailPost`.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 90.
+
+```view
+the email post content and author of (post) for (reader) — inputs (post, reader); outputs (content, authorName); bindings (author, username, displayName) — answers at most one (content, authorName)
+  where
+    view "(user) may read forum post (post)" with (post, user: reader)
+    Posting._getPost (post) has (author, content)
+    Authenticating._getById (user: author) has (username)
+    whether Profiling._getProfileFields (user: author) has (displayName)
+    authorName is notificationMailAuthor (displayName, username)
 ```
 
 ### the invitation for (address)
@@ -7285,7 +7324,7 @@ when RequestBoundary.request (message, path: "/mail/read", requestId, session)
 where
   view "the active user of (session)" with (session) has (user: actor)
   view "(user) may administer" with (user: actor)
-  no Mailing._getMessage (message)
+  no view "(user) may preview mail (message)" with (message, user: actor)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -7301,6 +7340,7 @@ when RequestBoundary.request (message, path: "/mail/read", requestId, session)
 where
   view "the active user of (session)" with (session) has (user: actor)
   view "(user) may administer" with (user: actor)
+  view "(user) may preview mail (message)" with (message, user: actor)
   Mailing._getMessage (message) has (recipient, subject, text)
   preview is mailPreviewText (text)
 then
@@ -13592,9 +13632,10 @@ where
   Authenticating._getById (user: recipient) has (email)
   key is forumMailKey (notification, post: subject, recipient)
   view "the email context of notification subject (subject) for (user)" with (subject, user: recipient) has (title, url)
+  whether view "the email post content and author of (post) for (reader)" with (post: subject, reader: recipient) has (authorName, content)
   mailSubject is notificationMailSubject (kind, title)
-  text is notificationMailText (kind, title, url)
-  html is notificationMailHtml (kind, title, url)
+  text is notificationMailText (authorName, content, kind, title, url)
+  html is notificationMailHtml (authorName, content, kind, title, url)
 then
   Mailing.enqueue (at, html, key, recipient: email, subject: mailSubject, text)
 ```

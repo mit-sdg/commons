@@ -116,6 +116,18 @@ export const notificationMailContext = view(
   ],
 ).optional();
 
+export const notificationMailPost = view(
+  "the email post content and author of (post) for (reader)",
+  ({ post, reader }, { content, authorName }, { author, username, displayName }) =>
+    where(
+      postReader({ user: reader, post }),
+      Posting._getPost({ post }).is({ author, content }),
+      Authenticating._getById({ user: author }).is({ username }),
+      whether(Profiling._getProfileFields({ user: author }).is({ displayName })),
+      compute(computations.notificationMailAuthor, { username, displayName }, authorName),
+    ),
+).optional();
+
 export const NotificationQueuesEmail = reaction(
   ({
     notification,
@@ -126,6 +138,8 @@ export const NotificationQueuesEmail = reaction(
     at,
     title,
     url,
+    content,
+    authorName,
     mailSubject,
     text,
     html,
@@ -138,9 +152,15 @@ export const NotificationQueuesEmail = reaction(
         Authenticating._getById({ user: recipient }).is({ email }),
         compute(computations.forumMailKey, { notification, recipient, post: subject }, key),
         notificationMailContext({ subject, user: recipient }).is({ title, url }),
+        whether(
+          notificationMailPost({ post: subject, reader: recipient }).is({
+            content,
+            authorName,
+          }),
+        ),
         compute(computations.notificationMailSubject, { kind, title }, mailSubject),
-        compute(computations.notificationMailText, { kind, title, url }, text),
-        compute(computations.notificationMailHtml, { kind, title, url }, html),
+        compute(computations.notificationMailText, { kind, title, url, content, authorName }, text),
+        compute(computations.notificationMailHtml, { kind, title, url, content, authorName }, html),
       )
       .then(
         Mailing.enqueue({

@@ -1,10 +1,11 @@
 import { activeUser } from "./session.ts";
-import { compute, each, former, no, view, where, whether } from "@mit-sdg/sync-engine/language";
+import { compute, each, former, is, no, view, where, whether } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayAdminister, mayNotAdminister } from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
+import { notificationSubjectReader } from "../forum/notifications.ts";
 
-const { Mailing, Wording } = concepts;
+const { Assigning, Mailing, Wording } = concepts;
 
 /** The one place in Commons' mail whose words an administrator may replace. */
 const INVITATION = "invitation";
@@ -149,6 +150,29 @@ export const PreviewTemplate = endpoint(
     ),
 );
 
+/** Outbox administration does not grant access to private discussion bodies. */
+export const mailContentReader = view(
+  "(user) may preview mail (message)",
+  ({ user, message }, _out, { key, post }) => [
+    where(
+      Mailing._getMessage({ message }).is({ key }),
+      compute(computations.notificationMailSource, { key }, post),
+      is.among(post, [null]),
+    ),
+    where(
+      Mailing._getMessage({ message }).is({ key }),
+      compute(computations.notificationMailSource, { key }, post),
+      notificationSubjectReader({ user, subject: post }),
+    ),
+    where(
+      Mailing._getMessage({ message }).is({ key }),
+      compute(computations.notificationMailSource, { key }, post),
+      mayAdminister({ user }),
+      Assigning._getDetail({ assignment: post }),
+    ),
+  ],
+).holds();
+
 /** Read a safe plain-text preview on demand; never send raw HTML or login secrets to the browser. */
 export const Read = endpoint(
   "/mail/read",
@@ -157,6 +181,7 @@ export const Read = endpoint(
       where(
         activeUser({ session }).is({ user: actor }),
         mayAdminister({ user: actor }),
+        mailContentReader({ user: actor, message }),
         Mailing._getMessage({ message }).is({ subject, recipient, text }),
         compute(computations.mailPreviewText, { text }, preview),
       )
@@ -165,7 +190,7 @@ export const Read = endpoint(
       where(
         activeUser({ session }).is({ user: actor }),
         mayAdminister({ user: actor }),
-        no(Mailing._getMessage({ message })),
+        no(mailContentReader({ user: actor, message })),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("missing"),

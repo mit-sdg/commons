@@ -481,11 +481,11 @@ assignmentNotificationUrl(assignment: String) : String
 notificationMailSubject(kind: String, title: String) : String
   Names the notification event and a bounded single-line discussion or assignment title.
 
-notificationMailText(kind: String, title: String, url: String) : String
-  Names the event and title with a sign-in link, without post text.
+notificationMailText(kind: String, title: String, url: String, content: Any, authorName: Any) : String
+  Names the event, title and post author, includes the full notified post as text, and links to it. Assignment releases have no post content or author.
 
-notificationMailHtml(kind: String, title: String, url: String) : String
-  Escapes the event and title and supplies a sign-in link, without post text.
+notificationMailHtml(kind: String, title: String, url: String, content: Any, authorName: Any) : String
+  Escapes the event, title, author and full message text, preserving paragraphs and line breaks without interpreting embedded HTML, and supplies a direct link.
 
 capabilitiesAreKnown(capabilities: Strings) : Bool
   Reports whether every named capability appears in the application's registry,
@@ -606,6 +606,12 @@ positionBefore(position: Number) : Number
 receiptKind(choices: Strings, expected: String) : String
   Names a submitted answer's feedback as graded, reference, or ungraded from
   the authored question material, without adding feedback state to a concept.
+
+notificationMailSource(key: String) : String|Null
+  Reads the notification subject from a forum-mail key for preview access checks. Non-forum mail returns null; malformed forum keys return an empty subject that admits no reader.
+
+notificationMailAuthor(username: String, displayName: Any) : String
+  Names the post author using their display name and username, falling back to username when their profile or display name is absent.
 ```
 
 Two of these decide rather than render. `singleImportRow` composes the one row a

@@ -109,28 +109,49 @@ export function notificationMailSubject({ kind, title }: { kind: string; title: 
   return `${eventPhrase(kind)}: ${title.replace(/\s+/g, " ").trim().slice(0, 160)}`;
 }
 
-export function notificationMailText({
-  kind,
-  title,
-  url,
-}: {
+interface NotificationMail {
   kind: string;
   title: string;
   url: string;
-}): string {
-  return `${eventPhrase(kind)}.\n\n${kind === "assignment_released" ? "Assignment" : "Discussion"}: ${title}\n\nSign in to view the details:\n${url}`;
+  content: unknown;
+  authorName: unknown;
 }
 
-export function notificationMailHtml({
-  kind,
-  title,
-  url,
+export function notificationMailAuthor({
+  username,
+  displayName,
 }: {
-  kind: string;
-  title: string;
-  url: string;
+  username: string;
+  displayName: unknown;
 }): string {
-  return `<p>${escapeHtml(eventPhrase(kind))}.</p><p>${kind === "assignment_released" ? "Assignment" : "Discussion"}: <strong>${escapeHtml(title)}</strong></p><p><a href="${escapeHtml(url)}">Sign in to view the details</a></p>`;
+  const name = typeof displayName === "string" ? displayName.trim() : "";
+  return name ? `${name} (@${username})` : `@${username}`;
+}
+
+export function notificationMailText(input: NotificationMail): string {
+  const { kind, title, url, content } = input;
+  const author = typeof input.authorName === "string" ? input.authorName : "";
+  const message = typeof content === "string" ? `\n\n${content}` : "";
+  return `${eventPhrase(kind)}.${author ? `\nAuthor: ${author}` : ""}\n\n${kind === "assignment_released" ? "Assignment" : "Discussion"}: ${title}${message}\n\nView in Commons:\n${url}`;
+}
+
+export function notificationMailHtml(input: NotificationMail): string {
+  const { kind, title, url, content } = input;
+  const author = typeof input.authorName === "string" ? input.authorName : "";
+  const message =
+    typeof content === "string" ? `<blockquote>${paragraphs(content)}</blockquote>` : "";
+  return `<p>${escapeHtml(eventPhrase(kind))}.</p>${author ? `<p>Author: <strong>${escapeHtml(author)}</strong></p>` : ""}<p>${kind === "assignment_released" ? "Assignment" : "Discussion"}: <strong>${escapeHtml(title)}</strong></p>${message}<p><a href="${escapeHtml(url)}">View in Commons</a></p>`;
+}
+
+/** null means non-forum mail; malformed forum keys must not admit a preview. */
+export function notificationMailSource({ key }: { key: string }): string | null {
+  if (!key.startsWith("forum:")) return null;
+  try {
+    const context = JSON.parse(key.slice(6));
+    return typeof context?.post === "string" ? context.post : "";
+  } catch {
+    return "";
+  }
 }
 
 /** Outbox inspection must not expose invitation passwords or reset codes. */

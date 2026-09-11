@@ -77,3 +77,10 @@ Access.mail.SaveTemplate at /mail/save-template
 Access.mail.ResetTemplate at /mail/reset-template
 Access.mail.PreviewTemplate at /mail/preview-template
 ```
+
+[Mail content access](view:Access.mail.mailContentReader) additionally requires
+current access to a notification's source; outbox administration alone does not
+grant access to private discussion bodies. Administrators retain access to
+assignment-release previews, as they can read staff assignment details. A hidden
+source receives `NOT_FOUND`, just like a missing message. Non-notification mail
+retains the existing administrator-only preview with credential redaction.
