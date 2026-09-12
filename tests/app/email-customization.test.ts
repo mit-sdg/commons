@@ -233,9 +233,13 @@ describe("administrator email customization", () => {
     expect(JSON.stringify(listing)).not.toContain("reset-voucher");
   });
 
-  test("forum emails name the event and opening title, inbox adds navigation, never email post bodies", async () => {
+  test("forum emails snapshot the public author, complete post, title, and direct link", async () => {
     const { app, admin, member, memberSession, call } = await setup();
     const at = new Date();
+    await app.concepts.Profiling.createProfile({
+      user: admin.user,
+      displayName: "Ada <Admin>",
+    });
     const root = await app.concepts.Posting.create({
       author: admin.user,
       content: "# Study & planning\n\nROOT SECRET BODY",
@@ -246,9 +250,11 @@ describe("administrator email customization", () => {
       resource: thread.conversation,
       holders: [`account:${admin.user}`, `account:${member.user}`],
     });
+    const unabridgedParagraph = `${"Detailed notification content remains readable. ".repeat(40)}FINAL-NOTIFICATION-CONTENT-MARKER`;
+    const replyContent = `Complete <script>alert("mail")</script> reply\nSecond & line\n\n${unabridgedParagraph}`;
     const reply = await app.concepts.Posting.create({
       author: admin.user,
-      content: "REPLY SECRET BODY",
+      content: replyContent,
       at,
     });
     await app.concepts.Conversing.reply({ item: reply.post, parent: thread.node, at });
@@ -260,14 +266,37 @@ describe("administrator email customization", () => {
       at,
     });
     await app.whenIdle();
-    const mail = (await app.concepts.Mailing._getPending({})).find((m) =>
-      m.key.includes(notified.notification),
-    );
+    const queuedMail = () =>
+      app.concepts.Mailing._getPending({}).then((messages) =>
+        messages.find((message) => message.key.includes(notified.notification)),
+      );
+    const mail = await queuedMail();
+    const directLink = `/t/${thread.conversation}#post-${reply.post}`;
     expect(mail?.subject).toBe("You were mentioned in a discussion: Study & planning");
-    expect(mail?.text).toContain(`/t/${thread.conversation}#post-${reply.post}`);
+    expect(mail?.text).toContain("You were mentioned in a discussion.");
+    expect(mail?.text).toContain("Discussion: Study & planning");
+    expect(mail?.text).toContain("From: Ada <Admin> (@admin)");
+    expect(mail?.text).toContain(replyContent);
+    expect(mail?.text.endsWith(directLink)).toBe(true);
+    expect(mail?.html).toContain("You were mentioned in a discussion.");
     expect(mail?.html).toContain("Study &amp; planning");
-    for (const secret of ["ROOT SECRET BODY", "REPLY SECRET BODY"])
-      expect(`${mail?.text}${mail?.html}`).not.toContain(secret);
+    expect(mail?.html).toContain("Ada &lt;Admin&gt; (@admin)");
+    expect(mail?.html).toContain(
+      "<p>Complete &lt;script&gt;alert(&quot;mail&quot;)&lt;/script&gt; reply<br>Second &amp; line</p>",
+    );
+    expect(mail?.html).toContain(`<p>${unabridgedParagraph}</p>`);
+    expect(mail?.html).not.toContain("<script>");
+    expect(mail?.html.endsWith(`Open discussion</a></p>`)).toBe(true);
+    expect(`${mail?.text}${mail?.html}`).not.toContain("ROOT SECRET BODY");
+
+    await app.concepts.Posting.edit({
+      post: reply.post,
+      content: "Edited after enqueue",
+      at: new Date(at.getTime() + 1_000),
+    });
+    await app.whenIdle();
+    expect((await queuedMail())?.text).toContain(replyContent);
+    expect((await queuedMail())?.text).not.toContain("Edited after enqueue");
     const inbox = await call("/notifications/inbox", {}, memberSession.session);
     expect(inbox).toMatchObject({
       ok: true,

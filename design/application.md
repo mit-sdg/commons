@@ -481,11 +481,20 @@ assignmentNotificationUrl(assignment: String) : String
 notificationMailSubject(kind: String, title: String) : String
   Names the notification event and a bounded single-line discussion or assignment title.
 
+notificationAuthorLabel(username: String, displayName: Any) : String
+  Forms a public author label from a nonblank display name and `@username`, or from `@username` alone.
+
+forumNotificationMailText(kind: String, title: String, url: String, author: String, content: String) : String
+  Names the event and discussion, identifies the author, preserves the complete post content as plain text, and finishes with the direct discussion link.
+
+forumNotificationMailHtml(kind: String, title: String, url: String, author: String, content: String) : String
+  Safely escapes every dynamic value—the event, discussion title, author, complete post content, and direct URL—while preserving the content's paragraphs and line breaks and placing the link last.
+
 notificationMailText(kind: String, title: String, url: String) : String
-  Names the event and title with a sign-in link, without post text.
+  Names a non-forum notification event and title with its direct link.
 
 notificationMailHtml(kind: String, title: String, url: String) : String
-  Escapes the event and title and supplies a sign-in link, without post text.
+  Escapes a non-forum notification event and title and supplies its direct link.
 
 capabilitiesAreKnown(capabilities: Strings) : Bool
   Reports whether every named capability appears in the application's registry,

@@ -1629,13 +1629,13 @@ Concrete types:
 - `audienceLabel(kind: String, identity: String, name: Any) : String` — [Commons application](../design/application.md), line 430.
 - `boardQuestions(value: LiveRunSnapshot, values: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 130.
 - `briefStanding(request: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 32.
-- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 490.
+- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 499.
 - `cardGiven(card: String) : String` — [The wall](../design/compositions/live/walls.md), line 114.
 - `cardId(response: String, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 86.
 - `cardStanding(card: String, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 78.
-- `carriesAdminister(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 494.
+- `carriesAdminister(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 503.
 - `carryUses() : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 88.
-- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 564.
+- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 573.
 - `cleanupAdmission(authorized: Json, openRun: Json, unlocked: Json, applied: Json, standing: Json) : String` — [The wall](../design/compositions/live/walls.md), line 40.
 - `cleanupBrief(account: String, candidates: Seq) : String` — [The wall](../design/compositions/live/walls.md), line 43.
 - `cleanupCategories(brief: String) : Seq` — [The wall](../design/compositions/live/walls.md), line 46.
@@ -1649,8 +1649,8 @@ Concrete types:
 - `draftContext(references: Strings, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 134.
 - `draftReferences(context: String) : Strings` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 137.
 - `draftRequest(request: String, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 140.
-- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 550.
-- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 554.
+- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 559.
+- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 563.
 - `editApplied(kind: String, target: String, value: String, title: Json, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Boolean` — [Edits the model proposes](../design/compositions/live/edits.md), line 69.
 - `editCap(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 121.
 - `editChoices(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 124.
@@ -1671,10 +1671,12 @@ Concrete types:
 - `editRoundTakesUse(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 96.
 - `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 103.
 - `editUse(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 130.
-- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 500.
+- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 509.
 - `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 137.
 - `failureStanding(failedAt: Date, at: Date) : String` — [The wall](../design/compositions/live/walls.md), line 73.
-- `forumMailKey(notification: String, recipient: String, post: String) : String` — [Notifications](../design/compositions/forum/notifications.md), line 69.
+- `forumMailKey(notification: String, recipient: String, post: String) : String` — [Notifications](../design/compositions/forum/notifications.md), line 72.
+- `forumNotificationMailHtml(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 490.
+- `forumNotificationMailText(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 487.
 - `forumNotificationUrl(conversation: String, post: String) : String` — [Commons application](../design/application.md), line 475.
 - `guideScope(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 173.
 - `guideUse(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 171.
@@ -1697,10 +1699,11 @@ Concrete types:
 - `linesStanding(lines: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 83.
 - `mailPreviewText(text: String) : String` — [Commons application](../design/application.md), line 469.
 - `metadataOpeningAuthor(item: String, posts: Seq) : Any` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 38.
+- `notificationAuthorLabel(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 484.
 - `notificationDiscussionTitle(content: Any) : String` — [Commons application](../design/application.md), line 472.
-- `notificationMailHtml(kind: String, title: String, url: String) : String` — [Commons application](../design/application.md), line 487.
+- `notificationMailHtml(kind: String, title: String, url: String) : String` — [Commons application](../design/application.md), line 496.
 - `notificationMailSubject(kind: String, title: String) : String` — [Commons application](../design/application.md), line 481.
-- `notificationMailText(kind: String, title: String, url: String) : String` — [Commons application](../design/application.md), line 484.
+- `notificationMailText(kind: String, title: String, url: String) : String` — [Commons application](../design/application.md), line 493.
 - `openingAdmission(authorized: Json, relay: Json, legRelay: Json, open: Json, openRound: Json, ran: Json, source: Json, sourceRound: Json, sourceOpen: Json, groups: Json, content: Json) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 57.
 - `openingAuthor(brief: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 66.
 - `openingAuthorized() : Boolean` — [Relays and their runs](../design/compositions/live/relays.md), line 54.
@@ -1709,19 +1712,19 @@ Concrete types:
 - `openingMaterial(brief: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 69.
 - `openingPresentation(brief: String) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 72.
 - `ownsTaskScope(user: String, scope: String) : Boolean` — [Tasks](../design/compositions/tasks/tasks.md), line 116.
-- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 574.
-- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 578.
-- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 581.
-- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 585.
-- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 589.
+- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 583.
+- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 587.
+- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 590.
+- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 594.
+- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 598.
 - `partLabel(value: Json, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 157.
 - `participantAnswers(reply: String, value: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 149.
 - `participantPassage(value: Json, participant: String) : String` — [The wall](../design/compositions/live/walls.md), line 142.
 - `participantQuestions(value: LiveRunSnapshot) : Seq` — [Live runs](../design/compositions/live/runs.md), line 126.
-- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 505.
-- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 510.
-- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 516.
-- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 513.
+- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 514.
+- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 519.
+- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 525.
+- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 522.
 - `pickPriority(count: Number) : Number` — [The wall](../design/compositions/live/walls.md), line 82.
 - `pileCards(pile: String, categories: Json, values: Json, value: Json) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 103.
 - `placingLines(reply: String, categories: Json, values: Json, removed: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 124.
@@ -1729,19 +1732,19 @@ Concrete types:
 - `placingReading(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 118.
 - `placingReason(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 129.
 - `placingRepairPassage(value: Json, categories: Json, values: Json, removed: Json, notes: String, offering: String, account: String) : String` — [The wall](../design/compositions/live/walls.md), line 110.
-- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 597.
-- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 602.
+- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 606.
+- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 611.
 - `postPreview(content: String) : Record` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 40.
 - `previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings` — [Commons application](../design/application.md), line 418.
-- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 606.
+- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 615.
 - `relayDraftPassage(request: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json, classDocuments: Json, relayDocuments: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 36.
 - `relayDraftReading(reply: String, passage: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 54.
 - `relayDraftReason(reply: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 59.
 - `relayDraftRepairPassage(passage: String, offering: String, account: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 50.
 - `relayEditLines(reply: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 63.
 - `relayGiven(relay: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 143.
-- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 569.
-- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 559.
+- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 578.
+- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 568.
 - `roundMaterialIsValid(title: String, prompt: String, choices: Strings, parts: Strings, cap: Number) : Boolean` — [Relays and their runs](../design/compositions/live/relays.md), line 158.
 - `sampledAnswers(reply: String) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 34.
 - `sampledGroups(reply: String, kind: String, choices: Json, use: String, carried?: Json) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 39.
@@ -1755,14 +1758,14 @@ Concrete types:
 - `samplingResolvedStanding(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 53.
 - `selectedIdentities(holders: Strings, kind: String) : Strings` — [Commons application](../design/application.md), line 427.
 - `selectedSection(section: Any) : Strings` — [Commons application](../design/application.md), line 451.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 519.
-- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 522.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 528.
+- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 531.
 - `snapshotForm(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 112.
 - `snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 115.
 - `snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 122.
 - `snapshotRequirements(value: Json) : Seq` — [Live runs](../design/compositions/live/runs.md), line 119.
 - `snapshotTitle(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 109.
-- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 593.
+- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 602.
 - `sorterNotes(relay: String, run: String) : String` — [The wall](../design/compositions/live/walls.md), line 93.
 - `sortingAdmission(mode: String, authorized: Boolean|Null, live: Boolean|Null, openRun: Boolean|Null, waiting: Boolean|Null, unlocked: Boolean|Null, answered: Boolean|Null, applied: Boolean|Null, ready: Boolean|Null, value: Json) : String` — [The wall](../design/compositions/live/walls.md), line 60.
 - `sortingBrief(account: String, value: Json, categories: Json, values: Json, removed: Json, notes: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 63.
@@ -1770,15 +1773,15 @@ Concrete types:
 - `sortingPileSubjects(categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 209.
 - `staffCapabilities(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 445.
 - `staffQuestion(holders: Seq, nonStaffAuthor: Any) : Boolean` — [Feeds and thread context](../design/compositions/forum/feed.md), line 31.
-- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 528.
+- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 537.
 - `submissionAllowed(detail: Json, section: String, at: Date) : Bool` — [Commons application](../design/application.md), line 394.
 - `summaryAdmission(items: Number) : String` — [The wall](../design/compositions/live/walls.md), line 50.
-- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 538.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 532.
-- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 535.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 547.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 541.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 544.
+- `taskListMailHtml(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 547.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 541.
+- `taskListMailText(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 544.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 556.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 550.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String` — [Commons application](../design/application.md), line 553.
 - `threadLastActivity(posts: Rows) : Any` — [Commons application](../design/application.md), line 412.
 - `threadParticipants(posts: Rows) : Strings` — [Commons application](../design/application.md), line 415.
 - `threadPostIds(nodes: Rows) : Strings` — [Commons application](../design/application.md), line 403.
@@ -1977,7 +1980,7 @@ Authored path: `Forum.threads.readableConversation`.
 ### (holders) include the whole course
 
 Authored path: `Forum.notifications.courseWideNotificationAudience`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 76.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 79.
 
 ```view
 (holders) include the whole course — inputs (holders); outputs (); bindings ()
@@ -2141,7 +2144,7 @@ the round of (leg) in (run) — inputs (run, leg); outputs (round, open); bindin
 ### (user) may read notification subject (subject)
 
 Authored path: `Forum.notifications.notificationSubjectReader`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 81.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 84.
 
 ```view
 (user) may read notification subject (subject) — inputs (user, subject); outputs (); bindings ()
@@ -2156,7 +2159,7 @@ Authored path: `Forum.notifications.notificationSubjectReader`.
 ### (notification) is available to (user)
 
 Authored path: `Forum.notifications.readableNotification`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 66.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 69.
 
 ```view
 (notification) is available to (user) — inputs (notification, user); outputs (); bindings (subject, link)
@@ -2940,7 +2943,7 @@ Authored path: `Course.assignments.maySubmitAssignment`.
 ### (user) receives a staff notification for (holders)
 
 Authored path: `Forum.notifications.staffNotificationRecipient`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 76.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 79.
 
 ```view
 (user) receives a staff notification for (holders) — inputs (user, holders); outputs (); bindings ()
@@ -3283,7 +3286,7 @@ the conversation placing (item) for (reader) — inputs (item, reader); outputs 
 ### the readable opening of (conversation) for (reader)
 
 Authored path: `Forum.notifications.readableDiscussionOpening`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 43.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 46.
 
 ```view
 the readable opening of (conversation) for (reader) — inputs (conversation, reader); outputs (content); bindings (item) — answers at most one (content)
@@ -3296,7 +3299,7 @@ the readable opening of (conversation) for (reader) — inputs (conversation, re
 ### the discussion context of (post) for (reader)
 
 Authored path: `Forum.notifications.notificationDiscussion`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 42.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 45.
 
 ```view
 the discussion context of (post) for (reader) — inputs (post, reader); outputs (conversation, discussionTitle); bindings (content) — answers at most one (conversation, discussionTitle)
@@ -3323,7 +3326,7 @@ the effective invitation copy () — inputs (); outputs (subject, body); binding
 ### the notification title of (assignment)
 
 Authored path: `Forum.notifications.assignmentNotificationTitle`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 83.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 86.
 
 ```view
 the notification title of (assignment) — inputs (assignment); outputs (assignmentTitle); bindings () — answers at most one (assignmentTitle)
@@ -3336,14 +3339,24 @@ Authored path: `Forum.notifications.notificationMailContext`.
 - Covered by [Notifications](../design/compositions/forum/notifications.md), line 26.
 
 ```view
-the email context of notification subject (subject) for (user) — inputs (subject, user); outputs (title, url); bindings (conversation) — answers at most one (title, url)
+the email context of notification subject (subject) for (user) — inputs (subject, user, kind); outputs (title, url, mailSubject, text, html); bindings (conversation, authorUser, username, displayName, author, content) — answers at most one (title, url, mailSubject, text, html)
   where
     view "the discussion context of (post) for (reader)" with (post: subject, reader: user) has (conversation, discussionTitle: title)
+    Posting._getPost (post: subject) has (author: authorUser, content)
+    Authenticating._getById (user: authorUser) has (username)
+    whether Profiling._getProfileFields (user: authorUser) has (displayName)
     url is forumNotificationUrl (conversation, post: subject)
+    mailSubject is notificationMailSubject (kind, title)
+    author is notificationAuthorLabel (displayName, username)
+    text is forumNotificationMailText (author, content, kind, title, url)
+    html is forumNotificationMailHtml (author, content, kind, title, url)
   where
     view "(user) may read notification subject (subject)" with (subject, user)
     view "the notification title of (assignment)" with (assignment: subject) has (assignmentTitle: title)
     url is assignmentNotificationUrl (assignment: subject)
+    mailSubject is notificationMailSubject (kind, title)
+    text is notificationMailText (kind, title, url)
+    html is notificationMailHtml (kind, title, url)
 ```
 
 ### the invitation for (address)
@@ -4062,7 +4075,7 @@ Former "the assigned population for (assignment)" — inputs (assignment); bindi
 ### the assignment notification presentation of (assignment) for (user)
 
 Authored path: `Forum.notifications.theAssignmentNotificationPresentation`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 83.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 86.
 
 ```former
 Former "the assignment notification presentation of (assignment) for (user)" — inputs (assignment, user); bindings (assignmentTitle); promises at most one record — forms:
@@ -4386,7 +4399,7 @@ Former "the current audience options of (user)" — inputs (user); bindings (hol
 ### the current mail eligibility of (recipient) for (post) at (queued)
 
 Authored path: `Forum.notifications.theMailEligibility`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 66.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 69.
 
 ```former
 Former "the current mail eligibility of (recipient) for (post) at (queued)" — inputs (recipient, post, queued); bindings (); promises at most one record — forms:
@@ -4451,7 +4464,7 @@ Former "the defined roles ()" — inputs (); bindings (role, name, capabilities)
 ### the discussion notification presentation of (post) for (reader)
 
 Authored path: `Forum.notifications.theDiscussionNotificationPresentation`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 40.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 43.
 
 ```former
 Former "the discussion notification presentation of (post) for (reader)" — inputs (post, reader); bindings (conversation, discussionTitle); promises at most one record — forms:
@@ -4854,7 +4867,7 @@ Former "the home feed by creation ()" — inputs (reader); bindings (conversatio
 ### the notification presentation of (item)
 
 Authored path: `Forum.notifications.theNotificationPresentationOf`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 38.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 41.
 
 ```former
 Former "the notification presentation of (item)" — inputs (item, reader); bindings (author, content, createdAt, editedAt, username, displayName, avatar); promises at most one record — forms:
@@ -4878,7 +4891,7 @@ Former "the notification presentation of (item)" — inputs (item, reader); bind
 ### the inbox of (user)
 
 Authored path: `Forum.notifications.theInboxOf`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 37.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 40.
 
 ```former
 Former "the inbox of (user)" — inputs (user); bindings (notification, kind, link, createdAt, read); promises exactly one record — forms:
@@ -5118,7 +5131,7 @@ Former "the notes shown to (learner)" — inputs (learner); bindings (note, auth
 ### the notifications of (user)
 
 Authored path: `Forum.notifications.theNotificationsOf`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 35.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 38.
 
 ```former
 Former "the notifications of (user)" — inputs (user); bindings (notification, kind, subject, link, createdAt, read); promises exactly one record — forms:
@@ -6259,7 +6272,7 @@ Former "the user search (query)" — inputs (query); bindings (user, username); 
 ### the visible unread notifications of (user)
 
 Authored path: `Forum.notifications.theUnreadCount`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 66.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 69.
 
 ```former
 Former "the visible unread notifications of (user)" — inputs (user); bindings (notification); promises exactly one record — forms:
@@ -13437,8 +13450,8 @@ then
 ### Forum.notifications.Dismiss:dismiss
 
 Authored path: `Forum.notifications.Dismiss`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 51.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 58.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 54.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 61.
 
 ```reaction
 when RequestBoundary.request (notification, path: "/notifications/dismiss", requestId, session)
@@ -13452,8 +13465,8 @@ then
 ### Forum.notifications.Dismiss:dismiss#2
 
 Authored path: `Forum.notifications.Dismiss`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 51.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 58.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 54.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 61.
 
 ```reaction
 when Notifying.dismiss (notification, recipient: user, result.notification: dismissed), asked by Forum.notifications.Dismiss:dismiss
@@ -13466,8 +13479,8 @@ then
 ### Forum.notifications.Dismiss:hidden
 
 Authored path: `Forum.notifications.Dismiss`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 51.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 58.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 54.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 61.
 
 ```reaction
 when RequestBoundary.request (notification, path: "/notifications/dismiss", requestId, session)
@@ -13495,8 +13508,8 @@ then
 ### Forum.notifications.ListNotifications
 
 Authored path: `Forum.notifications.ListNotifications`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 34.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 59.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 37.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 62.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/list", requestId, session)
@@ -13509,8 +13522,8 @@ then
 ### Forum.notifications.MarkAllRead:answer
 
 Authored path: `Forum.notifications.MarkAllRead`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 50.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 60.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 53.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 63.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/markAllRead", requestId, session)
@@ -13523,8 +13536,8 @@ then
 ### Forum.notifications.MarkAllRead:visible
 
 Authored path: `Forum.notifications.MarkAllRead`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 50.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 60.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 53.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 63.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/markAllRead", requestId, session)
@@ -13539,8 +13552,8 @@ then
 ### Forum.notifications.MarkRead:hidden
 
 Authored path: `Forum.notifications.MarkRead`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 50.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 61.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 53.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 64.
 
 ```reaction
 when RequestBoundary.request (notification, path: "/notifications/markRead", requestId, session)
@@ -13554,8 +13567,8 @@ then
 ### Forum.notifications.MarkRead:read
 
 Authored path: `Forum.notifications.MarkRead`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 50.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 61.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 53.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 64.
 
 ```reaction
 when RequestBoundary.request (notification, path: "/notifications/markRead", requestId, session)
@@ -13569,8 +13582,8 @@ then
 ### Forum.notifications.MarkRead:read#2
 
 Authored path: `Forum.notifications.MarkRead`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 50.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 61.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 53.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 64.
 
 ```reaction
 when Notifying.markRead (notification, recipient: user, result.notification: marked), asked by Forum.notifications.MarkRead:read
@@ -13591,10 +13604,7 @@ where
   view "(user) may read notification subject (subject)" with (subject, user: recipient)
   Authenticating._getById (user: recipient) has (email)
   key is forumMailKey (notification, post: subject, recipient)
-  view "the email context of notification subject (subject) for (user)" with (subject, user: recipient) has (title, url)
-  mailSubject is notificationMailSubject (kind, title)
-  text is notificationMailText (kind, title, url)
-  html is notificationMailHtml (kind, title, url)
+  view "the email context of notification subject (subject) for (user)" with (kind, subject, user: recipient) has (html, mailSubject, text)
 then
   Mailing.enqueue (at, html, key, recipient: email, subject: mailSubject, text)
 ```
@@ -13602,7 +13612,7 @@ then
 ### Forum.notifications.PurgeClearsNotifications
 
 Authored path: `Forum.notifications.PurgeClearsNotifications`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 55.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 58.
 
 ```reaction
 when Trashing.purge (item)
@@ -13613,8 +13623,8 @@ then
 ### Forum.notifications.ReadInbox
 
 Authored path: `Forum.notifications.ReadInbox`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 36.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 62.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 39.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 65.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/inbox", requestId, session)
@@ -13693,7 +13703,7 @@ then
 ### Forum.notifications.RootNotifiesAddressedAccounts
 
 Authored path: `Forum.notifications.RootNotifiesAddressedAccounts`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 73.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 76.
 
 ```reaction
 when Accessing.establish (holders, resource: conversation)
@@ -13714,7 +13724,7 @@ then
 ### Forum.notifications.RootNotifiesStaff
 
 Authored path: `Forum.notifications.RootNotifiesStaff`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 75.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 78.
 
 ```reaction
 when Accessing.establish (holders, resource: conversation)
@@ -13734,8 +13744,8 @@ then
 ### Forum.notifications.UnreadCount
 
 Authored path: `Forum.notifications.UnreadCount`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 46.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 63.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 49.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 66.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/unreadCount", requestId, session)

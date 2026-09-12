@@ -107,7 +107,7 @@ test("a failed establishment leaves placed content closed to every reader", asyn
   expect(await instances.Mailing._getPending({})).toEqual([]);
 });
 
-test("queued group mail is withheld after departure and includes only the title, not the body", async () => {
+test("queued group mail includes its author and full content but is withheld after departure", async () => {
   const {
     instances,
     people: [author, reader],
@@ -116,17 +116,21 @@ test("queued group mail is withheld after departure and includes only the title,
   const { group } = await instances.Grouping.create({ creator: author.user, title: "Study", at });
   await instances.Grouping.addMember({ group, member: author.user, candidate: reader.user, at });
   const app = assembleCommons(instances);
+  const content = "# Homework question\n\nComplete homework question for @reader";
   expect(
     await app.invoker.invoke("/threads/create", {
       session: author.session,
-      content: "# Homework question\n\nSECRET homework question for @reader",
+      content,
       holders: [`group:${group}`],
     }),
   ).toMatchObject({ ok: true });
   const [queued] = await instances.Mailing._getPending({});
   expect(queued).toBeDefined();
   expect(queued.subject).toBe("You were mentioned in a discussion: Homework question");
-  expect(queued.text + queued.html).not.toContain("SECRET");
+  expect(queued.text).toContain("From: @author");
+  expect(queued.text).toContain(content);
+  expect(queued.html).toContain("From: <strong>@author</strong>");
+  expect(queued.html).toContain("Complete homework question for @reader");
   await app.concepts.Grouping.leave({ group, member: reader.user, at });
   const { deliverPendingMail } = await import("../../src/email/worker.ts");
   const { forumMailEligibility } = await import("../../src/email/forum-policy.ts");

@@ -41,6 +41,7 @@ export function invitationTemplateBody({ body }: { body: string | null }): strin
 
 function paragraphs(text: string): string {
   return text
+    .replace(/\r\n?/g, "\n")
     .split(/\n\n+/)
     .map((p) => `<p>${escapeHtml(p).replaceAll("\n", "<br>")}</p>`)
     .join("");
@@ -107,6 +108,49 @@ export function assignmentNotificationUrl({ assignment }: { assignment: string }
 
 export function notificationMailSubject({ kind, title }: { kind: string; title: string }): string {
   return `${eventPhrase(kind)}: ${title.replace(/\s+/g, " ").trim().slice(0, 160)}`;
+}
+
+export function notificationAuthorLabel({
+  username,
+  displayName,
+}: {
+  username: string;
+  displayName: unknown;
+}): string {
+  const publicName = typeof displayName === "string" ? displayName.trim() : "";
+  return publicName === "" ? `@${username}` : `${publicName} (@${username})`;
+}
+
+export function forumNotificationMailText({
+  kind,
+  title,
+  url,
+  author,
+  content,
+}: {
+  kind: string;
+  title: string;
+  url: string;
+  author: string;
+  content: string;
+}): string {
+  return `${eventPhrase(kind)}.\n\nDiscussion: ${title}\nFrom: ${author}\n\n${content}\n\nOpen discussion:\n${url}`;
+}
+
+export function forumNotificationMailHtml({
+  kind,
+  title,
+  url,
+  author,
+  content,
+}: {
+  kind: string;
+  title: string;
+  url: string;
+  author: string;
+  content: string;
+}): string {
+  return `<p>${escapeHtml(eventPhrase(kind))}.</p><p>Discussion: <strong>${escapeHtml(title)}</strong></p><p>From: <strong>${escapeHtml(author)}</strong></p>${paragraphs(content)}<p><a href="${escapeHtml(url)}">Open discussion</a></p>`;
 }
 
 export function notificationMailText({

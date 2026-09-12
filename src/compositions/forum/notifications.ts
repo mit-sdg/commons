@@ -100,47 +100,44 @@ export const theDiscussionNotificationPresentation = former(
 
 export const notificationMailContext = view(
   "the email context of notification subject (subject) for (user)",
-  ({ subject, user }, { title, url }, { conversation }) => [
+  (
+    { subject, user, kind },
+    { title, url, mailSubject, text, html },
+    { conversation, authorUser, username, displayName, author, content },
+  ) => [
     where(
       notificationDiscussion({ post: subject, reader: user }).is({
         conversation,
         discussionTitle: title,
       }),
+      Posting._getPost({ post: subject }).is({ author: authorUser, content }),
+      Authenticating._getById({ user: authorUser }).is({ username }),
+      whether(Profiling._getProfileFields({ user: authorUser }).is({ displayName })),
       compute(computations.forumNotificationUrl, { conversation, post: subject }, url),
+      compute(computations.notificationMailSubject, { kind, title }, mailSubject),
+      compute(computations.notificationAuthorLabel, { username, displayName }, author),
+      compute(computations.forumNotificationMailText, { kind, title, url, author, content }, text),
+      compute(computations.forumNotificationMailHtml, { kind, title, url, author, content }, html),
     ),
     where(
       notificationSubjectReader({ user, subject }),
       assignmentNotificationTitle({ assignment: subject }).is({ assignmentTitle: title }),
       compute(computations.assignmentNotificationUrl, { assignment: subject }, url),
+      compute(computations.notificationMailSubject, { kind, title }, mailSubject),
+      compute(computations.notificationMailText, { kind, title, url }, text),
+      compute(computations.notificationMailHtml, { kind, title, url }, html),
     ),
   ],
 ).optional();
 
 export const NotificationQueuesEmail = reaction(
-  ({
-    notification,
-    recipient,
-    kind,
-    subject,
-    email,
-    at,
-    title,
-    url,
-    mailSubject,
-    text,
-    html,
-    message,
-    key,
-  }) =>
+  ({ notification, recipient, kind, subject, email, at, mailSubject, text, html, message, key }) =>
     when(Notifying.notify({ recipient, kind, subject, at }).responds({ notification }))
       .where(
         notificationSubjectReader({ user: recipient, subject }),
         Authenticating._getById({ user: recipient }).is({ email }),
         compute(computations.forumMailKey, { notification, recipient, post: subject }, key),
-        notificationMailContext({ subject, user: recipient }).is({ title, url }),
-        compute(computations.notificationMailSubject, { kind, title }, mailSubject),
-        compute(computations.notificationMailText, { kind, title, url }, text),
-        compute(computations.notificationMailHtml, { kind, title, url }, html),
+        notificationMailContext({ subject, user: recipient, kind }).is({ mailSubject, text, html }),
       )
       .then(
         Mailing.enqueue({

@@ -5,6 +5,9 @@ import {
   mailPreviewText,
   notificationDiscussionTitle,
   notificationMailSubject,
+  notificationAuthorLabel,
+  forumNotificationMailText,
+  forumNotificationMailHtml,
   notificationMailText,
   notificationMailHtml,
   forumNotificationUrl,
@@ -45,6 +48,45 @@ describe("email presentation", () => {
     expect(notificationMailHtml(input)).toContain("&lt;Planning&gt; &amp; review");
     expect(notificationMailHtml(input)).not.toContain("<Planning>");
     expect(notificationMailText(input)).toContain(input.url);
+  });
+
+  test("forum author labels use a nonblank display name and fall back to the username", () => {
+    expect(notificationAuthorLabel({ username: "ada", displayName: "  Ada Lovelace  " })).toBe(
+      "Ada Lovelace (@ada)",
+    );
+    expect(notificationAuthorLabel({ username: "ada", displayName: " \n\t " })).toBe("@ada");
+    expect(notificationAuthorLabel({ username: "ada", displayName: null })).toBe("@ada");
+  });
+
+  test("forum messages preserve complete text and safely render HTML paragraphs and line breaks", () => {
+    const unabridgedParagraph = `${"Detailed message content remains present. ".repeat(40)}FINAL-CONTENT-MARKER`;
+    const input = {
+      kind: "mention",
+      title: '<Planning> & "review"',
+      author: 'Ada <img src=x onerror="alert(1)"> (@ada)',
+      content: `First <script>alert("x")</script>\nSecond & line\n\n${unabridgedParagraph}`,
+      url: 'https://example.edu/t/thread?x="bad"&y=1#post-reply',
+    };
+    const text = forumNotificationMailText(input);
+    expect(text).toContain("You were mentioned in a discussion.");
+    expect(text).toContain(`Discussion: ${input.title}`);
+    expect(text).toContain(`From: ${input.author}\n\n${input.content}`);
+    expect(text.endsWith(input.url)).toBe(true);
+
+    const html = forumNotificationMailHtml(input);
+    expect(html).toContain("You were mentioned in a discussion.");
+    expect(html).toContain("&lt;Planning&gt; &amp; &quot;review&quot;");
+    expect(html).toContain("Ada &lt;img src=x onerror=&quot;alert(1)&quot;&gt; (@ada)");
+    expect(html).toContain(
+      "<p>First &lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;<br>Second &amp; line</p>",
+    );
+    expect(html).toContain(`<p>${unabridgedParagraph}</p>`);
+    expect(html).toContain(
+      'href="https://example.edu/t/thread?x=&quot;bad&quot;&amp;y=1#post-reply"',
+    );
+    expect(html).not.toContain("<script>");
+    expect(html).not.toContain("<img");
+    expect(html.endsWith("</a></p>")).toBe(true);
   });
 
   test("discussion titles come only from the first line and are bounded; URLs encode opaque IDs", () => {

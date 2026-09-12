@@ -114,6 +114,8 @@ test("assignment release notifications target actual assignees and disappear whe
   expect(mail?.subject).toBe("A new assignment is available: New exercise");
   expect(mail?.text).toContain(`/assignments/${draft.assignment}`);
   expect(`${mail?.text}${mail?.html}`).not.toContain("Private instructions");
+  expect(mail?.text).not.toContain("From:");
+  expect(mail?.html).not.toContain("From:");
   expect(rows).toEqual([
     expect.objectContaining({
       kind: "assignment_released",

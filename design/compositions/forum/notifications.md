@@ -24,12 +24,15 @@ also wrote the answer. Every successful Notifying action then triggers
 [Forum.notifications.NotificationQueuesEmail](reaction:Forum.notifications.NotificationQueuesEmail), which looks up the recipient's
 account email, checks audience access, resolves the
 [current email context](view:Forum.notifications.notificationMailContext), and
-queues an event-specific subject and message in Mailing. Emails name the event
-and discussion title with a direct sign-in link, but contain no post-body excerpt.
-Titles are rendered snapshots at enqueue time; current recipient access and the
-queued account address are still checked before dispatch. The inbox
-entry is already stored; a missing account email, rendering fault, queue refusal,
-or later SMTP failure cannot retract it.
+queues an event-specific subject and message in Mailing. Forum emails name the event
+and discussion title, identify the notified post's author by nonblank public display
+name and `@username` (or by `@username` alone), include the post's complete content,
+and finish with a direct discussion link. Plain-text mail preserves the authored text;
+HTML mail escapes the author and content while preserving paragraphs and line breaks.
+All mail details are rendered snapshots at enqueue time. Current recipient access and
+the queued account address are still checked before dispatch. The inbox entry is
+already stored; a missing account email, author identity, rendering fault, queue
+refusal, or later SMTP failure cannot retract it.
 
 [Forum.notifications.ListNotifications](reaction:Forum.notifications.ListNotifications) forms
 [the session account's retained notifications](former:Forum.notifications.theNotificationsOf).
@@ -82,5 +85,6 @@ The existing Notifying instance also retains assignment release notifications.
 Inbox reads, unread counts, mark-read, dismissal, and queued mail eligibility use that same admission.
 [Assignment title lookup](view:Forum.notifications.assignmentNotificationTitle) provides the [assignment presentation](former:Forum.notifications.theAssignmentNotificationPresentation), with an assignment link rather than a forum-post link.
 Release email names the assignment and event and links directly to the assignment;
-it does not include assignment instructions. Mail is rechecked at dispatch; an
-archived assignment or dropped student no longer admits its notification.
+it does not include forum author/message fields or assignment instructions. Mail is
+rechecked at dispatch; an archived assignment or dropped student no longer admits
+its notification.
