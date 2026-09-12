@@ -76,10 +76,27 @@ follows every successful TaskNotifying action, from either raise site. It looks
 up the recipient's account email, resolves the subject, and queues one Mailing
 message keyed by that notification. A membership message names the list. A task
 message says which change occurred, names the task title, the holding list's
-title, and the current deadline as text, and carries the task's own written
-details when it has any, so it reads on its own after the task it points at is
-gone. HTML mail escapes those details and preserves their paragraphs and line
-breaks. A task that was written with no details mails no empty detail block.
+title, and the current deadline read as the configured course's wall time with
+its zone named, and carries the task's own written details when it has any, so it
+reads on its own after the task it points at is gone. HTML mail escapes those
+details and preserves their paragraphs and line breaks. A task that was written
+with no details mails no empty detail block, and a deadline that does not read as
+a moment is named not at all rather than named wrongly.
+
+A membership message also names the member who made the change, because a group
+cannot say who changed your membership of it. The acting member travels on the
+Grouping action that raises the notification, so it is recorded on the
+notification itself and the inbox entry carries the same label its email names.
+
+A task message names no actor. The acting identity there is resolved from the
+session, and a value read from state cannot be carried past the first step of a
+consequence chain, so recording it would mean making the actor part of a Tasking
+action — and Tasking's purpose is to name who is _answerable_ for work, not who
+last touched it. That gap is recorded rather than forced.
+
+What mail carries of an authored message — a post's content or a task's details —
+is bounded. Past that bound mail carries as much as it can, cut at a word, and
+says plainly that the rest is in Commons rather than dropping it silently.
 
 A task message is rendered only for a recipient who is a current member of the
 list holding that task, read when the message is rendered. A membership message

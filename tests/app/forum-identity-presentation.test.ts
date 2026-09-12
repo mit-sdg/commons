@@ -88,6 +88,7 @@ describe("forum identity and lookup presentation", () => {
       kind: "reply",
       subject: post,
       link: post,
+      actor: null,
       at,
     });
 

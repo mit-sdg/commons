@@ -484,8 +484,11 @@ notificationMailSubject(kind: String, title: String) : String
 notificationAuthorLabel(username: String, displayName: Any) : String
   Forms a public author label from a nonblank display name and `@username`, or from `@username` alone.
 
+notificationActorLabel(username: Any, displayName: Any) : String
+  Forms the same public label for the person whose act raised a notification, and forms nothing at all when the notification recorded no actor.
+
 forumNotificationMailBody(content: String, post: String, opening: Any) : String
-  Keeps a reply's content whole, and drops the title line an opening post already spent on the discussion title.
+  Keeps a reply's content whole, drops the title line an opening post already spent on the discussion title, and bounds what mail carries, saying so in place of anything it had to leave behind.
 
 forumNotificationMailText(kind: String, title: String, url: String, author: String, content: String) : String
   Names the event and discussion, identifies the author, preserves the complete post content as plain text, and finishes with the direct discussion link.
@@ -493,8 +496,8 @@ forumNotificationMailText(kind: String, title: String, url: String, author: Stri
 forumNotificationMailHtml(kind: String, title: String, url: String, author: String, content: String) : String
   Safely escapes every dynamic value—the event, discussion title, author, complete post content, and direct URL—while preserving the content's paragraphs and line breaks and placing the link last.
 
-assignmentDueLabel(dueAt: Any, detail: Any) : String
-  Reads a due instant as the configured course's wall time, names the zone, falls back to UTC without a usable one, and says nothing at all about an absent or unreadable instant.
+dueWallTime(dueAt: Any, detail: Any) : String
+  Reads a deadline held either as a date or as an ISO string in the configured course's wall time, names the zone, falls back to UTC without a usable one, and says nothing at all about an absent or unreadable instant.
 
 assignmentNotificationMailText(kind: String, title: String, url: String, author: String, due: String) : String
   Names the release event, the assignment, its author, and its due wall time, and finishes with the direct assignment link, without the instructions.
@@ -547,20 +550,20 @@ subjectIsAddress(subject: String) : Bool
 taskListMailSubject(kind: String, listTitle: String) : String
   Renders the subject line for a task-list membership notification of that kind.
 
-taskListMailText(kind: String, listTitle: String) : String
-  Renders the plain-text membership message naming the list.
+taskListMailText(kind: String, listTitle: String, actor: String) : String
+  Renders the plain-text membership message naming the list and the member who made the change, when one is recorded.
 
-taskListMailHtml(kind: String, listTitle: String) : String
-  Renders the HTML membership message naming the list.
+taskListMailHtml(kind: String, listTitle: String, actor: String) : String
+  Renders the HTML membership message naming the list and the member who made the change, when one is recorded.
 
 taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String
   Renders the subject line for a task assignment or task state change of that kind.
 
-taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String, details: Any) : String
-  Renders the plain-text task message, saying which change occurred, naming the task, its list, and its deadline, and carrying the task's own written details when it has any.
+taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any) : String
+  Renders the plain-text task message, saying which change occurred, naming the task, its list, its deadline as wall time, and the member who made the change, and carrying a bounded copy of the task's own written details when it has any.
 
-taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String, details: Any) : String
-  Renders the HTML task message, saying which change occurred, naming the task, its list, and its deadline, and safely escaping the task's own written details into paragraphs when it has any.
+taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any) : String
+  Renders the HTML task message, saying which change occurred, naming the task, its list, its deadline as wall time, and the member who made the change, and safely escaping a bounded copy of the task's own written details into paragraphs when it has any.
 
 draftTitle(form: String) : String
   Renders a privacy-safe default title for an adopted AI draft from its form,

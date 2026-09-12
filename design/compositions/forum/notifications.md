@@ -29,7 +29,9 @@ and discussion title, identify the notified post's author by nonblank public dis
 name and `@username` (or by `@username` alone), include the post's complete content,
 and finish with a direct discussion link. Plain-text mail preserves the authored text;
 HTML mail escapes the author and content while preserving paragraphs and line breaks.
-All mail details are rendered snapshots at enqueue time. Current recipient access and
+What mail carries of the post is bounded: past that bound it carries as much as it
+can, cut at a word, and says plainly that the rest is in Commons rather than
+dropping it silently. All mail details are rendered snapshots at enqueue time. Current recipient access and
 the queued account address are still checked before dispatch. The inbox entry is
 already stored; a missing account email, author identity, rendering fault, queue
 refusal, or later SMTP failure cannot retract it.
@@ -86,8 +88,8 @@ Inbox reads, unread counts, mark-read, dismissal, and queued mail eligibility us
 [One assignment lookup](view:Forum.notifications.assignmentNotificationDetail) answers the title the inbox shows and the author and due instant the release email names, so a release reads the published assignments once rather than once per field. It provides the [assignment presentation](former:Forum.notifications.theAssignmentNotificationPresentation), with an assignment link rather than a forum-post link.
 Release email names the event and assignment, identifies the assignment's author by the
 same public label forum mail uses, states the due instant as the configured course's wall
-time (naming the zone, and falling back to UTC when no usable zone is configured), and
-links directly to the assignment. It does not include the instructions: those are the
+time by the same reading task deadlines use (naming the zone, and falling back to UTC when
+no usable zone is configured), and links directly to the assignment. It does not include the instructions: those are the
 working material rather than the event, and they only resolve inside Commons. Mail is
 rechecked at dispatch; an archived assignment or dropped student no longer admits
 its notification.

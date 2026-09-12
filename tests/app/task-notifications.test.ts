@@ -48,6 +48,8 @@ interface InboxRow {
   kind: string;
   subject: string;
   link: string | null;
+  actor: string | null;
+  actorLabel: string | null;
   read: boolean;
   listTitle: string | null;
   list: string | null;
@@ -128,6 +130,11 @@ describe("task-list membership notifications", () => {
     });
     expect(queued[0].subject).toContain("Reading Group");
     expect(queued[0].text).toContain("Reading Group");
+    // A group cannot say who changed your membership of it, so the notification records it.
+    expect(noahRows[0].actor).toBe(mara.user);
+    expect(noahRows[0].actorLabel).toBe("mara_add (@mara_add)");
+    expect(queued[0].text).toContain("By: mara_add (@mara_add)");
+    expect(queued[0].html).toContain("By: <strong>mara_add (@mara_add)</strong>");
     expect(queued[0].html).toContain("Reading Group");
     expect(queued[0].text).not.toContain("You have a new Commons notification");
   });
@@ -169,6 +176,9 @@ describe("task-list membership notifications", () => {
     const lossMail = queued.filter((message) => message.key === losses[0].notification);
     expect(lossMail).toHaveLength(1);
     expect(lossMail[0].text).toContain("Field Work");
+    expect(losses[0].actorLabel).toBe("mara_rm (@mara_rm)");
+    expect(lossMail[0].text).toContain("By: mara_rm (@mara_rm)");
+    expect(lossMail[0].html).toContain("By: <strong>mara_rm (@mara_rm)</strong>");
 
     // every open task was released without adding any further announcement
     for (const task of [first, second, third]) {
@@ -250,12 +260,41 @@ describe("task assignment notifications", () => {
     expect(mail[0].subject).toContain("Draft the brief");
     expect(mail[0].text).toContain("Draft the brief");
     expect(mail[0].text).toContain("Launch Plan");
-    expect(mail[0].text).toContain(WINDOW.endsAt);
+    expect(mail[0].text).toContain("Due: Wed, Aug 19, 2026, 5:00 PM UTC");
+    expect(mail[0].text).not.toContain(WINDOW.endsAt);
     expect(mail[0].text).toContain(details);
     expect(mail[0].html).toContain(
       "<p>Two &lt;pages&gt; &amp; a summary.<br>Cite the &lt;script&gt;alert(1)&lt;/script&gt; source.</p><p>Send it to the group.</p>",
     );
     expect(mail[0].html).not.toContain("<script>");
+  });
+
+  test("a task deadline mails as the configured course's wall time, not as its stored text", async () => {
+    const app = await newApp();
+    await app.concepts.Rostering.configureClass({
+      code: "6.1040",
+      title: "Software Design",
+      term: "Fall 2026",
+      timezone: "America/New_York",
+    });
+    const mara = await actor(app, "mara_zone");
+    const noah = await actor(app, "noah_zone");
+    const list = await makeList(app, mara, "Zoned Plan");
+    await call(app, "/tasklists/add-member", {
+      session: mara.session,
+      list,
+      candidate: noah.user,
+    });
+    const task = await makeTask(app, mara.session, list, "Zoned task");
+    await call(app, "/tasks/assign", { session: mara.session, task, assignee: noah.user });
+
+    const rows = await inbox(app, noah.session);
+    const assignment = rows.filter((row) => row.kind === "task-assigned");
+    const mail = (await pending(app)).filter((m) => m.key === assignment[0].notification);
+    // The same instant a UTC-less course reads as 5:00 PM UTC, read in the course's own zone.
+    expect(mail[0].text).toContain("Due: Wed, Aug 19, 2026, 1:00 PM EDT");
+    expect(mail[0].html).toContain("<li>Due: Wed, Aug 19, 2026, 1:00 PM EDT</li>");
+    expect(mail[0].text).not.toContain(WINDOW.endsAt);
   });
 
   test("a task written with no details mails no empty detail block", async () => {
@@ -276,7 +315,7 @@ describe("task assignment notifications", () => {
     const mail = (await pending(app)).filter((m) => m.key === assignment[0].notification);
     expect(mail).toHaveLength(1);
     expect(mail[0].html).not.toContain("<p></p>");
-    expect(mail[0].text).toContain(`Due: ${WINDOW.endsAt}\n\n`);
+    expect(mail[0].text).toContain("Due: Wed, Aug 19, 2026, 5:00 PM UTC\n\n");
   });
 
   test("assigning to yourself says nothing", async () => {
@@ -459,7 +498,8 @@ describe("changes to an assigned task", () => {
     const retimedMail = queued.find((message) => message.key === retimed?.notification);
     expect(retimedMail?.text).toContain("Watched");
     expect(retimedMail?.text).toContain("State Ops");
-    expect(retimedMail?.text).toContain(LATER.endsAt);
+    expect(retimedMail?.text).toContain("Due: Wed, Sep 2, 2026, 5:00 PM UTC");
+    expect(retimedMail?.text).not.toContain(LATER.endsAt);
     expect(retimedMail?.text).not.toContain(WINDOW.endsAt);
 
     // the member who acted hears nothing about their own work
@@ -726,6 +766,7 @@ describe("the two notification instances stay apart", () => {
       kind: "reply",
       subject: forumPost,
       link: forumPost,
+      actor: null,
       at: new Date(),
     });
     await app.whenIdle();
@@ -763,6 +804,7 @@ describe("the two notification instances stay apart", () => {
       kind: "task-completed",
       subject: task,
       link: task,
+      actor: null,
       at: new Date(),
     });
     await app.whenIdle();
@@ -803,6 +845,7 @@ describe("the two notification instances stay apart", () => {
       kind: "task-completed",
       subject: task,
       link: task,
+      actor: null,
       at: new Date(),
     });
     await app.whenIdle();
@@ -825,6 +868,7 @@ describe("the two notification instances stay apart", () => {
       kind: "task-list-removed",
       subject: list,
       link: list,
+      actor: null,
       at: new Date(),
     });
     await app.whenIdle();
@@ -844,6 +888,7 @@ describe("the two notification instances stay apart", () => {
       kind: "task-assigned",
       subject: "00000000-0000-4000-8000-000000000000",
       link: "00000000-0000-4000-8000-000000000000",
+      actor: null,
       at: new Date(),
     });
     await app.whenIdle();

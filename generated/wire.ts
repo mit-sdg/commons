@@ -4201,6 +4201,8 @@ export type CommonsWire = {
     };
     output: {
       "notifications": ({
+        "actor": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskNotifying"]["_getInbox"]>>>, ["actor"]>>;
+        "actorLabel": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["notificationActorLabel"]["fn"]>>, []>> | null;
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskNotifying"]["_getInbox"]>>>, ["createdAt"]>>;
         "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskNotifying"]["_getInbox"]>>>, ["kind"]>>;
         "link": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskNotifying"]["_getInbox"]>>>, ["link"]>>;
@@ -8709,6 +8711,8 @@ export type CommonsWireHttp = {
     input: Record<string, never>;
     output: {
       "notifications": ({
+        "actor": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskNotifying"]["_getInbox"]>>>, ["actor"]>>;
+        "actorLabel": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["notificationActorLabel"]["fn"]>>, []>> | null;
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskNotifying"]["_getInbox"]>>>, ["createdAt"]>>;
         "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskNotifying"]["_getInbox"]>>>, ["kind"]>>;
         "link": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskNotifying"]["_getInbox"]>>>, ["link"]>>;

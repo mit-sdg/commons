@@ -263,6 +263,7 @@ describe("administrator email customization", () => {
       kind: "mention",
       subject: reply.post,
       link: reply.post,
+      actor: null,
       at,
     });
     await app.whenIdle();
@@ -333,6 +334,7 @@ describe("administrator email customization", () => {
       kind: "accepted",
       subject: reply.post,
       link: reply.post,
+      actor: null,
       at,
     });
     await app.whenIdle();

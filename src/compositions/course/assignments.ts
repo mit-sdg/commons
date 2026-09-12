@@ -506,6 +506,7 @@ export const AssignmentReleaseNotifiesStudent = reaction(({ assignment, assignee
         kind: "assignment_released",
         subject: assignment,
         link: assignment,
+        actor: null,
         at,
       }),
     ),

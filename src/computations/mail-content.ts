@@ -15,6 +15,23 @@ function invitationLink(invitation: string): string {
 
 const INVITATION_SUBJECT_LIMIT = 200;
 const INVITATION_BODY_LIMIT = 20_000;
+const NOTIFICATION_MESSAGE_LIMIT = 20_000;
+
+/**
+ * A notification email carries its message whole, which is the point of carrying it at
+ * all, but an author decides how long a message is and a transport decides how long an
+ * email may be. Past this bound mail carries as much as it can, cut at a word rather than
+ * mid-word, and says plainly that the rest is in Commons — where the link below already
+ * points. Nothing is silently dropped.
+ */
+function mailedMessage(text: string): string {
+  const written = text.replace(/\r\n?/g, "\n").trim();
+  if (written.length <= NOTIFICATION_MESSAGE_LIMIT) return written;
+  const cut = written.slice(0, NOTIFICATION_MESSAGE_LIMIT);
+  const lastBreak = cut.search(/\s\S*$/);
+  const kept = (lastBreak === -1 ? cut : cut.slice(0, lastBreak)).trimEnd();
+  return `${kept}\u2026\n\n(Shortened for email. Open it in Commons to read the rest.)`;
+}
 
 /**
  * Commons' own words stand wherever an administrator has worded nothing, so
@@ -127,6 +144,19 @@ export function notificationAuthorLabel({
  * An opening post already gave the discussion its title, so repeating that line under
  * "Discussion:" would say the same thing twice; a reply owns every line it wrote.
  */
+/** An event that recorded no actor names none; the label is otherwise the author's. */
+export function notificationActorLabel({
+  username,
+  displayName,
+}: {
+  username: unknown;
+  displayName: unknown;
+}): string {
+  return typeof username === "string" && username !== ""
+    ? notificationAuthorLabel({ username, displayName })
+    : "";
+}
+
 export function forumNotificationMailBody({
   content,
   post,
@@ -136,7 +166,7 @@ export function forumNotificationMailBody({
   post: string;
   opening: unknown;
 }): string {
-  return post === opening ? bodyAfterTitle(content) : content;
+  return mailedMessage(post === opening ? bodyAfterTitle(content) : content);
 }
 
 export function forumNotificationMailText({
@@ -174,11 +204,13 @@ export function forumNotificationMailHtml({
 }
 
 /**
- * An assignment's due instant is stored as one moment; a course reads it in the wall time
- * it keeps. An unconfigured or unusable zone still deserves an unambiguous label, so the
- * fallback names UTC rather than the server's accidental locale.
+ * A deadline is one instant however it was stored — Assigning keeps a Date and Tasking an
+ * ISO string — and a course reads every instant in the wall time it keeps. One label serves
+ * both so two notifications about the same moment cannot read differently. An unconfigured
+ * or unusable zone still deserves an unambiguous label, so the fallback names UTC rather
+ * than the server's accidental locale, and an unreadable instant is named not at all.
  */
-export function assignmentDueLabel({ dueAt, detail }: { dueAt: unknown; detail: unknown }): string {
+export function dueWallTime({ dueAt, detail }: { dueAt: unknown; detail: unknown }): string {
   const due =
     dueAt instanceof Date ? dueAt : typeof dueAt === "string" ? new Date(dueAt) : new Date(NaN);
   if (Number.isNaN(due.getTime())) return "";
@@ -287,13 +319,32 @@ export function taskListMailSubject({
   return `${membershipPhrase(kind)}: ${listTitle}`;
 }
 
-export function taskListMailText({ kind, listTitle }: { kind: string; listTitle: string }): string {
-  return `${membershipPhrase(kind)} "${listTitle}".\n\n${configuredPublicOrigin()}/groups`;
+/** A group cannot say who changed your membership of it, so the mail names the actor. */
+export function taskListMailText({
+  kind,
+  listTitle,
+  actor,
+}: {
+  kind: string;
+  listTitle: string;
+  actor: string;
+}): string {
+  const by = actor === "" ? "" : `\nBy: ${actor}`;
+  return `${membershipPhrase(kind)} "${listTitle}".${by}\n\n${configuredPublicOrigin()}/groups`;
 }
 
-export function taskListMailHtml({ kind, listTitle }: { kind: string; listTitle: string }): string {
+export function taskListMailHtml({
+  kind,
+  listTitle,
+  actor,
+}: {
+  kind: string;
+  listTitle: string;
+  actor: string;
+}): string {
   const link = `${configuredPublicOrigin()}/groups`;
-  return `<p>${escapeHtml(membershipPhrase(kind))} &quot;${escapeHtml(listTitle)}&quot;.</p><p><a href="${escapeHtml(link)}">Open groups</a></p>`;
+  const by = actor === "" ? "" : `<p>By: <strong>${escapeHtml(actor)}</strong></p>`;
+  return `<p>${escapeHtml(membershipPhrase(kind))} &quot;${escapeHtml(listTitle)}&quot;.</p>${by}<p><a href="${escapeHtml(link)}">Open groups</a></p>`;
 }
 
 export function taskMailSubject({
@@ -308,23 +359,30 @@ export function taskMailSubject({
   return `${taskPhrase(kind)}: ${taskTitle} (${listTitle})`;
 }
 
-/** A task's own words are what the recipient has to act on, so mail carries them whole. */
+/**
+ * A task's own words are what the recipient has to act on, so mail carries them, and a task
+ * cannot say who changed it, so mail names the actor. A deadline is already a wall time.
+ */
 export function taskMailText({
   kind,
   taskTitle,
   listTitle,
   deadline,
+  actor,
   details,
 }: {
   kind: string;
   taskTitle: string;
   listTitle: string;
   deadline: string;
+  actor: string;
   details: unknown;
 }): string {
-  const written = typeof details === "string" ? details.trim() : "";
+  const due = deadline === "" ? "" : `\nDue: ${deadline}`;
+  const by = actor === "" ? "" : `\nBy: ${actor}`;
+  const written = typeof details === "string" ? mailedMessage(details) : "";
   const described = written === "" ? "" : `\n${written}\n`;
-  return `${taskPhrase(kind)}.\n\nTask: ${taskTitle}\nGroup: ${listTitle}\nDue: ${deadline}\n${described}\n${taskListsLink()}`;
+  return `${taskPhrase(kind)}.\n\nTask: ${taskTitle}\nGroup: ${listTitle}${due}${by}\n${described}\n${taskListsLink()}`;
 }
 
 export function taskMailHtml({
@@ -332,15 +390,19 @@ export function taskMailHtml({
   taskTitle,
   listTitle,
   deadline,
+  actor,
   details,
 }: {
   kind: string;
   taskTitle: string;
   listTitle: string;
   deadline: string;
+  actor: string;
   details: unknown;
 }): string {
   const link = taskListsLink();
-  const described = typeof details === "string" ? paragraphs(details) : "";
-  return `<p>${escapeHtml(taskPhrase(kind))}.</p><ul><li>Task: ${escapeHtml(taskTitle)}</li><li>Group: ${escapeHtml(listTitle)}</li><li>Due: ${escapeHtml(deadline)}</li></ul>${described}<p><a href="${escapeHtml(link)}">Open tasks</a></p>`;
+  const due = deadline === "" ? "" : `<li>Due: ${escapeHtml(deadline)}</li>`;
+  const by = actor === "" ? "" : `<li>By: ${escapeHtml(actor)}</li>`;
+  const described = typeof details === "string" ? paragraphs(mailedMessage(details)) : "";
+  return `<p>${escapeHtml(taskPhrase(kind))}.</p><ul><li>Task: ${escapeHtml(taskTitle)}</li><li>Group: ${escapeHtml(listTitle)}</li>${due}${by}</ul>${described}<p><a href="${escapeHtml(link)}">Open tasks</a></p>`;
 }

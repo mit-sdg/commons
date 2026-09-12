@@ -163,7 +163,7 @@ export const notificationMailContext = view(
       compute(computations.assignmentNotificationUrl, { assignment: subject }, url),
       compute(computations.notificationMailSubject, { kind, title }, mailSubject),
       compute(computations.notificationAuthorLabel, { username, displayName }, author),
-      compute(computations.assignmentDueLabel, { dueAt, detail }, due),
+      compute(computations.dueWallTime, { dueAt, detail }, due),
       compute(computations.assignmentNotificationMailText, { kind, title, url, author, due }, text),
       compute(computations.assignmentNotificationMailHtml, { kind, title, url, author, due }, html),
     ),
@@ -230,6 +230,7 @@ export const ReplyNotifiesParentAuthor = reaction(
           kind: "reply",
           subject: item,
           link: item,
+          actor: null,
           at,
         }),
       ),
@@ -253,6 +254,7 @@ export const ReplyNotifiesWatchers = reaction(
           kind: "followed_reply",
           subject: item,
           link: item,
+          actor: null,
           at,
         }),
       ),
@@ -272,6 +274,7 @@ export const RootMentionsNotify = reaction(({ conversation, node, item, mentione
         kind: "mention",
         subject: item,
         link: item,
+        actor: null,
         at,
       }),
     ),
@@ -290,6 +293,7 @@ export const ReplyMentionsNotify = reaction(({ item, parent, mentioned, parentIt
         kind: "mention",
         subject: item,
         link: item,
+        actor: null,
         at,
       }),
     ),
@@ -307,6 +311,7 @@ export const EditMentionsNotify = reaction(({ post, mentioned, at }) =>
         kind: "mention",
         subject: post,
         link: post,
+        actor: null,
         at,
       }),
     ),
@@ -325,6 +330,7 @@ export const AcceptNotifiesAnswerAuthor = reaction(({ answer, by, answerAuthor, 
         kind: "accepted",
         subject: answer,
         link: answer,
+        actor: null,
         at,
       }),
     ),
@@ -506,7 +512,16 @@ export const RootNotifiesAddressedAccounts = reaction(
         no(staffNotificationRecipient({ user: recipient, holders })),
         now(at),
       )
-      .then(Notifying.notify({ recipient, kind: "addressed", subject: item, link: item, at })),
+      .then(
+        Notifying.notify({
+          recipient,
+          kind: "addressed",
+          subject: item,
+          link: item,
+          actor: null,
+          at,
+        }),
+      ),
 );
 
 export const RootNotifiesStaff = reaction(({ conversation, holders, recipient, node, item, at }) =>
@@ -521,5 +536,14 @@ export const RootNotifiesStaff = reaction(({ conversation, holders, recipient, n
       isNotMentionedIn({ user: recipient, post: item }),
       now(at),
     )
-    .then(Notifying.notify({ recipient, kind: "staff_message", subject: item, link: item, at })),
+    .then(
+      Notifying.notify({
+        recipient,
+        kind: "staff_message",
+        subject: item,
+        link: item,
+        actor: null,
+        at,
+      }),
+    ),
 );

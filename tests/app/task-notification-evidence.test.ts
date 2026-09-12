@@ -17,6 +17,7 @@
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { assembleCommons } from "../../src/assembly/application.ts";
+import { dueWallTime } from "../../src/computations/mail-content.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 
 type App = ReturnType<typeof assembleCommons>;
@@ -263,7 +264,9 @@ describe("the mail distinguishes the kinds", () => {
       expect(message?.text).toContain("Distinct Ops");
       expect(message?.html).toContain("Watched");
       const deadline = row.kind === "task-assigned" ? WINDOW.endsAt : LATER.endsAt;
-      expect(message?.text).toContain(deadline);
+      // Mail names the deadline as wall time, so the snapshot is checked in that reading.
+      expect(message?.text).toContain(dueWallTime({ dueAt: deadline, detail: undefined }));
+      expect(message?.text).not.toContain(deadline);
     }
   });
 });

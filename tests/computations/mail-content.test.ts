@@ -9,7 +9,8 @@ import {
   forumNotificationMailBody,
   forumNotificationMailText,
   forumNotificationMailHtml,
-  assignmentDueLabel,
+  dueWallTime,
+  notificationActorLabel,
   assignmentNotificationMailText,
   assignmentNotificationMailHtml,
   forumNotificationUrl,
@@ -54,7 +55,7 @@ describe("email presentation", () => {
       title: "<Planning> & review",
       url: 'https://example.edu/assignments/a1?x="1"',
       author: "Dana <img src=x> (@dana)",
-      due: assignmentDueLabel({
+      due: dueWallTime({
         dueAt: new Date("2026-09-19T03:59:00.000Z"),
         detail: { timezone: "America/New_York" },
       }),
@@ -78,12 +79,12 @@ describe("email presentation", () => {
   test("a due label falls back to UTC without a usable course zone, and says nothing undated", () => {
     const dueAt = new Date("2026-09-19T03:59:00.000Z");
     const utc = "Sat, Sep 19, 2026, 3:59 AM UTC";
-    expect(assignmentDueLabel({ dueAt, detail: undefined })).toBe(utc);
-    expect(assignmentDueLabel({ dueAt, detail: { timezone: "" } })).toBe(utc);
-    expect(assignmentDueLabel({ dueAt, detail: { timezone: "Mars/Olympus" } })).toBe(utc);
-    expect(assignmentDueLabel({ dueAt: dueAt.toISOString(), detail: null })).toBe(utc);
-    expect(assignmentDueLabel({ dueAt: null, detail: undefined })).toBe("");
-    expect(assignmentDueLabel({ dueAt: "not a date", detail: undefined })).toBe("");
+    expect(dueWallTime({ dueAt, detail: undefined })).toBe(utc);
+    expect(dueWallTime({ dueAt, detail: { timezone: "" } })).toBe(utc);
+    expect(dueWallTime({ dueAt, detail: { timezone: "Mars/Olympus" } })).toBe(utc);
+    expect(dueWallTime({ dueAt: dueAt.toISOString(), detail: null })).toBe(utc);
+    expect(dueWallTime({ dueAt: null, detail: undefined })).toBe("");
+    expect(dueWallTime({ dueAt: "not a date", detail: undefined })).toBe("");
     expect(
       assignmentNotificationMailText({
         kind: "assignment_released",
@@ -162,6 +163,45 @@ describe("email presentation", () => {
       "You were mentioned in a discussion.\n\nDiscussion: Title only\nFrom: @ada\n\nOpen discussion:\nhttps://example.edu/t/1#post-2",
     );
     expect(forumNotificationMailHtml(input)).not.toContain("<p></p>");
+  });
+
+  test("an actor label names a recorded actor and names nothing when none was recorded", () => {
+    expect(notificationActorLabel({ username: "mara", displayName: "Mara Vex" })).toBe(
+      "Mara Vex (@mara)",
+    );
+    expect(notificationActorLabel({ username: "mara", displayName: null })).toBe("@mara");
+    expect(notificationActorLabel({ username: undefined, displayName: "Mara Vex" })).toBe("");
+    expect(notificationActorLabel({ username: "", displayName: null })).toBe("");
+  });
+
+  test("a message past the bound is cut at a word and says the rest is in Commons", () => {
+    const word = "alpha ";
+    const huge = word.repeat(4_000) + "OMEGA-TAIL-MARKER";
+    expect(huge.length).toBeGreaterThan(20_000);
+    const body = forumNotificationMailBody({ content: huge, post: "p", opening: undefined });
+    expect(body.length).toBeLessThan(huge.length);
+    expect(body).not.toContain("OMEGA-TAIL-MARKER");
+    expect(body).toContain("(Shortened for email. Open it in Commons to read the rest.)");
+    // Cut at a word, never mid-word.
+    expect(body).toMatch(/alpha\u2026\n\n\(Shortened/);
+
+    const whole = "alpha beta gamma";
+    expect(forumNotificationMailBody({ content: whole, post: "p", opening: undefined })).toBe(
+      whole,
+    );
+  });
+
+  test("a bounded message still renders as whole HTML paragraphs", () => {
+    const huge = "sentence ".repeat(4_000);
+    const html = forumNotificationMailHtml({
+      kind: "mention",
+      title: "T",
+      url: "u",
+      author: "@a",
+      content: forumNotificationMailBody({ content: huge, post: "p", opening: undefined }),
+    });
+    expect(html).toContain("<p>(Shortened for email. Open it in Commons to read the rest.)</p>");
+    expect(html.length).toBeLessThan(60_000);
   });
 
   test("discussion titles come only from the first line and are bounded; URLs encode opaque IDs", () => {

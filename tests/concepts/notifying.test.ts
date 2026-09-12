@@ -22,6 +22,7 @@ for (const [floor, make] of floors) {
         kind: "reply",
         subject: "p1",
         link: "/p1",
+        actor: null,
         at,
       });
       expect(typeof notification).toBe("string");
@@ -38,6 +39,7 @@ for (const [floor, make] of floors) {
         kind: "reply",
         subject: "p1",
         link: "/p1",
+        actor: null,
         at,
       });
       expect(await notifying.markRead({ notification, recipient: "mara" })).toEqual({
@@ -54,6 +56,7 @@ for (const [floor, make] of floors) {
         kind: "reply",
         subject: "p1",
         link: "/p1",
+        actor: null,
         at,
       });
       expect(
@@ -64,15 +67,30 @@ for (const [floor, make] of floors) {
 
     test("markAllRead clears the recipient's unread pile and is idempotent", async () => {
       const notifying = await make();
-      await notifying.notify({ recipient: "mara", kind: "reply", subject: "p1", link: "/p1", at });
+      await notifying.notify({
+        recipient: "mara",
+        kind: "reply",
+        subject: "p1",
+        link: "/p1",
+        actor: null,
+        at,
+      });
       await notifying.notify({
         recipient: "mara",
         kind: "mention",
         subject: "p2",
         link: "/p2",
+        actor: null,
         at,
       });
-      await notifying.notify({ recipient: "noah", kind: "reply", subject: "p3", link: "/p3", at });
+      await notifying.notify({
+        recipient: "noah",
+        kind: "reply",
+        subject: "p3",
+        link: "/p3",
+        actor: null,
+        at,
+      });
       expect(await notifying.markAllRead({ recipient: "mara" })).toEqual({ recipient: "mara" });
       expect(await notifying._getUnreadCount({ recipient: "mara" })).toEqual({ count: 0 });
       expect(await notifying._getUnreadCount({ recipient: "noah" })).toEqual({ count: 1 });
@@ -87,6 +105,7 @@ for (const [floor, make] of floors) {
         kind: "reply",
         subject: "p1",
         link: "/p1",
+        actor: null,
         at,
       });
       expect(await notifying.dismiss({ notification, recipient: "mara" })).toEqual({
@@ -107,6 +126,7 @@ for (const [floor, make] of floors) {
         kind: "reply",
         subject: "p1",
         link: "/p1",
+        actor: null,
         at: earlier,
       });
       const second = await notifying.notify({
@@ -114,6 +134,7 @@ for (const [floor, make] of floors) {
         kind: "mention",
         subject: "p2",
         link: "/p2",
+        actor: null,
         at: later,
       });
       const third = await notifying.notify({
@@ -121,6 +142,7 @@ for (const [floor, make] of floors) {
         kind: "reply",
         subject: "p3",
         link: "/p3",
+        actor: null,
         at: later,
       });
       expect((await notifying._getInbox({ recipient: "mara" })).map((n) => n.notification)).toEqual(
@@ -131,12 +153,20 @@ for (const [floor, make] of floors) {
     test("_getUnreadCount always answers with a single row", async () => {
       const notifying = await make();
       expect(await notifying._getUnreadCount({ recipient: "mara" })).toEqual({ count: 0 });
-      await notifying.notify({ recipient: "mara", kind: "reply", subject: "p1", link: "/p1", at });
+      await notifying.notify({
+        recipient: "mara",
+        kind: "reply",
+        subject: "p1",
+        link: "/p1",
+        actor: null,
+        at,
+      });
       await notifying.notify({
         recipient: "mara",
         kind: "mention",
         subject: "p2",
         link: "/p2",
+        actor: null,
         at,
       });
       expect(await notifying._getUnreadCount({ recipient: "mara" })).toEqual({ count: 2 });
@@ -149,6 +179,7 @@ for (const [floor, make] of floors) {
         kind: "mention",
         subject: "p1",
         link: "/p1",
+        actor: null,
         at,
       });
       expect(await notifying._hasFor({ user: "mara", subject: "p1" })).toEqual({
@@ -165,6 +196,7 @@ for (const [floor, make] of floors) {
         kind: "mention",
         subject: "p9",
         link: "/p9",
+        actor: null,
         at,
       });
       await notifying.dismiss({ notification, recipient: "noah" });
@@ -175,15 +207,30 @@ for (const [floor, make] of floors) {
 
     test("clearSubject removes every recipient's notification about one subject and is idempotent", async () => {
       const notifying = await make();
-      await notifying.notify({ recipient: "mara", kind: "reply", subject: "p1", link: "/p1", at });
+      await notifying.notify({
+        recipient: "mara",
+        kind: "reply",
+        subject: "p1",
+        link: "/p1",
+        actor: null,
+        at,
+      });
       await notifying.notify({
         recipient: "noah",
         kind: "mention",
         subject: "p1",
         link: "/p1",
+        actor: null,
         at,
       });
-      await notifying.notify({ recipient: "mara", kind: "reply", subject: "p2", link: "/p2", at });
+      await notifying.notify({
+        recipient: "mara",
+        kind: "reply",
+        subject: "p2",
+        link: "/p2",
+        actor: null,
+        at,
+      });
       expect(await notifying.clearSubject({ subject: "p1" })).toEqual({ subject: "p1" });
       expect(await notifying._hasFor({ user: "mara", subject: "p1" })).toEqual({
         notified: false,
@@ -212,6 +259,7 @@ describe("Notifying instances on MongoDB", () => {
       kind: "reply",
       subject: "p1",
       link: "/p1",
+      actor: null,
       at,
     });
 
@@ -232,6 +280,7 @@ describe("Notifying instances on MongoDB", () => {
       kind: "reply",
       subject: "p1",
       link: "/p1",
+      actor: null,
       at,
     });
 
@@ -251,6 +300,7 @@ describe("Notifying instances on MongoDB", () => {
       kind: "reply",
       subject: "p1",
       link: "/p1",
+      actor: null,
       at,
     });
     const taskRow = await tasks.notify({
@@ -258,6 +308,7 @@ describe("Notifying instances on MongoDB", () => {
       kind: "assigned",
       subject: "p1",
       link: "/p1",
+      actor: null,
       at,
     });
 
@@ -286,6 +337,7 @@ describe("Notifying instances on MongoDB", () => {
       kind: "reply",
       subject: "p1",
       link: "/p1",
+      actor: null,
       at: earlier,
     });
     const taskFirst = await tasks.notify({
@@ -293,6 +345,7 @@ describe("Notifying instances on MongoDB", () => {
       kind: "assigned",
       subject: "t1",
       link: "/t1",
+      actor: null,
       at: later,
     });
     const forumSecond = await forum.notify({
@@ -300,6 +353,7 @@ describe("Notifying instances on MongoDB", () => {
       kind: "mention",
       subject: "p2",
       link: "/p2",
+      actor: null,
       at: later,
     });
     const taskSecond = await tasks.notify({
@@ -307,6 +361,7 @@ describe("Notifying instances on MongoDB", () => {
       kind: "retimed",
       subject: "t2",
       link: "/t2",
+      actor: null,
       at: later,
     });
     const forumThird = await forum.notify({
@@ -314,6 +369,7 @@ describe("Notifying instances on MongoDB", () => {
       kind: "reply",
       subject: "p3",
       link: "/p3",
+      actor: null,
       at: later,
     });
 
