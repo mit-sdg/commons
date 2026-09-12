@@ -6,6 +6,7 @@ import {
   notificationDiscussionTitle,
   notificationMailSubject,
   notificationAuthorLabel,
+  forumNotificationMailBody,
   forumNotificationMailText,
   forumNotificationMailHtml,
   notificationMailText,
@@ -87,6 +88,34 @@ describe("email presentation", () => {
     expect(html).not.toContain("<script>");
     expect(html).not.toContain("<img");
     expect(html.endsWith("</a></p>")).toBe(true);
+  });
+
+  test("an opening's title line is not repeated in its own mail, and a reply keeps every line", () => {
+    const opening = "# Homework question\n\nComplete question\n\nSecond paragraph";
+    expect(forumNotificationMailBody({ content: opening, post: "p1", opening: "p1" })).toBe(
+      "Complete question\n\nSecond paragraph",
+    );
+    expect(forumNotificationMailBody({ content: opening, post: "p2", opening: "p1" })).toBe(opening);
+    expect(forumNotificationMailBody({ content: opening, post: "p1", opening: undefined })).toBe(
+      opening,
+    );
+    expect(forumNotificationMailBody({ content: "# Title only", post: "p1", opening: "p1" })).toBe(
+      "",
+    );
+  });
+
+  test("an opening with nothing under its title mails no blank message block", () => {
+    const input = {
+      kind: "mention",
+      title: "Title only",
+      author: "@ada",
+      content: "",
+      url: "https://example.edu/t/1#post-2",
+    };
+    expect(forumNotificationMailText(input)).toBe(
+      "You were mentioned in a discussion.\n\nDiscussion: Title only\nFrom: @ada\n\nOpen discussion:\nhttps://example.edu/t/1#post-2",
+    );
+    expect(forumNotificationMailHtml(input)).not.toContain("<p></p>");
   });
 
   test("discussion titles come only from the first line and are bounded; URLs encode opaque IDs", () => {

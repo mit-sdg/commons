@@ -1,5 +1,5 @@
 import { configuredPublicOrigin } from "../deployment.ts";
-import { excerpt, titleFromContent } from "../presentation/post-text.ts";
+import { bodyAfterTitle, excerpt, titleFromContent } from "../presentation/post-text.ts";
 
 const escapeHtml = (value: string) =>
   value
@@ -40,11 +40,13 @@ export function invitationTemplateBody({ body }: { body: string | null }): strin
 }
 
 function paragraphs(text: string): string {
-  return text
-    .replace(/\r\n?/g, "\n")
-    .split(/\n\n+/)
-    .map((p) => `<p>${escapeHtml(p).replaceAll("\n", "<br>")}</p>`)
-    .join("");
+  const written = text.replace(/\r\n?/g, "\n").trim();
+  return written === ""
+    ? ""
+    : written
+        .split(/\n\n+/)
+        .map((p) => `<p>${escapeHtml(p).replaceAll("\n", "<br>")}</p>`)
+        .join("");
 }
 
 export function invitationMailText({
@@ -121,6 +123,22 @@ export function notificationAuthorLabel({
   return publicName === "" ? `@${username}` : `${publicName} (@${username})`;
 }
 
+/**
+ * An opening post already gave the discussion its title, so repeating that line under
+ * "Discussion:" would say the same thing twice; a reply owns every line it wrote.
+ */
+export function forumNotificationMailBody({
+  content,
+  post,
+  opening,
+}: {
+  content: string;
+  post: string;
+  opening: unknown;
+}): string {
+  return post === opening ? bodyAfterTitle(content) : content;
+}
+
 export function forumNotificationMailText({
   kind,
   title,
@@ -134,7 +152,9 @@ export function forumNotificationMailText({
   author: string;
   content: string;
 }): string {
-  return `${eventPhrase(kind)}.\n\nDiscussion: ${title}\nFrom: ${author}\n\n${content}\n\nOpen discussion:\n${url}`;
+  const written = content.trim();
+  const message = written === "" ? "" : `\n${written}\n`;
+  return `${eventPhrase(kind)}.\n\nDiscussion: ${title}\nFrom: ${author}\n${message}\nOpen discussion:\n${url}`;
 }
 
 export function forumNotificationMailHtml({

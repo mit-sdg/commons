@@ -128,9 +128,13 @@ test("queued group mail includes its author and full content but is withheld aft
   expect(queued).toBeDefined();
   expect(queued.subject).toBe("You were mentioned in a discussion: Homework question");
   expect(queued.text).toContain("From: @author");
-  expect(queued.text).toContain(content);
+  expect(queued.text).toContain("Complete homework question for @reader");
   expect(queued.html).toContain("From: <strong>@author</strong>");
-  expect(queued.html).toContain("Complete homework question for @reader");
+  expect(queued.html).toContain("<p>Complete homework question for @reader</p>");
+  // The opening's first line is already the discussion title; mail must not say it twice.
+  expect(queued.text).not.toContain("# Homework question");
+  expect(queued.text.match(/Homework question/g)).toHaveLength(1);
+  expect(queued.html).not.toContain("# Homework question");
   await app.concepts.Grouping.leave({ group, member: reader.user, at });
   const { deliverPendingMail } = await import("../../src/email/worker.ts");
   const { forumMailEligibility } = await import("../../src/email/forum-policy.ts");

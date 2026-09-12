@@ -484,6 +484,9 @@ notificationMailSubject(kind: String, title: String) : String
 notificationAuthorLabel(username: String, displayName: Any) : String
   Forms a public author label from a nonblank display name and `@username`, or from `@username` alone.
 
+forumNotificationMailBody(content: String, post: String, opening: Any) : String
+  Keeps a reply's content whole, and drops the title line an opening post already spent on the discussion title.
+
 forumNotificationMailText(kind: String, title: String, url: String, author: String, content: String) : String
   Names the event and discussion, identifies the author, preserves the complete post content as plain text, and finishes with the direct discussion link.
 

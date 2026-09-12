@@ -99,11 +99,22 @@ export const theDiscussionNotificationPresentation = former(
 ).optional();
 
 export const notificationMailContext = view(
-  "the email context of notification subject (subject) for (user)",
+  "the email context of notification subject (subject) of kind (kind) for (user)",
   (
     { subject, user, kind },
-    { title, url, mailSubject, text, html },
-    { conversation, authorUser, username, displayName, author, content },
+    { mailSubject, text, html },
+    {
+      title,
+      url,
+      conversation,
+      opening,
+      authorUser,
+      username,
+      displayName,
+      author,
+      content,
+      body,
+    },
   ) => [
     where(
       notificationDiscussion({ post: subject, reader: user }).is({
@@ -113,11 +124,21 @@ export const notificationMailContext = view(
       Posting._getPost({ post: subject }).is({ author: authorUser, content }),
       Authenticating._getById({ user: authorUser }).is({ username }),
       whether(Profiling._getProfileFields({ user: authorUser }).is({ displayName })),
+      whether(Conversing._getRoot({ conversation }).is({ item: opening })),
       compute(computations.forumNotificationUrl, { conversation, post: subject }, url),
       compute(computations.notificationMailSubject, { kind, title }, mailSubject),
       compute(computations.notificationAuthorLabel, { username, displayName }, author),
-      compute(computations.forumNotificationMailText, { kind, title, url, author, content }, text),
-      compute(computations.forumNotificationMailHtml, { kind, title, url, author, content }, html),
+      compute(computations.forumNotificationMailBody, { content, post: subject, opening }, body),
+      compute(
+        computations.forumNotificationMailText,
+        { kind, title, url, author, content: body },
+        text,
+      ),
+      compute(
+        computations.forumNotificationMailHtml,
+        { kind, title, url, author, content: body },
+        html,
+      ),
     ),
     where(
       notificationSubjectReader({ user, subject }),
