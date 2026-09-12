@@ -173,28 +173,75 @@ export function forumNotificationMailHtml({
   return `<p>${escapeHtml(eventPhrase(kind))}.</p><p>Discussion: <strong>${escapeHtml(title)}</strong></p><p>From: <strong>${escapeHtml(author)}</strong></p>${paragraphs(content)}<p><a href="${escapeHtml(url)}">Open discussion</a></p>`;
 }
 
-export function notificationMailText({
-  kind,
-  title,
-  url,
-}: {
-  kind: string;
-  title: string;
-  url: string;
-}): string {
-  return `${eventPhrase(kind)}.\n\n${kind === "assignment_released" ? "Assignment" : "Discussion"}: ${title}\n\nSign in to view the details:\n${url}`;
+/**
+ * An assignment's due instant is stored as one moment; a course reads it in the wall time
+ * it keeps. An unconfigured or unusable zone still deserves an unambiguous label, so the
+ * fallback names UTC rather than the server's accidental locale.
+ */
+export function assignmentDueLabel({ dueAt, detail }: { dueAt: unknown; detail: unknown }): string {
+  const due =
+    dueAt instanceof Date ? dueAt : typeof dueAt === "string" ? new Date(dueAt) : new Date(NaN);
+  if (Number.isNaN(due.getTime())) return "";
+  const named =
+    typeof detail === "object" && detail !== null && "timezone" in detail
+      ? (detail as { timezone: unknown }).timezone
+      : undefined;
+  const format = (timeZone: string) =>
+    new Intl.DateTimeFormat("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "short",
+      timeZone,
+    }).format(due);
+  try {
+    return format(typeof named === "string" && named !== "" ? named : "UTC");
+  } catch {
+    return format("UTC");
+  }
 }
 
-export function notificationMailHtml({
+/**
+ * A release names who published the assignment and when it is due, which is what the
+ * recipient triages on. The instructions stay out: they are the working material rather
+ * than the event, they carry links and attachments that only resolve inside Commons, and
+ * a problem set's full text does not belong in every assignee's mailbox.
+ */
+export function assignmentNotificationMailText({
   kind,
   title,
   url,
+  author,
+  due,
 }: {
   kind: string;
   title: string;
   url: string;
+  author: string;
+  due: string;
 }): string {
-  return `<p>${escapeHtml(eventPhrase(kind))}.</p><p>${kind === "assignment_released" ? "Assignment" : "Discussion"}: <strong>${escapeHtml(title)}</strong></p><p><a href="${escapeHtml(url)}">Sign in to view the details</a></p>`;
+  const when = due === "" ? "" : `\nDue: ${due}`;
+  return `${eventPhrase(kind)}.\n\nAssignment: ${title}\nFrom: ${author}${when}\n\nOpen assignment:\n${url}`;
+}
+
+export function assignmentNotificationMailHtml({
+  kind,
+  title,
+  url,
+  author,
+  due,
+}: {
+  kind: string;
+  title: string;
+  url: string;
+  author: string;
+  due: string;
+}): string {
+  const when = due === "" ? "" : `<p>Due: <strong>${escapeHtml(due)}</strong></p>`;
+  return `<p>${escapeHtml(eventPhrase(kind))}.</p><p>Assignment: <strong>${escapeHtml(title)}</strong></p><p>From: <strong>${escapeHtml(author)}</strong></p>${when}<p><a href="${escapeHtml(url)}">Open assignment</a></p>`;
 }
 
 /** Outbox inspection must not expose invitation passwords or reset codes. */
@@ -261,18 +308,23 @@ export function taskMailSubject({
   return `${taskPhrase(kind)}: ${taskTitle} (${listTitle})`;
 }
 
+/** A task's own words are what the recipient has to act on, so mail carries them whole. */
 export function taskMailText({
   kind,
   taskTitle,
   listTitle,
   deadline,
+  details,
 }: {
   kind: string;
   taskTitle: string;
   listTitle: string;
   deadline: string;
+  details: unknown;
 }): string {
-  return `${taskPhrase(kind)}.\n\nTask: ${taskTitle}\nGroup: ${listTitle}\nDue: ${deadline}\n\n${taskListsLink()}`;
+  const written = typeof details === "string" ? details.trim() : "";
+  const described = written === "" ? "" : `\n${written}\n`;
+  return `${taskPhrase(kind)}.\n\nTask: ${taskTitle}\nGroup: ${listTitle}\nDue: ${deadline}\n${described}\n${taskListsLink()}`;
 }
 
 export function taskMailHtml({
@@ -280,12 +332,15 @@ export function taskMailHtml({
   taskTitle,
   listTitle,
   deadline,
+  details,
 }: {
   kind: string;
   taskTitle: string;
   listTitle: string;
   deadline: string;
+  details: unknown;
 }): string {
   const link = taskListsLink();
-  return `<p>${escapeHtml(taskPhrase(kind))}.</p><ul><li>Task: ${escapeHtml(taskTitle)}</li><li>Group: ${escapeHtml(listTitle)}</li><li>Due: ${escapeHtml(deadline)}</li></ul><p><a href="${escapeHtml(link)}">Open tasks</a></p>`;
+  const described = typeof details === "string" ? paragraphs(details) : "";
+  return `<p>${escapeHtml(taskPhrase(kind))}.</p><ul><li>Task: ${escapeHtml(taskTitle)}</li><li>Group: ${escapeHtml(listTitle)}</li><li>Due: ${escapeHtml(deadline)}</li></ul>${described}<p><a href="${escapeHtml(link)}">Open tasks</a></p>`;
 }

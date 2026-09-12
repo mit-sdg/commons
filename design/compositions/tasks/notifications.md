@@ -75,9 +75,11 @@ missed one.
 follows every successful TaskNotifying action, from either raise site. It looks
 up the recipient's account email, resolves the subject, and queues one Mailing
 message keyed by that notification. A membership message names the list. A task
-message says which change occurred and names the task title, the holding list's
-title, and the current deadline as text, so it reads on its own after the task
-it points at is gone.
+message says which change occurred, names the task title, the holding list's
+title, and the current deadline as text, and carries the task's own written
+details when it has any, so it reads on its own after the task it points at is
+gone. HTML mail escapes those details and preserves their paragraphs and line
+breaks. A task that was written with no details mails no empty detail block.
 
 A task message is rendered only for a recipient who is a current member of the
 list holding that task, read when the message is rendered. A membership message

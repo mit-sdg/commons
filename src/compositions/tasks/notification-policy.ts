@@ -23,7 +23,7 @@ export const theMailFor = view(
   (
     { kind, subject, recipient, at },
     { mailSubject, text, html },
-    { listTitle, taskTitle, list, deadline },
+    { listTitle, taskTitle, list, deadline, details },
   ) => [
     where(
       Grouping._getGroup({ group: subject }).is({ title: listTitle }),
@@ -36,12 +36,13 @@ export const theMailFor = view(
         title: taskTitle,
         scope: list,
         endsAt: deadline,
+        details,
       }),
       Grouping._getGroup({ group: list }).is({ title: listTitle }),
       Grouping._isMember({ group: list, member: recipient }).is({ isMember: true }),
       compute(computations.taskMailSubject, { kind, taskTitle, listTitle }, mailSubject),
-      compute(computations.taskMailText, { kind, taskTitle, listTitle, deadline }, text),
-      compute(computations.taskMailHtml, { kind, taskTitle, listTitle, deadline }, html),
+      compute(computations.taskMailText, { kind, taskTitle, listTitle, deadline, details }, text),
+      compute(computations.taskMailHtml, { kind, taskTitle, listTitle, deadline, details }, html),
     ),
   ],
 ).optional();

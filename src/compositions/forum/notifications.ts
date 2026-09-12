@@ -46,11 +46,18 @@ export const notificationSubjectReader = view(
   ],
 ).holds();
 
-export const assignmentNotificationTitle = view(
-  "the notification title of (assignment)",
-  ({ assignment }, { assignmentTitle }, _vars) =>
+/** One read answers the inbox's title and the release mail's author and due instant alike. */
+export const assignmentNotificationDetail = view(
+  "the notification detail of (assignment)",
+  ({ assignment }, { assignmentTitle, assignmentAuthor, dueAt }, _vars) =>
     where(
-      Assigning._getAssignments({}).is({ assignment, title: assignmentTitle, status: "PUBLISHED" }),
+      Assigning._getAssignments({}).is({
+        assignment,
+        title: assignmentTitle,
+        author: assignmentAuthor,
+        dueAt,
+        status: "PUBLISHED",
+      }),
     ),
 ).optional();
 
@@ -59,7 +66,7 @@ export const theAssignmentNotificationPresentation = former(
   ({ assignment, user }, { assignmentTitle }) =>
     where(
       notificationSubjectReader({ user, subject: assignment }),
-      assignmentNotificationTitle({ assignment }).is({ assignmentTitle }),
+      assignmentNotificationDetail({ assignment }).is({ assignmentTitle }),
     ).form({ assignmentTitle }),
 ).optional();
 
@@ -114,6 +121,9 @@ export const notificationMailContext = view(
       author,
       content,
       body,
+      dueAt,
+      due,
+      detail,
     },
   ) => [
     where(
@@ -142,11 +152,20 @@ export const notificationMailContext = view(
     ),
     where(
       notificationSubjectReader({ user, subject }),
-      assignmentNotificationTitle({ assignment: subject }).is({ assignmentTitle: title }),
+      assignmentNotificationDetail({ assignment: subject }).is({
+        assignmentTitle: title,
+        assignmentAuthor: authorUser,
+        dueAt,
+      }),
+      Authenticating._getById({ user: authorUser }).is({ username }),
+      whether(Profiling._getProfileFields({ user: authorUser }).is({ displayName })),
+      whether(Rostering._getClass({}).is({ detail })),
       compute(computations.assignmentNotificationUrl, { assignment: subject }, url),
       compute(computations.notificationMailSubject, { kind, title }, mailSubject),
-      compute(computations.notificationMailText, { kind, title, url }, text),
-      compute(computations.notificationMailHtml, { kind, title, url }, html),
+      compute(computations.notificationAuthorLabel, { username, displayName }, author),
+      compute(computations.assignmentDueLabel, { dueAt, detail }, due),
+      compute(computations.assignmentNotificationMailText, { kind, title, url, author, due }, text),
+      compute(computations.assignmentNotificationMailHtml, { kind, title, url, author, due }, html),
     ),
   ],
 ).optional();

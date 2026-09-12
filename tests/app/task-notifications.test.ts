@@ -79,8 +79,15 @@ async function makeTask(
   list: string,
   title: string,
   window: { startsAt: string; endsAt: string } = WINDOW,
+  details?: string,
 ) {
-  const created = await call(app, "/tasks/create", { session, list, title, ...window });
+  const created = await call(app, "/tasks/create", {
+    session,
+    list,
+    title,
+    ...window,
+    ...(details === undefined ? {} : { details }),
+  });
   return String(created.task);
 }
 
@@ -207,7 +214,7 @@ describe("task-list membership notifications", () => {
 });
 
 describe("task assignment notifications", () => {
-  test("assigning to another member tells them, with task, list and deadline in the mail", async () => {
+  test("assigning to another member tells them, with task, list, deadline and details in the mail", async () => {
     const app = await newApp();
     const mara = await actor(app, "mara_assign");
     const noah = await actor(app, "noah_assign");
@@ -217,7 +224,9 @@ describe("task assignment notifications", () => {
       list,
       candidate: noah.user,
     });
-    const task = await makeTask(app, mara.session, list, "Draft the brief");
+    const details =
+      "Two <pages> & a summary.\nCite the <script>alert(1)</script> source.\n\nSend it to the group.";
+    const task = await makeTask(app, mara.session, list, "Draft the brief", WINDOW, details);
 
     const assigned = await call(app, "/tasks/assign", {
       session: mara.session,
@@ -242,6 +251,32 @@ describe("task assignment notifications", () => {
     expect(mail[0].text).toContain("Draft the brief");
     expect(mail[0].text).toContain("Launch Plan");
     expect(mail[0].text).toContain(WINDOW.endsAt);
+    expect(mail[0].text).toContain(details);
+    expect(mail[0].html).toContain(
+      "<p>Two &lt;pages&gt; &amp; a summary.<br>Cite the &lt;script&gt;alert(1)&lt;/script&gt; source.</p><p>Send it to the group.</p>",
+    );
+    expect(mail[0].html).not.toContain("<script>");
+  });
+
+  test("a task written with no details mails no empty detail block", async () => {
+    const app = await newApp();
+    const mara = await actor(app, "mara_nodetail");
+    const noah = await actor(app, "noah_nodetail");
+    const list = await makeList(app, mara, "Bare Plan");
+    await call(app, "/tasklists/add-member", {
+      session: mara.session,
+      list,
+      candidate: noah.user,
+    });
+    const task = await makeTask(app, mara.session, list, "Bare task");
+    await call(app, "/tasks/assign", { session: mara.session, task, assignee: noah.user });
+
+    const rows = await inbox(app, noah.session);
+    const assignment = rows.filter((row) => row.kind === "task-assigned");
+    const mail = (await pending(app)).filter((m) => m.key === assignment[0].notification);
+    expect(mail).toHaveLength(1);
+    expect(mail[0].html).not.toContain("<p></p>");
+    expect(mail[0].text).toContain(`Due: ${WINDOW.endsAt}\n\n`);
   });
 
   test("assigning to yourself says nothing", async () => {

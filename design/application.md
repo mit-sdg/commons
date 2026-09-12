@@ -493,11 +493,14 @@ forumNotificationMailText(kind: String, title: String, url: String, author: Stri
 forumNotificationMailHtml(kind: String, title: String, url: String, author: String, content: String) : String
   Safely escapes every dynamic value—the event, discussion title, author, complete post content, and direct URL—while preserving the content's paragraphs and line breaks and placing the link last.
 
-notificationMailText(kind: String, title: String, url: String) : String
-  Names a non-forum notification event and title with its direct link.
+assignmentDueLabel(dueAt: Any, detail: Any) : String
+  Reads a due instant as the configured course's wall time, names the zone, falls back to UTC without a usable one, and says nothing at all about an absent or unreadable instant.
 
-notificationMailHtml(kind: String, title: String, url: String) : String
-  Escapes a non-forum notification event and title and supplies its direct link.
+assignmentNotificationMailText(kind: String, title: String, url: String, author: String, due: String) : String
+  Names the release event, the assignment, its author, and its due wall time, and finishes with the direct assignment link, without the instructions.
+
+assignmentNotificationMailHtml(kind: String, title: String, url: String, author: String, due: String) : String
+  Escapes every dynamic value of the release—the event, assignment title, author, and due wall time—and places the assignment link last, without the instructions.
 
 capabilitiesAreKnown(capabilities: Strings) : Bool
   Reports whether every named capability appears in the application's registry,
@@ -553,11 +556,11 @@ taskListMailHtml(kind: String, listTitle: String) : String
 taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String
   Renders the subject line for a task assignment or task state change of that kind.
 
-taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String
-  Renders the plain-text task message, saying which change occurred and naming the task, its list, and its deadline.
+taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String, details: Any) : String
+  Renders the plain-text task message, saying which change occurred, naming the task, its list, and its deadline, and carrying the task's own written details when it has any.
 
-taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String
-  Renders the HTML task message, saying which change occurred and naming the task, its list, and its deadline.
+taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String, details: Any) : String
+  Renders the HTML task message, saying which change occurred, naming the task, its list, and its deadline, and safely escaping the task's own written details into paragraphs when it has any.
 
 draftTitle(form: String) : String
   Renders a privacy-safe default title for an adopted AI draft from its form,

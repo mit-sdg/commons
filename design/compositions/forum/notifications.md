@@ -83,8 +83,11 @@ Current post access still gates notification creation, inbox visibility, and mai
 The existing Notifying instance also retains assignment release notifications.
 [Subject admission](view:Forum.notifications.notificationSubjectReader) admits forum posts through postReader, or published assignments for their active student assignees whose accounts remain available.
 Inbox reads, unread counts, mark-read, dismissal, and queued mail eligibility use that same admission.
-[Assignment title lookup](view:Forum.notifications.assignmentNotificationTitle) provides the [assignment presentation](former:Forum.notifications.theAssignmentNotificationPresentation), with an assignment link rather than a forum-post link.
-Release email names the assignment and event and links directly to the assignment;
-it does not include forum author/message fields or assignment instructions. Mail is
+[One assignment lookup](view:Forum.notifications.assignmentNotificationDetail) answers the title the inbox shows and the author and due instant the release email names, so a release reads the published assignments once rather than once per field. It provides the [assignment presentation](former:Forum.notifications.theAssignmentNotificationPresentation), with an assignment link rather than a forum-post link.
+Release email names the event and assignment, identifies the assignment's author by the
+same public label forum mail uses, states the due instant as the configured course's wall
+time (naming the zone, and falling back to UTC when no usable zone is configured), and
+links directly to the assignment. It does not include the instructions: those are the
+working material rather than the event, and they only resolve inside Commons. Mail is
 rechecked at dispatch; an archived assignment or dropped student no longer admits
 its notification.
