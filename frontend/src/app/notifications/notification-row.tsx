@@ -228,6 +228,11 @@ function TaskNotificationBody({
             {detail?.due ? (
               <Fact.Due at={detail.due} verb="due" precision="day" />
             ) : null}
+            {detail?.by ? (
+              <Fact.Where preposition="by" className="truncate">
+                {detail.by}
+              </Fact.Where>
+            ) : null}
           </Facts>
         ) : (
           <p className="mt-0.5 truncate text-xs italic text-muted-foreground/80">

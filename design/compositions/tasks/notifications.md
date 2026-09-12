@@ -94,9 +94,10 @@ consequence chain, so recording it would mean making the actor part of a Tasking
 action — and Tasking's purpose is to name who is _answerable_ for work, not who
 last touched it. That gap is recorded rather than forced.
 
-What mail carries of an authored message — a post's content or a task's details —
-is bounded. Past that bound mail carries as much as it can, cut at a word, and
-says plainly that the rest is in Commons rather than dropping it silently.
+What mail carries of the task's details is bounded, by the same bound the forum
+applies to a post's content. Past it mail carries as much as it can, cut at a
+word, and says plainly that the rest is in Commons rather than dropping it
+silently.
 
 A task message is rendered only for a recipient who is a current member of the
 list holding that task, read when the message is rendered. A membership message

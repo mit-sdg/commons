@@ -32,6 +32,32 @@ for (const [floor, make] of floors) {
       expect(await notifying._getUnreadCount({ recipient: "mara" })).toEqual({ count: 1 });
     });
 
+    test("an actor is kept when one is recorded and answers null when none is", async () => {
+      const notifying = await make();
+      await notifying.notify({
+        recipient: "mara",
+        kind: "task-list-added",
+        subject: "list-1",
+        link: "list-1",
+        actor: "noah",
+        at,
+      });
+      await notifying.notify({
+        recipient: "mara",
+        kind: "reply",
+        subject: "p1",
+        link: "/p1",
+        actor: null,
+        at: new Date(at.getTime() - 1_000),
+      });
+      expect(
+        (await notifying._getInbox({ recipient: "mara" })).map((n) => [n.kind, n.actor]),
+      ).toEqual([
+        ["task-list-added", "noah"],
+        ["reply", null],
+      ]);
+    });
+
     test("markRead flips the notification read and drops the unread count", async () => {
       const notifying = await make();
       const { notification } = await notifying.notify({

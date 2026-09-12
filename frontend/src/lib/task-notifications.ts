@@ -128,6 +128,12 @@ export interface TaskRowDetail {
   list: string | null;
   /** When it is due, as the endpoint gave it, or null when it has no deadline. */
   due: unknown;
+  /**
+   * Who caused it, by the same public label its email names, or null where the
+   * notification recorded no actor. A group cannot say who changed your
+   * membership of it, so those rows carry one; task rows do not.
+   */
+  by: string | null;
 }
 
 /**
@@ -142,12 +148,17 @@ export function taskRowDetail(
 ): TaskRowDetail | null {
   if (!hasTaskPresentation(row)) return null;
   const list = row.listTitle == null ? null : String(row.listTitle);
+  const label =
+    row.actorLabel == null || String(row.actorLabel) === ""
+      ? null
+      : String(row.actorLabel);
   if (isMembershipKind(String(row.kind)))
-    return list === null ? null : { title: null, list, due: null };
+    return list === null ? null : { title: null, list, due: null, by: label };
   return {
     title: String(row.task.title),
     list,
     due: toDate(row.task.endsAt) === null ? null : row.task.endsAt,
+    by: label,
   };
 }
 

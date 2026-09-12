@@ -140,10 +140,6 @@ export function notificationAuthorLabel({
   return publicName === "" ? `@${username}` : `${publicName} (@${username})`;
 }
 
-/**
- * An opening post already gave the discussion its title, so repeating that line under
- * "Discussion:" would say the same thing twice; a reply owns every line it wrote.
- */
 /** An event that recorded no actor names none; the label is otherwise the author's. */
 export function notificationActorLabel({
   username,
@@ -157,6 +153,11 @@ export function notificationActorLabel({
     : "";
 }
 
+/**
+ * An opening post already gave the discussion its title, so repeating that line under
+ * "Discussion:" would say the same thing twice; a reply owns every line it wrote. What
+ * mail carries of either is bounded.
+ */
 export function forumNotificationMailBody({
   content,
   post,

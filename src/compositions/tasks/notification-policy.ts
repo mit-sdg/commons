@@ -15,8 +15,9 @@ export const removedSomebodyElse = view(
 
 /**
  * How is the person whose act raised this entry named? A notification records an actor only
- * where its subject cannot say who acted, and both task entries are such a case, so the
- * reads are optional and an entry with no actor recorded is named by nothing at all rather
+ * where its subject cannot say who acted: a group cannot say who changed your membership of
+ * it, so membership entries carry one, while task entries carry none. The reads are
+ * therefore optional, and an entry with no actor recorded is named by nothing at all rather
  * than withheld.
  */
 export const theActorLabelOf = view(
@@ -39,9 +40,10 @@ export const theActorPresentation = former(
 /**
  * Which finished subject line, text, and HTML does this entry deserve? A membership entry
  * resolves through the group read, a task entry through the task read, and an entry that
- * resolves through neither renders nothing at all. Both name the actor, and a task entry
- * reads its stored instant as the course's wall time so that a task deadline and an
- * assignment deadline about the same moment cannot read differently.
+ * resolves through neither renders nothing at all. A membership entry names the member who
+ * changed it; a task entry names no actor and instead reads its stored instant as the
+ * course's wall time, so a task deadline and an assignment deadline about the same moment
+ * cannot read differently.
  */
 export const theMailFor = view(
   "the task notification mail of kind (kind) about (subject) by (actor) for (recipient) at (at)",

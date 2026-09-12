@@ -53,6 +53,8 @@ function enrichedTaskRow(
     read: false,
     list: "list-xyz",
     listTitle: "Kitchen crew",
+    actor: null,
+    actorLabel: null,
     task: {
       title: "Wash the pans",
       details: "Before close",
@@ -399,23 +401,36 @@ describe("the one dim line under a row", () => {
     expect(detail?.due).not.toBeNull();
   });
 
-  test("a membership row names only its list", () => {
-    const detail = taskRowDetail(
-      enrichedTaskRow({
-        kind: "task-list-added",
-        list: null,
-        listTitle: "Kitchen crew",
-        task: {
-          title: null,
-          details: null,
-          startsAt: null,
-          endsAt: null,
-          state: null,
-          assignee: null,
-        },
-      }),
-    );
-    expect(detail).toEqual({ title: null, list: "Kitchen crew", due: null });
+  test("a membership row names its list and who changed it", () => {
+    const membership = {
+      kind: "task-list-added",
+      list: null,
+      listTitle: "Kitchen crew",
+      task: {
+        title: null,
+        details: null,
+        startsAt: null,
+        endsAt: null,
+        state: null,
+        assignee: null,
+      },
+    };
+    expect(
+      taskRowDetail(
+        enrichedTaskRow({ ...membership, actorLabel: "Mara Vex (@mara)" }),
+      ),
+    ).toEqual({
+      title: null,
+      list: "Kitchen crew",
+      due: null,
+      by: "Mara Vex (@mara)",
+    });
+  });
+
+  test("a row whose notification recorded no actor names none", () => {
+    for (const actorLabel of [null, ""]) {
+      expect(taskRowDetail(enrichedTaskRow({ actorLabel }))?.by).toBeNull();
+    }
   });
 
   test("a withheld row has no line, so the row can say so itself", () => {

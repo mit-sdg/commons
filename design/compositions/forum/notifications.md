@@ -31,10 +31,10 @@ and finish with a direct discussion link. Plain-text mail preserves the authored
 HTML mail escapes the author and content while preserving paragraphs and line breaks.
 What mail carries of the post is bounded: past that bound it carries as much as it
 can, cut at a word, and says plainly that the rest is in Commons rather than
-dropping it silently. All mail details are rendered snapshots at enqueue time. Current recipient access and
-the queued account address are still checked before dispatch. The inbox entry is
-already stored; a missing account email, author identity, rendering fault, queue
-refusal, or later SMTP failure cannot retract it.
+dropping it silently. All mail details are rendered snapshots at enqueue time.
+Current recipient access and the queued account address are still checked before
+dispatch. The inbox entry is already stored; a missing account email, author
+identity, rendering fault, queue refusal, or later SMTP failure cannot retract it.
 
 [Forum.notifications.ListNotifications](reaction:Forum.notifications.ListNotifications) forms
 [the session account's retained notifications](former:Forum.notifications.theNotificationsOf).
@@ -89,7 +89,7 @@ Inbox reads, unread counts, mark-read, dismissal, and queued mail eligibility us
 Release email names the event and assignment, identifies the assignment's author by the
 same public label forum mail uses, states the due instant as the configured course's wall
 time by the same reading task deadlines use (naming the zone, and falling back to UTC when
-no usable zone is configured), and links directly to the assignment. It does not include the instructions: those are the
-working material rather than the event, and they only resolve inside Commons. Mail is
-rechecked at dispatch; an archived assignment or dropped student no longer admits
-its notification.
+no usable zone is configured), and links directly to the assignment. It does not include
+the instructions: those are the working material rather than the event, and they only
+resolve inside Commons. Mail is rechecked at dispatch; an archived assignment or dropped
+student no longer admits its notification.
