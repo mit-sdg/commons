@@ -138,10 +138,10 @@ export interface TaskRowDetail {
 
 /**
  * The facts of the single dim line beneath a task row's sentence: what the
- * row is about, where it lives, and when it is due, one fact each and each
- * of its own kind, so the line renders every fact in its own form. Null
- * where presentation was withheld — the row says so in its own words
- * instead, rather than going blank.
+ * row is about, where it lives, when it is due, and who caused it, one fact
+ * each and each of its own kind, so the line renders every fact in its own
+ * form. Null where presentation was withheld — the row says so in its own
+ * words instead, rather than going blank.
  */
 export function taskRowDetail(
   row: TaskInboxNotification,
