@@ -102,9 +102,7 @@ test("staff notify a discussion audience once, with the post itself", async ({
   await signOut(page);
   await signIn(page, "noah");
   await page.goto("/notifications");
-  await expect(
-    page.getByText("Staff shared this post", { exact: false }),
-  ).toBeVisible();
+  await expect(page.getByText("Staff shared this post", { exact: false })).toBeVisible();
   await expect(page.getByText(BODY, { exact: false })).toBeVisible();
 
   // A reader who is not staff is offered no send and learns no notice state.

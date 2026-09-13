@@ -94,6 +94,37 @@ describe("forum event wording and direct navigation", () => {
     expect(forumRowHref(notification)).toBe("/t/conversation-1#post-post-2");
   });
 
+  test("an opening post's excerpt does not repeat the title above it", () => {
+    const opening = row({
+      kind: "audience_notice",
+      post: {
+        author: "author-1",
+        content:
+          "# How does induction work?\n\nStart with the base case, then the step.",
+        createdAt: "2026-09-10T00:00:00Z",
+        editedAt: null,
+      },
+    });
+    expect(forumPresentation(opening).excerpt).toBe(
+      "Start with the base case, then the step.",
+    );
+    // The heading is the row's own headline, printed once.
+    const html = render(opening);
+    expect(html.split("How does induction work?").length - 1).toBe(1);
+  });
+
+  test("a reply keeps every line it wrote, heading or not", () => {
+    const reply = row({
+      post: {
+        author: "author-1",
+        content: "# A heading of my own\n\nAnd the rest of the reply.",
+        createdAt: "2026-09-10T00:00:00Z",
+        editedAt: null,
+      },
+    });
+    expect(forumPresentation(reply).excerpt).toContain("A heading of my own");
+  });
+
   test("known actor events keep clear wording", () => {
     for (const [kind, wording] of [
       ["staff_message", "sent a private message to staff"],
