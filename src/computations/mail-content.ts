@@ -1,13 +1,12 @@
 import { configuredPublicOrigin } from "../deployment.ts";
 import { bodyAfterTitle, excerpt, titleFromContent } from "../presentation/post-text.ts";
 
-const escapeHtml = (value: string) =>
-  value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+import {
+  mailCredential,
+  mailDocument,
+  mailMarkdown,
+  mailParagraphs,
+} from "../presentation/mail.ts";
 
 function invitationLink(invitation: string): string {
   return `${configuredPublicOrigin()}/register?invitation=${encodeURIComponent(invitation)}`;
@@ -56,16 +55,6 @@ export function invitationTemplateBody({ body }: { body: string | null }): strin
     : worded.slice(0, INVITATION_BODY_LIMIT).trim();
 }
 
-function paragraphs(text: string): string {
-  const written = text.replace(/\r\n?/g, "\n").trim();
-  return written === ""
-    ? ""
-    : written
-        .split(/\n\n+/)
-        .map((p) => `<p>${escapeHtml(p).replaceAll("\n", "<br>")}</p>`)
-        .join("");
-}
-
 export function invitationMailText({
   invitation,
   credential,
@@ -87,8 +76,12 @@ export function invitationMailHtml({
   credential: string;
   body: string;
 }): string {
-  const link = invitationLink(invitation);
-  return `${paragraphs(body)}<p><a href="${escapeHtml(link)}">Register your account</a></p><p>Temporary password: <strong>${escapeHtml(credential)}</strong></p><p>This invitation does not expire.</p>`;
+  return mailDocument({
+    title: "Your Commons invitation",
+    bodyHtml: mailParagraphs(body) + mailCredential("Temporary password", credential),
+    note: "This invitation does not expire.",
+    action: { label: "Register your account", url: invitationLink(invitation) },
+  });
 }
 
 const notificationPhrase: Record<string, string> = {
@@ -201,7 +194,13 @@ export function forumNotificationMailHtml({
   author: string;
   content: string;
 }): string {
-  return `<p>${escapeHtml(eventPhrase(kind))}.</p><p>Discussion: <strong>${escapeHtml(title)}</strong></p><p>From: <strong>${escapeHtml(author)}</strong></p>${paragraphs(content)}<p><a href="${escapeHtml(url)}">Open discussion</a></p>`;
+  return mailDocument({
+    title,
+    event: `${eventPhrase(kind)}.`,
+    facts: [["From", author]],
+    bodyHtml: mailMarkdown(content, url),
+    action: { label: "Open discussion", url },
+  });
 }
 
 /**
@@ -273,8 +272,15 @@ export function assignmentNotificationMailHtml({
   author: string;
   due: string;
 }): string {
-  const when = due === "" ? "" : `<p>Due: <strong>${escapeHtml(due)}</strong></p>`;
-  return `<p>${escapeHtml(eventPhrase(kind))}.</p><p>Assignment: <strong>${escapeHtml(title)}</strong></p><p>From: <strong>${escapeHtml(author)}</strong></p>${when}<p><a href="${escapeHtml(url)}">Open assignment</a></p>`;
+  return mailDocument({
+    title,
+    event: `${eventPhrase(kind)}.`,
+    facts: [
+      ["From", author],
+      ["Due", due],
+    ],
+    action: { label: "Open assignment", url },
+  });
 }
 
 /** Outbox inspection must not expose invitation passwords or reset codes. */
@@ -293,7 +299,7 @@ const taskKindPhrase: Record<string, string> = {
   "task-assigned": "A task was assigned to you",
   "task-retimed": "A task assigned to you was rescheduled",
   "task-canceled": "A task assigned to you was canceled",
-  "task-uncanceled": "A task assigned to you was uncanceled",
+  "task-uncanceled": "A task assigned to you is no longer canceled",
   "task-reopened": "A task assigned to you was reopened",
   "task-completed": "A task assigned to you was completed",
 };
@@ -306,8 +312,25 @@ const membershipPhrase = (kind: string): string =>
 const taskPhrase = (kind: string): string =>
   Object.hasOwn(taskKindPhrase, kind) ? taskKindPhrase[kind] : "A task assigned to you changed";
 
-function taskListsLink(): string {
-  return `${configuredPublicOrigin()}/tasks`;
+function taskLink(list: string, task: string): string {
+  return `${configuredPublicOrigin()}/groups/${encodeURIComponent(list)}?view=tasks&task=${encodeURIComponent(task)}`;
+}
+
+function membershipDestination(list: string, member: boolean) {
+  return member
+    ? {
+        label: "Open group",
+        url: `${configuredPublicOrigin()}/groups/${encodeURIComponent(list)}?view=members`,
+      }
+    : { label: "Open groups", url: `${configuredPublicOrigin()}/groups` };
+}
+
+function subjectTitle(title: string, limit = 160): string {
+  return title
+    .replace(/[\p{Cc}\u2028\u2029]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, limit);
 }
 
 export function taskListMailSubject({
@@ -317,7 +340,7 @@ export function taskListMailSubject({
   kind: string;
   listTitle: string;
 }): string {
-  return `${membershipPhrase(kind)}: ${listTitle}`;
+  return `${membershipPhrase(kind)}: ${subjectTitle(listTitle)}`;
 }
 
 /** A group cannot say who changed your membership of it, so the mail names the actor. */
@@ -325,27 +348,39 @@ export function taskListMailText({
   kind,
   listTitle,
   actor,
+  list,
+  member,
 }: {
   kind: string;
   listTitle: string;
   actor: string;
+  list: string;
+  member: boolean;
 }): string {
   const by = actor === "" ? "" : `\nBy: ${actor}`;
-  return `${membershipPhrase(kind)} "${listTitle}".${by}\n\n${configuredPublicOrigin()}/groups`;
+  const { label, url } = membershipDestination(list, member);
+  return `${membershipPhrase(kind)} "${listTitle}".${by}\n\n${label}:\n${url}`;
 }
 
 export function taskListMailHtml({
   kind,
   listTitle,
   actor,
+  list,
+  member,
 }: {
   kind: string;
   listTitle: string;
   actor: string;
+  list: string;
+  member: boolean;
 }): string {
-  const link = `${configuredPublicOrigin()}/groups`;
-  const by = actor === "" ? "" : `<p>By: <strong>${escapeHtml(actor)}</strong></p>`;
-  return `<p>${escapeHtml(membershipPhrase(kind))} &quot;${escapeHtml(listTitle)}&quot;.</p>${by}<p><a href="${escapeHtml(link)}">Open groups</a></p>`;
+  return mailDocument({
+    title: listTitle || "Group",
+    event: `${membershipPhrase(kind)}.`,
+    facts: [["By", actor]],
+    action: membershipDestination(list, member),
+  });
 }
 
 export function taskMailSubject({
@@ -357,13 +392,10 @@ export function taskMailSubject({
   taskTitle: string;
   listTitle: string;
 }): string {
-  return `${taskPhrase(kind)}: ${taskTitle} (${listTitle})`;
+  return `${taskPhrase(kind)}: ${subjectTitle(taskTitle)} (${subjectTitle(listTitle, 80)})`;
 }
 
-/**
- * A task's own words are what the recipient has to act on, so mail carries them, and a task
- * cannot say who changed it, so mail names the actor. A deadline is already a wall time.
- */
+/** A task message keeps the written details and leads to that task, not a task index. */
 export function taskMailText({
   kind,
   taskTitle,
@@ -371,6 +403,8 @@ export function taskMailText({
   deadline,
   actor,
   details,
+  list,
+  task,
 }: {
   kind: string;
   taskTitle: string;
@@ -378,12 +412,14 @@ export function taskMailText({
   deadline: string;
   actor: string;
   details: unknown;
+  list: string;
+  task: string;
 }): string {
   const due = deadline === "" ? "" : `\nDue: ${deadline}`;
   const by = actor === "" ? "" : `\nBy: ${actor}`;
   const written = typeof details === "string" ? mailedMessage(details) : "";
   const described = written === "" ? "" : `\n${written}\n`;
-  return `${taskPhrase(kind)}.\n\nTask: ${taskTitle}\nGroup: ${listTitle}${due}${by}\n${described}\n${taskListsLink()}`;
+  return `${taskPhrase(kind)}.\n\nTask: ${taskTitle}\nGroup: ${listTitle}${due}${by}\n${described}\nOpen task:\n${taskLink(list, task)}`;
 }
 
 export function taskMailHtml({
@@ -393,6 +429,8 @@ export function taskMailHtml({
   deadline,
   actor,
   details,
+  list,
+  task,
 }: {
   kind: string;
   taskTitle: string;
@@ -400,10 +438,19 @@ export function taskMailHtml({
   deadline: string;
   actor: string;
   details: unknown;
+  list: string;
+  task: string;
 }): string {
-  const link = taskListsLink();
-  const due = deadline === "" ? "" : `<li>Due: ${escapeHtml(deadline)}</li>`;
-  const by = actor === "" ? "" : `<li>By: ${escapeHtml(actor)}</li>`;
-  const described = typeof details === "string" ? paragraphs(mailedMessage(details)) : "";
-  return `<p>${escapeHtml(taskPhrase(kind))}.</p><ul><li>Task: ${escapeHtml(taskTitle)}</li><li>Group: ${escapeHtml(listTitle)}</li>${due}${by}</ul>${described}<p><a href="${escapeHtml(link)}">Open tasks</a></p>`;
+  const url = taskLink(list, task);
+  return mailDocument({
+    title: taskTitle || "Task",
+    event: `${taskPhrase(kind)}.`,
+    facts: [
+      ["Group", listTitle],
+      ["Due", deadline],
+      ["By", actor],
+    ],
+    bodyHtml: typeof details === "string" ? mailMarkdown(mailedMessage(details), url) : "",
+    action: { label: "Open task", url },
+  });
 }

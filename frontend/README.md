@@ -97,6 +97,11 @@ Account changes reset cached presentation and local drafts. The initial session
 check finishes before form inputs appear, including on public entry pages, so
 session initialization cannot erase a draft entered under a provisional identity.
 
+A notification opened while signed out keeps its local path, query, and fragment
+through sign-in; external return destinations are refused. Task notifications and
+emails select a task in its group's task view, which waits for current data, opens
+its details, and focuses its card, including completed and canceled tasks.
+
 ## Running
 
 Start the frontend with the rest of Commons from the repository root as

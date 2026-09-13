@@ -75,8 +75,13 @@ test("ordinary create and reply establish a fixed private audience", async () =>
 test("a failed establishment leaves placed content closed to every reader", async () => {
   const {
     instances,
-    people: [author, reader],
+    people: [author, reader, administrator],
   } = await fixture();
+  const { role } = await instances.Roling.defineRole({
+    name: "Operations",
+    capabilities: ["administer"],
+  });
+  await instances.Roling.assign({ user: administrator.user, context: "commons", role });
   instances.Accessing.establish = async function establish() {
     throw new Error("unavailable storage");
   };
@@ -90,7 +95,7 @@ test("a failed establishment leaves placed content closed to every reader", asyn
   ).toMatchObject({ ok: false });
   const [conversation] = await instances.Conversing._getConversations({});
   expect(conversation).toBeDefined();
-  for (const person of [author, reader]) {
+  for (const person of [author, reader, administrator]) {
     expect(
       await app.invoker.invoke("/threads/get", {
         session: person.session,
@@ -130,7 +135,7 @@ test("queued group mail includes its author and full content but is withheld aft
   expect(queued.text).toContain("From: @author");
   expect(queued.text).toContain("Complete homework question for @reader");
   expect(queued.html).toContain("From: <strong>@author</strong>");
-  expect(queued.html).toContain("<p>Complete homework question for @reader</p>");
+  expect(queued.html).toMatch(/<p[^>]*>Complete homework question for @reader<\/p>/);
   // The opening's first line is already the discussion title; mail must not say it twice.
   expect(queued.text).not.toContain("# Homework question");
   expect(queued.text.match(/Homework question/g)).toHaveLength(1);

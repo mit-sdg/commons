@@ -26,7 +26,7 @@ describe("email presentation", () => {
     const html = invitationMailHtml(input);
     expect(html).not.toContain("<img");
     expect(html).toContain("&lt;img");
-    expect(html).toContain("<br>Second line</p><p>A new paragraph.</p>");
+    expect(html).toMatch(/<br>Second line<\/p><p[^>]*>A new paragraph\.<\/p>/);
     expect(html).toContain("&lt;secret&gt;");
     expect(html).toContain("invitation=id%22%26");
     expect(invitationMailText(input)).toContain("Temporary password: <secret>");
@@ -73,7 +73,8 @@ describe("email presentation", () => {
     expect(html).toContain("Dana &lt;img src=x&gt; (@dana)");
     expect(html).not.toContain("<img");
     expect(html).toContain('href="https://example.edu/assignments/a1?x=&quot;1&quot;"');
-    expect(html.endsWith("Open assignment</a></p>")).toBe(true);
+    expect(html).toContain("Open assignment</a>");
+    expect(html.indexOf("Open assignment</a>")).toBeGreaterThan(html.indexOf("Due:"));
   });
 
   test("a due label falls back to UTC without a usable course zone, and says nothing undated", () => {
@@ -123,16 +124,18 @@ describe("email presentation", () => {
     expect(html).toContain("You were mentioned in a discussion.");
     expect(html).toContain("&lt;Planning&gt; &amp; &quot;review&quot;");
     expect(html).toContain("Ada &lt;img src=x onerror=&quot;alert(1)&quot;&gt; (@ada)");
-    expect(html).toContain(
-      "<p>First &lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;<br>Second &amp; line</p>",
+    expect(html).toMatch(
+      /<p[^>]*>First &lt;script&gt;alert\("x"\)&lt;\/script&gt;<br\s*\/?>Second &amp; line<\/p>/,
     );
-    expect(html).toContain(`<p>${unabridgedParagraph}</p>`);
+    expect(html).toContain(`${unabridgedParagraph}</p>`);
     expect(html).toContain(
       'href="https://example.edu/t/thread?x=&quot;bad&quot;&amp;y=1#post-reply"',
     );
     expect(html).not.toContain("<script>");
     expect(html).not.toContain("<img");
-    expect(html.endsWith("</a></p>")).toBe(true);
+    expect(html.indexOf("Open discussion</a>")).toBeGreaterThan(
+      html.indexOf("FINAL-CONTENT-MARKER"),
+    );
   });
 
   test("an opening's title line is not repeated in its own mail, and a reply keeps every line", () => {
@@ -200,7 +203,9 @@ describe("email presentation", () => {
       author: "@a",
       content: forumNotificationMailBody({ content: huge, post: "p", opening: undefined }),
     });
-    expect(html).toContain("<p>(Shortened for email. Open it in Commons to read the rest.)</p>");
+    expect(html).toMatch(
+      /<p[^>]*>\(Shortened for email\. Open it in Commons to read the rest\.\)<\/p>/,
+    );
     expect(html.length).toBeLessThan(60_000);
   });
 

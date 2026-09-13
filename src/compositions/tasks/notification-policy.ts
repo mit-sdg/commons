@@ -50,14 +50,23 @@ export const theMailFor = view(
   (
     { kind, subject, actor, recipient, at },
     { mailSubject, text, html },
-    { listTitle, taskTitle, list, endsAt, deadline, details, detail, actorLabel },
+    { listTitle, taskTitle, list, endsAt, deadline, details, detail, actorLabel, isMember },
   ) => [
     where(
       Grouping._getGroup({ group: subject }).is({ title: listTitle }),
+      Grouping._isMember({ group: subject, member: recipient }).is({ isMember }),
       theActorLabelOf({ actor }).is({ actorLabel }),
       compute(computations.taskListMailSubject, { kind, listTitle }, mailSubject),
-      compute(computations.taskListMailText, { kind, listTitle, actor: actorLabel }, text),
-      compute(computations.taskListMailHtml, { kind, listTitle, actor: actorLabel }, html),
+      compute(
+        computations.taskListMailText,
+        { kind, listTitle, actor: actorLabel, list: subject, member: isMember },
+        text,
+      ),
+      compute(
+        computations.taskListMailHtml,
+        { kind, listTitle, actor: actorLabel, list: subject, member: isMember },
+        html,
+      ),
     ),
     where(
       Tasking._getTask({ task: subject, at }).is({
@@ -74,12 +83,12 @@ export const theMailFor = view(
       compute(computations.taskMailSubject, { kind, taskTitle, listTitle }, mailSubject),
       compute(
         computations.taskMailText,
-        { kind, taskTitle, listTitle, deadline, actor: actorLabel, details },
+        { kind, taskTitle, listTitle, deadline, actor: actorLabel, details, list, task: subject },
         text,
       ),
       compute(
         computations.taskMailHtml,
-        { kind, taskTitle, listTitle, deadline, actor: actorLabel, details },
+        { kind, taskTitle, listTitle, deadline, actor: actorLabel, details, list, task: subject },
         html,
       ),
     ),

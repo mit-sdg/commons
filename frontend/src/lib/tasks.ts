@@ -1,6 +1,11 @@
 import { api, publicErrorMessage, unwrap } from "@/lib/api";
 import type { AssignedTask, TaskList, TaskListPage } from "@/lib/models";
 
+/** The task view can focus open, completed, and canceled tasks after its data loads. */
+export function taskHref(list: string, task: string): string {
+  return `/groups/${encodeURIComponent(list)}?view=tasks&task=${encodeURIComponent(task)}`;
+}
+
 /** A `datetime-local` value for a moment, in the reader's own zone. */
 export function toLocalInput(value: unknown): string {
   const date = value == null ? new Date() : new Date(value as string);

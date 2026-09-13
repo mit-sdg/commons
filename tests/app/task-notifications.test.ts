@@ -136,6 +136,8 @@ describe("task-list membership notifications", () => {
     expect(queued[0].text).toContain("By: mara_add (@mara_add)");
     expect(queued[0].html).toContain("By: <strong>mara_add (@mara_add)</strong>");
     expect(queued[0].html).toContain("Reading Group");
+    expect(queued[0].text.endsWith(`/groups/${list}?view=members`)).toBe(true);
+    expect(queued[0].html).toContain(`/groups/${list}?view=members`);
     expect(queued[0].text).not.toContain("You have a new Commons notification");
   });
 
@@ -179,6 +181,8 @@ describe("task-list membership notifications", () => {
     expect(losses[0].actorLabel).toBe("mara_rm (@mara_rm)");
     expect(lossMail[0].text).toContain("By: mara_rm (@mara_rm)");
     expect(lossMail[0].html).toContain("By: <strong>mara_rm (@mara_rm)</strong>");
+    expect(lossMail[0].text.endsWith("/groups")).toBe(true);
+    expect(lossMail[0].html).not.toContain(`/groups/${list}`);
 
     // every open task was released without adding any further announcement
     for (const task of [first, second, third]) {
@@ -263,10 +267,12 @@ describe("task assignment notifications", () => {
     expect(mail[0].text).toContain("Due: Wed, Aug 19, 2026, 5:00 PM UTC");
     expect(mail[0].text).not.toContain(WINDOW.endsAt);
     expect(mail[0].text).toContain(details);
-    expect(mail[0].html).toContain(
-      "<p>Two &lt;pages&gt; &amp; a summary.<br>Cite the &lt;script&gt;alert(1)&lt;/script&gt; source.</p><p>Send it to the group.</p>",
+    expect(mail[0].html).toMatch(
+      /<p[^>]*>Two &lt;pages&gt; &amp; a summary\.<br\s*\/?>Cite the &lt;script&gt;alert\(1\)&lt;\/script&gt; source\.<\/p>\s*<p[^>]*>Send it to the group\.<\/p>/,
     );
     expect(mail[0].html).not.toContain("<script>");
+    expect(mail[0].text.endsWith(`/groups/${list}?view=tasks&task=${task}`)).toBe(true);
+    expect(mail[0].html).toContain(`/groups/${list}?view=tasks&amp;task=${task}`);
   });
 
   test("a task deadline mails as the configured course's wall time, not as its stored text", async () => {
@@ -293,7 +299,7 @@ describe("task assignment notifications", () => {
     const mail = (await pending(app)).filter((m) => m.key === assignment[0].notification);
     // The same instant a UTC-less course reads as 5:00 PM UTC, read in the course's own zone.
     expect(mail[0].text).toContain("Due: Wed, Aug 19, 2026, 1:00 PM EDT");
-    expect(mail[0].html).toContain("<li>Due: Wed, Aug 19, 2026, 1:00 PM EDT</li>");
+    expect(mail[0].html).toContain("Due: <strong>Wed, Aug 19, 2026, 1:00 PM EDT</strong>");
     expect(mail[0].text).not.toContain(WINDOW.endsAt);
   });
 

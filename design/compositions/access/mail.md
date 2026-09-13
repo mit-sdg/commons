@@ -27,6 +27,10 @@ in their links are redacted before the preview reaches the browser. Deduplicatio
 keys stay server-side because authentication-mail keys contain those same link
 identifiers. Raw mail HTML is not returned. An unknown message receives `NOT_FOUND`; all mail reads
 refuse a non-administrator with `FORBIDDEN`.
+Administrator outbox access includes private discussion notification bodies;
+administrators also have read access to those discussions without joining their
+explicit audiences. A mail preview remains an enqueue-time snapshot, not a live
+post read.
 
 ## Invitation copy
 

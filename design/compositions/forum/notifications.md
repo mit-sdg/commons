@@ -10,7 +10,7 @@ entries already stored for other recipients.
 When a root audience is established, the
 [otherUsersMentionedIn view](view:Forum.notifications.otherUsersMentionedIn) resolves each distinct exact username
 mentioned in its content while excluding the author. [Forum.notifications.RootMentionsNotify](reaction:Forum.notifications.RootMentionsNotify)
-notifies each resulting account that currently belongs to the audience. For a reply,
+notifies each resulting account that can currently read the post through audience membership or administration. For a reply,
 [Forum.notifications.ReplyMentionsNotify](reaction:Forum.notifications.ReplyMentionsNotify) applies the same rule, using
 [isNotMentionedIn](view:Forum.notifications.isNotMentionedIn) to suppress the parent author who receives the
 reply notification instead. [Forum.notifications.EditMentionsNotify](reaction:Forum.notifications.EditMentionsNotify)
@@ -28,7 +28,10 @@ queues an event-specific subject and message in Mailing. Forum emails name the e
 and discussion title, identify the notified post's author by nonblank public display
 name and `@username` (or by `@username` alone), include the post's complete content,
 and finish with a direct discussion link. Plain-text mail preserves the authored text;
-HTML mail escapes the author and content while preserving paragraphs and line breaks.
+HTML mail uses the shared text-first layout and renders the message as sanitized Markdown.
+Headings, lists, emphasis, quotes, code, and tables remain readable. Authored HTML stays
+literal, links become safe absolute destinations, and images become descriptive links
+rather than remote loads. The title, event, author, and action remain escaped text.
 What mail carries of the post is bounded: past that bound it carries as much as it
 can, cut at a word, and says plainly that the rest is in Commons rather than
 dropping it silently. All mail details are rendered snapshots at enqueue time.
@@ -76,6 +79,11 @@ forumMailKey(notification: String, recipient: String, post: String) : String
 ```
 
 [Starting a discussion notifies explicit account recipients](reaction:Forum.notifications.RootNotifiesAddressedAccounts), excluding the author and people already selected by the mention path. Group and section holders do not broadcast notifications to their members.
+Administrator access alone does not subscribe an account or queue notifications.
+An administrator who is explicitly addressed, mentioned, following, or the parent
+post's author follows the same event-specific rules as any other eligible reader.
+Inbox visibility and dispatch eligibility use the administrator's current access,
+not the role they held when the notification was raised.
 
 Private openings that explicitly include Staff trigger [RootNotifiesStaff](reaction:Forum.notifications.RootNotifiesStaff).
 The [staff recipient rule](view:Forum.notifications.staffNotificationRecipient) uses the existing Staff audience membership and excludes [course-wide audiences](view:Forum.notifications.courseWideNotificationAudience).
