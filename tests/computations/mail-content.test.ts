@@ -233,7 +233,11 @@ describe("email presentation", () => {
     // Blank is reachable: /tasklists/create defaults its title to "", and neither Grouping
     // nor Assigning refuses one. A bare trailing colon would name nothing at all.
     const group = { kind: "task-list-added", listTitle: " ", actor: "", list: "g", member: true };
-    for (const output of [taskListMailSubject(group), taskListMailText(group), taskListMailHtml(group)])
+    for (const output of [
+      taskListMailSubject(group),
+      taskListMailText(group),
+      taskListMailHtml(group),
+    ])
       expect(output).toContain("Untitled group");
 
     const task = {
@@ -251,7 +255,13 @@ describe("email presentation", () => {
       expect(output).toContain("Untitled group");
     }
 
-    const released = { kind: "assignment_released", title: "", url: "https://e.edu/a", author: "@dana", due: "" };
+    const released = {
+      kind: "assignment_released",
+      title: "",
+      url: "https://e.edu/a",
+      author: "@dana",
+      due: "",
+    };
     for (const output of [
       notificationMailSubject(released),
       assignmentNotificationMailText(released),
