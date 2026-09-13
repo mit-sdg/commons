@@ -84,6 +84,34 @@ export function invitationMailHtml({
   });
 }
 
+/**
+ * One written line, whatever was typed into it. A title is the same line wherever it is
+ * said — a subject, a sentence, a heading — and a control character somebody pasted cannot
+ * become a second header line in a subject.
+ */
+function oneLine(title: string): string {
+  return title
+    .replace(/[\p{Cc}\u2028\u2029]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * A title its author left blank still has to name what it names. Blank is reachable —
+ * /tasklists/create defaults its title to the empty string, and neither Grouping nor
+ * Assigning refuses one — and a subject ending in a bare colon, or a sentence about the
+ * group "", says less than nothing. The fallback is chosen once so a subject line, a plain
+ * text body, and an HTML heading about one event cannot disagree about what was named.
+ */
+function named(title: string, fallback: string): string {
+  return oneLine(title) || fallback;
+}
+
+const UNNAMED_DISCUSSION = "Untitled discussion";
+const UNNAMED_ASSIGNMENT = "Untitled assignment";
+const UNNAMED_GROUP = "Untitled group";
+const UNNAMED_TASK = "Untitled task";
+
 const notificationPhrase: Record<string, string> = {
   reply: "New reply to your post",
   followed_reply: "New reply in a discussion you follow",
@@ -118,8 +146,12 @@ export function assignmentNotificationUrl({ assignment }: { assignment: string }
   return `${configuredPublicOrigin()}/assignments/${encodeURIComponent(assignment)}`;
 }
 
+/** Only one kind of notification is about an assignment; the rest are about a discussion. */
+const unnamedSubject = (kind: string): string =>
+  kind === "assignment_released" ? UNNAMED_ASSIGNMENT : UNNAMED_DISCUSSION;
+
 export function notificationMailSubject({ kind, title }: { kind: string; title: string }): string {
-  return `${eventPhrase(kind)}: ${title.replace(/\s+/g, " ").trim().slice(0, 160)}`;
+  return `${eventPhrase(kind)}: ${named(title, unnamedSubject(kind)).slice(0, 160)}`;
 }
 
 export function notificationAuthorLabel({
@@ -178,7 +210,7 @@ export function forumNotificationMailText({
 }): string {
   const written = content.trim();
   const message = written === "" ? "" : `\n${written}\n`;
-  return `${eventPhrase(kind)}.\n\nDiscussion: ${title}\nFrom: ${author}\n${message}\nOpen discussion:\n${url}`;
+  return `${eventPhrase(kind)}.\n\nDiscussion: ${named(title, UNNAMED_DISCUSSION)}\nFrom: ${author}\n${message}\nOpen discussion:\n${url}`;
 }
 
 export function forumNotificationMailHtml({
@@ -195,7 +227,7 @@ export function forumNotificationMailHtml({
   content: string;
 }): string {
   return mailDocument({
-    title,
+    title: named(title, UNNAMED_DISCUSSION),
     event: `${eventPhrase(kind)}.`,
     facts: [["From", author]],
     bodyHtml: mailMarkdown(content, url),
@@ -256,7 +288,7 @@ export function assignmentNotificationMailText({
   due: string;
 }): string {
   const when = due === "" ? "" : `\nDue: ${due}`;
-  return `${eventPhrase(kind)}.\n\nAssignment: ${title}\nFrom: ${author}${when}\n\nOpen assignment:\n${url}`;
+  return `${eventPhrase(kind)}.\n\nAssignment: ${named(title, UNNAMED_ASSIGNMENT)}\nFrom: ${author}${when}\n\nOpen assignment:\n${url}`;
 }
 
 export function assignmentNotificationMailHtml({
@@ -273,7 +305,7 @@ export function assignmentNotificationMailHtml({
   due: string;
 }): string {
   return mailDocument({
-    title,
+    title: named(title, UNNAMED_ASSIGNMENT),
     event: `${eventPhrase(kind)}.`,
     facts: [
       ["From", author],
@@ -325,12 +357,8 @@ function membershipDestination(list: string, member: boolean) {
     : { label: "Open groups", url: `${configuredPublicOrigin()}/groups` };
 }
 
-function subjectTitle(title: string, limit = 160): string {
-  return title
-    .replace(/[\p{Cc}\u2028\u2029]/gu, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, limit);
+function subjectTitle(title: string, fallback: string, limit = 160): string {
+  return named(title, fallback).slice(0, limit);
 }
 
 export function taskListMailSubject({
@@ -340,7 +368,7 @@ export function taskListMailSubject({
   kind: string;
   listTitle: string;
 }): string {
-  return `${membershipPhrase(kind)}: ${subjectTitle(listTitle)}`;
+  return `${membershipPhrase(kind)}: ${subjectTitle(listTitle, UNNAMED_GROUP)}`;
 }
 
 /** A group cannot say who changed your membership of it, so the mail names the actor. */
@@ -359,7 +387,7 @@ export function taskListMailText({
 }): string {
   const by = actor === "" ? "" : `\nBy: ${actor}`;
   const { label, url } = membershipDestination(list, member);
-  return `${membershipPhrase(kind)} "${listTitle}".${by}\n\n${label}:\n${url}`;
+  return `${membershipPhrase(kind)} "${named(listTitle, UNNAMED_GROUP)}".${by}\n\n${label}:\n${url}`;
 }
 
 export function taskListMailHtml({
@@ -376,7 +404,7 @@ export function taskListMailHtml({
   member: boolean;
 }): string {
   return mailDocument({
-    title: listTitle || "Group",
+    title: named(listTitle, UNNAMED_GROUP),
     event: `${membershipPhrase(kind)}.`,
     facts: [["By", actor]],
     action: membershipDestination(list, member),
@@ -392,7 +420,7 @@ export function taskMailSubject({
   taskTitle: string;
   listTitle: string;
 }): string {
-  return `${taskPhrase(kind)}: ${subjectTitle(taskTitle)} (${subjectTitle(listTitle, 80)})`;
+  return `${taskPhrase(kind)}: ${subjectTitle(taskTitle, UNNAMED_TASK)} (${subjectTitle(listTitle, UNNAMED_GROUP, 80)})`;
 }
 
 /** A task message keeps the written details and leads to that task, not a task index. */
@@ -419,7 +447,7 @@ export function taskMailText({
   const by = actor === "" ? "" : `\nBy: ${actor}`;
   const written = typeof details === "string" ? mailedMessage(details) : "";
   const described = written === "" ? "" : `\n${written}\n`;
-  return `${taskPhrase(kind)}.\n\nTask: ${taskTitle}\nGroup: ${listTitle}${due}${by}\n${described}\nOpen task:\n${taskLink(list, task)}`;
+  return `${taskPhrase(kind)}.\n\nTask: ${named(taskTitle, UNNAMED_TASK)}\nGroup: ${named(listTitle, UNNAMED_GROUP)}${due}${by}\n${described}\nOpen task:\n${taskLink(list, task)}`;
 }
 
 export function taskMailHtml({
@@ -443,10 +471,10 @@ export function taskMailHtml({
 }): string {
   const url = taskLink(list, task);
   return mailDocument({
-    title: taskTitle || "Task",
+    title: named(taskTitle, UNNAMED_TASK),
     event: `${taskPhrase(kind)}.`,
     facts: [
-      ["Group", listTitle],
+      ["Group", named(listTitle, UNNAMED_GROUP)],
       ["Due", deadline],
       ["By", actor],
     ],

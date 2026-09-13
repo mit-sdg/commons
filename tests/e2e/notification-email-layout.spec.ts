@@ -100,6 +100,9 @@ for (const [name, html, action] of samples) {
       await page.setContent(html);
       await expect(page.locator("h1")).toHaveCount(1);
       await expect(page.locator("a").last()).toHaveText(action);
+      // Commons' own action is a thumb-sized target, not a line of text among the author's.
+      const target = await page.locator("a").last().boundingBox();
+      expect(target?.height ?? 0).toBeGreaterThanOrEqual(44);
       await expect(page.locator("img, script, link[rel=stylesheet], input, iframe")).toHaveCount(0);
       expect(
         await page

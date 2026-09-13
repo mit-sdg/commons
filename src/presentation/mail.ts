@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-import { Marked } from "marked";
+import { Marked, Renderer } from "marked";
 import sanitizeHtml from "sanitize-html";
 
 export const escapeMailHtml = (value: string): string =>
@@ -12,6 +12,18 @@ export const escapeMailHtml = (value: string): string =>
 
 const LINK_STYLE =
   "color:#a34412;text-decoration:underline;overflow-wrap:anywhere;word-break:break-word;";
+/**
+ * The action is the one link Commons wrote, among however many the author did. A bordered
+ * block says so without depending on a background colour surviving the client: a stripped
+ * border leaves a bold link rather than white text on white. The padding is also what makes
+ * it a thumb-sized target on a phone.
+ */
+const ACTION_STYLE =
+  "display:inline-block;padding:14px 22px;border:1px solid #a34412;border-radius:6px;" +
+  "font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;line-height:1.2;" +
+  "color:#a34412;text-decoration:none;overflow-wrap:anywhere;word-break:break-word;";
+/** A checklist item carries its own ☑/☐, so a list marker beside it would be a second one. */
+const TASK_ITEM_STYLE = "margin:0 0 6px;list-style:none;";
 const PARAGRAPH_STYLE = "margin:0 0 16px;";
 const PROSE_STYLES: Readonly<Record<string, string>> = {
   p: PARAGRAPH_STYLE,
@@ -53,6 +65,11 @@ function markdown(source: string, baseUrl: string): string {
       image: ({ href, text }) =>
         `<a href="${escapeMailHtml(href)}">${escapeMailHtml(text || "View image")}</a>`,
       checkbox: ({ checked }) => (checked ? "☑ " : "☐ "),
+      // Marked's own item, tagged so the checkbox above becomes the item's only marker.
+      listitem(item) {
+        const rendered = Renderer.prototype.listitem.call(this, item);
+        return item.task ? rendered.replace("<li>", '<li class="task">') : rendered;
+      },
       heading({ depth, tokens }) {
         const level = Math.min(depth + 1, 6);
         return `<h${level}>${this.parser.parseInline(tokens)}</h${level}>`;
@@ -95,6 +112,7 @@ function markdown(source: string, baseUrl: string): string {
       "*": (tagName, attributes) => {
         const attribs: Record<string, string> = {};
         if (PROSE_STYLES[tagName]) attribs.style = PROSE_STYLES[tagName];
+        if (tagName === "li" && attributes.class === "task") attribs.style = TASK_ITEM_STYLE;
         if (tagName === "a") {
           const href = attributes.href ? absoluteLink(attributes.href, baseUrl) : "";
           if (!href) return { tagName: "span", attribs: {} };
@@ -186,6 +204,9 @@ export function mailDocument({
   note = "",
 }: MailDocument): string {
   const heading = escapeMailHtml(title);
+  // Below the heading, not above it: the first words of the body are what an inbox shows
+  // beside the subject, and the subject already says which event this is. Leading with the
+  // title spends that line on what distinguishes this mail from the last one.
   const context = event
     ? `<p style="margin:0 0 10px;font-size:14px;line-height:1.5;color:#57534e;">${escapeMailHtml(event)}</p>`
     : "";
@@ -201,14 +222,14 @@ export function mailDocument({
     ? `<p style="margin:20px 0 0;font-size:13px;line-height:1.6;color:#57534e;">${escapeMailHtml(note)}</p>`
     : "";
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${heading}</title></head>
-<body style="margin:0;padding:0;background-color:#f8f7f4;color:#292524;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><title>${heading}</title></head>
+<body style="margin:0;padding:0;color-scheme:light;background-color:#f8f7f4;color:#292524;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background-color:#f8f7f4;"><tr><td align="center" style="padding:24px 12px;">
 <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0"><tr><td><![endif]-->
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;table-layout:fixed;"><tr><td style="padding:0 12px 16px;font-family:Georgia,serif;font-size:22px;font-weight:bold;color:#292524;">Commons</td></tr>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;table-layout:fixed;">
 <tr><td style="padding:28px 24px;background-color:#ffffff;border:1px solid #e7e5e4;border-radius:10px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;color:#292524;overflow-wrap:anywhere;word-break:break-word;">
-${context}<h1 style="margin:0 0 16px;font-family:Georgia,serif;font-size:26px;line-height:1.3;font-weight:bold;color:#292524;">${heading}</h1>${metadata}${message}${notice}
-<p style="margin:24px 0 0;padding-top:20px;border-top:1px solid #e7e5e4;"><a href="${escapeMailHtml(action.url)}" style="${LINK_STYLE}font-weight:bold;">${escapeMailHtml(action.label)}</a></p>
+<h1 style="margin:0 0 10px;font-family:Georgia,serif;font-size:26px;line-height:1.3;font-weight:bold;color:#292524;">${heading}</h1>${context}${metadata}${message}${notice}
+<div style="margin-top:24px;padding-top:20px;border-top:1px solid #e7e5e4;"><a href="${escapeMailHtml(action.url)}" style="${ACTION_STYLE}">${escapeMailHtml(action.label)}</a></div>
 </td></tr></table><!--[if mso]></td></tr></table><![endif]-->
 </td></tr></table></body></html>`;
 }

@@ -48,6 +48,51 @@ describe("the shared email document", () => {
     expect(html).toContain("Open &lt;discussion&gt;");
   });
 
+  test("the document declares a light scheme rather than leaving a client to invert it", () => {
+    const html = mailDocument({
+      title: "Readable",
+      action: { label: "Open", url: "https://example.edu/" },
+    });
+    // Every colour in here is a light-mode colour. A client told nothing may invert some of
+    // them and not others, which is how dark text lands on a dark card.
+    expect(html).toContain('<meta name="color-scheme" content="light">');
+    expect(html).toContain('<meta name="supported-color-schemes" content="light">');
+    expect(html).toContain("color-scheme:light");
+  });
+
+  test("the event follows the heading, so an inbox preview leads with what differs", () => {
+    const html = mailDocument({
+      title: "Does the drain invariant hold?",
+      event: "New reply to your post.",
+      facts: [["From", "Ada"]],
+      action: { label: "Open discussion", url: "https://example.edu/" },
+    });
+    // The subject already carries the event phrase; the preview line must not repeat it
+    // before saying which discussion this is.
+    expect(html.indexOf("New reply to your post.")).toBeGreaterThan(
+      html.indexOf("Does the drain invariant hold?"),
+    );
+    expect(html.indexOf("From:")).toBeGreaterThan(html.indexOf("New reply to your post."));
+    // Nothing readable precedes the heading, so the preview cannot open on boilerplate.
+    const beforeHeading = html.slice(html.indexOf("<body"), html.indexOf("<h1"));
+    expect(beforeHeading.replace(/<[^>]*>/g, "").trim()).toBe("");
+  });
+
+  test("the action reads as Commons' own, not as one more link an author wrote", () => {
+    const html = mailDocument({
+      title: "A discussion",
+      bodyHtml: mailMarkdown("[An author's link](https://elsewhere.example.edu/)", BASE),
+      action: { label: "Open discussion", url: "https://example.edu/" },
+    });
+    const action = html.slice(html.lastIndexOf("<a "));
+    expect(action).toContain("border:1px solid");
+    expect(action).toContain("text-decoration:none");
+    // A thumb-sized target: padding, not line height alone, is what makes it one.
+    expect(action).toContain("padding:14px 22px");
+    expect(html).toContain('href="https://elsewhere.example.edu/"');
+    expect(html.indexOf("elsewhere.example.edu")).toBeLessThan(html.lastIndexOf("<a "));
+  });
+
   test("password resets use the shared presentation without losing credentials or safety wording", () => {
     const html = passwordResetMailHtml({
       voucher: "v/#",
@@ -78,6 +123,10 @@ describe("authored messages in HTML mail", () => {
     expect(html.match(/<ul\b/g)).toHaveLength(2);
     expect(html).toContain("☑ Ready");
     expect(html).toContain("☐ Pending");
+    // A checked box is the item's marker. A bullet beside it would be a second one.
+    expect(html).toMatch(/<li style="[^"]*list-style:none[^"]*">☑ Ready<\/li>/);
+    expect(html).toMatch(/<li style="[^"]*list-style:none[^"]*">☐ Pending<\/li>/);
+    expect(html).toMatch(/<li style="(?:(?!list-style)[^"])*">First/);
     expect(html).not.toContain("<input");
     expect(html).toContain("<pre");
     expect(html).toContain("&lt;safe&gt;");

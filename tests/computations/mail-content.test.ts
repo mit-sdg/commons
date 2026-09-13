@@ -14,6 +14,12 @@ import {
   assignmentNotificationMailText,
   assignmentNotificationMailHtml,
   forumNotificationUrl,
+  taskListMailHtml,
+  taskListMailSubject,
+  taskListMailText,
+  taskMailHtml,
+  taskMailSubject,
+  taskMailText,
 } from "../../src/computations/mail-content.ts";
 
 describe("email presentation", () => {
@@ -221,6 +227,43 @@ describe("email presentation", () => {
     expect(forumNotificationUrl({ conversation: "a/b", post: "c#d" })).toContain(
       "/t/a%2Fb#post-c%23d",
     );
+  });
+
+  test("a title nobody wrote is named the same way in the subject, the text, and the HTML", () => {
+    // Blank is reachable: /tasklists/create defaults its title to "", and neither Grouping
+    // nor Assigning refuses one. A bare trailing colon would name nothing at all.
+    const group = { kind: "task-list-added", listTitle: " ", actor: "", list: "g", member: true };
+    for (const output of [taskListMailSubject(group), taskListMailText(group), taskListMailHtml(group)])
+      expect(output).toContain("Untitled group");
+
+    const task = {
+      kind: "task-assigned",
+      taskTitle: "",
+      listTitle: "\u0000",
+      deadline: "",
+      actor: "",
+      details: "",
+      list: "g",
+      task: "t",
+    };
+    for (const output of [taskMailSubject(task), taskMailText(task), taskMailHtml(task)]) {
+      expect(output).toContain("Untitled task");
+      expect(output).toContain("Untitled group");
+    }
+
+    const released = { kind: "assignment_released", title: "", url: "https://e.edu/a", author: "@dana", due: "" };
+    for (const output of [
+      notificationMailSubject(released),
+      assignmentNotificationMailText(released),
+      assignmentNotificationMailHtml(released),
+    ])
+      expect(output).toContain("Untitled assignment");
+
+    // No output may end on the colon or the quotes that were meant to introduce a name.
+    expect(taskListMailSubject(group).endsWith(": ")).toBe(false);
+    expect(taskMailSubject(task)).not.toContain(" ()");
+    expect(taskMailText(task)).not.toContain("Task: \n");
+    expect(taskListMailText(group)).not.toContain('""');
   });
 
   test("outbox previews hide credentials and link tokens without losing useful copy", () => {
