@@ -21,7 +21,14 @@ them. An invalid or no-longer-addressable selection refuses in full. The returne
 identities are shown before submission; publication validates that exact set
 without silently adding or removing holders.
 
-All forum reads require an established audience. Existing installations with no discussions need no audience backfill; a conversation without grants remains inaccessible.
+Administrators holding `administer` may read all established discussions, including
+private discussions addressed to other people, groups, or sections. This is a
+read-access exception, not audience membership: it never changes the selected
+holders, joins a group, or expands the choices someone may address. The audience
+preview still includes the sender under its existing rules. Audience labels show
+only the explicit selection, without a separate administrator-access annotation.
+Existing discussions gain this access without a backfill; a conversation without
+grants remains inaccessible to everyone, including administrators.
 
 ```endpoints
 Forum.audiences.Preview at /audiences/preview
@@ -30,10 +37,16 @@ Forum.audiences.ForConversation at /audiences/forConversation
 ```
 
 Established conversation admission
-requires a current usable account, current audience membership, and the owning
-conversation record. Conversation-only reads additionally require some stored
+requires a current usable account, an established audience, the owning conversation
+record, and either current audience membership or the current `administer`
+capability. Other staff and moderators receive no exception. Revoking administration
+removes its extra access on the next read, and archival denies even an administrator. Conversation-only reads additionally require some stored
 post in that conversation. Post-specific reads instead verify their own placement
 and Posting record; that post supplies the existence witness without enumerating
 the entire thread again. Ordinary reads also reject trashed posts, while stored
 post inspection retains its existing moderation policy. Retained grants or nodes
-alone never admit an absent conversation or absent post.
+alone never admit an absent conversation or absent post. The shared admission applies
+to feeds, thread and post reads, related metadata, notifications, and actions that
+require discussion access. Independent restrictions still apply: administration
+does not grant another author's edit permission, bypass a conversation lock, or
+expose trash through an ordinary post read.

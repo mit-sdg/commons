@@ -8,7 +8,7 @@ priority appears first.
 [Forum.pins.PinsForScope](reaction:Forum.pins.PinsForScope) forms
 [the priority-ordered readable pins](former:Forum.pins.thePinsOf) in one scope.
 [Forum.pins.IsPinned](reaction:Forum.pins.IsPinned) reports one readable post's status in that scope. The
-scope must be the post’s actual conversation, and the caller must currently belong to its audience.
+scope must be the post’s actual conversation, and the caller must currently have discussion access through audience membership or administration.
 
 Trash hides a pin without removing it, so restore makes it visible again.
 After permanent post purge, [Forum.pins.PurgeClearsPins](reaction:Forum.pins.PurgeClearsPins) removes its pins from

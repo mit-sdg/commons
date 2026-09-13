@@ -26,7 +26,6 @@ import { count, excerpt } from "@/lib/format";
 import { forumActionText, forumPresentation } from "@/lib/forum-notifications";
 import type { InboxNotification, TaskInboxNotification } from "@/lib/models";
 import {
-  hasTaskPresentation,
   type MergedNotification,
   type NotificationGroup,
   type TaskNotificationKind,
@@ -119,7 +118,7 @@ function KindIcon({ kind }: { kind: string }) {
 
 function headlineClass(unread: boolean): string {
   return cn(
-    "truncate text-sm",
+    "line-clamp-2 text-sm",
     unread ? "font-semibold text-foreground" : "text-muted-foreground",
   );
 }
@@ -140,9 +139,11 @@ function ForumNotificationBody({
       <>
         <ClipboardList className="mt-0.5 size-7 shrink-0 text-primary" />
         <div className="min-w-0 flex-1">
-          <p className={headlineClass(unread)}>{forumActionText(n.kind)}</p>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground/80">
-            {n.assignmentTitle}
+          <p className={headlineClass(unread)}>
+            {n.assignmentTitle || "Assignment"}
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {forumActionText(n.kind)}
           </p>
         </div>
       </>
@@ -200,8 +201,8 @@ function ForumNotificationBody({
 }
 
 /**
- * A task row: its kind's own sentence, then one dim line of context. Where the
- * inbox withheld presentation the row says so instead of going blank.
+ * The subject is primary; the event and its remaining facts follow. Where the
+ * inbox withheld presentation the row says so instead of guessing a title.
  */
 function TaskNotificationBody({
   row,
@@ -212,23 +213,40 @@ function TaskNotificationBody({
 }) {
   const kind = String(row.kind);
   const detail = taskRowDetail(row);
+  const title = detail
+    ? detail.title === null
+      ? detail.list?.trim() || "Group"
+      : detail.title.trim() || "Task"
+    : null;
+  const hasFacts =
+    detail &&
+    (detail.due || detail.by || (detail.title !== null && detail.list));
   return (
     <>
       <KindIcon kind={kind} />
       <div className="min-w-0 flex-1">
-        <p className={headlineClass(unread)}>{taskActionText(kind)}</p>
-        {hasTaskPresentation(row) ? (
-          <Facts className="mt-0.5 text-xs text-muted-foreground">
-            {detail?.title ? (
-              <span className="truncate">{detail.title}</span>
+        <p className={headlineClass(unread)}>{title || taskActionText(kind)}</p>
+        {detail ? (
+          <>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {taskActionText(kind)}
+            </p>
+            {hasFacts ? (
+              <Facts className="mt-0.5 text-xs text-muted-foreground">
+                {detail.title !== null && detail.list ? (
+                  <Fact.Where className="truncate">{detail.list}</Fact.Where>
+                ) : null}
+                {detail.due ? (
+                  <Fact.Due at={detail.due} verb="due" precision="day" />
+                ) : null}
+                {detail.by ? (
+                  <Fact.Where preposition="by" className="truncate">
+                    {detail.by}
+                  </Fact.Where>
+                ) : null}
+              </Facts>
             ) : null}
-            {detail?.list ? (
-              <Fact.Where className="truncate">{detail.list}</Fact.Where>
-            ) : null}
-            {detail?.due ? (
-              <Fact.Due at={detail.due} verb="due" precision="day" />
-            ) : null}
-          </Facts>
+          </>
         ) : (
           <p className="mt-0.5 truncate text-xs italic text-muted-foreground/80">
             {withheldTaskNote(kind)}

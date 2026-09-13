@@ -165,6 +165,7 @@ test("production feeds, nested links, notification counts and unread marks filte
     subject: f.privateThread.post,
     link: f.privateThread.post,
     kind: "mention",
+    actor: null,
     at,
   });
   await f.instances.Notifying.notify({
@@ -172,6 +173,7 @@ test("production feeds, nested links, notification counts and unread marks filte
     subject: f.shared.post,
     link: f.privateThread.post,
     kind: "mention",
+    actor: null,
     at,
   });
   const { notification } = await f.instances.Notifying.notify({
@@ -179,6 +181,7 @@ test("production feeds, nested links, notification counts and unread marks filte
     subject: f.shared.post,
     link: f.shared.post,
     kind: "reply",
+    actor: null,
     at,
   });
   for (const path of [
@@ -243,6 +246,7 @@ test("unread counts equal the visible list with multiple rows and after marking"
       kind: "reply",
       subject: post,
       link: post,
+      actor: null,
       at,
     });
   }

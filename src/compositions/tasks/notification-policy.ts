@@ -1,7 +1,7 @@
-import { compute, is, view, where } from "@mit-sdg/sync-engine/language";
+import { compute, former, is, view, where, whether } from "@mit-sdg/sync-engine/language";
 import { computations, concepts } from "../../concepts.ts";
 
-const { Grouping, Tasking } = concepts;
+const { Authenticating, Grouping, Profiling, Rostering, Tasking } = concepts;
 
 /**
  * A member who removed somebody else is still on the roster afterwards; a member who
@@ -14,34 +14,83 @@ export const removedSomebodyElse = view(
 ).holds();
 
 /**
+ * How is the person whose act raised this entry named? A notification records an actor only
+ * where its subject cannot say who acted: a group cannot say who changed your membership of
+ * it, so membership entries carry one, while task entries carry none. The reads are
+ * therefore optional, and an entry with no actor recorded is named by nothing at all rather
+ * than withheld.
+ */
+export const theActorLabelOf = view(
+  "the notification actor label of (actor)",
+  ({ actor }, { actorLabel }, { username, displayName }) =>
+    where(
+      whether(Authenticating._getById({ user: actor }).is({ username })),
+      whether(Profiling._getProfileFields({ user: actor }).is({ displayName })),
+      compute(computations.notificationActorLabel, { username, displayName }, actorLabel),
+    ),
+).optional();
+
+/** The same actor label the mail names, in the shape an inbox entry can carry. */
+export const theActorPresentation = former(
+  "the notification actor presentation of (actor)",
+  ({ actor }, { actorLabel }) =>
+    where(theActorLabelOf({ actor }).is({ actorLabel })).form({ actorLabel }),
+).optional();
+
+/**
  * Which finished subject line, text, and HTML does this entry deserve? A membership entry
  * resolves through the group read, a task entry through the task read, and an entry that
- * resolves through neither renders nothing at all.
+ * resolves through neither renders nothing at all. A membership entry names the member who
+ * changed it; a task entry names no actor and instead reads its stored instant as the
+ * course's wall time, so a task deadline and an assignment deadline about the same moment
+ * cannot read differently.
  */
 export const theMailFor = view(
-  "the task notification mail of kind (kind) about (subject) for (recipient) at (at)",
+  "the task notification mail of kind (kind) about (subject) by (actor) for (recipient) at (at)",
   (
-    { kind, subject, recipient, at },
+    { kind, subject, actor, recipient, at },
     { mailSubject, text, html },
-    { listTitle, taskTitle, list, deadline },
+    { listTitle, taskTitle, list, endsAt, deadline, details, detail, actorLabel, isMember },
   ) => [
     where(
       Grouping._getGroup({ group: subject }).is({ title: listTitle }),
+      Grouping._isMember({ group: subject, member: recipient }).is({ isMember }),
+      theActorLabelOf({ actor }).is({ actorLabel }),
       compute(computations.taskListMailSubject, { kind, listTitle }, mailSubject),
-      compute(computations.taskListMailText, { kind, listTitle }, text),
-      compute(computations.taskListMailHtml, { kind, listTitle }, html),
+      compute(
+        computations.taskListMailText,
+        { kind, listTitle, actor: actorLabel, list: subject, member: isMember },
+        text,
+      ),
+      compute(
+        computations.taskListMailHtml,
+        { kind, listTitle, actor: actorLabel, list: subject, member: isMember },
+        html,
+      ),
     ),
     where(
       Tasking._getTask({ task: subject, at }).is({
         title: taskTitle,
         scope: list,
-        endsAt: deadline,
+        endsAt,
+        details,
       }),
       Grouping._getGroup({ group: list }).is({ title: listTitle }),
       Grouping._isMember({ group: list, member: recipient }).is({ isMember: true }),
+      theActorLabelOf({ actor }).is({ actorLabel }),
+      whether(Rostering._getClass({}).is({ detail })),
+      compute(computations.dueWallTime, { dueAt: endsAt, detail }, deadline),
       compute(computations.taskMailSubject, { kind, taskTitle, listTitle }, mailSubject),
-      compute(computations.taskMailText, { kind, taskTitle, listTitle, deadline }, text),
-      compute(computations.taskMailHtml, { kind, taskTitle, listTitle, deadline }, html),
+      compute(
+        computations.taskMailText,
+        { kind, taskTitle, listTitle, deadline, actor: actorLabel, details, list, task: subject },
+        text,
+      ),
+      compute(
+        computations.taskMailHtml,
+        { kind, taskTitle, listTitle, deadline, actor: actorLabel, details, list, task: subject },
+        html,
+      ),
     ),
   ],
 ).optional();

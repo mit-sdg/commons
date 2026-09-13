@@ -15,6 +15,7 @@ import type { ApiError } from "@/lib/api";
 import { isApiError } from "@/lib/api";
 import { toDate } from "@/lib/format";
 import type { InboxNotification, TaskInboxNotification } from "@/lib/models";
+import { taskHref } from "@/lib/tasks";
 
 /**
  * The eight kinds this change mints. A kind says what happened; it never says
@@ -101,12 +102,17 @@ export function taskRowListId(row: TaskInboxNotification): string | null {
   return row.list == null ? null : String(row.list);
 }
 
-/** Where a task-domain row navigates, or null when it names no list. */
+/** A readable task opens itself; a removal opens groups rather than a now-inaccessible roster. */
 export function taskRowHref(row: TaskInboxNotification): string | null {
+  if (!hasTaskPresentation(row)) return null;
   const list = taskRowListId(row);
-  return list === null
-    ? null
-    : `/groups/${list}?view=${isMembershipKind(String(row.kind)) ? "members" : "tasks"}`;
+  if (list === null) return null;
+  if (isMembershipKind(String(row.kind))) {
+    return row.kind === "task-list-removed"
+      ? "/groups"
+      : `/groups/${encodeURIComponent(list)}?view=members`;
+  }
+  return taskHref(list, String(row.link ?? row.subject));
 }
 
 /** A deadline said briefly, for the one dim line under a row's sentence. */
@@ -120,7 +126,7 @@ export function dueLabel(endsAt: unknown): string {
   return `due ${day}`;
 }
 
-/** The facts of a task row's one dim line, each of its own kind. */
+/** The subject title and the remaining context facts of a task row. */
 export interface TaskRowDetail {
   /** What the row is about: the task's title, or nothing for a membership row. */
   title: string | null;
@@ -128,26 +134,36 @@ export interface TaskRowDetail {
   list: string | null;
   /** When it is due, as the endpoint gave it, or null when it has no deadline. */
   due: unknown;
+  /**
+   * Who caused it, by the same public label its email names, or null where the
+   * notification recorded no actor. A group cannot say who changed your
+   * membership of it, so those rows carry one; task rows do not.
+   */
+  by: string | null;
 }
 
 /**
- * The facts of the single dim line beneath a task row's sentence: what the
- * row is about, where it lives, and when it is due, one fact each and each
- * of its own kind, so the line renders every fact in its own form. Null
- * where presentation was withheld — the row says so in its own words
- * instead, rather than going blank.
+ * The subject takes the headline; the event and the other facts follow beneath
+ * it. A membership row uses its list as the title rather than repeating it in
+ * the facts. Null means presentation was withheld, so the row keeps its event
+ * and explains the unavailable subject rather than guessing.
  */
 export function taskRowDetail(
   row: TaskInboxNotification,
 ): TaskRowDetail | null {
   if (!hasTaskPresentation(row)) return null;
   const list = row.listTitle == null ? null : String(row.listTitle);
+  const label =
+    row.actorLabel == null || String(row.actorLabel) === ""
+      ? null
+      : String(row.actorLabel);
   if (isMembershipKind(String(row.kind)))
-    return list === null ? null : { title: null, list, due: null };
+    return list === null ? null : { title: null, list, due: null, by: label };
   return {
     title: String(row.task.title),
     list,
     due: toDate(row.task.endsAt) === null ? null : row.task.endsAt,
+    by: label,
   };
 }
 

@@ -90,13 +90,20 @@ test("assignment release notifications target actual assignees and disappear whe
     app,
     people: [student, admin, , other],
   } = await fixture();
+  await invoke(app, "/roster/configure-class", {
+    session: admin.session,
+    code: "6.1040",
+    title: "Software Design",
+    term: "Fall 2026",
+    timezone: "America/New_York",
+  });
   const draft = await invoke(app, "/assignments/create-draft", {
     session: admin.session,
     title: "New exercise",
     instructions: "Private instructions",
     kind: "HOMEWORK",
     availableAt: new Date().toISOString(),
-    dueAt: new Date(Date.now() + 86400000).toISOString(),
+    dueAt: new Date("2026-09-19T03:59:00.000Z").toISOString(),
     audience: "EVERYONE",
     acceptsSubmissions: true,
   });
@@ -114,6 +121,12 @@ test("assignment release notifications target actual assignees and disappear whe
   expect(mail?.subject).toBe("A new assignment is available: New exercise");
   expect(mail?.text).toContain(`/assignments/${draft.assignment}`);
   expect(`${mail?.text}${mail?.html}`).not.toContain("Private instructions");
+  expect(mail?.text).toContain("Assignment: New exercise");
+  expect(mail?.text).toContain("From: @admin");
+  expect(mail?.html).toContain("From: <strong>@admin</strong>");
+  // The configured course zone, not UTC and not the server's locale, decides the wall time.
+  expect(mail?.text).toContain("Due: Fri, Sep 18, 2026, 11:59 PM EDT");
+  expect(mail?.html).toContain("Due: <strong>Fri, Sep 18, 2026, 11:59 PM EDT</strong>");
   expect(rows).toEqual([
     expect.objectContaining({
       kind: "assignment_released",

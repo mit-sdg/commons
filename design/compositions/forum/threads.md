@@ -2,7 +2,7 @@
 
 [Forum.threads.CreateThread](reaction:Forum.threads.CreateThread) resolves the session account, validates its fixed complete audience, creates a Posting post, starts a conversation, then establishes its audience atomically. Until establishment succeeds, every forum read is closed to the conversation.
 
-[Forum.threads.ReplyToThread](reaction:Forum.threads.ReplyToThread) requires current audience access and an untrashed, existing parent post before creating and placing a reply. A locked conversation returns `FORBIDDEN`; missing and inaccessible parents both return `NOT_FOUND`. Placement is a separate action, so its failure after Posting creation can leave an inaccessible unplaced post. [placementOf](view:Forum.threads.placementOf) and [readableConversation](view:Forum.threads.readableConversation) require the current reader.
+[Forum.threads.ReplyToThread](reaction:Forum.threads.ReplyToThread) requires current discussion access (audience membership or administration) and an untrashed, existing parent post before creating and placing a reply. A locked conversation returns `FORBIDDEN`; missing and inaccessible parents both return `NOT_FOUND`. Placement is a separate action, so its failure after Posting creation can leave an inaccessible unplaced post. [placementOf](view:Forum.threads.placementOf) and [readableConversation](view:Forum.threads.readableConversation) require the current reader.
 
 The [forumPost view](view:Forum.threads.forumPost) distinguishes Posting records placed in a conversation from records used by other features, such as assignment artifacts. Forum read and moderation rules use this boundary so those other records do not become public posts merely because they share Posting storage.
 

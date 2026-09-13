@@ -75,8 +75,13 @@ test("ordinary create and reply establish a fixed private audience", async () =>
 test("a failed establishment leaves placed content closed to every reader", async () => {
   const {
     instances,
-    people: [author, reader],
+    people: [author, reader, administrator],
   } = await fixture();
+  const { role } = await instances.Roling.defineRole({
+    name: "Operations",
+    capabilities: ["administer"],
+  });
+  await instances.Roling.assign({ user: administrator.user, context: "commons", role });
   instances.Accessing.establish = async function establish() {
     throw new Error("unavailable storage");
   };
@@ -90,7 +95,7 @@ test("a failed establishment leaves placed content closed to every reader", asyn
   ).toMatchObject({ ok: false });
   const [conversation] = await instances.Conversing._getConversations({});
   expect(conversation).toBeDefined();
-  for (const person of [author, reader]) {
+  for (const person of [author, reader, administrator]) {
     expect(
       await app.invoker.invoke("/threads/get", {
         session: person.session,
@@ -107,7 +112,7 @@ test("a failed establishment leaves placed content closed to every reader", asyn
   expect(await instances.Mailing._getPending({})).toEqual([]);
 });
 
-test("queued group mail is withheld after departure and includes only the title, not the body", async () => {
+test("queued group mail includes its author and full content but is withheld after departure", async () => {
   const {
     instances,
     people: [author, reader],
@@ -116,17 +121,25 @@ test("queued group mail is withheld after departure and includes only the title,
   const { group } = await instances.Grouping.create({ creator: author.user, title: "Study", at });
   await instances.Grouping.addMember({ group, member: author.user, candidate: reader.user, at });
   const app = assembleCommons(instances);
+  const content = "# Homework question\n\nComplete homework question for @reader";
   expect(
     await app.invoker.invoke("/threads/create", {
       session: author.session,
-      content: "# Homework question\n\nSECRET homework question for @reader",
+      content,
       holders: [`group:${group}`],
     }),
   ).toMatchObject({ ok: true });
   const [queued] = await instances.Mailing._getPending({});
   expect(queued).toBeDefined();
   expect(queued.subject).toBe("You were mentioned in a discussion: Homework question");
-  expect(queued.text + queued.html).not.toContain("SECRET");
+  expect(queued.text).toContain("From: @author");
+  expect(queued.text).toContain("Complete homework question for @reader");
+  expect(queued.html).toContain("From: <strong>@author</strong>");
+  expect(queued.html).toMatch(/<p[^>]*>Complete homework question for @reader<\/p>/);
+  // The opening's first line is already the discussion title; mail must not say it twice.
+  expect(queued.text).not.toContain("# Homework question");
+  expect(queued.text.match(/Homework question/g)).toHaveLength(1);
+  expect(queued.html).not.toContain("# Homework question");
   await app.concepts.Grouping.leave({ group, member: reader.user, at });
   const { deliverPendingMail } = await import("../../src/email/worker.ts");
   const { forumMailEligibility } = await import("../../src/email/forum-policy.ts");

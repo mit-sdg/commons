@@ -4201,6 +4201,8 @@ export type CommonsWire = {
     };
     output: {
       "notifications": ({
+        "actor": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskNotifying"]["_getInbox"]>>>, ["actor"]>>;
+        "actorLabel": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["notificationActorLabel"]["fn"]>>, []>> | null;
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskNotifying"]["_getInbox"]>>>, ["createdAt"]>>;
         "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskNotifying"]["_getInbox"]>>>, ["kind"]>>;
         "link": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskNotifying"]["_getInbox"]>>>, ["link"]>>;
@@ -4739,7 +4741,7 @@ export type CommonsWire = {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
-      "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["currentAudienceMembership"]["fn"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Archiving"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_anyMembership"]>[0], ["member"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["_getRole"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>]>>;
+      "user": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Archiving"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["_hasCapability"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["currentAudienceMembership"]["fn"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Archiving"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_anyMembership"]>[0], ["member"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["_getRole"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>]>]>>;
     };
     error: { error: AppWideError | "INVALID_INPUT" | "ITEM_ALREADY_SEEN" | "ITEM_NOT_REGISTERED" | "NOT_FOUND" };
   };
@@ -8709,6 +8711,8 @@ export type CommonsWireHttp = {
     input: Record<string, never>;
     output: {
       "notifications": ({
+        "actor": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskNotifying"]["_getInbox"]>>>, ["actor"]>>;
+        "actorLabel": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["notificationActorLabel"]["fn"]>>, []>> | null;
         "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskNotifying"]["_getInbox"]>>>, ["createdAt"]>>;
         "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskNotifying"]["_getInbox"]>>>, ["kind"]>>;
         "link": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["TaskNotifying"]["_getInbox"]>>>, ["link"]>>;
@@ -9208,7 +9212,7 @@ export type CommonsWireHttp = {
       "scope": Jsonify<OneOf<[AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Conversing"]["_getConversation"]>>>, ["conversation"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>]>]>>;
     };
     output: {
-      "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["currentAudienceMembership"]["fn"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Archiving"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_anyMembership"]>[0], ["member"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["_getRole"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>]>>;
+      "user": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Archiving"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["_hasCapability"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["currentAudienceMembership"]["fn"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Archiving"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_anyMembership"]>[0], ["member"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Roling"]["_getRole"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>>>, ["user"]>]>]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
