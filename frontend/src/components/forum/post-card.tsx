@@ -270,12 +270,17 @@ export function PostCard({
               ) : null}
             </div>
           )}
-          <div className="flex items-center gap-0.5">
+          {/* Wrapping rather than overflowing: a deeply nested reply on a
+              phone has less room than even the shortened actions need. */}
+          <div className="flex flex-wrap items-center justify-end gap-x-0.5 gap-y-1">
             {canAcceptAnswers ? (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={toggleAccepted}
+                aria-label={
+                  isAccepted ? "Unmark as the answer" : "Mark as the answer"
+                }
                 className={cn(
                   "gap-1.5",
                   isAccepted
@@ -288,7 +293,9 @@ export function PostCard({
                 ) : (
                   <CheckCircle2 className="size-4" />
                 )}
-                {isAccepted ? "Unmark" : "Accept"}
+                <span className="hidden sm:inline">
+                  {isAccepted ? "Unmark" : "Accept"}
+                </span>
               </Button>
             ) : null}
             {controlsReady ? (

@@ -30,7 +30,7 @@ export function PinControl({
 
   if (!session || !permissions.can("moderate")) {
     return pinned ? (
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+      <span className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-medium text-primary">
         <Pin className="size-3.5" />
         Pinned
       </span>
@@ -83,13 +83,16 @@ export function PinControl({
         variant="ghost"
         size="sm"
         onClick={pinned ? unpin : pin}
+        aria-label={pinned ? "Unpin" : "Pin"}
         className={cn(
           "gap-1.5 text-muted-foreground",
           pinned && "text-primary",
         )}
       >
         {pinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
-        {pinned ? "Unpin" : "Pin"}
+        {/* The post footer is wider than a phone in words alone, so the
+            secondary actions there keep only their icons on small screens. */}
+        <span className="hidden sm:inline">{pinned ? "Unpin" : "Pin"}</span>
       </Button>
       {pinned ? (
         <Button

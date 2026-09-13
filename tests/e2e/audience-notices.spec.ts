@@ -69,10 +69,10 @@ test("staff notify a discussion audience once, with the post itself", async ({
   await dialog.getByRole("button", { name: "Notify 2 people", exact: true }).click();
 
   // A notified post says so, and offers no second send.
-  await expect(page.getByText("Audience notified.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Audience notified", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Notify audience", exact: true })).toHaveCount(0);
   await page.reload();
-  await expect(page.getByText("Audience notified.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Audience notified", { exact: true })).toBeVisible();
 
   // The email carries the post, not a bare event line.
   await expect
@@ -110,7 +110,7 @@ test("staff notify a discussion audience once, with the post itself", async ({
   // A reader who is not staff is offered no send and learns no notice state.
   await page.goto(discussion);
   await expect(page.getByRole("button", { name: "Notify audience", exact: true })).toHaveCount(0);
-  await expect(page.getByText("Audience notified.", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Audience notified", { exact: true })).toHaveCount(0);
 });
 
 test("post and notify confirms on the reply it just created", async ({ page }) => {
@@ -131,14 +131,15 @@ test("post and notify confirms on the reply it just created", async ({ page }) =
 
   const reply = "We are in room 2-105 for the rest of term.";
   await page.getByPlaceholder("Write your reply… Markdown supported.").fill(reply);
-  await page.getByRole("button", { name: "Post and notify", exact: true }).click();
+  await page.getByRole("button", { name: "More ways to post", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Post and notify", exact: true }).click();
 
   // The confirmation is about the reply that was just posted, not a guess.
   const dialog = page.getByRole("dialog");
   await expect(dialog).toContainText("2 people");
   await dialog.getByRole("button", { name: "Notify 2 people", exact: true }).click();
   await expect(page.getByText(reply, { exact: false })).toBeVisible();
-  await expect(page.getByText("Audience notified.", { exact: true })).toHaveCount(1);
+  await expect(page.getByText("Audience notified", { exact: true })).toHaveCount(1);
   // The opening post was not notified, so it still offers the send.
   await expect(page.getByRole("button", { name: "Notify audience", exact: true })).toHaveCount(1);
 });
