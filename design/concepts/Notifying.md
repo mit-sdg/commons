@@ -8,9 +8,11 @@ dismiss, or clear notifications.
 ## Principle
 
 Someone replies to Mara's post, creating an unread notification that identifies
-the event and its subject. Mara marks it read, which lowers her unread count
-without removing it. She later marks every notification read and dismisses one.
-Dismissing it again is refused. Noah cannot read or dismiss Mara's
+the event and its subject. Noah adds her to a list, creating a notification whose
+subject names the list and whose actor names Noah, because a list cannot say who
+changed her membership of it. Mara marks the first read, which lowers her unread
+count without removing it. She later marks every notification read and dismisses
+one. Dismissing it again is refused. Noah cannot read or dismiss Mara's
 notifications.
 
 ## Types
@@ -34,11 +36,13 @@ a set of Notifications with
   a kind      String
   a subject   Subject
   an optional link Link
+  an optional actor Person
   a createdAt Date
 
 an Unread set of Notifications
 
 Rule: a notification remains until its recipient dismisses it or clearSubject removes every notification about its subject.
+Rule: an actor is the person whose act raised the notification, and is recorded only when the subject does not already say who that was.
 Rule: actions that name a recipient operate only on that person's notifications, and another person's notification is refused as not found.
 Rule: markAllRead and marking an already-read notification succeed without changing anything.
 ```
@@ -46,10 +50,10 @@ Rule: markAllRead and marking an already-read notification succeed without chang
 ## Actions
 
 ```actions
-notify(recipient: Person, kind: String, subject: Subject, link: Link, at: Date) : return (notification: Notification)
+notify(recipient: Person, kind: String, subject: Subject, link: Link, actor: Person, at: Date) : return (notification: Notification)
   where true
   then
-    add a new notification with recipient, kind, subject, link, and createdAt at
+    add a new notification with recipient, kind, subject, link, actor, and createdAt at
     add notification to unread
     return notification
 
@@ -87,7 +91,7 @@ clearSubject(subject: Subject) : return (subject: Subject)
 ## Queries
 
 ```queries
-_getInbox (recipient: String) : many (notification: String, kind: String, subject: Subject, link: Link|Null, createdAt: Date, read: Boolean)
+_getInbox (recipient: String) : many (notification: String, kind: String, subject: Subject, link: Link|Null, actor: Person|Null, createdAt: Date, read: Boolean)
   answers the recipient's notifications newest first, with later arrivals breaking equal-time ties
   answers no rows when none match
 

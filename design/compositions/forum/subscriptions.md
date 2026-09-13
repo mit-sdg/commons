@@ -11,7 +11,7 @@ adds each followed conversation's root-post summary and current thread statistic
 reports that account's state for one readable conversation.
 
 [Forum.subscriptions.Subscribers](reaction:Forum.subscriptions.Subscribers) forms
-[the current followers](former:Forum.subscriptions.theSubscribersOf) only while the session account belongs to the conversation’s current audience. Root trash or missing root content does not by itself hide subscription state. Successful
+[the current followers](former:Forum.subscriptions.theSubscribersOf) only while the session account has current discussion access through audience membership or administration. Root trash or missing root content does not by itself hide subscription state. Successful
 replies consult the retained subscribers when creating followed-reply
 notifications, with author and mention exclusions defined by notification
 behavior.

@@ -25,7 +25,7 @@ Forum.feed.ListActivity at /threads/activity
 Forum.feed.ListLatest at /threads/latest
 ```
 
-The shared Staff questions filter selects conversations explicitly addressed to Staff whose [opening author is outside Staff](view:Forum.feed.nonStaffOpening). Each reader must still belong to the conversation audience.
+The shared Staff questions filter selects conversations explicitly addressed to Staff whose [opening author is outside Staff](view:Forum.feed.nonStaffOpening). Each reader must still have discussion access, through audience membership or administration.
 
 ```computations
 staffQuestion(holders: Seq, nonStaffAuthor: Any) : Boolean

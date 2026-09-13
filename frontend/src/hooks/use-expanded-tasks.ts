@@ -5,6 +5,8 @@ import { useCallback, useState } from "react";
 export interface ExpandedTasks {
   isExpanded: (task: string) => boolean;
   toggle: (task: string) => void;
+  /** Opens a linked task once it has loaded, without toggling an already-open detail closed. */
+  expand: (task: string) => void;
   /** Expands every collapsible task, or collapses them all when none are left. */
   toggleAll: () => void;
   /** How many tasks on the page have details worth collapsing. */
@@ -38,6 +40,12 @@ export function useExpandedTasks(expandable: string[]): ExpandedTasks {
     });
   }, []);
 
+  const expand = useCallback((task: string) => {
+    setExpanded((current) =>
+      current.has(task) ? current : new Set([...current, task]),
+    );
+  }, []);
+
   const toggleAll = useCallback(() => {
     setExpanded(allExpanded ? new Set<string>() : new Set(expandable));
   }, [allExpanded, expandable]);
@@ -45,6 +53,7 @@ export function useExpandedTasks(expandable: string[]): ExpandedTasks {
   return {
     isExpanded,
     toggle,
+    expand,
     toggleAll,
     expandableCount: expandable.length,
     allExpanded,

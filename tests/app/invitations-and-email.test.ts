@@ -77,6 +77,7 @@ describe("invitations and email", () => {
       kind: "reply",
       subject: forumPost,
       link: forumPost,
+      actor: null,
       at: new Date(),
     });
     if ("error" in notified) throw new Error(String(notified.error));

@@ -1,6 +1,7 @@
 import { compute, is, view, where, whether } from "@mit-sdg/sync-engine/language";
 import { concepts, computations as c } from "../../concepts.ts";
 import { STAFF_CAPABILITIES } from "../../computations/audiences.ts";
+import { mayAdminister } from "../access/policy.ts";
 const {
   Accessing,
   Authenticating,
@@ -86,13 +87,21 @@ export const audienceMember = view(
       is.among(allowed, [true]),
     ),
 ).holds();
+/** Administration grants discussion access, not membership or new addressing choices. */
+export const discussionAudienceReader = view(
+  "(user) may read discussions addressed to (holders)",
+  ({ user, holders }, _out, _vars) => [
+    where(mayAdminister({ user })),
+    where(audienceMember({ user, holders })),
+  ],
+).holds();
 export const establishedConversationReader = view(
-  "(user) belongs to the established audience of (conversation)",
+  "(user) may read established conversation (conversation)",
   ({ user, conversation }, _out, { holders }) =>
     where(
       usableUser({ user }),
       Accessing._holders({ resource: conversation }).is({ holders }),
-      audienceMember({ user, holders }),
+      discussionAudienceReader({ user, holders }),
       Conversing._exists({ conversation }).is({ exists: true }),
     ),
 ).holds();

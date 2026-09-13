@@ -114,6 +114,7 @@ export function TaskCard({
   personal = false,
   expanded,
   onToggleExpanded,
+  highlighted = false,
 }: {
   task: TaskCardTask;
   /** The profiles that may hold this task; empty hides reassignment. */
@@ -125,6 +126,8 @@ export function TaskCard({
   /** Whether the details are open. Omit both to let the card govern itself. */
   expanded?: boolean;
   onToggleExpanded?: () => void;
+  /** The task selected by a notification or email link. */
+  highlighted?: boolean;
 }) {
   const id = String(task.task);
   const [retiming, setRetiming] = useState(false);
@@ -241,9 +244,12 @@ export function TaskCard({
 
   return (
     <article
+      id={`task-${id}`}
+      tabIndex={-1}
       className={cn(
-        "rounded-xl border border-border bg-card p-4",
-        canceled && "opacity-70",
+        "scroll-mt-28 rounded-xl border border-border bg-card p-4 focus:outline-none",
+        highlighted && "border-primary ring-1 ring-primary/30",
+        canceled && !highlighted && "opacity-70",
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -370,12 +376,12 @@ export function TaskCard({
               size="sm"
               disabled={busy}
               onClick={() =>
-                run("uncancel", "Task uncanceled", () =>
+                run("uncancel", "Task restored", () =>
                   api.tasks.uncancel({ task: id }),
                 )
               }
             >
-              <Undo2 className="size-4" /> Uncancel
+              <Undo2 className="size-4" /> Restore task
             </Button>
           ) : null}
 

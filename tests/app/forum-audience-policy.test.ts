@@ -82,6 +82,17 @@ async function fixture(holders: (people: { user: string; session: string }[]) =>
   });
   return { db, instances, people, post, node, conversation, app };
 }
+async function grantAdministration(
+  instances: ReturnType<typeof mongoImplementations>,
+  user: string,
+) {
+  const { role } = await instances.Roling.defineRole({
+    name: "Operations",
+    capabilities: ["administer"],
+  });
+  await instances.Roling.assign({ user, context: "commons", role });
+}
+
 test("production policy preserves direct access after departure, but closes new addressing and all access after archival", async () => {
   const f = await fixture((people) => [`account:${people[1].user}`]);
   const [author, reader] = f.people;
@@ -129,23 +140,27 @@ test("production Staff classification excludes moderate and changes with the cur
     await f.app.form(admission({ session: reader.session, conversation: f.conversation })),
   ).toBeNull();
 });
-test("production conversation admission survives root content removal and has no missing-grant fallback", async () => {
-  const f = await fixture((people) => [`account:${people[1].user}`]);
-  const { post } = await f.instances.Posting.create({
-    author: f.people[1].user,
-    content: "reply",
-    at: new Date(),
-  });
-  await f.instances.Conversing.reply({ item: post, parent: f.node, at: new Date() });
-  await f.instances.Posting.delete({ post: f.post });
-  expect(
-    await f.app.form(admission({ session: f.people[1].session, conversation: f.conversation })),
-  ).toEqual({ user: f.people[1].user });
-  await f.instances.Accessing.retire({ resource: f.conversation });
-  expect(
-    await f.app.form(admission({ session: f.people[1].session, conversation: f.conversation })),
-  ).toBeNull();
-});
+test.each([false, true])(
+  "production conversation admission survives root removal but never missing grants (administrator=%s)",
+  async (administrator) => {
+    const f = await fixture((people) => [`account:${people[administrator ? 0 : 1].user}`]);
+    if (administrator) await grantAdministration(f.instances, f.people[1].user);
+    const { post } = await f.instances.Posting.create({
+      author: f.people[1].user,
+      content: "reply",
+      at: new Date(),
+    });
+    await f.instances.Conversing.reply({ item: post, parent: f.node, at: new Date() });
+    await f.instances.Posting.delete({ post: f.post });
+    expect(
+      await f.app.form(admission({ session: f.people[1].session, conversation: f.conversation })),
+    ).toEqual({ user: f.people[1].user });
+    await f.instances.Accessing.retire({ resource: f.conversation });
+    expect(
+      await f.app.form(admission({ session: f.people[1].session, conversation: f.conversation })),
+    ).toBeNull();
+  },
+);
 
 test("the production options and full selection agree on people, groups, sections and Staff-only Students", async () => {
   const f = await fixture((people) => [`account:${people[1].user}`]);
@@ -328,61 +343,81 @@ test("audience preview keeps a current group collective and refuses a withdrawn 
   ).toMatchObject({ ok: false });
 });
 
-test("Staff preview includes the sender for another section without altering publication admission", async () => {
-  const f = await fixture(() => ["standing:everyone"]);
-  const author = f.people[0];
-  const { role } = await f.instances.Roling.defineRole({ name: "Staff", capabilities: ["grade"] });
-  await f.instances.Roling.assign({ user: author.user, context: "commons", role });
-  const { section } = await f.instances.Rostering.createSection({
-    name: "Other",
-    location: "",
-    meetingPattern: "",
-  });
-  const selected = [`section:${section._id}`];
-  const app = createEdge(f.instances).application;
-  expect(
-    await app.invoker.invoke("/audiences/preview", { session: author.session, holders: selected }),
-  ).toMatchObject({ ok: true, value: { holders: [`account:${author.user}`, ...selected].sort() } });
-  expect(
-    await f.app.form(fullAddressing({ session: author.session, holders: selected })),
-  ).toBeNull();
-});
+test.each(["grade", "administer"])(
+  "Staff preview includes the sender for another section without altering publication admission (%s)",
+  async (capability) => {
+    const f = await fixture(() => ["standing:everyone"]);
+    const author = f.people[0];
+    const { role } = await f.instances.Roling.defineRole({
+      name: "Staff",
+      capabilities: [capability],
+    });
+    await f.instances.Roling.assign({ user: author.user, context: "commons", role });
+    const { section } = await f.instances.Rostering.createSection({
+      name: "Other",
+      location: "",
+      meetingPattern: "",
+    });
+    const selected = [`section:${section._id}`];
+    const app = createEdge(f.instances).application;
+    expect(
+      await app.invoker.invoke("/audiences/preview", {
+        session: author.session,
+        holders: selected,
+      }),
+    ).toMatchObject({
+      ok: true,
+      value: { holders: [`account:${author.user}`, ...selected].sort() },
+    });
+    expect(
+      await f.app.form(fullAddressing({ session: author.session, holders: selected })),
+    ).toBeNull();
+  },
+);
 
-test("post and conversation admission retain their distinct existence conditions", async () => {
-  const f = await fixture((people) => [`account:${people[1].user}`]);
-  const reader = f.people[1];
-  const postInput = { user: reader.user, post: f.post };
-  const conversationInput = { session: reader.session, conversation: f.conversation };
-  expect(await f.app.form(postAdmission(postInput))).toEqual({ post: f.post });
-  await f.instances.Trashing.trash({ item: f.post, by: reader.user, at: new Date() });
-  expect(await f.app.form(postAdmission(postInput))).toBeNull();
-  expect(await f.app.form(storedAdmission(postInput))).toEqual({ post: f.post });
-  expect(await f.app.form(admission(conversationInput))).toEqual({ user: reader.user });
-  await f.instances.Posting.delete({ post: f.post });
-  expect(await f.instances.Accessing._holders({ resource: f.conversation })).toHaveLength(1);
-  expect(await f.instances.Conversing._getThread({ conversation: f.conversation })).toHaveLength(1);
-  expect(await f.app.form(postAdmission(postInput))).toBeNull();
-  expect(await f.app.form(storedAdmission(postInput))).toBeNull();
-  expect(await f.app.form(admission(conversationInput))).toBeNull();
-  const { post } = await f.instances.Posting.create({
-    author: reader.user,
-    content: "Survivor",
-    at: new Date(),
-  });
-  expect(await f.app.form(postAdmission({ user: reader.user, post }))).toBeNull();
-  await f.instances.Conversing.reply({ item: post, parent: f.node, at: new Date() });
-  expect(await f.app.form(admission(conversationInput))).toEqual({ user: reader.user });
-  expect(await f.app.form(postAdmission({ user: reader.user, post }))).toEqual({ post });
-  expect(await f.app.form(storedAdmission(postInput))).toBeNull();
-  // Model residual nodes/grants after the owning conversation record is absent.
-  await f.db
-    .collection<{ _id: string }>("conversing.conversations")
-    .deleteOne({ _id: f.conversation });
-  expect(await f.instances.Conversing._getThread({ conversation: f.conversation })).toHaveLength(2);
-  expect(await f.app.form(admission(conversationInput))).toBeNull();
-  expect(await f.app.form(postAdmission({ user: reader.user, post }))).toBeNull();
-  expect(await f.app.form(storedAdmission({ user: reader.user, post }))).toBeNull();
-});
+test.each([false, true])(
+  "post and conversation admission retain their distinct existence conditions (administrator=%s)",
+  async (administrator) => {
+    const f = await fixture((people) => [`account:${people[administrator ? 0 : 1].user}`]);
+    const reader = f.people[1];
+    if (administrator) await grantAdministration(f.instances, reader.user);
+    const postInput = { user: reader.user, post: f.post };
+    const conversationInput = { session: reader.session, conversation: f.conversation };
+    expect(await f.app.form(postAdmission(postInput))).toEqual({ post: f.post });
+    await f.instances.Trashing.trash({ item: f.post, by: reader.user, at: new Date() });
+    expect(await f.app.form(postAdmission(postInput))).toBeNull();
+    expect(await f.app.form(storedAdmission(postInput))).toEqual({ post: f.post });
+    expect(await f.app.form(admission(conversationInput))).toEqual({ user: reader.user });
+    await f.instances.Posting.delete({ post: f.post });
+    expect(await f.instances.Accessing._holders({ resource: f.conversation })).toHaveLength(1);
+    expect(await f.instances.Conversing._getThread({ conversation: f.conversation })).toHaveLength(
+      1,
+    );
+    expect(await f.app.form(postAdmission(postInput))).toBeNull();
+    expect(await f.app.form(storedAdmission(postInput))).toBeNull();
+    expect(await f.app.form(admission(conversationInput))).toBeNull();
+    const { post } = await f.instances.Posting.create({
+      author: reader.user,
+      content: "Survivor",
+      at: new Date(),
+    });
+    expect(await f.app.form(postAdmission({ user: reader.user, post }))).toBeNull();
+    await f.instances.Conversing.reply({ item: post, parent: f.node, at: new Date() });
+    expect(await f.app.form(admission(conversationInput))).toEqual({ user: reader.user });
+    expect(await f.app.form(postAdmission({ user: reader.user, post }))).toEqual({ post });
+    expect(await f.app.form(storedAdmission(postInput))).toBeNull();
+    // Model residual nodes/grants after the owning conversation record is absent.
+    await f.db
+      .collection<{ _id: string }>("conversing.conversations")
+      .deleteOne({ _id: f.conversation });
+    expect(await f.instances.Conversing._getThread({ conversation: f.conversation })).toHaveLength(
+      2,
+    );
+    expect(await f.app.form(admission(conversationInput))).toBeNull();
+    expect(await f.app.form(postAdmission({ user: reader.user, post }))).toBeNull();
+    expect(await f.app.form(storedAdmission({ user: reader.user, post }))).toBeNull();
+  },
+);
 
 test("a post-specific read does not enumerate its thread to prove a surviving post", async () => {
   const f = await fixture((people) => [`account:${people[1].user}`]);

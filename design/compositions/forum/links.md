@@ -21,4 +21,4 @@ Forum.links.Backlinks at /links/backlinks
 Forum.links.Forward at /links/forward
 ```
 
-All target reads and changes derive the reader from the session and apply the conversation’s current audience. Collections filter before projecting related identities or counts; author and moderator roles provide no ordinary read exception.
+All target reads and changes derive the reader from the session and apply the [shared discussion-read policy](audiences.md), including administrator access. Collections filter before projecting related identities or counts; authors and non-administrator moderators receive no ordinary read exception.

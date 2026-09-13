@@ -388,6 +388,18 @@ remain unchanged, and the retained line stays available as read-only history.
 These bindings record application meaning. They do not copy state, validate an
 identity at runtime, or make one concept depend on another.
 
+## Email presentation
+
+Outgoing HTML mail shares an image-free, text-first document: a bounded-width layout,
+clear title, compact facts, readable message, and a named action link. Essential styles
+are inline, with system fonts and presentation tables for mail clients. Plain-text
+alternatives remain useful without HTML. Invitation wording stays plain text; forum
+messages and task details render Markdown with literal, escaped authored HTML, safe
+absolute links, and image descriptions as links rather than remotely loaded images.
+Rendered prose is additionally bounded to 70 KB so inline styles cannot push the action
+past common clipping thresholds; further shortening is explicitly noted outside the
+rendered message, even if a code fence was cut.
+
 ## Computations
 
 ```computations
@@ -464,7 +476,7 @@ invitationMailText(invitation: String, credential: String, body: String) : Strin
   Appends the mandatory registration link, temporary password, and lifetime notice to the invitation copy.
 
 invitationMailHtml(invitation: String, credential: String, body: String) : String
-  Escapes the invitation copy, preserving line breaks, and appends the mandatory registration link, password, and lifetime notice.
+  Presents escaped plain-text invitation copy in the shared HTML layout, preserving line breaks and including the mandatory registration link, password, and lifetime notice.
 
 mailPreviewText(text: String) : String
   Redacts invitation passwords, reset codes, and their link tokens from plain-text outbox previews.
@@ -481,11 +493,29 @@ assignmentNotificationUrl(assignment: String) : String
 notificationMailSubject(kind: String, title: String) : String
   Names the notification event and a bounded single-line discussion or assignment title.
 
-notificationMailText(kind: String, title: String, url: String) : String
-  Names the event and title with a sign-in link, without post text.
+notificationAuthorLabel(username: String, displayName: Any) : String
+  Forms a public author label from a nonblank display name and `@username`, or from `@username` alone.
 
-notificationMailHtml(kind: String, title: String, url: String) : String
-  Escapes the event and title and supplies a sign-in link, without post text.
+notificationActorLabel(username: Any, displayName: Any) : String
+  Forms the same public label for the person whose act raised a notification, and forms nothing at all when the notification recorded no actor.
+
+forumNotificationMailBody(content: String, post: String, opening: Any) : String
+  Keeps a reply's content whole, drops the title line an opening post already spent on the discussion title, and bounds what mail carries, saying so in place of anything it had to leave behind.
+
+forumNotificationMailText(kind: String, title: String, url: String, author: String, content: String) : String
+  Names the event and discussion, identifies the author, preserves the complete post content as plain text, and finishes with the direct discussion link.
+
+forumNotificationMailHtml(kind: String, title: String, url: String, author: String, content: String) : String
+  Escapes the event, title, author, and URL, renders the bounded message as sanitized Markdown in the shared HTML layout, and places the discussion action after the message.
+
+dueWallTime(dueAt: Any, detail: Any) : String
+  Reads a deadline held either as a date or as an ISO string in the configured course's wall time, names the zone, falls back to UTC without a usable one, and says nothing at all about an absent or unreadable instant.
+
+assignmentNotificationMailText(kind: String, title: String, url: String, author: String, due: String) : String
+  Names the release event, the assignment, its author, and its due wall time, and finishes with the direct assignment link, without the instructions.
+
+assignmentNotificationMailHtml(kind: String, title: String, url: String, author: String, due: String) : String
+  Presents the escaped event, assignment title, author, and due wall time in the shared HTML layout, with the assignment action last and without the instructions.
 
 capabilitiesAreKnown(capabilities: Strings) : Bool
   Reports whether every named capability appears in the application's registry,
@@ -514,7 +544,7 @@ passwordResetMailText(voucher: String, credential: String, username: String) : S
   Renders the plain-text password-reset message naming the account.
 
 passwordResetMailHtml(voucher: String, credential: String, username: String) : String
-  Renders the HTML password-reset message naming the account.
+  Uses the shared HTML layout to name the account, show the escaped reset code, retain the expiry and unsolicited-request warning, and link to password reset.
 
 setupSecretMatches(secret: String) : Bool
   Reports whether the candidate matches the configured setup-secret verifier.
@@ -532,20 +562,20 @@ subjectIsAddress(subject: String) : Bool
 taskListMailSubject(kind: String, listTitle: String) : String
   Renders the subject line for a task-list membership notification of that kind.
 
-taskListMailText(kind: String, listTitle: String) : String
-  Renders the plain-text membership message naming the list.
+taskListMailText(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String
+  Names the group and recorded actor, linking a current member to that group's members view and a non-member to the usable groups index.
 
-taskListMailHtml(kind: String, listTitle: String) : String
-  Renders the HTML membership message naming the list.
+taskListMailHtml(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String
+  Presents the escaped group and recorded actor in the shared HTML layout, with a direct group action for a current member and a groups-index action otherwise.
 
 taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String
   Renders the subject line for a task assignment or task state change of that kind.
 
-taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String) : String
-  Renders the plain-text task message, saying which change occurred and naming the task, its list, and its deadline.
+taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String
+  Names the event, task, group, deadline and recorded actor, carries bounded authored details, and ends with a direct link selecting that task inside its group.
 
-taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String) : String
-  Renders the HTML task message, saying which change occurred and naming the task, its list, and its deadline.
+taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String
+  Presents the escaped task title, event, group, deadline and recorded actor in the shared HTML layout, renders bounded details as sanitized Markdown, and ends with the direct task action.
 
 draftTitle(form: String) : String
   Renders a privacy-safe default title for an adopted AI draft from its form,

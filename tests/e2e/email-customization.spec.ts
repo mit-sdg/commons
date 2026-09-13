@@ -93,7 +93,7 @@ test("an administrator previews/saves invitation copy and reads a redacted outbo
   expect(retained?.subject).toBe(subject);
 });
 
-test("a real forum reply shows discussion context and navigates directly; email omits post bodies", async ({
+test("a real forum reply shows discussion context and navigates directly; email carries its author and message", async ({
   page,
   browser,
 }, testInfo) => {
@@ -139,8 +139,10 @@ test("a real forum reply shows discussion context and navigates directly; email 
   expect(mail).toBeTruthy();
   if (!mail) throw new Error("No email was queued for the reply");
   const detail = await post(page, "/mail/read", { message: mail.message });
-  expect(detail.text).toContain(title);
+  expect(detail.text).toContain(`Discussion: ${title}`);
+  expect(detail.text).toContain("From: Noah Patel (@noah)");
+  expect(detail.text).toContain("PRIVATE REPLY BODY");
+  // The notified post is the reply, so the opening's body is not this message.
   expect(detail.text).not.toContain("PRIVATE OPENING BODY");
-  expect(detail.text).not.toContain("PRIVATE REPLY BODY");
-  expect(detail.text).toContain(`/t/${thread.conversation}#post-${reply.post}`);
+  expect(detail.text.endsWith(`/t/${thread.conversation}#post-${reply.post}`)).toBe(true);
 });

@@ -12,6 +12,7 @@ import {
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   removedSomebodyElse,
+  theActorPresentation,
   theListTitleBehind,
   theMailFor,
   theTaskBehind,
@@ -20,13 +21,14 @@ import { concepts } from "../../concepts.ts";
 
 const { Authenticating, Grouping, Mailing, TaskNotifying } = concepts;
 
-export const MembershipGainNotifies = reaction(({ list, candidate, at }) =>
-  when(Grouping.addMember({ candidate, at }).responds({ group: list })).then(
+export const MembershipGainNotifies = reaction(({ list, member, candidate, at }) =>
+  when(Grouping.addMember({ member, candidate, at }).responds({ group: list })).then(
     TaskNotifying.notify({
       recipient: candidate,
       kind: "task-list-added",
       subject: list,
       link: list,
+      actor: member,
       at,
     }),
   ),
@@ -41,17 +43,30 @@ export const MembershipLossNotifies = reaction(({ list, member, target, at }) =>
         kind: "task-list-removed",
         subject: list,
         link: list,
+        actor: member,
         at,
       }),
     ),
 );
 
 export const NotificationQueuesEmail = reaction(
-  ({ notification, recipient, kind, subject, at, email, mailSubject, text, html, message }) =>
-    when(TaskNotifying.notify({ recipient, kind, subject, at }).responds({ notification }))
+  ({
+    notification,
+    recipient,
+    kind,
+    subject,
+    actor,
+    at,
+    email,
+    mailSubject,
+    text,
+    html,
+    message,
+  }) =>
+    when(TaskNotifying.notify({ recipient, kind, subject, actor, at }).responds({ notification }))
       .where(
         Authenticating._getById({ user: recipient }).is({ email }),
-        theMailFor({ kind, subject, recipient, at }).is({ mailSubject, text, html }),
+        theMailFor({ kind, subject, actor, recipient, at }).is({ mailSubject, text, html }),
       )
       .then(
         Mailing.enqueue({
@@ -92,22 +107,27 @@ export const theTaskNotificationPresentationOf = former(
     }),
 );
 
-/** What is this recipient's task inbox? */
+/**
+ * What is this recipient's task inbox? An entry carries the same actor label its email
+ * names, so the inbox and the mail about one event never disagree about who caused it.
+ */
 export const theTaskInboxOf = former(
   "the task inbox of (user) at (at)",
-  ({ user, at }, { notification, kind, subject, link, createdAt, read }) =>
+  ({ user, at }, { notification, kind, subject, link, actor, createdAt, read }) =>
     each(
       TaskNotifying._getInbox({ recipient: user }).is({
         notification,
         kind,
         subject,
         link,
+        actor,
         createdAt,
         read,
       }),
     )
-      .form({ notification, kind, subject, link, createdAt, read })
-      .splicing(whether(theTaskNotificationPresentationOf({ subject, kind, reader: user, at }))),
+      .form({ notification, kind, subject, link, actor, createdAt, read })
+      .splicing(whether(theTaskNotificationPresentationOf({ subject, kind, reader: user, at })))
+      .splicing(whether(theActorPresentation({ actor }))),
 );
 
 export const ReadInbox = endpoint("/tasknotifications/inbox", ({ session, user, at }) =>
