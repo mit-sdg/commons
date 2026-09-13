@@ -9,6 +9,7 @@ import {
   CircleCheck,
   ClipboardList,
   ListChecks,
+  Megaphone,
   MessageCircle,
   RotateCcw,
   Undo2,
@@ -163,6 +164,10 @@ function ForumNotificationBody({
         <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
           {n.kind === "accepted" ? (
             <Check className="size-3.5 text-primary" />
+          ) : n.kind === "audience_notice" ? (
+            // The same megaphone staff pressed to send it, so a notice reads
+            // apart from an ordinary discussion update at a glance.
+            <Megaphone className="size-3.5 text-primary" />
           ) : (
             <MessageCircle className="size-3.5 text-primary" />
           )}

@@ -10,8 +10,7 @@ const ACTOR_EVENTS: Record<string, string> = {
 
 /** Accepted rows carry the answer's author, not the person accepting it. */
 export function forumActionText(kind: string): string {
-  if (kind === "audience_notice")
-    return "Staff shared this post with the discussion audience";
+  if (kind === "audience_notice") return "Staff shared this post";
   if (kind === "accepted") return "Your answer was accepted";
   if (kind === "assignment_released") return "A new assignment is available";
   return Object.hasOwn(ACTOR_EVENTS, kind)

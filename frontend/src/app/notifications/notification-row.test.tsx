@@ -83,15 +83,11 @@ describe("forum event wording and direct navigation", () => {
 
   test("an audience notice names staff, not the post's author, as the sender", () => {
     const notification = row({ kind: "audience_notice" });
-    expect(forumActionText("audience_notice")).toBe(
-      "Staff shared this post with the discussion audience",
-    );
+    expect(forumActionText("audience_notice")).toBe("Staff shared this post");
     // The card's actor is the post's author, who did not do the sharing.
     expect(forumPresentation(notification).actor).toBeNull();
     const html = render(notification);
-    expect(html).toContain(
-      "Staff shared this post with the discussion audience",
-    );
+    expect(html).toContain("Staff shared this post");
     expect(html).toContain("How does induction work?");
     expect(html).toContain("Start with the base case.");
     expect(html).not.toContain("Maria");

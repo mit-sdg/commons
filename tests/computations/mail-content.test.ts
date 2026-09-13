@@ -230,7 +230,7 @@ describe("email presentation", () => {
       content: "First paragraph\n\nSecond <b>paragraph</b>",
     };
     expect(notificationMailSubject(notice)).toBe(
-      "Staff shared a post with the discussion audience: Lab timing",
+      "Staff shared a post: Lab timing",
     );
     expect(forumNotificationMailText(notice)).toContain("From: Mara (@mara)");
     expect(forumNotificationMailText(notice)).toContain("Second <b>paragraph</b>");

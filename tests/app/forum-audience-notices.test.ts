@@ -105,7 +105,7 @@ test("staff notify a post's audience once, with the post itself, excluding its a
     [admin!.email, tutor!.email].sort(),
   );
   const mail = queued.find((message) => message.recipient === tutor!.email);
-  expect(mail?.subject).toBe("Staff shared a post with the discussion audience: Lab timing");
+  expect(mail?.subject).toBe("Staff shared a post: Lab timing");
   expect(mail?.text).toContain("Correction: the second bench is broken.");
   expect(mail?.text).toContain("From: @student");
   expect(mail?.text).toContain(`#post-${reply.post}`);

@@ -91,7 +91,7 @@ test("staff notify a discussion audience once, with the post itself", async ({
     .fill("noah@example.edu");
   await page
     .getByRole("button", {
-      name: "Read email: Staff shared a post with the discussion audience: Thursday lab bench change",
+      name: "Read email: Staff shared a post: Thursday lab bench change",
       exact: true,
     })
     .click();
@@ -103,7 +103,7 @@ test("staff notify a discussion audience once, with the post itself", async ({
   await signIn(page, "noah");
   await page.goto("/notifications");
   await expect(
-    page.getByText("Staff shared this post with the discussion audience", { exact: false }),
+    page.getByText("Staff shared this post", { exact: false }),
   ).toBeVisible();
   await expect(page.getByText(BODY, { exact: false })).toBeVisible();
 
