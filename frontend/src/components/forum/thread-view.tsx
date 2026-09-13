@@ -235,7 +235,9 @@ export function ThreadView({
               </span>
             ) : null}
           </div>
-          <div className="flex items-center gap-2">
+          {/* Four labelled buttons are wider than a phone, so they wrap here
+              rather than pushing the whole page sideways. */}
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {collapsible.length > 0 ? (
               <Button
                 variant="outline"

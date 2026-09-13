@@ -1,10 +1,25 @@
 "use client";
 
-import { Bold, Code, Italic, Link2, List, Quote } from "lucide-react";
+import {
+  Bold,
+  ChevronDown,
+  Code,
+  Italic,
+  Link2,
+  List,
+  Megaphone,
+  Quote,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MentionAutocomplete } from "@/components/forum/mention-autocomplete";
 import { Spinner } from "@/components/states";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
 import { DRAFT_SAVE_DELAY_MS, readDraft, saveDraft } from "@/lib/drafts";
@@ -25,7 +40,9 @@ interface ComposerProps {
   draft?: string;
   onSubmit: (content: string) => Promise<void> | void;
   /**
-   * A second way to post the same writing, offered beside the ordinary submit.
+   * A second way to post the same writing, offered from the submit button's
+   * own menu rather than as a rival button beside it: posting is one action
+   * with a variant, and two filled buttons of equal weight read as two.
    * Staff use it to post and then notify the audience in one move; the
    * confirmation still happens, on the post this creates.
    */
@@ -238,10 +255,15 @@ export function Composer({
           />
         </div>
       ) : null}
-      <div className="flex items-center justify-end gap-2 border-t border-border px-3 py-2.5">
+      <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-3 py-2.5">
         {kept ? (
           <>
-            <span role="status" className="text-xs text-muted-foreground">
+            {/* A phone needs the room for the buttons; the discard button
+                already says that a draft is being kept. */}
+            <span
+              role="status"
+              className="hidden text-xs text-muted-foreground sm:inline"
+            >
               Draft kept in this browser only
             </span>
             <Button
@@ -276,26 +298,39 @@ export function Composer({
             Cancel
           </Button>
         ) : null}
-        {altSubmitLabel && onAltSubmit ? (
+        <div className="inline-flex items-stretch">
           <Button
             type="button"
             size="sm"
-            variant="outline"
-            onClick={() => submit(onAltSubmit)}
+            onClick={() => submit()}
             disabled={disabled || busy || !value.trim()}
+            className={cn(altSubmitLabel && onAltSubmit && "rounded-r-none")}
           >
-            {altSubmitLabel}
+            {busy ? <Spinner className="size-4" /> : null}
+            {submitLabel}
           </Button>
-        ) : null}
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => submit()}
-          disabled={disabled || busy || !value.trim()}
-        >
-          {busy ? <Spinner className="size-4" /> : null}
-          {submitLabel}
-        </Button>
+          {altSubmitLabel && onAltSubmit ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  size="sm"
+                  aria-label="More ways to post"
+                  disabled={disabled || busy || !value.trim()}
+                  className="rounded-l-none border-l border-primary-foreground/25 px-2"
+                >
+                  <ChevronDown className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => submit(onAltSubmit)}>
+                  <Megaphone className="size-4" />
+                  {altSubmitLabel}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
+        </div>
       </div>
     </div>
   );
