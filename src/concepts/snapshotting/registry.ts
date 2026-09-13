@@ -9,6 +9,7 @@ export const snapshotting = registerConcept({
   spec,
   refusals: { SNAPSHOT_EXISTS: SnapshotExists },
   floors: {
-    mongo: ({ database }: { database: Db }) => new MongoSnapshottingConcept(database),
+    mongo: ({ database }: { database: Db }, instance: string) =>
+      new MongoSnapshottingConcept(database, instance),
   },
 });

@@ -43,6 +43,10 @@ concrete LiveRunSnapshot
   The complete structured presentation captured for one published live run, or
   for one round of a relay run.
 
+concrete ForumNotice
+  What one forum post's audience was told: the post's content and author, the
+  staff account that sent it, and the moment it was sent.
+
 concrete LiveExecution
   A Reasoning asking that sorts a round or summarizes a pile, or a Publishing
   edition created when a relay round opens.
@@ -275,6 +279,10 @@ instantiate Scoring with
   Subject is Publishing.Edition
   Item is Questioning.Question
   Submission is Responding.Response
+
+instantiate Snapshotting as NoticeSnapshotting with
+  Subject is Posting.Post
+  Value is ForumNotice
 
 instantiate Snapshotting as RunSnapshotting with
   Subject is Publishing.Edition
@@ -516,6 +524,9 @@ assignmentNotificationMailText(kind: String, title: String, url: String, author:
 
 assignmentNotificationMailHtml(kind: String, title: String, url: String, author: String, due: String) : String
   Presents the escaped event, assignment title, author, and due wall time in the shared HTML layout, with the assignment action last and without the instructions.
+
+noticeRecord(content: String, author: String, by: String, at: Date) : Json
+  Composes what a forum post's audience was sent, so a later edit cannot rewrite what they received.
 
 capabilitiesAreKnown(capabilities: Strings) : Bool
   Reports whether every named capability appears in the application's registry,

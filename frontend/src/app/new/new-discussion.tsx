@@ -8,6 +8,7 @@ import {
   AudiencePicker,
 } from "@/components/forum/audience-picker";
 import { Composer } from "@/components/forum/composer";
+import { NoticeDialog } from "@/components/forum/notice-dialog";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireAuth } from "@/components/require-auth";
 import { Input } from "@/components/ui/input";
@@ -32,7 +33,13 @@ function NewDiscussionForm({
 }) {
   const router = useRouter();
   const [posting, setPosting] = useState(false);
-  const { session, me } = useAuth();
+  const { session, me, permissions } = useAuth();
+  // "Post and notify" confirms on the opening post it just created, then goes
+  // to the discussion either way: the post stands whether or not it notified.
+  const [pendingNotice, setPendingNotice] = useState<{
+    post: string;
+    conversation: string;
+  } | null>(null);
   const [title, setTitle] = useState("");
   const [chosen, setSelected] = useState<string[]>([initialAudience]);
   const selected = fromGroup ? [`group:${fromGroup}`] : chosen;
@@ -118,7 +125,13 @@ function NewDiscussionForm({
     return () => window.removeEventListener("focus", refreshAudience);
   }, [refreshOptions, refreshPreview]);
 
-  async function create(body: string) {
+  function openDiscussion(conversation: string) {
+    router.push(
+      `/t/${conversation}${fromGroup ? `?fromGroup=${encodeURIComponent(fromGroup)}` : ""}`,
+    );
+  }
+
+  async function create(body: string, notify = false) {
     if (!session || !preview.data || !selected.length)
       throw new Error("Choose who can see this.");
     if (!title.trim()) {
@@ -128,7 +141,7 @@ function NewDiscussionForm({
     const content = `# ${title.trim()}\n\n${body}`;
     setPosting(true);
     try {
-      const { conversation } = unwrap(
+      const { conversation, post } = unwrap(
         await api.threads.create({
           content,
           holders: unwrap(await api.audiences.preview({ holders: selected }))
@@ -138,9 +151,12 @@ function NewDiscussionForm({
       posted.current = true;
       if (author !== null) clearDraft(author, scope);
       toast.success("Discussion posted.");
-      router.push(
-        `/t/${conversation}${fromGroup ? `?fromGroup=${encodeURIComponent(fromGroup)}` : ""}`,
-      );
+      if (notify)
+        setPendingNotice({
+          post: String(post),
+          conversation: String(conversation),
+        });
+      else openDiscussion(String(conversation));
     } catch (err) {
       toast.error(
         err instanceof CommonsError
@@ -244,9 +260,26 @@ function NewDiscussionForm({
             placeholder="Write your question or idea…"
             draft={scope}
             onSubmit={create}
+            altSubmitLabel={permissions.isStaff ? "Post and notify" : undefined}
+            onAltSubmit={
+              permissions.isStaff ? (body) => create(body, true) : undefined
+            }
           />
         </div>
       </div>
+
+      {pendingNotice ? (
+        <NoticeDialog
+          post={pendingNotice.post}
+          open
+          onOpenChange={(next) => {
+            if (next) return;
+            const { conversation } = pendingNotice;
+            setPendingNotice(null);
+            openDiscussion(conversation);
+          }}
+        />
+      ) : null}
     </PageContainer>
   );
 }

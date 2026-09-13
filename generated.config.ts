@@ -44,6 +44,7 @@ export default {
       new URL("./design/compositions/forum/feed-pages.md", import.meta.url),
       new URL("./design/compositions/forum/links.md", import.meta.url),
       new URL("./design/compositions/forum/moderation.md", import.meta.url),
+      new URL("./design/compositions/forum/notices.md", import.meta.url),
       new URL("./design/compositions/forum/notifications.md", import.meta.url),
       new URL("./design/compositions/forum/pins.md", import.meta.url),
       new URL("./design/compositions/forum/posts.md", import.meta.url),

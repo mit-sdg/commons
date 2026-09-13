@@ -120,6 +120,7 @@ const notificationPhrase: Record<string, string> = {
   addressed: "A discussion was started with you",
   staff_message: "New private discussion for staff",
   assignment_released: "A new assignment is available",
+  audience_notice: "Staff shared a post with the discussion audience",
 };
 
 const eventPhrase = (kind: string) =>

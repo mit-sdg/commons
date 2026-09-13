@@ -15,6 +15,8 @@ import { Fact } from "@/components/facts";
 import { BookmarkButton } from "@/components/forum/bookmark-button";
 import { Composer } from "@/components/forum/composer";
 import { FlagDialog } from "@/components/forum/flag-dialog";
+import { NoticeControl } from "@/components/forum/notice-control";
+import { NoticeDialog } from "@/components/forum/notice-dialog";
 import { PinControl } from "@/components/forum/pin-control";
 import { usePostControls } from "@/components/forum/post-controls-provider";
 import { PostLinks } from "@/components/forum/post-links";
@@ -48,6 +50,9 @@ interface PostCardProps {
   locked: boolean;
   scope: string;
   isUnread?: boolean;
+  /** Whether this post has already notified its audience, as staff see it. */
+  notified?: boolean;
+  onNotified?: () => void;
   onChanged: () => void;
   /** Lets the thread reveal replies it is collapsing before one is added. */
   onReplied?: () => void;
@@ -62,6 +67,8 @@ export function PostCard({
   locked,
   scope,
   isUnread = false,
+  notified = false,
+  onNotified,
   onChanged,
   onReplied,
 }: PostCardProps) {
@@ -70,6 +77,7 @@ export function PostCard({
   const [replying, setReplying] = useState(false);
   const [resumedReply, setResumedReply] = useState(false);
   const [flagOpen, setFlagOpen] = useState(false);
+  const [pendingNotice, setPendingNotice] = useState<string | null>(null);
 
   const postId = String(node.item);
   const nodeId = String(node.node);
@@ -116,7 +124,7 @@ export function PostCard({
     }
   }
 
-  async function submitReply(content: string) {
+  async function submitReply(content: string, notify = false) {
     if (!session) return;
     const result = await api.threads.reply({
       parent: nodeId,
@@ -131,6 +139,7 @@ export function PostCard({
       setReplying(false);
       onReplied?.();
       onChanged();
+      if (notify) setPendingNotice(String(result.post));
     }
   }
 
@@ -293,6 +302,13 @@ export function PostCard({
                 controls={sharedControls}
               />
             ) : null}
+            {!isTrashed ? (
+              <NoticeControl
+                post={postId}
+                notified={notified}
+                onNotified={onNotified}
+              />
+            ) : null}
             {session && !locked ? (
               <Button
                 variant="ghost"
@@ -363,12 +379,28 @@ export function PostCard({
             autoFocus={!resumedReply}
             draft={replyDraft}
             onSubmit={submitReply}
+            altSubmitLabel={permissions.isStaff ? "Post and notify" : undefined}
+            onAltSubmit={
+              permissions.isStaff
+                ? (content) => submitReply(content, true)
+                : undefined
+            }
             onCancel={() => setReplying(false)}
           />
         </div>
       ) : null}
 
       <FlagDialog target={postId} open={flagOpen} onOpenChange={setFlagOpen} />
+      {pendingNotice ? (
+        <NoticeDialog
+          post={pendingNotice}
+          open
+          onOpenChange={(next) => {
+            if (!next) setPendingNotice(null);
+          }}
+          onNotified={onNotified}
+        />
+      ) : null}
     </article>
   );
 }
