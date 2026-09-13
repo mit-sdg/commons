@@ -1,6 +1,7 @@
 import { submissionAllowed } from "./computations/assessment-eligibility.ts";
 import { ownsTaskScope } from "./computations/task-scopes.ts";
 import { validPostControlSelection } from "./computations/post-controls.ts";
+import { noticeRecord } from "./computations/forum-notices.ts";
 import {
   validFeedOrder,
   validThreadSelection,
@@ -276,6 +277,7 @@ const registrations = {
   Locking: locking,
   Locating: locating,
   Mailing: mailing,
+  NoticeSnapshotting: snapshotting,
   Notifying: notifying,
   Noting: noting,
   PasswordResetVouching: vouching,
@@ -433,6 +435,7 @@ export const learningConcepts = conceptSet(registrations, {
   dueWallTime,
   assignmentNotificationMailHtml,
   assignmentNotificationMailText,
+  noticeRecord,
   passwordResetCooldownStart,
   passwordResetExpiry,
   passwordResetMailHtml,

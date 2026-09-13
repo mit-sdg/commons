@@ -17,6 +17,7 @@ import { AudienceChips } from "@/components/forum/audience-picker";
 import { CategoryBadge } from "@/components/forum/badges";
 import { CategoryAssign } from "@/components/forum/category-assign";
 import { Composer } from "@/components/forum/composer";
+import { NoticeDialog } from "@/components/forum/notice-dialog";
 import { PostCard } from "@/components/forum/post-card";
 import { PostControlsProvider } from "@/components/forum/post-controls-provider";
 import { PostPreview } from "@/components/forum/post-preview";
@@ -70,11 +71,22 @@ export function ThreadView({
     () => api.pins.forScope({ scope: conversation }),
     [conversation],
   );
+  // Which posts have already notified their audience. Staff alone may ask, so
+  // every other reader runs no query and every card renders no control.
+  const notices = useQuery<{ notices: { post: string }[] }>(
+    session && permissions.isStaff
+      ? () => api.notices.forConversation({ conversation })
+      : null,
+    [conversation, session, permissions.isStaff],
+  );
   const hashTargetVersion =
     data?.nodes.map((node) => String(node.item)).join("\u0000") ?? "";
   const [collapsedNodes, setCollapsedNodes] = useState<ReadonlySet<string>>(
     () => new Set<string>(),
   );
+  // A reply posted with "Post and notify" confirms on the post it just made,
+  // so the count staff approve is the real one rather than a guess.
+  const [pendingNotice, setPendingNotice] = useState<string | null>(null);
 
   const unread = useUnread(conversation, data ? data.questionId : "");
 
@@ -116,6 +128,9 @@ export function ThreadView({
     ? titleFromContent(root.post.content)
     : "Opening post unavailable";
   const subscriberCount = subscribers.data?.subscribers.length ?? 0;
+  const notifiedPosts = new Set(
+    (notices.data?.notices ?? []).map((notice) => String(notice.post)),
+  );
   const pinnedItems = pinned.data?.pinned ?? [];
   const threadTree = buildThreadTree(nodes, data.structure);
   const summaries = summarizeBranches(threadTree, unread.unreadItems);
@@ -140,6 +155,7 @@ export function ThreadView({
     refetch();
     pinned.refetch();
     subscribers.refetch();
+    notices.refetch();
   }
 
   async function toggleLock() {
@@ -154,7 +170,7 @@ export function ThreadView({
     }
   }
 
-  async function postRootReply(content: string) {
+  async function postRootReply(content: string, notify = false) {
     if (!session || !root) return;
     const result = await api.threads.reply({
       parent: String(root.node),
@@ -167,6 +183,7 @@ export function ThreadView({
     } else {
       toast.success("Reply posted");
       refetchAll();
+      if (notify) setPendingNotice(String(result.post));
     }
   }
 
@@ -316,6 +333,8 @@ export function ThreadView({
               locked={locked}
               scope={conversation}
               unreadItems={unread.unreadItems}
+              notifiedPosts={notifiedPosts}
+              onNotified={notices.refetch}
               summaries={summaries}
               collapsedNodes={collapsedNodes}
               onCollapsedChange={setBranchCollapsed}
@@ -343,6 +362,14 @@ export function ThreadView({
               submitLabel="Post reply"
               draft={replyScope(conversation)}
               onSubmit={postRootReply}
+              altSubmitLabel={
+                permissions.isStaff ? "Post and notify" : undefined
+              }
+              onAltSubmit={
+                permissions.isStaff
+                  ? (content) => postRootReply(content, true)
+                  : undefined
+              }
             />
           </>
         ) : (
@@ -357,6 +384,17 @@ export function ThreadView({
           </p>
         )}
       </section>
+
+      {pendingNotice ? (
+        <NoticeDialog
+          post={pendingNotice}
+          open
+          onOpenChange={(next) => {
+            if (!next) setPendingNotice(null);
+          }}
+          onNotified={notices.refetch}
+        />
+      ) : null}
     </PageContainer>
   );
 }
@@ -371,6 +409,8 @@ function ThreadBranchView({
   locked,
   scope,
   unreadItems,
+  notifiedPosts,
+  onNotified,
   summaries,
   collapsedNodes,
   onCollapsedChange,
@@ -385,6 +425,8 @@ function ThreadBranchView({
   locked: boolean;
   scope: string;
   unreadItems: Set<string>;
+  notifiedPosts: ReadonlySet<string>;
+  onNotified: () => void;
   summaries: Map<string, BranchSummary>;
   collapsedNodes: ReadonlySet<string>;
   onCollapsedChange: (node: string, collapsed: boolean) => void;
@@ -410,6 +452,8 @@ function ThreadBranchView({
             locked={locked}
             scope={scope}
             isUnread={unreadItems.has(String(branch.node.item))}
+            notified={notifiedPosts.has(String(branch.node.item))}
+            onNotified={onNotified}
             onChanged={onChanged}
             onReplied={() => onCollapsedChange(nodeId, false)}
           />
@@ -471,6 +515,8 @@ function ThreadBranchView({
               locked={locked}
               scope={scope}
               unreadItems={unreadItems}
+              notifiedPosts={notifiedPosts}
+              onNotified={onNotified}
               summaries={summaries}
               collapsedNodes={collapsedNodes}
               onCollapsedChange={onCollapsedChange}

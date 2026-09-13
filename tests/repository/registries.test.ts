@@ -211,6 +211,8 @@ describe("application-owned design integration", () => {
       "Scoring.Subject is Publishing.Edition",
       "Scoring.Submission is Responding.Response",
       "Sharing.Subject is Publishing.Edition",
+      "NoticeSnapshotting.Subject is Posting.Post",
+      "NoticeSnapshotting.Value is ForumNotice",
       "RunSnapshotting.Subject is Publishing.Edition",
       "RunSnapshotting.Value is LiveRunSnapshot",
     ].sort();

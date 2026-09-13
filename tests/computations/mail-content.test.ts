@@ -51,7 +51,13 @@ describe("email presentation", () => {
     ["__proto__", "New Commons notification"],
     ["toString", "New Commons notification"],
   ])("%s names what happened without machine-kind wording", (kind, phrase) => {
-    const input = { kind, title: "<Planning> & review", url: "https://example.edu/t/123#post-456" };
+    const input = {
+      kind,
+      title: "<Planning> & review",
+      url: "https://example.edu/t/123#post-456",
+      content: null,
+      authorName: null,
+    };
     expect(notificationMailSubject(input)).toBe(`${phrase}: ${input.title}`);
   });
 
@@ -213,6 +219,23 @@ describe("email presentation", () => {
       /<p[^>]*>\(Shortened for email\. Open it in Commons to read the rest\.\)<\/p>/,
     );
     expect(html.length).toBeLessThan(60_000);
+  });
+
+  test("an audience notice names its own event and still carries the post", () => {
+    const notice = {
+      kind: "audience_notice",
+      title: "Lab timing",
+      url: "https://example.edu/t/1#post-2",
+      author: "Mara (@mara)",
+      content: "First paragraph\n\nSecond <b>paragraph</b>",
+    };
+    expect(notificationMailSubject(notice)).toBe(
+      "Staff shared a post with the discussion audience: Lab timing",
+    );
+    expect(forumNotificationMailText(notice)).toContain("From: Mara (@mara)");
+    expect(forumNotificationMailText(notice)).toContain("Second <b>paragraph</b>");
+    expect(forumNotificationMailHtml(notice)).toContain("&lt;b&gt;paragraph&lt;/b&gt;");
+    expect(forumNotificationMailHtml(notice)).not.toContain("<b>paragraph</b>");
   });
 
   test("discussion titles come only from the first line and are bounded; URLs encode opaque IDs", () => {

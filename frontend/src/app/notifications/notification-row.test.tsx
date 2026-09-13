@@ -81,6 +81,23 @@ describe("forum event wording and direct navigation", () => {
     expect(html).not.toContain("accepted your answer");
   });
 
+  test("an audience notice names staff, not the post's author, as the sender", () => {
+    const notification = row({ kind: "audience_notice" });
+    expect(forumActionText("audience_notice")).toBe(
+      "Staff shared this post with the discussion audience",
+    );
+    // The card's actor is the post's author, who did not do the sharing.
+    expect(forumPresentation(notification).actor).toBeNull();
+    const html = render(notification);
+    expect(html).toContain(
+      "Staff shared this post with the discussion audience",
+    );
+    expect(html).toContain("How does induction work?");
+    expect(html).toContain("Start with the base case.");
+    expect(html).not.toContain("Maria");
+    expect(forumRowHref(notification)).toBe("/t/conversation-1#post-post-2");
+  });
+
   test("known actor events keep clear wording", () => {
     for (const [kind, wording] of [
       ["staff_message", "sent a private message to staff"],

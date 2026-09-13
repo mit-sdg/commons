@@ -24,6 +24,13 @@ interface ComposerProps {
    */
   draft?: string;
   onSubmit: (content: string) => Promise<void> | void;
+  /**
+   * A second way to post the same writing, offered beside the ordinary submit.
+   * Staff use it to post and then notify the audience in one move; the
+   * confirmation still happens, on the post this creates.
+   */
+  altSubmitLabel?: string;
+  onAltSubmit?: (content: string) => Promise<void> | void;
   onCancel?: () => void;
 }
 
@@ -52,6 +59,8 @@ export function Composer({
   session,
   draft,
   onSubmit,
+  altSubmitLabel,
+  onAltSubmit,
   onCancel,
 }: ComposerProps) {
   const [value, setValue] = useState(initialValue);
@@ -153,12 +162,14 @@ export function Composer({
     });
   }
 
-  async function submit() {
+  async function submit(
+    post: (content: string) => Promise<void> | void = onSubmit,
+  ) {
     if (!value.trim() || busy || disabled) return;
     setMentionQuery(null);
     setBusy(true);
     try {
-      await onSubmit(value.trim());
+      await post(value.trim());
       typed.current = false;
       discardDraft();
       setValue("");
@@ -265,10 +276,21 @@ export function Composer({
             Cancel
           </Button>
         ) : null}
+        {altSubmitLabel && onAltSubmit ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => submit(onAltSubmit)}
+            disabled={disabled || busy || !value.trim()}
+          >
+            {altSubmitLabel}
+          </Button>
+        ) : null}
         <Button
           type="button"
           size="sm"
-          onClick={submit}
+          onClick={() => submit()}
           disabled={disabled || busy || !value.trim()}
         >
           {busy ? <Spinner className="size-4" /> : null}

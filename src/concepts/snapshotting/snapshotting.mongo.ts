@@ -15,8 +15,9 @@ export class MongoSnapshottingConcept {
   private readonly snapshots: Collection<SnapshotDoc>;
   private indexes: Promise<string[]> | undefined;
 
-  constructor(db: Db) {
-    this.snapshots = db.collection<SnapshotDoc>("snapshotting.snapshots");
+  constructor(db: Db, instance = "Snapshotting") {
+    const prefix = `${instance[0]?.toLowerCase() ?? ""}${instance.slice(1)}`;
+    this.snapshots = db.collection<SnapshotDoc>(`${prefix}.snapshots`);
   }
 
   async #ready(): Promise<void> {
