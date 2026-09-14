@@ -21,7 +21,9 @@ them. An invalid or no-longer-addressable selection refuses in full. The returne
 identities are shown before submission; publication validates that exact set
 without silently adding or removing holders.
 
-All forum reads require an established audience. Existing installations with no discussions need no audience backfill; a conversation without grants remains inaccessible.
+All forum reads require an established audience and current membership, including
+for administrators. Existing conversation grants use this same policy without a
+backfill; a conversation without grants remains inaccessible.
 
 ```endpoints
 Forum.audiences.Preview at /audiences/preview

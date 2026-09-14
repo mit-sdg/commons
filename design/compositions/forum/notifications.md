@@ -36,11 +36,11 @@ What mail carries of the post is bounded: past that bound it carries as much as 
 can, cut at a word, and says plainly that the rest is in Commons rather than
 dropping it silently. All mail details are rendered snapshots at enqueue time.
 Current recipient access and the queued account address are still checked before
-dispatch. The [administrator announcement-email exclusion](view:Forum.notifications.administratorAudienceNotice)
-means audience notices do not queue email for recipients who currently hold
-administration authority; their in-app notification remains. The inbox entry is
-already stored; a missing account email, author identity, rendering fault, queue
-refusal, or later SMTP failure cannot retract it.
+dispatch. Administrators follow the same audience and event rules as other recipients:
+administration neither grants notification access to other private posts nor
+suppresses email for posts in their audience. The inbox entry is already stored;
+a missing account email, author identity, rendering fault, queue refusal, or later
+SMTP failure cannot retract it.
 
 [Forum.notifications.ListNotifications](reaction:Forum.notifications.ListNotifications) forms
 [the session account's retained notifications](former:Forum.notifications.theNotificationsOf).

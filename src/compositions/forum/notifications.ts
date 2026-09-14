@@ -1,5 +1,4 @@
 import { postConversation, postReader, staff, usableUser } from "./audience-policy.ts";
-import { mayAdminister } from "../access/policy.ts";
 import { activeUser } from "../access/session.ts";
 import {
   compute,
@@ -171,17 +170,10 @@ export const notificationMailContext = view(
   ],
 ).optional();
 
-export const administratorAudienceNotice = view(
-  "(user) is an administrator receiving audience notice kind (kind)",
-  ({ user, kind }, _out, _vars) =>
-    where(is.among(kind, ["audience_notice"]), mayAdminister({ user })),
-).holds();
-
 export const NotificationQueuesEmail = reaction(
   ({ notification, recipient, kind, subject, email, at, mailSubject, text, html, message, key }) =>
     when(Notifying.notify({ recipient, kind, subject, at }).responds({ notification }))
       .where(
-        no(administratorAudienceNotice({ user: recipient, kind })),
         notificationSubjectReader({ user: recipient, subject }),
         Authenticating._getById({ user: recipient }).is({ email }),
         compute(computations.forumMailKey, { notification, recipient, post: subject }, key),

@@ -38,8 +38,9 @@ independent action, and the capture is already stored: a fault for one recipient
 leaves the notice sent to the others and does not make the post notifiable again.
 Every such notification then follows the ordinary forum mail path, which already
 carries the post's content, its author, and a direct discussion link; this kind
-adds only its own event wording. Administrators retain the in-app notice when
-they belong to the audience, but announcement emails are not queued for them.
+adds only its own event wording. Administrators in the audience receive both
+the in-app notice and email under the same rules as other recipients; those
+outside it receive neither.
 
 [Forum.notices.ForConversation](reaction:Forum.notices.ForConversation) forms
 [the notified posts of one discussion](former:Forum.notices.theNoticedPostsOf) so

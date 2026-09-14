@@ -2652,25 +2652,6 @@ Authored path: `Forum.threads.publicTarget`.
   where no Roling._getRole (context, user)
 ```
 
-### (user) may administer
-
-```view
-(user) may administer — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
-```
-
-### (user) is an administrator receiving audience notice kind (kind)
-
-Authored path: `Forum.notifications.administratorAudienceNotice`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 39.
-
-```view
-(user) is an administrator receiving audience notice kind (kind) — inputs (user, kind); outputs (); bindings ()
-  where
-    kind is among ["audience_notice"]
-    view "(user) may administer" with (user)
-```
-
 ### (user) is archived
 
 ```view
@@ -2770,6 +2751,13 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
   where
     Rostering._getSections () has (section, status: "ACTIVE")
     Rostering._getSeatByUser (user) has (section, status: "ACTIVE")
+```
+
+### (user) may administer
+
+```view
+(user) may administer — inputs (user); outputs (); bindings ()
+  where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
 ```
 
 ### (user) may host live runs
@@ -3426,7 +3414,7 @@ the discussion context of (post) for (reader) — inputs (post, reader); outputs
 ### the effective invitation copy ()
 
 Authored path: `Access.mail.invitationCopy`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 43.
+- Covered by [Mail](../design/compositions/access/mail.md), line 47.
 
 ```view
 the effective invitation copy () — inputs (); outputs (subject, body); bindings (wordedSubject, wordedBody) — answers exactly one (subject, body)
@@ -5059,7 +5047,7 @@ Former "the invitation details of (invitation) with (credential)" — inputs (in
 ### the invitation email preview of (subject) and (body)
 
 Authored path: `Access.mail.theInvitationPreview`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 60.
+- Covered by [Mail](../design/compositions/access/mail.md), line 64.
 
 ```former
 Former "the invitation email preview of (subject) and (body)" — inputs (subject, body); bindings (shownSubject, shownBody, text, html); promises exactly one record — forms:
@@ -5076,7 +5064,7 @@ Former "the invitation email preview of (subject) and (body)" — inputs (subjec
 ### the invitation email template ()
 
 Authored path: `Access.mail.theInvitationTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 39.
+- Covered by [Mail](../design/compositions/access/mail.md), line 43.
 
 ```former
 Former "the invitation email template ()" — inputs (); bindings (subject, body); promises exactly one record — forms:
@@ -5304,7 +5292,7 @@ Former "the notifications of (user)" — inputs (user); bindings (notification, 
 ### the notified posts of (conversation) for (reader)
 
 Authored path: `Forum.notices.theNoticedPostsOf`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 45.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 46.
 
 ```former
 Former "the notified posts of (conversation) for (reader)" — inputs (conversation, reader); bindings (item); promises exactly one record — forms:
@@ -7388,7 +7376,7 @@ then
 
 Authored path: `Access.mail.List`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 18.
-- Covered by [Mail](../design/compositions/access/mail.md), line 73.
+- Covered by [Mail](../design/compositions/access/mail.md), line 77.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/list", requestId, session)
@@ -7403,7 +7391,7 @@ then
 
 Authored path: `Access.mail.List`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 18.
-- Covered by [Mail](../design/compositions/access/mail.md), line 73.
+- Covered by [Mail](../design/compositions/access/mail.md), line 77.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/list", requestId, session)
@@ -7417,8 +7405,8 @@ then
 ### Access.mail.PreviewTemplate:forbidden
 
 Authored path: `Access.mail.PreviewTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 59.
-- Covered by [Mail](../design/compositions/access/mail.md), line 78.
+- Covered by [Mail](../design/compositions/access/mail.md), line 63.
+- Covered by [Mail](../design/compositions/access/mail.md), line 82.
 
 ```reaction
 when RequestBoundary.request (body, path: "/mail/preview-template", requestId, session, subject)
@@ -7432,8 +7420,8 @@ then
 ### Access.mail.PreviewTemplate:success
 
 Authored path: `Access.mail.PreviewTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 59.
-- Covered by [Mail](../design/compositions/access/mail.md), line 78.
+- Covered by [Mail](../design/compositions/access/mail.md), line 63.
+- Covered by [Mail](../design/compositions/access/mail.md), line 82.
 
 ```reaction
 when RequestBoundary.request (body, path: "/mail/preview-template", requestId, session, subject)
@@ -7448,7 +7436,7 @@ then
 
 Authored path: `Access.mail.Read`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 24.
-- Covered by [Mail](../design/compositions/access/mail.md), line 74.
+- Covered by [Mail](../design/compositions/access/mail.md), line 78.
 
 ```reaction
 when RequestBoundary.request (message, path: "/mail/read", requestId, session)
@@ -7463,7 +7451,7 @@ then
 
 Authored path: `Access.mail.Read`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 24.
-- Covered by [Mail](../design/compositions/access/mail.md), line 74.
+- Covered by [Mail](../design/compositions/access/mail.md), line 78.
 
 ```reaction
 when RequestBoundary.request (message, path: "/mail/read", requestId, session)
@@ -7479,7 +7467,7 @@ then
 
 Authored path: `Access.mail.Read`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 24.
-- Covered by [Mail](../design/compositions/access/mail.md), line 74.
+- Covered by [Mail](../design/compositions/access/mail.md), line 78.
 
 ```reaction
 when RequestBoundary.request (message, path: "/mail/read", requestId, session)
@@ -7495,8 +7483,8 @@ then
 ### Access.mail.ResetTemplate:forbidden
 
 Authored path: `Access.mail.ResetTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 47.
-- Covered by [Mail](../design/compositions/access/mail.md), line 77.
+- Covered by [Mail](../design/compositions/access/mail.md), line 51.
+- Covered by [Mail](../design/compositions/access/mail.md), line 81.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/reset-template", requestId, session)
@@ -7510,8 +7498,8 @@ then
 ### Access.mail.ResetTemplate:success
 
 Authored path: `Access.mail.ResetTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 47.
-- Covered by [Mail](../design/compositions/access/mail.md), line 77.
+- Covered by [Mail](../design/compositions/access/mail.md), line 51.
+- Covered by [Mail](../design/compositions/access/mail.md), line 81.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/reset-template", requestId, session)
@@ -7525,8 +7513,8 @@ then
 ### Access.mail.ResetTemplate:success#2
 
 Authored path: `Access.mail.ResetTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 47.
-- Covered by [Mail](../design/compositions/access/mail.md), line 77.
+- Covered by [Mail](../design/compositions/access/mail.md), line 51.
+- Covered by [Mail](../design/compositions/access/mail.md), line 81.
 
 ```reaction
 when Wording.withdraw (place: "invitation"), asked by Access.mail.ResetTemplate:success
@@ -7539,8 +7527,8 @@ then
 ### Access.mail.SaveTemplate:forbidden
 
 Authored path: `Access.mail.SaveTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 45.
-- Covered by [Mail](../design/compositions/access/mail.md), line 76.
+- Covered by [Mail](../design/compositions/access/mail.md), line 49.
+- Covered by [Mail](../design/compositions/access/mail.md), line 80.
 
 ```reaction
 when RequestBoundary.request (body, path: "/mail/save-template", requestId, session, subject)
@@ -7554,8 +7542,8 @@ then
 ### Access.mail.SaveTemplate:success
 
 Authored path: `Access.mail.SaveTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 45.
-- Covered by [Mail](../design/compositions/access/mail.md), line 76.
+- Covered by [Mail](../design/compositions/access/mail.md), line 49.
+- Covered by [Mail](../design/compositions/access/mail.md), line 80.
 
 ```reaction
 when RequestBoundary.request (body, path: "/mail/save-template", requestId, session, subject)
@@ -7569,8 +7557,8 @@ then
 ### Access.mail.SaveTemplate:success#2
 
 Authored path: `Access.mail.SaveTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 45.
-- Covered by [Mail](../design/compositions/access/mail.md), line 76.
+- Covered by [Mail](../design/compositions/access/mail.md), line 49.
+- Covered by [Mail](../design/compositions/access/mail.md), line 80.
 
 ```reaction
 when Wording.word (heading: subject, passage: body, place: "invitation", result.heading: savedSubject, result.passage: savedBody), asked by Access.mail.SaveTemplate:success
@@ -7583,8 +7571,8 @@ then
 ### Access.mail.Template:default
 
 Authored path: `Access.mail.Template`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 38.
-- Covered by [Mail](../design/compositions/access/mail.md), line 75.
+- Covered by [Mail](../design/compositions/access/mail.md), line 42.
+- Covered by [Mail](../design/compositions/access/mail.md), line 79.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/template", requestId, session)
@@ -7599,8 +7587,8 @@ then
 ### Access.mail.Template:forbidden
 
 Authored path: `Access.mail.Template`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 38.
-- Covered by [Mail](../design/compositions/access/mail.md), line 75.
+- Covered by [Mail](../design/compositions/access/mail.md), line 42.
+- Covered by [Mail](../design/compositions/access/mail.md), line 79.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/template", requestId, session)
@@ -7614,8 +7602,8 @@ then
 ### Access.mail.Template:worded
 
 Authored path: `Access.mail.Template`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 38.
-- Covered by [Mail](../design/compositions/access/mail.md), line 75.
+- Covered by [Mail](../design/compositions/access/mail.md), line 42.
+- Covered by [Mail](../design/compositions/access/mail.md), line 79.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/template", requestId, session)
@@ -12155,7 +12143,7 @@ then
 
 Authored path: `Forum.audiences.ForConversation`.
 - Covered by [Audiences](../design/compositions/forum/audiences.md), line 10.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 29.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 31.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/audiences/forConversation", requestId, session)
@@ -12169,7 +12157,7 @@ then
 
 Authored path: `Forum.audiences.ForConversation`.
 - Covered by [Audiences](../design/compositions/forum/audiences.md), line 10.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 29.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 31.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/audiences/forConversation", requestId, session)
@@ -12184,7 +12172,7 @@ then
 
 Authored path: `Forum.audiences.Options`.
 - Covered by [Audiences](../design/compositions/forum/audiences.md), line 3.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 28.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 30.
 
 ```reaction
 when RequestBoundary.request (path: "/audiences/options", requestId, session)
@@ -12199,7 +12187,7 @@ then
 
 Authored path: `Forum.audiences.Options`.
 - Covered by [Audiences](../design/compositions/forum/audiences.md), line 3.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 28.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 30.
 
 ```reaction
 when RequestBoundary.request (path: "/audiences/options", requestId, session)
@@ -12214,7 +12202,7 @@ then
 
 Authored path: `Forum.audiences.Options`.
 - Covered by [Audiences](../design/compositions/forum/audiences.md), line 3.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 28.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 30.
 
 ```reaction
 when RequestBoundary.request (path: "/audiences/options", requestId, session)
@@ -12229,7 +12217,7 @@ then
 
 Authored path: `Forum.audiences.Preview`.
 - Covered by [Audiences](../design/compositions/forum/audiences.md), line 17.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 27.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 29.
 
 ```reaction
 when RequestBoundary.request (holders, path: "/audiences/preview", requestId, session)
@@ -12244,7 +12232,7 @@ then
 
 Authored path: `Forum.audiences.Preview`.
 - Covered by [Audiences](../design/compositions/forum/audiences.md), line 17.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 27.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 29.
 
 ```reaction
 when RequestBoundary.request (holders, path: "/audiences/preview", requestId, session)
@@ -12259,7 +12247,7 @@ then
 
 Authored path: `Forum.audiences.Preview`.
 - Covered by [Audiences](../design/compositions/forum/audiences.md), line 17.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 27.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 29.
 
 ```reaction
 when RequestBoundary.request (holders, path: "/audiences/preview", requestId, session)
@@ -13607,8 +13595,8 @@ then
 ### Forum.notices.ForConversation:hidden
 
 Authored path: `Forum.notices.ForConversation`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 44.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 62.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 45.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 63.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/notices/forConversation", requestId, session)
@@ -13622,8 +13610,8 @@ then
 ### Forum.notices.ForConversation:reader
 
 Authored path: `Forum.notices.ForConversation`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 44.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 62.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 45.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 63.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/notices/forConversation", requestId, session)
@@ -13638,8 +13626,8 @@ then
 ### Forum.notices.ForConversation:staff
 
 Authored path: `Forum.notices.ForConversation`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 44.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 62.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 45.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 63.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/notices/forConversation", requestId, session)
@@ -13671,7 +13659,7 @@ then
 
 Authored path: `Forum.notices.Notify`.
 - Covered by [Audience notices](../design/compositions/forum/notices.md), line 22.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 63.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 64.
 
 ```reaction
 when RequestBoundary.request (path: "/notices/notify", post, requestId, session)
@@ -13687,7 +13675,7 @@ then
 
 Authored path: `Forum.notices.Notify`.
 - Covered by [Audience notices](../design/compositions/forum/notices.md), line 22.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 63.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 64.
 
 ```reaction
 when RequestBoundary.request (path: "/notices/notify", post, requestId, session)
@@ -13702,7 +13690,7 @@ then
 
 Authored path: `Forum.notices.Notify`.
 - Covered by [Audience notices](../design/compositions/forum/notices.md), line 22.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 63.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 64.
 
 ```reaction
 when RequestBoundary.request (path: "/notices/notify", post, requestId, session)
@@ -13721,7 +13709,7 @@ then
 
 Authored path: `Forum.notices.Notify`.
 - Covered by [Audience notices](../design/compositions/forum/notices.md), line 22.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 63.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 64.
 
 ```reaction
 when NoticeSnapshotting.capture (subject: post, value, snapshot), asked by Forum.notices.Notify:notify
@@ -13735,7 +13723,7 @@ then
 
 Authored path: `Forum.notices.Preview`.
 - Covered by [Audience notices](../design/compositions/forum/notices.md), line 13.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 64.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 65.
 
 ```reaction
 when RequestBoundary.request (path: "/notices/preview", post, requestId, session)
@@ -13750,7 +13738,7 @@ then
 
 Authored path: `Forum.notices.Preview`.
 - Covered by [Audience notices](../design/compositions/forum/notices.md), line 13.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 64.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 65.
 
 ```reaction
 when RequestBoundary.request (path: "/notices/preview", post, requestId, session)
@@ -13766,7 +13754,7 @@ then
 
 Authored path: `Forum.notices.Preview`.
 - Covered by [Audience notices](../design/compositions/forum/notices.md), line 13.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 64.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 65.
 
 ```reaction
 when RequestBoundary.request (path: "/notices/preview", post, requestId, session)
@@ -13947,7 +13935,6 @@ Authored path: `Forum.notifications.NotificationQueuesEmail`.
 ```reaction
 when Notifying.notify (at, kind, recipient, subject, notification)
 where
-  no view "(user) is an administrator receiving audience notice kind (kind)" with (kind, user: recipient)
   view "(user) may read notification subject (subject)" with (subject, user: recipient)
   Authenticating._getById (user: recipient) has (email)
   key is forumMailKey (notification, post: subject, recipient)
