@@ -32,6 +32,7 @@ function sameScope(
 export function useQuery<T>(
   loader: (() => Promise<T | { error: string }>) | null,
   deps: ReadonlyArray<unknown>,
+  { retainOnTransportError = false }: { retainOnTransportError?: boolean } = {},
 ): QueryState<T> {
   const enabled = loader !== null;
   const [result, setResult] = useState<QueryResult<T> | null>(null);
@@ -59,47 +60,62 @@ export function useQuery<T>(
       return;
     }
     const scope = [...deps];
-    setResult((previous) => ({
-      scope,
-      data: previous && sameScope(previous.scope, scope) ? previous.data : null,
-      error: null,
-      refused: null,
-      loading: true,
-    }));
+    setResult((previous) => {
+      const current =
+        previous && sameScope(previous.scope, scope) ? previous : null;
+      const stale = retainOnTransportError && current?.data != null;
+      return {
+        scope,
+        data: current?.data ?? null,
+        // A pending retry has not yet made a stale result current again.
+        error: stale ? current.error : null,
+        refused: stale ? current.refused : null,
+        loading: true,
+      };
+    });
+    const fail = (code: string | null, message: string) => {
+      setResult((previous) => ({
+        scope,
+        // Only a known transport failure can retain an already authorized
+        // result. Refusals and unknown failures still discard it.
+        data:
+          retainOnTransportError &&
+          (code === "NETWORK_ERROR" ||
+            code === "TIMED_OUT" ||
+            code === "TRANSPORT_ERROR") &&
+          previous &&
+          sameScope(previous.scope, scope)
+            ? previous.data
+            : null,
+        error: message,
+        refused: code,
+        loading: false,
+      }));
+    };
     Promise.resolve()
       .then(loader)
       .then((value) => {
         if (id !== reqId.current) return;
-        setResult(
-          isApiError(value)
-            ? {
-                scope,
-                data: null,
-                error: publicErrorMessage(value.error),
-                refused: value.error,
-                loading: false,
-              }
-            : {
-                scope,
-                data: value as T,
-                error: null,
-                refused: null,
-                loading: false,
-              },
-        );
+        if (isApiError(value)) {
+          fail(value.error, publicErrorMessage(value.error));
+        } else {
+          setResult({
+            scope,
+            data: value as T,
+            error: null,
+            refused: null,
+            loading: false,
+          });
+        }
       })
       .catch((error: unknown) => {
         if (id !== reqId.current) return;
-        setResult({
-          scope,
-          data: null,
-          error:
-            error instanceof CommonsError
-              ? error.message
-              : publicErrorMessage("INTERNAL_ERROR"),
-          refused: error instanceof CommonsError ? error.code : null,
-          loading: false,
-        });
+        fail(
+          error instanceof CommonsError ? error.code : null,
+          error instanceof CommonsError
+            ? error.message
+            : publicErrorMessage("INTERNAL_ERROR"),
+        );
       })
       .finally(() => {
         if (id !== reqId.current) return;
@@ -116,7 +132,7 @@ export function useQuery<T>(
       queued.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...deps, enabled, nonce]);
+  }, [...deps, enabled, nonce, retainOnTransportError]);
 
   const current =
     enabled && result && sameScope(result.scope, deps) ? result : null;

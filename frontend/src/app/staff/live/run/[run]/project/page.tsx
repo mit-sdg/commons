@@ -27,6 +27,7 @@ function ProjectorContent() {
   const { data, loading, error, refused, refetch } = useQuery(
     session ? () => api["/live/relays/run"]({ run }).then(unwrap) : null,
     [session, run],
+    { retainOnTransportError: true },
   );
 
   const relayRun = data?.run ?? null;
@@ -57,7 +58,12 @@ function ProjectorContent() {
     return (
       <>
         {notice}
-        <RelayProjector run={relayRun} refetch={refetch} ended={ended} />
+        <RelayProjector
+          run={relayRun}
+          refetch={refetch}
+          ended={ended}
+          error={error}
+        />
       </>
     );
   return (
@@ -75,6 +81,7 @@ function QuizProjector() {
   const { data, loading, error, refetch } = useQuery(
     session ? () => api["/live/runs/results"]({ run }).then(unwrap) : null,
     [session, run],
+    { retainOnTransportError: true },
   );
 
   const board = data?.board ?? null;

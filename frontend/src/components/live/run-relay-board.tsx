@@ -134,11 +134,16 @@ export function RelayRunBoard({
   const openButton = useRef<HTMLButtonElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
 
-  const { data: relayData } = useQuery(
+  const {
+    data: relayData,
+    error: relayError,
+    refetch: refetchRelay,
+  } = useQuery(
     session
       ? () => api["/live/relays/get"]({ relay: run.relay }).then(unwrap)
       : null,
-    [session, run.relay, run],
+    [session, run.relay],
+    { retainOnTransportError: true },
   );
   const relay = relayData?.relay ?? null;
 
@@ -178,6 +183,7 @@ export function RelayRunBoard({
       ? () => api["/live/walls/read"]({ round: shown }).then(unwrap)
       : null,
     [session, shown, openRound],
+    { retainOnTransportError: true },
   );
   const wall = wallData?.wall ?? null;
 
@@ -197,13 +203,29 @@ export function RelayRunBoard({
     shownTake === null || shownTake.use === "parts"
       ? null
       : (run.rounds.find((one) => one.leg === shownTake.source)?.round ?? null);
-  const { data: sourceData } = useQuery(
+  const {
+    data: sourceData,
+    error: sourceError,
+    refetch: refetchSource,
+  } = useQuery(
     session && choiceSource !== null
       ? () => api["/live/walls/read"]({ round: choiceSource }).then(unwrap)
       : null,
     [session, choiceSource],
+    { retainOnTransportError: true },
   );
   const sourceWall: WallShape | null = sourceData?.wall ?? null;
+
+  // Polls and actions refresh these resources without changing their identity.
+  // Keep the source cards mounted while their replacements are being read.
+  const previousRun = useRef(run);
+  useEffect(() => {
+    const previous = previousRun.current;
+    previousRun.current = run;
+    if (previous === run || previous.relay !== run.relay) return;
+    refetchRelay();
+    refetchSource();
+  }, [run, refetchRelay, refetchSource]);
 
   /** A vote round has nothing to sort: every answer is one of the choices. */
   const voting =
@@ -973,6 +995,12 @@ export function RelayRunBoard({
       {error !== null && !adrift ? (
         <p className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2 text-destructive text-sm">
           {error} This wall is stale.
+        </p>
+      ) : null}
+
+      {relayError || sourceError || (shownWall !== null && wallError) ? (
+        <p role="status" className="mb-4 text-muted-foreground text-sm">
+          {relayError ?? sourceError ?? wallError} This wall is stale.
         </p>
       ) : null}
 
