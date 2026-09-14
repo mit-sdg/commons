@@ -13,6 +13,9 @@ import {
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { activeUser } from "../access/session.ts";
 import {
+  anonymousParticipationAllowed,
+  participationAvailable,
+  theParticipationAccess,
   questionBelongsToRun,
   questionIsNotOfRun,
   runHasNoOpenRound,
@@ -57,8 +60,25 @@ const signedResponse = view(
     ),
 ).holds();
 
-const ownsResponse = (signed: boolean, response: symbol, session: symbol) =>
-  signed ? signedResponse({ response, session }) : anonymousResponse({ response });
+const allowedAnonymousResponse = view(
+  "(response) allows anonymous use",
+  ({ response }, _outputs, { subject }) =>
+    where(
+      anonymousResponse({ response }),
+      Responding._response({ response }).is({ subject }),
+      anonymousParticipationAllowed({ subject }),
+    ),
+).holds();
+
+const allowedSignedResponse = view(
+  "(response) allows use by (session)",
+  ({ response, session }, _outputs, { subject }) =>
+    where(
+      signedResponse({ response, session }),
+      Responding._response({ response }).is({ subject }),
+      participationAvailable({ subject }),
+    ),
+).holds();
 
 /**
  * What a participant meets on arrival: the run, whether it is open, and its
@@ -67,8 +87,10 @@ const ownsResponse = (signed: boolean, response: symbol, session: symbol) =>
  */
 export const theParticipantFace = former(
   "the face of (run)",
-  ({ run }, { open, presentation, title, form, questions }) =>
+  ({ run }, { open, presentation, title, form, questions, mode, requireSignIn }) =>
     where(
+      theParticipationAccess({ subject: run }).is({ mode }),
+      compute(computations.liveRequiresSignIn, { mode }, requireSignIn),
       Publishing._edition({ edition: run }).is({ open }),
       RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
       compute(computations.snapshotTitle, { value: presentation }, title),
@@ -80,6 +102,7 @@ export const theParticipantFace = former(
       form,
       open,
       questions,
+      requireSignIn,
     }),
 ).optional();
 
@@ -157,12 +180,15 @@ export const Arrive = endpoint(
     receive({ token })
       .then(Sharing.open({ token }).responds({ subject: run }))
       .then(
-        where(runIsAQuestionnaireRun({ run }))
+        where(runIsAQuestionnaireRun({ run }), participationAvailable({ subject: run }))
           .then(respond({ face: theParticipantFace({ run }) }))
           .named("questionnaire"),
-        where(runIsARelayRun({ run }))
+        where(runIsARelayRun({ run }), participationAvailable({ subject: run }))
           .then(respond({ relay: theRelayFace({ run }) }))
           .named("relay"),
+        where(no(participationAvailable({ subject: run })))
+          .then(respond({ error: "NOT_FOUND" }))
+          .named("unavailable"),
       ),
   { input: { required: ["token"] } },
 );
@@ -195,6 +221,7 @@ export const Begin = endpoint(
           now(at),
           namesNoAccount({ identifier: device }),
           runIsOpen({ run }),
+          anonymousParticipationAllowed({ subject: run }),
           runIsAQuestionnaireRun({ run }),
         )
           .then(Responding.begin({ participant: device, subject: run, at }).responds({ response }))
@@ -204,6 +231,7 @@ export const Begin = endpoint(
           now(at),
           namesNoAccount({ identifier: device }),
           runIsOpen({ run }),
+          anonymousParticipationAllowed({ subject: run }),
           runIsARelayRun({ run }),
           theOpenRoundOf({ run }).is({ round }),
         )
@@ -215,6 +243,7 @@ export const Begin = endpoint(
         where(
           namesNoAccount({ identifier: device }),
           runIsOpen({ run }),
+          anonymousParticipationAllowed({ subject: run }),
           runIsARelayRun({ run }),
           runHasNoOpenRound({ run }),
         )
@@ -223,6 +252,20 @@ export const Begin = endpoint(
         where(runIsOpen({ run }), no(namesNoAccount({ identifier: device })))
           .then(respond({ error: "NOT_FOUND" }))
           .named("named-account"),
+        where(
+          runIsOpen({ run }),
+          namesNoAccount({ identifier: device }),
+          theParticipationAccess({ subject: run }).is({ mode: "signed" }),
+        )
+          .then(respond({ error: "SIGN_IN_REQUIRED" }))
+          .named("sign-in-required"),
+        where(
+          runIsOpen({ run }),
+          namesNoAccount({ identifier: device }),
+          no(participationAvailable({ subject: run })),
+        )
+          .then(respond({ error: "NOT_FOUND" }))
+          .named("unavailable"),
         where(runIsClosed({ run }))
           .then(respond({ error: "CLOSED" }))
           .named("closed"),
@@ -239,6 +282,7 @@ export const BeginSigned = endpoint(
         where(
           now(at),
           runIsOpen({ run }),
+          participationAvailable({ subject: run }),
           runIsAQuestionnaireRun({ run }),
           activeUser({ session }).is({ user }),
         )
@@ -248,6 +292,7 @@ export const BeginSigned = endpoint(
         where(
           now(at),
           runIsOpen({ run }),
+          participationAvailable({ subject: run }),
           runIsARelayRun({ run }),
           theOpenRoundOf({ run }).is({ round }),
           activeUser({ session }).is({ user }),
@@ -255,9 +300,21 @@ export const BeginSigned = endpoint(
           .then(Responding.begin({ participant: user, subject: round, at }).responds({ response }))
           .then(respond({ response, participant: user }))
           .named("round"),
-        where(runIsOpen({ run }), runIsARelayRun({ run }), runHasNoOpenRound({ run }))
+        where(
+          participationAvailable({ subject: run }),
+          runIsOpen({ run }),
+          runIsARelayRun({ run }),
+          runHasNoOpenRound({ run }),
+        )
           .then(respond({ error: "NO_OPEN_ROUND" }))
           .named("no-open-round"),
+        where(
+          runIsOpen({ run }),
+          activeUser({ session }),
+          no(participationAvailable({ subject: run })),
+        )
+          .then(respond({ error: "NOT_FOUND" }))
+          .named("unavailable"),
         where(runIsClosed({ run }))
           .then(respond({ error: "CLOSED" }))
           .named("closed"),
@@ -265,12 +322,14 @@ export const BeginSigned = endpoint(
   { input: { required: ["token", "session"] } },
 );
 
-const answerReaction =
-  (signed: boolean): Parameters<typeof endpoint>[1] =>
-  ({ session, response, question, value, run, answered }) =>
-    receive(signed ? { session, response, question, value } : { response, question, value }).then(
+// Keep refusals beside each endpoint: only an owned response may reveal its
+// access policy. Signed endpoints never expose the anonymous sign-in refusal.
+export const Answer = endpoint(
+  "/live/p/answer",
+  ({ response, question, value, run, answered }) =>
+    receive({ response, question, value }).then(
       where(
-        ownsResponse(signed, response, session),
+        allowedAnonymousResponse({ response }),
         Responding._response({ response }).is({ subject: run }),
         runIsOpen({ run }),
         questionBelongsToRun({ question, run }),
@@ -281,7 +340,7 @@ const answerReaction =
         .then(respond({ response: answered }))
         .named("success"),
       where(
-        ownsResponse(signed, response, session),
+        allowedAnonymousResponse({ response }),
         Responding._response({ response }).is({ subject: run }),
         runIsOpen({ run }),
         questionIsNotOfRun({ question, run }),
@@ -289,31 +348,85 @@ const answerReaction =
         .then(respond({ error: "NOT_PART" }))
         .named("not-part"),
       where(
-        ownsResponse(signed, response, session),
+        allowedAnonymousResponse({ response }),
         Responding._response({ response }).is({ subject: run }),
         runIsClosed({ run }),
       )
         .then(respond({ error: "CLOSED" }))
         .named("closed"),
-      where(no(ownsResponse(signed, response, session)))
+      where(
+        anonymousResponse({ response }),
+        Responding._response({ response }).is({ subject: run }),
+        no(participationAvailable({ subject: run })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("unavailable"),
+      where(
+        anonymousResponse({ response }),
+        Responding._response({ response }).is({ subject: run }),
+        theParticipationAccess({ subject: run }).is({ mode: "signed" }),
+      )
+        .then(respond({ error: "SIGN_IN_REQUIRED" }))
+        .named("sign-in-required"),
+      where(no(anonymousResponse({ response })))
         .then(respond({ error: "NOT_FOUND" }))
         .named("not-owner"),
-    );
+    ),
+  { input: { required: ["response", "question", "value"] } },
+);
 
-export const Answer = endpoint("/live/p/answer", answerReaction(false), {
-  input: { required: ["response", "question", "value"] },
-});
-export const AnswerSigned = endpoint("/live/p/answer-signed", answerReaction(true), {
-  input: { required: ["session", "response", "question", "value"] },
-});
+export const AnswerSigned = endpoint(
+  "/live/p/answer-signed",
+  ({ session, response, question, value, run, answered }) =>
+    receive({ session, response, question, value }).then(
+      where(
+        allowedSignedResponse({ response, session }),
+        Responding._response({ response }).is({ subject: run }),
+        runIsOpen({ run }),
+        questionBelongsToRun({ question, run }),
+      )
+        .then(
+          Responding.answer({ response, item: question, value }).responds({ response: answered }),
+        )
+        .then(respond({ response: answered }))
+        .named("success"),
+      where(
+        allowedSignedResponse({ response, session }),
+        Responding._response({ response }).is({ subject: run }),
+        runIsOpen({ run }),
+        questionIsNotOfRun({ question, run }),
+      )
+        .then(respond({ error: "NOT_PART" }))
+        .named("not-part"),
+      where(
+        allowedSignedResponse({ response, session }),
+        Responding._response({ response }).is({ subject: run }),
+        runIsClosed({ run }),
+      )
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
+      where(
+        signedResponse({ response, session }),
+        Responding._response({ response }).is({ subject: run }),
+        no(participationAvailable({ subject: run })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("unavailable"),
 
-const submitReaction =
-  (signed: boolean): Parameters<typeof endpoint>[1] =>
-  ({ session, response, run, presentation, form, required, at, submitted }) =>
-    receive(signed ? { session, response } : { response }).then(
+      where(no(signedResponse({ response, session })))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("not-owner"),
+    ),
+  { input: { required: ["session", "response", "question", "value"] } },
+);
+
+export const Submit = endpoint(
+  "/live/p/submit",
+  ({ response, run, presentation, form, required, at, submitted }) =>
+    receive({ response }).then(
       where(
         now(at),
-        ownsResponse(signed, response, session),
+        allowedAnonymousResponse({ response }),
         Responding._response({ response }).is({ subject: run }),
         runIsOpen({ run }),
         RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
@@ -326,7 +439,7 @@ const submitReaction =
         .named("survey"),
       where(
         now(at),
-        ownsResponse(signed, response, session),
+        allowedAnonymousResponse({ response }),
         Responding._response({ response }).is({ subject: run }),
         runIsOpen({ run }),
         runIsARound({ run }),
@@ -338,7 +451,7 @@ const submitReaction =
         .named("round-whole"),
       where(
         now(at),
-        ownsResponse(signed, response, session),
+        allowedAnonymousResponse({ response }),
         Responding._response({ response }).is({ subject: run }),
         runIsOpen({ run }),
         RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
@@ -350,99 +463,274 @@ const submitReaction =
         .then(respond({ response: submitted }))
         .named("quiz-whole"),
       where(
-        ownsResponse(signed, response, session),
+        allowedAnonymousResponse({ response }),
         Responding._response({ response }).is({ subject: run }),
         runIsClosed({ run }),
       )
         .then(respond({ error: "CLOSED" }))
         .named("closed"),
-      where(no(ownsResponse(signed, response, session)))
+      where(
+        anonymousResponse({ response }),
+        Responding._response({ response }).is({ subject: run }),
+        no(participationAvailable({ subject: run })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("unavailable"),
+      where(
+        anonymousResponse({ response }),
+        Responding._response({ response }).is({ subject: run }),
+        theParticipationAccess({ subject: run }).is({ mode: "signed" }),
+      )
+        .then(respond({ error: "SIGN_IN_REQUIRED" }))
+        .named("sign-in-required"),
+      where(no(anonymousResponse({ response })))
         .then(respond({ error: "NOT_FOUND" }))
         .named("not-owner"),
-    );
+    ),
+  { input: { required: ["response"] } },
+);
 
-export const Submit = endpoint("/live/p/submit", submitReaction(false), {
-  input: { required: ["response"] },
-});
-export const SubmitSigned = endpoint("/live/p/submit-signed", submitReaction(true), {
-  input: { required: ["session", "response"] },
-});
-
-const outcomeReaction =
-  (signed: boolean): Parameters<typeof endpoint>[1] =>
-  ({ session, response, run }) =>
-    receive(signed ? { session, response } : { response }).then(
+export const SubmitSigned = endpoint(
+  "/live/p/submit-signed",
+  ({ session, response, run, presentation, form, required, at, submitted }) =>
+    receive({ session, response }).then(
       where(
-        ownsResponse(signed, response, session),
+        now(at),
+        allowedSignedResponse({ response, session }),
+        Responding._response({ response }).is({ subject: run }),
+        runIsOpen({ run }),
+        RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
+        compute(computations.snapshotForm, { value: presentation }, form),
+        is.among(form, ["survey"]),
+        no(runIsARound({ run })),
+      )
+        .then(Responding.submit({ response, at }).responds({ response: submitted }))
+        .then(respond({ response: submitted }))
+        .named("survey"),
+      where(
+        now(at),
+        allowedSignedResponse({ response, session }),
+        Responding._response({ response }).is({ subject: run }),
+        runIsOpen({ run }),
+        runIsARound({ run }),
+        RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
+        compute(computations.snapshotRequirements, { value: presentation }, required),
+      )
+        .then(Responding.submit({ response, at, required }).responds({ response: submitted }))
+        .then(respond({ response: submitted }))
+        .named("round-whole"),
+      where(
+        now(at),
+        allowedSignedResponse({ response, session }),
+        Responding._response({ response }).is({ subject: run }),
+        runIsOpen({ run }),
+        RunSnapshotting._snapshot({ subject: run }).is({ value: presentation }),
+        compute(computations.snapshotForm, { value: presentation }, form),
+        is.among(form, ["quiz"]),
+        compute(computations.snapshotRequirements, { value: presentation }, required),
+      )
+        .then(Responding.submit({ response, at, required }).responds({ response: submitted }))
+        .then(respond({ response: submitted }))
+        .named("quiz-whole"),
+      where(
+        allowedSignedResponse({ response, session }),
+        Responding._response({ response }).is({ subject: run }),
+        runIsClosed({ run }),
+      )
+        .then(respond({ error: "CLOSED" }))
+        .named("closed"),
+      where(
+        signedResponse({ response, session }),
+        Responding._response({ response }).is({ subject: run }),
+        no(participationAvailable({ subject: run })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("unavailable"),
+
+      where(no(signedResponse({ response, session })))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("not-owner"),
+    ),
+  { input: { required: ["session", "response"] } },
+);
+
+export const Outcome = endpoint(
+  "/live/p/outcome",
+  ({ response, run }) =>
+    receive({ response }).then(
+      where(
+        allowedAnonymousResponse({ response }),
         Responding._response({ response }).is({ subject: run, submitted: true }),
         no(Scoring._keyFor({ subject: run })),
       )
         .then(respond({ received: true }))
         .named("survey"),
       where(
-        ownsResponse(signed, response, session),
+        allowedAnonymousResponse({ response }),
         Responding._response({ response }).is({ subject: run, submitted: true }),
         Scoring._keyFor({ subject: run }).is({ disclosure: "score" }),
       )
         .then(respond({ received: true, outcome: theScoreOutcome({ response }) }))
         .named("score"),
       where(
-        ownsResponse(signed, response, session),
+        allowedAnonymousResponse({ response }),
         Responding._response({ response }).is({ subject: run, submitted: true }),
         Scoring._keyFor({ subject: run }).is({ disclosure: "answers" }),
       )
         .then(respond({ received: true, outcome: theAnswersOutcome({ response }) }))
         .named("answers"),
       where(
-        ownsResponse(signed, response, session),
+        allowedAnonymousResponse({ response }),
         Responding._response({ response }).is({ subject: run, submitted: true }),
         Scoring._keyFor({ subject: run }).is({ disclosure: "explanations" }),
       )
         .then(respond({ received: true, outcome: theExplanationsOutcome({ response }) }))
         .named("explanations"),
       where(
-        ownsResponse(signed, response, session),
+        allowedAnonymousResponse({ response }),
         Responding._response({ response }).is({ submitted: false }),
       )
         .then(respond({ error: "NOT_SUBMITTED" }))
         .named("in-progress"),
-      where(no(ownsResponse(signed, response, session)))
+      where(
+        anonymousResponse({ response }),
+        Responding._response({ response }).is({ subject: run }),
+        no(participationAvailable({ subject: run })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("unavailable"),
+      where(
+        anonymousResponse({ response }),
+        Responding._response({ response }).is({ subject: run }),
+        theParticipationAccess({ subject: run }).is({ mode: "signed" }),
+      )
+        .then(respond({ error: "SIGN_IN_REQUIRED" }))
+        .named("sign-in-required"),
+      where(no(anonymousResponse({ response })))
         .then(respond({ error: "NOT_FOUND" }))
         .named("not-owner"),
-    );
+    ),
+  { input: { required: ["response"] } },
+);
 
-export const Outcome = endpoint("/live/p/outcome", outcomeReaction(false), {
-  input: { required: ["response"] },
-});
-export const OutcomeSigned = endpoint("/live/p/outcome-signed", outcomeReaction(true), {
-  input: { required: ["session", "response"] },
-});
+export const OutcomeSigned = endpoint(
+  "/live/p/outcome-signed",
+  ({ session, response, run }) =>
+    receive({ session, response }).then(
+      where(
+        allowedSignedResponse({ response, session }),
+        Responding._response({ response }).is({ subject: run, submitted: true }),
+        no(Scoring._keyFor({ subject: run })),
+      )
+        .then(respond({ received: true }))
+        .named("survey"),
+      where(
+        allowedSignedResponse({ response, session }),
+        Responding._response({ response }).is({ subject: run, submitted: true }),
+        Scoring._keyFor({ subject: run }).is({ disclosure: "score" }),
+      )
+        .then(respond({ received: true, outcome: theScoreOutcome({ response }) }))
+        .named("score"),
+      where(
+        allowedSignedResponse({ response, session }),
+        Responding._response({ response }).is({ subject: run, submitted: true }),
+        Scoring._keyFor({ subject: run }).is({ disclosure: "answers" }),
+      )
+        .then(respond({ received: true, outcome: theAnswersOutcome({ response }) }))
+        .named("answers"),
+      where(
+        allowedSignedResponse({ response, session }),
+        Responding._response({ response }).is({ subject: run, submitted: true }),
+        Scoring._keyFor({ subject: run }).is({ disclosure: "explanations" }),
+      )
+        .then(respond({ received: true, outcome: theExplanationsOutcome({ response }) }))
+        .named("explanations"),
+      where(
+        allowedSignedResponse({ response, session }),
+        Responding._response({ response }).is({ submitted: false }),
+      )
+        .then(respond({ error: "NOT_SUBMITTED" }))
+        .named("in-progress"),
+      where(
+        signedResponse({ response, session }),
+        Responding._response({ response }).is({ subject: run }),
+        no(participationAvailable({ subject: run })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("unavailable"),
+
+      where(no(signedResponse({ response, session })))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("not-owner"),
+    ),
+  { input: { required: ["session", "response"] } },
+);
 
 /** Where you landed, shown once you have handed in, with your own cards marked. */
-const wallReaction =
-  (signed: boolean): Parameters<typeof endpoint>[1] =>
-  ({ session, response, round }) =>
-    receive(signed ? { session, response } : { response }).then(
+export const Wall = endpoint(
+  "/live/p/wall",
+  ({ response, round }) =>
+    receive({ response }).then(
       where(
-        ownsResponse(signed, response, session),
+        allowedAnonymousResponse({ response }),
         Responding._response({ response }).is({ subject: round, submitted: true }),
       )
         .then(respond({ wall: theWall({ round, viewer: response }) }))
         .named("submitted"),
       where(
-        ownsResponse(signed, response, session),
+        allowedAnonymousResponse({ response }),
         Responding._response({ response }).is({ submitted: false }),
       )
         .then(respond({ error: "NOT_SUBMITTED" }))
         .named("in-progress"),
-      where(no(ownsResponse(signed, response, session)))
+      where(
+        anonymousResponse({ response }),
+        Responding._response({ response }).is({ subject: round }),
+        no(participationAvailable({ subject: round })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("unavailable"),
+      where(
+        anonymousResponse({ response }),
+        Responding._response({ response }).is({ subject: round }),
+        theParticipationAccess({ subject: round }).is({ mode: "signed" }),
+      )
+        .then(respond({ error: "SIGN_IN_REQUIRED" }))
+        .named("sign-in-required"),
+      where(no(anonymousResponse({ response })))
         .then(respond({ error: "NOT_FOUND" }))
         .named("not-owner"),
-    );
+    ),
+  { input: { required: ["response"] } },
+);
 
-export const Wall = endpoint("/live/p/wall", wallReaction(false), {
-  input: { required: ["response"] },
-});
-export const WallSigned = endpoint("/live/p/wall-signed", wallReaction(true), {
-  input: { required: ["session", "response"] },
-});
+export const WallSigned = endpoint(
+  "/live/p/wall-signed",
+  ({ session, response, round }) =>
+    receive({ session, response }).then(
+      where(
+        allowedSignedResponse({ response, session }),
+        Responding._response({ response }).is({ subject: round, submitted: true }),
+      )
+        .then(respond({ wall: theWall({ round, viewer: response }) }))
+        .named("submitted"),
+      where(
+        allowedSignedResponse({ response, session }),
+        Responding._response({ response }).is({ submitted: false }),
+      )
+        .then(respond({ error: "NOT_SUBMITTED" }))
+        .named("in-progress"),
+      where(
+        signedResponse({ response, session }),
+        Responding._response({ response }).is({ subject: round }),
+        no(participationAvailable({ subject: round })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("unavailable"),
+
+      where(no(signedResponse({ response, session })))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("not-owner"),
+    ),
+  { input: { required: ["session", "response"] } },
+);

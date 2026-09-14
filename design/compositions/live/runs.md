@@ -105,7 +105,20 @@ Seats are for trying a run out, never for its scores, so a figure of the room
 leaves the model's out; where each surface draws that line is the frontend's
 business.
 
+The launch accepts `requireSignIn`, default false. Accessing retains the run's
+complete holder choice after snapshot/key creation and before Sharing issues a
+token. Each new run chooses independently. Staff reads and close remain unchanged.
+
 ```computations
+liveAccessHolders(requireSignIn: Boolean) : Seq
+  Names the live holder selected by the launch toggle, independently of forum audiences.
+
+liveAccessMode(holders: Json, retired: Boolean) : String
+  Missing non-retired access is legacy open; a sole recognized holder is open or signed. All other established or retired states are unavailable.
+
+liveRequiresSignIn(mode: String) : Boolean
+  Says whether an available participation policy requires an account.
+
 snapshotTitle(value: LiveRunSnapshot) : String
   Reads the captured questionnaire title.
 

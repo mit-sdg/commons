@@ -1,3 +1,8 @@
+import {
+  liveAccessHolders,
+  liveAccessMode,
+  liveRequiresSignIn,
+} from "./computations/live-access.ts";
 import { submissionAllowed } from "./computations/assessment-eligibility.ts";
 import { ownsTaskScope } from "./computations/task-scopes.ts";
 import { validPostControlSelection } from "./computations/post-controls.ts";
@@ -310,6 +315,9 @@ const registrations = {
 };
 
 export const learningConcepts = conceptSet(registrations, {
+  liveAccessHolders,
+  liveAccessMode,
+  liveRequiresSignIn,
   submissionAllowed,
   validPostControlSelection,
   validProfileSelection,

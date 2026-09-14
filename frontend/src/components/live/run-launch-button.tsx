@@ -4,6 +4,7 @@ import { Radio } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type ComponentProps, useId, useState } from "react";
 import { toast } from "sonner";
+import { LaunchOptions } from "@/components/live/launch-options";
 import { Button } from "@/components/ui/button";
 import { api, isApiError, publicErrorMessage } from "@/lib/api";
 
@@ -42,9 +43,12 @@ export function RunLaunchButton({
   const hintId = useId();
   const said = disabled && hint !== undefined;
 
-  async function launch() {
+  async function launch(requireSignIn: boolean) {
     setBusy(true);
-    const result = await api["/live/runs/launch"]({ questionnaire });
+    const result = await api["/live/runs/launch"]({
+      questionnaire,
+      requireSignIn,
+    });
     if (isApiError(result)) {
       setBusy(false);
       toast.error(
@@ -63,25 +67,28 @@ export function RunLaunchButton({
   // launch that is refused hands the focus back to the button that asked.
   return (
     <span className="inline-flex">
-      <Button
-        size={size}
-        variant={disabled ? "outline" : variant}
-        className={
-          disabled
-            ? "cursor-default text-muted-foreground hover:bg-background hover:text-muted-foreground dark:hover:bg-input/30"
-            : undefined
+      <LaunchOptions
+        busy={busy}
+        disabled={disabled}
+        onLaunch={launch}
+        trigger={
+          <Button
+            size={size}
+            variant={disabled ? "outline" : variant}
+            className={
+              disabled
+                ? "cursor-default text-muted-foreground hover:bg-background hover:text-muted-foreground dark:hover:bg-input/30"
+                : undefined
+            }
+            aria-disabled={disabled || busy || undefined}
+            aria-label={name}
+            title={disabled ? hint : undefined}
+            aria-describedby={said ? hintId : undefined}
+          >
+            <Radio /> {busy ? "Launching…" : label}
+          </Button>
         }
-        aria-disabled={disabled || busy || undefined}
-        aria-label={name}
-        title={disabled ? hint : undefined}
-        aria-describedby={said ? hintId : undefined}
-        onClick={() => {
-          if (disabled || busy) return;
-          void launch();
-        }}
-      >
-        <Radio /> {busy ? "Launching…" : label}
-      </Button>
+      />
       {said ? (
         <span id={hintId} className="sr-only">
           {hint}

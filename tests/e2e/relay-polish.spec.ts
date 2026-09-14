@@ -365,6 +365,7 @@ test("bounded preview picks, carry rendering, guides, and viewport reachability"
   ).toBeVisible();
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Launch", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Launch", exact: true }).click();
   await page.waitForURL("**/staff/live/run/**");
   await page.getByRole("button", { name: "Relay guide: Session host guide", exact: true }).click();
   await expect(
