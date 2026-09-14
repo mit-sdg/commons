@@ -86,6 +86,10 @@ for (const audience of ["private", "everyone"] as const) {
       const mail = (await floor.Mailing._getPending({})).find((m) => m.key.includes(leaf.post));
       expect(mail).toBeDefined();
       expect(await forumMailEligibility(edge.application)(mail!)).toBe(true);
+      if (capability === "administer")
+        expect(await ok("/notices/preview", { post: root.post }, moderator)).toMatchObject({
+          notified: false,
+        });
 
       // Delete remains author-only and leaf-only, even for a moderator's own reply.
       const conflict = { status: 409, body: { error: "CONFLICT" } };
@@ -129,6 +133,11 @@ for (const audience of ["private", "everyone"] as const) {
       ).toEqual([root.post, middle.post, leaf.post]);
 
       async function assertHidden() {
+        expect(await call("/notices/preview", { post: root.post }, moderator)).toEqual(missing);
+        expect(await call("/notices/notify", { post: leaf.post }, moderator)).toEqual(missing);
+        expect(
+          await call("/notices/forConversation", { conversation: root.conversation }, moderator),
+        ).toEqual(missing);
         for (const actor of [author, reader, moderator]) {
           expect(await call("/threads/get", { conversation: root.conversation }, actor)).toEqual(
             missing,

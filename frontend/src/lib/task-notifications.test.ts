@@ -53,6 +53,8 @@ function enrichedTaskRow(
     read: false,
     list: "list-xyz",
     listTitle: "Kitchen crew",
+    actor: null,
+    actorLabel: null,
     task: {
       title: "Wash the pans",
       details: "Before close",
@@ -143,20 +145,26 @@ describe("task notification presentation", () => {
     ).toBe(false);
   });
 
-  test("a task row links to the list identity it carries", () => {
+  test("a task row links to its own task inside the list it carries", () => {
     expect(taskRowListId(enrichedTaskRow())).toBe("list-xyz");
-    expect(taskRowHref(enrichedTaskRow())).toBe("/groups/list-xyz?view=tasks");
+    expect(taskRowHref(enrichedTaskRow())).toBe(
+      "/groups/list-xyz?view=tasks&task=task-abc",
+    );
+    expect(
+      taskRowHref(enrichedTaskRow({ list: "list/one", link: "task#two" })),
+    ).toBe("/groups/list%2Fone?view=tasks&task=task%23two");
   });
 
-  test("a membership row links to the list it is about", () => {
+  test("a membership gain links to the group, and a removal avoids its unavailable roster", () => {
     const row = enrichedTaskRow({
-      kind: "task-list-removed",
+      kind: "task-list-added",
       subject: "list-gone",
       link: "list-gone",
       list: null,
       listTitle: "Old crew",
     });
     expect(taskRowHref(row)).toBe("/groups/list-gone?view=members");
+    expect(taskRowHref({ ...row, kind: "task-list-removed" })).toBe("/groups");
   });
 
   test("a withheld task row links nowhere rather than to its task id", () => {
@@ -165,9 +173,9 @@ describe("task notification presentation", () => {
     expect(taskRowHref(row)).toBeNull();
   });
 
-  test("a membership row about a list the reader left keeps its link", () => {
+  test("an old membership gain about a group the reader left links nowhere", () => {
     const row = withheldTaskRow({ kind: "task-list-added", link: "list-xyz" });
-    expect(taskRowHref(row)).toBe("/groups/list-xyz?view=members");
+    expect(taskRowHref(row)).toBeNull();
   });
 });
 
@@ -399,23 +407,36 @@ describe("the one dim line under a row", () => {
     expect(detail?.due).not.toBeNull();
   });
 
-  test("a membership row names only its list", () => {
-    const detail = taskRowDetail(
-      enrichedTaskRow({
-        kind: "task-list-added",
-        list: null,
-        listTitle: "Kitchen crew",
-        task: {
-          title: null,
-          details: null,
-          startsAt: null,
-          endsAt: null,
-          state: null,
-          assignee: null,
-        },
-      }),
-    );
-    expect(detail).toEqual({ title: null, list: "Kitchen crew", due: null });
+  test("a membership row names its list and who changed it", () => {
+    const membership = {
+      kind: "task-list-added",
+      list: null,
+      listTitle: "Kitchen crew",
+      task: {
+        title: null,
+        details: null,
+        startsAt: null,
+        endsAt: null,
+        state: null,
+        assignee: null,
+      },
+    };
+    expect(
+      taskRowDetail(
+        enrichedTaskRow({ ...membership, actorLabel: "Mara Vex (@mara)" }),
+      ),
+    ).toEqual({
+      title: null,
+      list: "Kitchen crew",
+      due: null,
+      by: "Mara Vex (@mara)",
+    });
+  });
+
+  test("a row whose notification recorded no actor names none", () => {
+    for (const actorLabel of [null, ""]) {
+      expect(taskRowDetail(enrichedTaskRow({ actorLabel }))?.by).toBeNull();
+    }
   });
 
   test("a withheld row has no line, so the row can say so itself", () => {

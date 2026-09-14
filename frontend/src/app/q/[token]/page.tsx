@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, CircleSlash } from "lucide-react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   Suspense,
   useCallback,
@@ -44,6 +44,7 @@ import {
   publicErrorMessage,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { signInHref } from "@/lib/sign-in-return";
 import { cn } from "@/lib/utils";
 
 type Arrival = Output<"/live/p/arrive">;
@@ -115,9 +116,9 @@ function outOfReach(result: unknown): boolean {
  */
 type Landing = "saved" | "refused" | "unreachable" | "unsigned";
 
-/** A signed call refused for its sign-in, which is the phone's to renew. */
-function unsigned(signed: boolean, result: unknown): boolean {
-  return signed && isApiError(result) && result.error === "UNAUTHORIZED";
+/** The HTTP boundary uses the same category for required and expired sign-in. */
+function unsigned(result: unknown): boolean {
+  return isApiError(result) && result.error === "UNAUTHORIZED";
 }
 
 /** What a phone says when begin is refused with a word other than handed in. */
@@ -211,7 +212,7 @@ function useAnswerSender(response: string | null, signed: boolean) {
             sent.current[question] = value;
             return "saved";
           }
-          if (unsigned(signed, result)) return "unsigned";
+          if (unsigned(result)) return "unsigned";
           return outOfReach(result) ? "unreachable" : "refused";
         } catch {
           return "unreachable";
@@ -266,6 +267,7 @@ export default function ParticipantPage() {
 }
 
 function ParticipantContent() {
+  const router = useRouter();
   const { token } = useParams<{ token: string }>();
   const arrivedBy = useArrivedBy(token);
   const { me, loading: authLoading, logout } = useAuth();
@@ -294,7 +296,20 @@ function ParticipantContent() {
   // sign-in still stands and says so if it does not. The identity it holds
   // stays, so nothing falls back to an anonymous phone in the meantime; what
   // was typed stays on the screen, and what was handed in belongs to the run.
+  const signIn = useCallback(() => {
+    router.replace(
+      signInHref(
+        window.location.pathname +
+          window.location.search +
+          window.location.hash,
+      ),
+    );
+  }, [router]);
   const onEnded = useCallback(async () => {
+    if (me === null) {
+      signIn();
+      return;
+    }
     try {
       const probe = await api.auth.me();
       if (!("error" in probe)) return;
@@ -302,7 +317,7 @@ function ParticipantContent() {
       return;
     }
     setEnded(true);
-  }, []);
+  }, [me, signIn]);
   const notice = ended ? (
     <SignInEnded next={`/q/${token}`} className="mb-4" />
   ) : null;
@@ -314,6 +329,19 @@ function ParticipantContent() {
     (signedParticipant === null
       ? participant.startsWith("device:")
       : participant === `user:${signedParticipant}`);
+
+  const requireSignIn = (face ?? relay)?.requireSignIn;
+  const needsSignIn = requireSignIn === true && !authLoading && me === null;
+  const participationReady =
+    progressBelongsToViewer &&
+    progressReady &&
+    requireSignIn !== undefined &&
+    !needsSignIn &&
+    !ended;
+
+  useEffect(() => {
+    if (needsSignIn) signIn();
+  }, [needsSignIn, signIn]);
 
   // A shared browser can pass from one signed-in participant to another. Wait
   // for auth before restoring, and keep each account (or anonymous device) in
@@ -397,7 +425,7 @@ function ParticipantContent() {
 
   // After hand-in, poll the outcome until the grade lands (surveys answer at once).
   useEffect(() => {
-    if (!submitted || response === null) return;
+    if (!participationReady || !submitted || response === null) return;
     let cancelled = false;
     // The handle exists before the first poll runs, so neither the poll nor the
     // cleanup closes over a binding that does not exist yet.
@@ -417,7 +445,7 @@ function ParticipantContent() {
           return;
         }
         if (isApiError(result)) {
-          if (unsigned(me !== null, result)) {
+          if (unsigned(result)) {
             stop();
             void onEnded();
             return;
@@ -443,10 +471,10 @@ function ParticipantContent() {
     void poll();
     handle.timer = setInterval(() => void poll(), OUTCOME_POLL_MS);
     return stop;
-  }, [submitted, response, outcomeRetry, me, onEnded]);
+  }, [participationReady, submitted, response, outcomeRetry, me, onEnded]);
 
   const begin = useCallback(async () => {
-    if (participant === null) return;
+    if (!participationReady || participant === null) return;
     setBusy(true);
     try {
       const result = me
@@ -458,7 +486,7 @@ function ParticipantContent() {
         return;
       }
       if (isApiError(result)) {
-        if (unsigned(me !== null, result)) {
+        if (unsigned(result)) {
           void onEnded();
           return;
         }
@@ -483,14 +511,15 @@ function ParticipantContent() {
     } finally {
       setBusy(false);
     }
-  }, [me, token, participant, answers, loadFace, onEnded]);
+  }, [participationReady, me, token, participant, answers, loadFace, onEnded]);
 
   // Typing counts at once — the hand-in button must not stay dead under a
   // finger while a written answer sits uncommitted — but the network only
   // hears committed values: blur, or the hand-in flush.
   const draftAnswer = useCallback(
     (question: string, value: string) => {
-      if (response === null || participant === null) return;
+      if (!participationReady || response === null || participant === null)
+        return;
       const next = { ...answers, [question]: value };
       setAnswers(next);
       writeProgress(token, participant, {
@@ -499,12 +528,13 @@ function ParticipantContent() {
         submitted: false,
       });
     },
-    [response, participant, answers, token],
+    [participationReady, response, participant, answers, token],
   );
 
   const answer = useCallback(
     (question: string, value: string) => {
-      if (response === null || participant === null) return;
+      if (!participationReady || response === null || participant === null)
+        return;
       const held = answers[question] ?? "";
       const next = { ...answers, [question]: value };
       setAnswers(next);
@@ -538,12 +568,21 @@ function ParticipantContent() {
         toast.error("That answer didn't save. Try again.");
       });
     },
-    [response, participant, answers, token, persistAnswer, onEnded],
+    [
+      participationReady,
+      response,
+      participant,
+      answers,
+      token,
+      persistAnswer,
+      onEnded,
+    ],
   );
 
   const rememberSubmitted = useCallback(
     (received?: Outcome) => {
-      if (response === null || participant === null) return;
+      if (!participationReady || response === null || participant === null)
+        return;
       submissionUncertain.current = false;
       setSubmitted(true);
       setJustHandedIn(true);
@@ -557,13 +596,13 @@ function ParticipantContent() {
         submitted: true,
       });
     },
-    [response, participant, token, answers],
+    [participationReady, response, participant, token, answers],
   );
 
   // A hand-in may commit even when its HTTP response is lost. Outcome is the
   // authoritative receipt, so it also reconciles an uncertain retry or reload.
   const recoverSubmission = useCallback(async (): Promise<boolean> => {
-    if (response === null) return false;
+    if (!participationReady || response === null) return false;
     try {
       const result = me
         ? await api["/live/p/outcome-signed"]({ response })
@@ -574,11 +613,11 @@ function ParticipantContent() {
     } catch {
       return false;
     }
-  }, [response, rememberSubmitted, me]);
+  }, [participationReady, response, rememberSubmitted, me]);
 
   useEffect(() => {
     if (
-      !progressReady ||
+      !participationReady ||
       submitted ||
       response === null ||
       reconciledResponse.current === response
@@ -586,10 +625,11 @@ function ParticipantContent() {
       return;
     reconciledResponse.current = response;
     void recoverSubmission();
-  }, [progressReady, submitted, response, recoverSubmission]);
+  }, [participationReady, submitted, response, recoverSubmission]);
 
   const submit = useCallback(async () => {
-    if (response === null || participant === null) return;
+    if (!participationReady || response === null || participant === null)
+      return;
     setBusy(true);
     try {
       if (submissionUncertain.current && (await recoverSubmission())) return;
@@ -622,7 +662,7 @@ function ParticipantContent() {
         setFaceError(ANSWERS_KEPT);
         return;
       }
-      if (unsigned(me !== null, result)) {
+      if (unsigned(result)) {
         void onEnded();
         return;
       }
@@ -642,6 +682,7 @@ function ParticipantContent() {
       setBusy(false);
     }
   }, [
+    participationReady,
     response,
     participant,
     answers,
@@ -675,8 +716,20 @@ function ParticipantContent() {
     );
   }
 
+  if (needsSignIn || authLoading) {
+    return (
+      <Shell>
+        <LoadingState
+          label={
+            needsSignIn ? "Redirecting to sign in…" : "Checking your session…"
+          }
+        />
+      </Shell>
+    );
+  }
+
   if (relay !== null) {
-    if (!progressReady || participant === null) {
+    if (!progressReady || !progressBelongsToViewer || participant === null) {
       return (
         <Shell>
           <LoadingState label="Opening…" />
@@ -1020,7 +1073,7 @@ function RelayPhone({
         onReach(true);
         if (isApiError(result)) {
           settled = true;
-          if (unsigned(signedIn, result)) {
+          if (unsigned(result)) {
             void onEnded();
             return;
           }
@@ -1122,7 +1175,7 @@ function RelayPhone({
           ? await api["/live/p/wall-signed"]({ response })
           : await api["/live/p/wall"]({ response });
         if (cancelled) return;
-        if (unsigned(signedIn, result)) {
+        if (unsigned(result)) {
           stop();
           void onEnded();
           return;
@@ -1226,7 +1279,7 @@ function RelayPhone({
         const standing = signedIn
           ? await api["/live/p/wall-signed"]({ response })
           : await api["/live/p/wall"]({ response });
-        if (unsigned(signedIn, standing)) {
+        if (unsigned(standing)) {
           void onEnded();
           return;
         }
@@ -1295,7 +1348,7 @@ function RelayPhone({
       const result = signedIn
         ? await api["/live/p/submit-signed"]({ response })
         : await api["/live/p/submit"]({ response });
-      if (unsigned(signedIn, result)) {
+      if (unsigned(result)) {
         void onEnded();
         return;
       }
@@ -1362,7 +1415,7 @@ function RelayPhone({
           ? await api["/live/p/wall-signed"]({ response })
           : await api["/live/p/wall"]({ response });
         if (cancelled) return;
-        if (unsigned(signedIn, standing)) {
+        if (unsigned(standing)) {
           void onEnded();
           return;
         }

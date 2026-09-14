@@ -228,6 +228,7 @@ export function shortId(id: string): string {
 }
 
 export {
+  bodyAfterTitle,
   bodyExcerpt,
   excerpt,
   titleFromContent,

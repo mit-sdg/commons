@@ -7,6 +7,7 @@ interface NotificationDoc {
   kind: string;
   subject: string;
   link: string | null;
+  actor: string | null;
   createdAt: Date;
   read: boolean;
   seq: number;
@@ -36,12 +37,14 @@ export class MongoNotifyingConcept {
     kind,
     subject,
     link,
+    actor,
     at,
   }: {
     recipient: string;
     kind: string;
     subject: string;
     link: string | null;
+    actor: string | null;
     at: Date;
   }) {
     const notification = crypto.randomUUID();
@@ -52,6 +55,7 @@ export class MongoNotifyingConcept {
       kind,
       subject,
       link,
+      actor,
       createdAt: at,
       read: false,
       seq,
@@ -99,6 +103,7 @@ export class MongoNotifyingConcept {
       kind: doc.kind,
       subject: doc.subject,
       link: doc.link,
+      actor: doc.actor,
       createdAt: doc.createdAt,
       read: doc.read,
     }));

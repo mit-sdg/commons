@@ -1,6 +1,12 @@
+import {
+  liveAccessHolders,
+  liveAccessMode,
+  liveRequiresSignIn,
+} from "./computations/live-access.ts";
 import { submissionAllowed } from "./computations/assessment-eligibility.ts";
 import { ownsTaskScope } from "./computations/task-scopes.ts";
 import { validPostControlSelection } from "./computations/post-controls.ts";
+import { noticeRecord } from "./computations/forum-notices.ts";
 import {
   validFeedOrder,
   validThreadSelection,
@@ -234,8 +240,14 @@ import {
   forumNotificationUrl,
   assignmentNotificationUrl,
   notificationMailSubject,
-  notificationMailHtml,
-  notificationMailText,
+  notificationAuthorLabel,
+  notificationActorLabel,
+  forumNotificationMailBody,
+  forumNotificationMailHtml,
+  forumNotificationMailText,
+  dueWallTime,
+  assignmentNotificationMailHtml,
+  assignmentNotificationMailText,
   taskListMailHtml,
   taskListMailSubject,
   taskListMailText,
@@ -270,6 +282,7 @@ const registrations = {
   Locking: locking,
   Locating: locating,
   Mailing: mailing,
+  NoticeSnapshotting: snapshotting,
   Notifying: notifying,
   Noting: noting,
   PasswordResetVouching: vouching,
@@ -302,6 +315,9 @@ const registrations = {
 };
 
 export const learningConcepts = conceptSet(registrations, {
+  liveAccessHolders,
+  liveAccessMode,
+  liveRequiresSignIn,
   submissionAllowed,
   validPostControlSelection,
   validProfileSelection,
@@ -419,8 +435,15 @@ export const learningConcepts = conceptSet(registrations, {
   forumNotificationUrl,
   assignmentNotificationUrl,
   notificationMailSubject,
-  notificationMailHtml,
-  notificationMailText,
+  notificationAuthorLabel,
+  notificationActorLabel,
+  forumNotificationMailBody,
+  forumNotificationMailHtml,
+  forumNotificationMailText,
+  dueWallTime,
+  assignmentNotificationMailHtml,
+  assignmentNotificationMailText,
+  noticeRecord,
   passwordResetCooldownStart,
   passwordResetExpiry,
   passwordResetMailHtml,

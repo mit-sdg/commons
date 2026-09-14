@@ -75,14 +75,38 @@ missed one.
 follows every successful TaskNotifying action, from either raise site. It looks
 up the recipient's account email, resolves the subject, and queues one Mailing
 message keyed by that notification. A membership message names the list. A task
-message says which change occurred and names the task title, the holding list's
-title, and the current deadline as text, so it reads on its own after the task
-it points at is gone.
+message says which change occurred, names the task title, the holding list's
+title, and the current deadline read as the configured course's wall time with
+its zone named, and carries the task's own written details when it has any, so it
+reads on its own after the task it points at is gone. HTML mail uses the shared
+text-first layout and safely renders those details as Markdown, with literal authored
+HTML, safe absolute links, and no remote image loads. A task that was written
+with no details mails no empty detail block, and a deadline that does not read as
+a moment is named not at all rather than named wrongly.
+
+A membership message also names the member who made the change, because a group
+cannot say who changed your membership of it. The acting member travels on the
+Grouping action that raises the notification, so it is recorded on the
+notification itself and the inbox entry carries the same label its email names.
+
+A task message names no actor. The acting identity there is resolved from the
+session, and a value read from state cannot be carried past the first step of a
+consequence chain, so recording it would mean making the actor part of a Tasking
+action — and Tasking's purpose is to name who is _answerable_ for work, not who
+last touched it. That gap is recorded rather than forced.
+
+What mail carries of the task's details is bounded, by the same bound the forum
+applies to a post's content. Past it mail carries as much as it can, cut at a
+word, and says plainly that the rest is in Commons rather than dropping it
+silently.
 
 A task message is rendered only for a recipient who is a current member of the
 list holding that task, read when the message is rendered. A membership message
-takes no such test: a `task-list-removed` recipient is a non-member by
-construction, and naming the list is the point of it.
+is still rendered for a non-member: naming the group is the point of a removal.
+Its destination follows current membership when queued: members open that group's
+members view, while non-members open the groups index instead of an inaccessible
+roster. Task messages select the specific task in the group's task view, including
+completed and canceled tasks, rather than sending the recipient to the task index.
 
 A notification identity is unique across both instances, so under Mailing's
 one-key-one-message rule a notification never produces two emails and neither
@@ -137,6 +161,13 @@ account's identifier is refused as missing.
 There is no `/tasknotifications/list` beside the inbox: the task inbox already
 answers every row and withholds presentation where policy requires, so an
 unenriched list would carry no behavior of its own.
+
+The web rows put the task or group title first, followed by the event and the
+remaining group, deadline, and actor facts without repeating the title. Withheld
+rows keep their event and unavailable explanation rather than inventing a title.
+Task links open, highlight, and expand the selected task after the group's data
+loads; a deleted target has an explicit unavailable note. Membership removals link
+to groups, and withheld membership gains no longer link to an inaccessible roster.
 
 The web notifications page and bell read both instances, merging the two lists
 by creation time, summing the two unread counts into one badge, and issuing both

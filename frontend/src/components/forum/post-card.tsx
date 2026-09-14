@@ -10,12 +10,14 @@ import {
   XCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Fact } from "@/components/facts";
 import { BookmarkButton } from "@/components/forum/bookmark-button";
 import { Composer } from "@/components/forum/composer";
 import { FlagDialog } from "@/components/forum/flag-dialog";
+import { NoticeControl } from "@/components/forum/notice-control";
+import { NoticeDialog } from "@/components/forum/notice-dialog";
 import { PinControl } from "@/components/forum/pin-control";
 import { usePostControls } from "@/components/forum/post-controls-provider";
 import { PostLinks } from "@/components/forum/post-links";
@@ -39,6 +41,7 @@ import { UserName } from "@/components/user-name";
 import { UserRole } from "@/components/user-role";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { hasDraft, replyScope } from "@/lib/drafts";
 import type { ThreadNode } from "@/lib/models";
 import { cn } from "@/lib/utils";
 
@@ -53,7 +56,12 @@ interface PostCardProps {
   /** Collect a snapshot only when the moderator opens the confirmation. */
   getDescendants?: () => string[];
   isUnread?: boolean;
+  /** Whether this post has already notified its audience, as staff see it. */
+  notified?: boolean;
+  onNotified?: () => void;
   onChanged: () => void;
+  /** Lets the thread reveal replies it is collapsing before one is added. */
+  onReplied?: () => void;
 }
 
 export function PostCard({
@@ -66,19 +74,25 @@ export function PostCard({
   scope,
   getDescendants,
   isUnread = false,
+  notified = false,
+  onNotified,
   onChanged,
+  onReplied,
 }: PostCardProps) {
   const { session, me, permissions } = useAuth();
   const router = useRouter();
   const [trashTarget, setTrashTarget] = useState<TrashTarget | null>(null);
   const [editing, setEditing] = useState(false);
   const [replying, setReplying] = useState(false);
+  const [resumedReply, setResumedReply] = useState(false);
   const [flagOpen, setFlagOpen] = useState(false);
+  const [pendingNotice, setPendingNotice] = useState<string | null>(null);
 
   const postId = String(node.item);
   const nodeId = String(node.node);
   const author = String(node.post.author);
   const myId = me ? String(me.user) : null;
+  const replyDraft = replyScope(scope, nodeId);
   const controls = usePostControls(postId);
   const sharedControls = controls?.data
     ? { data: controls.data, refetch: controls.refetch }
@@ -89,6 +103,17 @@ export function PostCard({
   const canAcceptAnswers = !!myId && myId === rootAuthorId && !isRoot;
   const isAccepted = acceptedAnswer === postId;
   const edited = !!node.post.editedAt;
+
+  // A reply left unfinished on this post opens itself again, so returning to
+  // the discussion returns to the writing. It does not take the caret with it:
+  // the reader came back to the discussion, not to this box.
+  useEffect(() => {
+    if (myId === null || locked || !hasDraft(myId, replyDraft)) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- an unfinished reply opens once its author is known */
+    setReplying(true);
+    setResumedReply(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [locked, myId, replyDraft]);
 
   const highlightUnread = isUnread && !isAccepted;
 
@@ -103,7 +128,7 @@ export function PostCard({
     }
   }
 
-  async function submitReply(content: string) {
+  async function submitReply(content: string, notify = false) {
     if (!session) return;
     const result = await api.threads.reply({
       parent: nodeId,
@@ -116,7 +141,9 @@ export function PostCard({
     } else {
       toast.success("Reply posted");
       setReplying(false);
+      onReplied?.();
       onChanged();
+      if (notify) setPendingNotice(String(result.post));
     }
   }
 
@@ -227,12 +254,17 @@ export function PostCard({
               ) : null}
             </div>
           )}
-          <div className="flex items-center gap-0.5">
+          {/* Wrapping rather than overflowing: a deeply nested reply on a
+              phone has less room than even the shortened actions need. */}
+          <div className="flex flex-wrap items-center justify-end gap-x-0.5 gap-y-1">
             {canAcceptAnswers ? (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={toggleAccepted}
+                aria-label={
+                  isAccepted ? "Unmark as the answer" : "Mark as the answer"
+                }
                 className={cn(
                   "gap-1.5",
                   isAccepted
@@ -245,7 +277,9 @@ export function PostCard({
                 ) : (
                   <CheckCircle2 className="size-4" />
                 )}
-                {isAccepted ? "Unmark" : "Accept"}
+                <span className="hidden sm:inline">
+                  {isAccepted ? "Unmark" : "Accept"}
+                </span>
               </Button>
             ) : null}
             {controlsReady ? (
@@ -259,11 +293,19 @@ export function PostCard({
                 controls={sharedControls}
               />
             ) : null}
+            <NoticeControl
+              post={postId}
+              notified={notified}
+              onNotified={onNotified}
+            />
             {session && !locked ? (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setReplying((v) => !v)}
+                onClick={() => {
+                  setResumedReply(false);
+                  setReplying((v) => !v);
+                }}
                 className="gap-1.5 text-muted-foreground"
               >
                 <CornerUpLeft className="size-4" />
@@ -334,8 +376,15 @@ export function PostCard({
             placeholder="Write a reply…"
             submitLabel="Post reply"
             minRows={4}
-            autoFocus
+            autoFocus={!resumedReply}
+            draft={replyDraft}
             onSubmit={submitReply}
+            altSubmitLabel={permissions.isStaff ? "Post and notify" : undefined}
+            onAltSubmit={
+              permissions.isStaff
+                ? (content) => submitReply(content, true)
+                : undefined
+            }
             onCancel={() => setReplying(false)}
           />
         </div>
@@ -352,6 +401,16 @@ export function PostCard({
         />
       ) : null}
       <FlagDialog target={postId} open={flagOpen} onOpenChange={setFlagOpen} />
+      {pendingNotice ? (
+        <NoticeDialog
+          post={pendingNotice}
+          open
+          onOpenChange={(next) => {
+            if (!next) setPendingNotice(null);
+          }}
+          onNotified={onNotified}
+        />
+      ) : null}
     </article>
   );
 }

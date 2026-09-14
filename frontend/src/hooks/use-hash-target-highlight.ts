@@ -32,6 +32,7 @@ export function useHashTargetHighlight({
   highlightDurationMs = 2400,
   behavior = "smooth",
   block = "center",
+  onTarget,
 }: {
   enabled?: boolean;
   deps?: ReadonlyArray<unknown>;
@@ -39,10 +40,20 @@ export function useHashTargetHighlight({
   highlightDurationMs?: number;
   behavior?: ScrollBehavior;
   block?: ScrollLogicalPosition;
+  /**
+   * Asks the page to reveal a target it may be hiding, before the scroll. The
+   * retries below give the reveal a render to take effect.
+   */
+  onTarget?: (targetId: string) => void;
 } = {}) {
   const highlightedElement = useRef<HTMLElement | null>(null);
   const clearHighlightTimer = useRef<number | null>(null);
+  const revealTarget = useRef(onTarget);
   const dependencyKey = deps.map((dep) => String(dep)).join("\u0000");
+
+  useEffect(() => {
+    revealTarget.current = onTarget;
+  }, [onTarget]);
 
   useEffect(() => {
     void dependencyKey;
@@ -68,8 +79,12 @@ export function useHashTargetHighlight({
       const targetId = explicitTargetId ?? targetIdFromHash();
       if (!targetId) return true;
 
+      revealTarget.current?.(targetId);
+
       const target = document.getElementById(targetId);
-      if (!target) return false;
+      // A target still hidden — inside a collapsed branch that has yet to
+      // re-render — has no box to scroll to, so wait for the next attempt.
+      if (!target || target.getClientRects().length === 0) return false;
 
       clearCurrentHighlight();
       target.scrollIntoView({ behavior, block, inline: "nearest" });

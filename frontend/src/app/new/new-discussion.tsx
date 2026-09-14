@@ -1,13 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   AudienceChips,
   AudiencePicker,
 } from "@/components/forum/audience-picker";
 import { Composer } from "@/components/forum/composer";
+import { NoticeDialog } from "@/components/forum/notice-dialog";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireAuth } from "@/components/require-auth";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,13 @@ import { Label } from "@/components/ui/label";
 import { useQuery } from "@/hooks/use-query";
 import { api, CommonsError, publicErrorMessage, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import {
+  clearDraft,
+  DRAFT_SAVE_DELAY_MS,
+  newDiscussionScope,
+  readDraft,
+  saveDraft,
+} from "@/lib/drafts";
 
 function NewDiscussionForm({
   initialAudience,
@@ -25,10 +33,26 @@ function NewDiscussionForm({
 }) {
   const router = useRouter();
   const [posting, setPosting] = useState(false);
-  const { session } = useAuth();
+  const { session, me, permissions } = useAuth();
+  // "Post and notify" confirms on the opening post it just created, then goes
+  // to the discussion either way: the post stands whether or not it notified.
+  const [pendingNotice, setPendingNotice] = useState<{
+    post: string;
+    conversation: string;
+  } | null>(null);
   const [title, setTitle] = useState("");
   const [chosen, setSelected] = useState<string[]>([initialAudience]);
   const selected = fromGroup ? [`group:${fromGroup}`] : chosen;
+  const author = me ? String(me.user) : null;
+  // The composer keeps the opening post; this page keeps the title and the
+  // audience beside it, so one unfinished discussion resumes whole.
+  const scope = newDiscussionScope(
+    fromGroup ? `group:${fromGroup}` : initialAudience,
+  );
+  const [resumed, setResumed] = useState(false);
+  const touched = useRef(false);
+  const posted = useRef(false);
+  const keptOnce = useRef(false);
   const options = useQuery(
     async () => unwrap(await api.audiences.options({})),
     [],
@@ -39,6 +63,56 @@ function NewDiscussionForm({
       : null,
     [selected.join("\u0000")],
   );
+
+  // An unfinished discussion returns once its author and the audiences they
+  // may still address are known: an audience since lost is dropped rather than
+  // refused at post time. Writing already entered here is never overwritten.
+  const audiences = options.data?.holders;
+  const audiencesRefused = options.error;
+  useEffect(() => {
+    if (resumed || author === null) return;
+    if (!audiences && !audiencesRefused) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- an unfinished discussion returns once its author is known */
+    setResumed(true);
+    if (touched.current) return;
+    const kept = readDraft(author, scope);
+    if (kept === null) return;
+    if (kept.title) setTitle(kept.title);
+    if (!fromGroup && kept.holders.length) {
+      const offered = audiences
+        ? new Set(audiences.map((holder) => holder.holder))
+        : null;
+      const usable = offered
+        ? kept.holders.filter((holder) => offered.has(holder))
+        : kept.holders;
+      if (usable.length) setSelected(usable);
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [audiences, audiencesRefused, author, fromGroup, resumed, scope]);
+
+  // Nothing is kept until the resume above has read what was there, or the
+  // read would find what this just wrote. Whatever was typed while the
+  // audiences loaded is kept the moment resuming ends; later edits trail
+  // typing, so a draft costs one write after a pause rather than one per
+  // keystroke.
+  const audience = selected.join("\u0000");
+  useEffect(() => {
+    if (author === null || !resumed) return;
+    function keep() {
+      if (posted.current || author === null) return;
+      saveDraft(author, scope, {
+        title,
+        holders: audience ? audience.split("\u0000") : [],
+      });
+    }
+    if (!keptOnce.current) {
+      keptOnce.current = true;
+      keep();
+      return;
+    }
+    const timer = setTimeout(keep, DRAFT_SAVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [audience, author, resumed, scope, title]);
 
   const refreshOptions = options.refetch;
   const refreshPreview = preview.refetch;
@@ -51,7 +125,13 @@ function NewDiscussionForm({
     return () => window.removeEventListener("focus", refreshAudience);
   }, [refreshOptions, refreshPreview]);
 
-  async function create(body: string) {
+  function openDiscussion(conversation: string) {
+    router.push(
+      `/t/${conversation}${fromGroup ? `?fromGroup=${encodeURIComponent(fromGroup)}` : ""}`,
+    );
+  }
+
+  async function create(body: string, notify = false) {
     if (!session || !preview.data || !selected.length)
       throw new Error("Choose who can see this.");
     if (!title.trim()) {
@@ -61,17 +141,22 @@ function NewDiscussionForm({
     const content = `# ${title.trim()}\n\n${body}`;
     setPosting(true);
     try {
-      const { conversation } = unwrap(
+      const { conversation, post } = unwrap(
         await api.threads.create({
           content,
           holders: unwrap(await api.audiences.preview({ holders: selected }))
             .holders,
         }),
       );
+      posted.current = true;
+      if (author !== null) clearDraft(author, scope);
       toast.success("Discussion posted.");
-      router.push(
-        `/t/${conversation}${fromGroup ? `?fromGroup=${encodeURIComponent(fromGroup)}` : ""}`,
-      );
+      if (notify)
+        setPendingNotice({
+          post: String(post),
+          conversation: String(conversation),
+        });
+      else openDiscussion(String(conversation));
     } catch (err) {
       toast.error(
         err instanceof CommonsError
@@ -106,7 +191,10 @@ function NewDiscussionForm({
                 disabled={posting}
                 loading={options.loading}
                 error={options.error}
-                onChange={setSelected}
+                onChange={(holders) => {
+                  touched.current = true;
+                  setSelected(holders);
+                }}
                 onRefresh={() => {
                   refreshOptions();
                   refreshPreview();
@@ -150,7 +238,10 @@ function NewDiscussionForm({
           <Input
             id="title"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              touched.current = true;
+              setTitle(e.target.value);
+            }}
             placeholder="What would you like to discuss?"
             className="text-base"
             autoFocus
@@ -167,10 +258,28 @@ function NewDiscussionForm({
             submitLabel="Post discussion"
             minRows={6}
             placeholder="Write your question or idea…"
+            draft={scope}
             onSubmit={create}
+            altSubmitLabel={permissions.isStaff ? "Post and notify" : undefined}
+            onAltSubmit={
+              permissions.isStaff ? (body) => create(body, true) : undefined
+            }
           />
         </div>
       </div>
+
+      {pendingNotice ? (
+        <NoticeDialog
+          post={pendingNotice.post}
+          open
+          onOpenChange={(next) => {
+            if (next) return;
+            const { conversation } = pendingNotice;
+            setPendingNotice(null);
+            openDiscussion(conversation);
+          }}
+        />
+      ) : null}
     </PageContainer>
   );
 }

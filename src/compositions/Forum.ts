@@ -5,6 +5,7 @@ import * as feedPages from "./forum/feed-pages.ts";
 import * as feed from "./forum/feed.ts";
 import * as links from "./forum/links.ts";
 import * as moderation from "./forum/moderation.ts";
+import * as notices from "./forum/notices.ts";
 import * as notifications from "./forum/notifications.ts";
 import * as pins from "./forum/pins.ts";
 import * as posts from "./forum/posts.ts";
@@ -35,6 +36,7 @@ export const compositions = {
   reactions,
   bookmarks,
   notifications,
+  notices,
   subscriptions,
   pins,
   unread,

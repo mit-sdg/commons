@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, CommonsError, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { signInReturnPath } from "@/lib/sign-in-return";
 
 export function AuthForm({
   mode,
@@ -45,9 +46,7 @@ export function AuthForm({
   const invitation = invitationProp ?? searchParams.get("invitation") ?? "";
   // A screen whose sign-in ended sends the person here with its own address,
   // so signing in returns them to it. Only a path on this site is followed.
-  const asked = searchParams.get("next") ?? "";
-  const returnTo =
-    asked.startsWith("/") && !asked.startsWith("//") ? asked : "/";
+  const returnTo = signInReturnPath(searchParams.get("next"));
 
   /**
    * The link carries the invitation; the temporary password is typed from the

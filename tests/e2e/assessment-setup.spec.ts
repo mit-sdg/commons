@@ -86,6 +86,9 @@ test("skills refresh without clearing a draft, and graders can open unassessed a
     ).toBeVisible();
     await expect(review.getByRole("tab", { name: "Submissions", exact: true })).toBeVisible();
     await expect(review.getByRole("button", { name: "Edit", exact: true })).toHaveCount(0);
+    // The grader is an account other specs read as a student: this spec leaves
+    // the room as it found it, so a whole-suite run stays order-independent.
+    await call("/roles/revoke", { user: "noah@example.edu", context: "commons" });
   } finally {
     await staff.close();
     await grader.close();

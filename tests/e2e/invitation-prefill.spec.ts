@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { invitationCredential } from "../../src/concepts/inviting/credential.ts";
 
 for (const source of ["csv", "manual"] as const) {
-  test(`${source} invitation prefills registration as soon as the temporary password is entered`, async ({
+  test(`${source} invitation prefills registration and accepts the entered temporary password`, async ({
     page,
     request,
   }) => {
@@ -42,6 +42,8 @@ for (const source of ["csv", "manual"] as const) {
     );
     expect(issued).toBeDefined();
     const credential = invitationCredential(issued.invitation);
+    // Copying from an email can include surrounding spaces and tabs.
+    const enteredCredential = source === "manual" ? ` \t${credential}\t ` : credential;
 
     // The browser is signed out, just as someone opening their invitation email is.
     await page.goto(`/register?invitation=${issued.invitation}`);
@@ -50,7 +52,7 @@ for (const source of ["csv", "manual"] as const) {
     const username = page.getByLabel("Username", { exact: true });
     const password = page.getByLabel("Temporary password", { exact: true });
     await expect(name).toHaveValue("");
-    await password.fill(credential);
+    await password.fill(enteredCredential);
     // Pasting the credential must not require an extra click or tab to start the lookup.
     await expect(name).toHaveValue(displayName);
     await expect(username).toHaveValue(`prefill_${source}`);
@@ -68,9 +70,59 @@ for (const source of ["csv", "manual"] as const) {
     const corrected = page.waitForResponse((response) =>
       response.url().endsWith("/api/auth/invitation"),
     );
-    await password.fill(credential);
+    await password.fill(enteredCredential);
     expect((await corrected).status()).toBe(200);
     await expect(name).toHaveValue("My chosen name");
     await expect(username).toHaveValue(`chosen_${source}`);
+    await expect(password).toHaveValue(enteredCredential);
+
+    // Acceptance must use the same credential as the successful preview, both
+    // to verify the invitation and to set the account's initial password.
+    const accepted = page.waitForResponse((response) =>
+      response.url().endsWith("/api/auth/accept-invitation"),
+    );
+    await page.getByRole("button", { name: "Accept invitation", exact: true }).click();
+    const acceptance = await accepted;
+    expect(acceptance.status()).toBe(200);
+    expect(acceptance.request().postDataJSON()).toEqual({
+      invitation: issued.invitation,
+      temporaryPassword: credential,
+      username: `chosen_${source}`,
+      password: credential,
+      displayName: "My chosen name",
+    });
+
+    // Automatic sign-in must also use the trimmed credential and hold a session.
+    await expect(page).toHaveURL("/");
+    // APIRequestContext does not send Secure cookies over local HTTP itself.
+    const browserHeaders = {
+      Cookie: (await page.context().cookies())
+        .map(({ name, value }) => `${name}=${value}`)
+        .join("; "),
+    };
+    const me = await page.request.post("/api/auth/me", { headers: browserHeaders, data: {} });
+    expect(me.ok()).toBe(true);
+    expect(await me.json()).toMatchObject({ username: `chosen_${source}`, email });
+
+    // Ordinary passwords can intentionally contain surrounding whitespace.
+    // Changing and signing in with one must keep every character intact.
+    const chosenPassword = "  my chosen password  ";
+    const changed = await page.request.post("/api/auth/changePassword", {
+      headers: browserHeaders,
+      data: { oldPassword: credential, newPassword: chosenPassword },
+    });
+    expect(changed.ok()).toBe(true);
+    await page.goto("/login");
+    await page.getByLabel("Username", { exact: true }).fill(`chosen_${source}`);
+    await page.getByLabel("Password", { exact: true }).fill(chosenPassword);
+    const signedIn = page.waitForResponse((response) => response.url().endsWith("/api/auth/login"));
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    const signIn = await signedIn;
+    expect(signIn.request().postDataJSON()).toEqual({
+      username: `chosen_${source}`,
+      password: chosenPassword,
+    });
+    expect(signIn.status()).toBe(200);
+    await expect(page).toHaveURL("/");
   });
 }

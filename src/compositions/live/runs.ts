@@ -13,6 +13,7 @@ import {
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { activeUser } from "../access/session.ts";
 import {
+  liveLaunchInput,
   mayHostLive,
   mayNotHostLive,
   namesNoAccount,
@@ -25,6 +26,7 @@ import {
 import { computations, concepts } from "../../concepts.ts";
 
 const {
+  Accessing,
   Locating,
   Profiling,
   Publishing,
@@ -172,11 +174,16 @@ export const OpenRuns = endpoint("/live/runs/open", ({ session, user, at }) =>
 /**
  * Presenting is the one coherent authored read for a launch. Every durable run
  * artifact is derived from that returned value before either address is issued.
+ * Access modes use explicit branches: the engine cannot carry computed holders
+ * through this action chain. The computed holders select the branch; its access
+ * write uses the matching literal before either participation address is issued.
  */
 export const Launch = endpoint(
   "/live/runs/launch",
   ({
     session,
+    requireSignIn,
+    holders,
     questionnaire,
     user,
     at,
@@ -191,7 +198,7 @@ export const Launch = endpoint(
     token,
     code,
   }) =>
-    receive({ session, questionnaire })
+    receive({ session, questionnaire, requireSignIn })
       .then(
         where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user })).then(
           Questioning.present({ questionnaire }).responds({
@@ -205,6 +212,18 @@ export const Launch = endpoint(
       )
       .then(
         where(
+          no(Relaying._legFor({ material: questionnaire })),
+          is.among(form, ["quiz"]),
+          is.among(proposes, [false]),
+        )
+          .then(respond({ error: "NOT_QUIZ_READY" }))
+          .named("unready-quiz"),
+        where(Relaying._legFor({ material: questionnaire }))
+          .then(respond({ error: "QUESTIONNAIRE_NOT_FOUND" }))
+          .named("round"),
+        where(
+          compute(computations.liveAccessHolders, { requireSignIn }, holders),
+          is.among("standing:everyone", holders),
           now(at),
           activeUser({ session }).is({ user }),
           mayHostLive({ user }),
@@ -221,11 +240,19 @@ export const Launch = endpoint(
             RunSnapshotting.capture({ subject: run, value: presentation }).responds({ snapshot }),
           )
           .then(Scoring.establish({ subject: run, disclosure, expectations }).responds({ key }))
+          .then(
+            Accessing.establish({
+              resource: run,
+              holders: ["standing:everyone"],
+            }).responds(),
+          )
           .then(Sharing.issue({ subject: run }).responds({ token }))
           .then(Locating.ensure({ subject: run }).responds({ code }))
           .then(respond({ run, token, code }))
           .named("quiz"),
         where(
+          compute(computations.liveAccessHolders, { requireSignIn }, holders),
+          is.among("standing:everyone", holders),
           now(at),
           activeUser({ session }).is({ user }),
           mayHostLive({ user }),
@@ -240,22 +267,77 @@ export const Launch = endpoint(
           .then(
             RunSnapshotting.capture({ subject: run, value: presentation }).responds({ snapshot }),
           )
+          .then(
+            Accessing.establish({
+              resource: run,
+              holders: ["standing:everyone"],
+            }).responds(),
+          )
           .then(Sharing.issue({ subject: run }).responds({ token }))
           .then(Locating.ensure({ subject: run }).responds({ code }))
           .then(respond({ run, token, code }))
           .named("survey"),
         where(
+          compute(computations.liveAccessHolders, { requireSignIn }, holders),
+          is.among("standing:authenticated", holders),
+          now(at),
+          activeUser({ session }).is({ user }),
+          mayHostLive({ user }),
           no(Relaying._legFor({ material: questionnaire })),
           is.among(form, ["quiz"]),
-          is.among(proposes, [false]),
+          is.among(proposes, [true]),
         )
-          .then(respond({ error: "NOT_QUIZ_READY" }))
-          .named("unready-quiz"),
-        where(Relaying._legFor({ material: questionnaire }))
-          .then(respond({ error: "QUESTIONNAIRE_NOT_FOUND" }))
-          .named("round"),
+          .then(
+            Publishing.publish({ author: user, material: questionnaire, at }).responds({
+              edition: run,
+            }),
+          )
+          .then(
+            RunSnapshotting.capture({ subject: run, value: presentation }).responds({ snapshot }),
+          )
+          .then(Scoring.establish({ subject: run, disclosure, expectations }).responds({ key }))
+          .then(
+            Accessing.establish({
+              resource: run,
+              holders: ["standing:authenticated"],
+            }).responds(),
+          )
+          .then(Sharing.issue({ subject: run }).responds({ token }))
+          .then(Locating.ensure({ subject: run }).responds({ code }))
+          .then(respond({ run, token, code }))
+          .named("quiz-signed"),
+        where(
+          compute(computations.liveAccessHolders, { requireSignIn }, holders),
+          is.among("standing:authenticated", holders),
+          now(at),
+          activeUser({ session }).is({ user }),
+          mayHostLive({ user }),
+          no(Relaying._legFor({ material: questionnaire })),
+          is.among(form, ["survey"]),
+        )
+          .then(
+            Publishing.publish({ author: user, material: questionnaire, at }).responds({
+              edition: run,
+            }),
+          )
+          .then(
+            RunSnapshotting.capture({ subject: run, value: presentation }).responds({ snapshot }),
+          )
+          .then(
+            Accessing.establish({
+              resource: run,
+              holders: ["standing:authenticated"],
+            }).responds(),
+          )
+          .then(Sharing.issue({ subject: run }).responds({ token }))
+          .then(Locating.ensure({ subject: run }).responds({ code }))
+          .then(respond({ run, token, code }))
+          .named("survey-signed"),
       ),
-  { input: { required: ["session", "questionnaire"] } },
+  {
+    input: { required: ["session", "questionnaire"], defaults: { requireSignIn: false } },
+    validators: { input: liveLaunchInput },
+  },
 );
 
 export const LaunchForbidden = endpoint("/live/runs/launch", ({ session, questionnaire, user }) =>

@@ -1,4 +1,5 @@
 import { configuredPublicOrigin } from "../deployment.ts";
+import { mailCredential, mailDocument, mailParagraphs } from "../presentation/mail.ts";
 
 // The mail bodies below promise "one hour" in prose; keep them in step with this value.
 const RESET_VALIDITY_MS = 60 * 60 * 1000;
@@ -6,14 +7,6 @@ const RESET_VALIDITY_MS = 60 * 60 * 1000;
 // A second request inside this window reuses nothing and sends nothing, so a
 // stranger cannot turn the public endpoint into a mail cannon.
 const RESET_COOLDOWN_MS = 5 * 60 * 1000;
-
-const escapeHtml = (value: string) =>
-  value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 
 export function passwordResetExpiry({ at }: { at: Date }): Date {
   return new Date(at.getTime() + RESET_VALIDITY_MS);
@@ -48,6 +41,13 @@ export function passwordResetMailHtml({
   credential: string;
   username: string;
 }): string {
-  const link = resetLink(voucher);
-  return `<p>Someone asked to reset the password for <strong>${escapeHtml(username)}</strong> on Commons.</p><p><a href="${escapeHtml(link)}">Reset your password</a></p><p>Reset code: <strong>${escapeHtml(credential)}</strong></p><p>This link expires in one hour. If you did not ask for this, ignore this email; your password is unchanged.</p>`;
+  return mailDocument({
+    title: "Reset your Commons password",
+    facts: [["Account", username]],
+    bodyHtml:
+      mailParagraphs("Someone asked to reset the password for this account on Commons.") +
+      mailCredential("Reset code", credential),
+    note: "This link expires in one hour. If you did not ask for this, ignore this email; your password is unchanged.",
+    action: { label: "Reset your password", url: resetLink(voucher) },
+  });
 }

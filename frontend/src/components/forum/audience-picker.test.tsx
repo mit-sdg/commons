@@ -69,6 +69,36 @@ test("unique names remain plain, including equal names of different kinds", () =
   }
 });
 
+test("private audience labels show selected recipients without an administrator annotation", () => {
+  for (const kind of ["account", "group", "section"]) {
+    const selected = option("selected-recipient", kind, "Selected recipient");
+    const holders = [selected.holder];
+    const html = render(
+      <AudienceChips holders={holders} options={[selected]} />,
+    );
+    expect(html).toContain("Selected recipient");
+    expect(html).not.toContain("and administrators");
+    expect(holders).toEqual([selected.holder]);
+  }
+});
+
+test("standing and empty audiences have no administrator annotation", () => {
+  for (const identity of ["everyone", "staff"]) {
+    const selected = option(
+      identity,
+      "standing",
+      identity === "staff" ? "Staff" : "Everyone",
+    );
+    const html = render(
+      <AudienceChips holders={[selected.holder]} options={[selected]} />,
+    );
+    expect(html).not.toContain("and administrators");
+  }
+  expect(render(<AudienceChips holders={[]} options={[]} />)).not.toContain(
+    "and administrators",
+  );
+});
+
 test("duplicate names extend a shared identity prefix only as far as needed", () => {
   const options = [option("abcdef1-rest"), option("abcdef2-rest")];
   expect(audiencePresentation(options[0], options).label).toBe(

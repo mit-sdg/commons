@@ -176,6 +176,7 @@ export const RetimeTask = endpoint(
             kind: "task-retimed",
             subject: task,
             link: task,
+            actor: null,
             at,
           }),
         )
@@ -215,6 +216,7 @@ export const AssignTask = endpoint(
             kind: "task-assigned",
             subject: task,
             link: task,
+            actor: null,
             at,
           }),
         )
@@ -275,6 +277,7 @@ export const CompleteTask = endpoint(
             kind: "task-completed",
             subject: task,
             link: task,
+            actor: null,
             at,
           }),
         )
@@ -312,6 +315,7 @@ export const ReopenTask = endpoint(
             kind: "task-reopened",
             subject: task,
             link: task,
+            actor: null,
             at,
           }),
         )
@@ -349,6 +353,7 @@ export const CancelTask = endpoint(
             kind: "task-canceled",
             subject: task,
             link: task,
+            actor: null,
             at,
           }),
         )
@@ -386,6 +391,7 @@ export const UncancelTask = endpoint(
             kind: "task-uncanceled",
             subject: task,
             link: task,
+            actor: null,
             at,
           }),
         )

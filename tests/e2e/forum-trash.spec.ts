@@ -35,6 +35,12 @@ for (const entryPoint of ["post menu", "flag queue"]) {
     if (entryPoint === "post menu") {
       await page.goto(`/t/${root.conversation}`);
       await page
+        .locator(".thread-branch-content")
+        .filter({ has: page.locator(`#post-${middle.post}`) })
+        .getByRole("button", { name: "Hide 1 reply", exact: true })
+        .click();
+      await expect(page.locator(`#post-${leaf.post}`)).toBeHidden();
+      await page
         .locator(`#post-${middle.post}`)
         .getByRole("button", { name: "Post actions" })
         .click();
@@ -67,6 +73,14 @@ for (const entryPoint of ["post menu", "flag queue"]) {
       .click();
     await expect(page.locator(`#post-${leaf.post}`)).toContainText(`Batch leaf from ${entryPoint}`);
     await expect(page.locator(`#post-${middle.post}`)).toContainText("removed by a moderator");
+    await page
+      .locator(".thread-branch-content")
+      .filter({ has: page.locator(`#post-${middle.post}`) })
+      .getByRole("button", { name: "Hide 1 reply", exact: true })
+      .click();
+    await expect(page.locator(`#post-${leaf.post}`)).toBeHidden();
+    await page.evaluate(`window.location.hash = ${JSON.stringify(`#post-${leaf.post}`)}`);
+    await expect(page.locator(`#post-${leaf.post}`)).toBeVisible();
     await call("/trash/purge", { item: middle.post });
     await call("/trash/trash", { item: leaf.post });
     await call("/trash/purge", { item: leaf.post });

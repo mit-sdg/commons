@@ -46,11 +46,18 @@ export const notificationSubjectReader = view(
   ],
 ).holds();
 
-export const assignmentNotificationTitle = view(
-  "the notification title of (assignment)",
-  ({ assignment }, { assignmentTitle }, _vars) =>
+/** One read answers the inbox's title and the release mail's author and due instant alike. */
+export const assignmentNotificationDetail = view(
+  "the notification detail of (assignment)",
+  ({ assignment }, { assignmentTitle, assignmentAuthor, dueAt }, _vars) =>
     where(
-      Assigning._getAssignments({}).is({ assignment, title: assignmentTitle, status: "PUBLISHED" }),
+      Assigning._getAssignments({}).is({
+        assignment,
+        title: assignmentTitle,
+        author: assignmentAuthor,
+        dueAt,
+        status: "PUBLISHED",
+      }),
     ),
 ).optional();
 
@@ -59,7 +66,7 @@ export const theAssignmentNotificationPresentation = former(
   ({ assignment, user }, { assignmentTitle }) =>
     where(
       notificationSubjectReader({ user, subject: assignment }),
-      assignmentNotificationTitle({ assignment }).is({ assignmentTitle }),
+      assignmentNotificationDetail({ assignment }).is({ assignmentTitle }),
     ).form({ assignmentTitle }),
 ).optional();
 
@@ -99,48 +106,78 @@ export const theDiscussionNotificationPresentation = former(
 ).optional();
 
 export const notificationMailContext = view(
-  "the email context of notification subject (subject) for (user)",
-  ({ subject, user }, { title, url }, { conversation }) => [
+  "the email context of notification subject (subject) of kind (kind) for (user)",
+  (
+    { subject, user, kind },
+    { mailSubject, text, html },
+    {
+      title,
+      url,
+      conversation,
+      opening,
+      authorUser,
+      username,
+      displayName,
+      author,
+      content,
+      body,
+      dueAt,
+      due,
+      detail,
+    },
+  ) => [
     where(
       notificationDiscussion({ post: subject, reader: user }).is({
         conversation,
         discussionTitle: title,
       }),
+      Posting._getPost({ post: subject }).is({ author: authorUser, content }),
+      Authenticating._getById({ user: authorUser }).is({ username }),
+      whether(Profiling._getProfileFields({ user: authorUser }).is({ displayName })),
+      whether(Conversing._getRoot({ conversation }).is({ item: opening })),
       compute(computations.forumNotificationUrl, { conversation, post: subject }, url),
+      compute(computations.notificationMailSubject, { kind, title }, mailSubject),
+      compute(computations.notificationAuthorLabel, { username, displayName }, author),
+      compute(computations.forumNotificationMailBody, { content, post: subject, opening }, body),
+      compute(
+        computations.forumNotificationMailText,
+        { kind, title, url, author, content: body },
+        text,
+      ),
+      compute(
+        computations.forumNotificationMailHtml,
+        { kind, title, url, author, content: body },
+        html,
+      ),
     ),
     where(
       notificationSubjectReader({ user, subject }),
-      assignmentNotificationTitle({ assignment: subject }).is({ assignmentTitle: title }),
+      assignmentNotificationDetail({ assignment: subject }).is({
+        assignmentTitle: title,
+        assignmentAuthor: authorUser,
+        dueAt,
+      }),
+      Authenticating._getById({ user: authorUser }).is({ username }),
+      whether(Profiling._getProfileFields({ user: authorUser }).is({ displayName })),
+      whether(Rostering._getClass({}).is({ detail })),
       compute(computations.assignmentNotificationUrl, { assignment: subject }, url),
+      compute(computations.notificationMailSubject, { kind, title }, mailSubject),
+      compute(computations.notificationAuthorLabel, { username, displayName }, author),
+      compute(computations.dueWallTime, { dueAt, detail }, due),
+      compute(computations.assignmentNotificationMailText, { kind, title, url, author, due }, text),
+      compute(computations.assignmentNotificationMailHtml, { kind, title, url, author, due }, html),
     ),
   ],
 ).optional();
 
 export const NotificationQueuesEmail = reaction(
-  ({
-    notification,
-    recipient,
-    kind,
-    subject,
-    email,
-    at,
-    title,
-    url,
-    mailSubject,
-    text,
-    html,
-    message,
-    key,
-  }) =>
+  ({ notification, recipient, kind, subject, email, at, mailSubject, text, html, message, key }) =>
     when(Notifying.notify({ recipient, kind, subject, at }).responds({ notification }))
       .where(
         notificationSubjectReader({ user: recipient, subject }),
         Authenticating._getById({ user: recipient }).is({ email }),
         compute(computations.forumMailKey, { notification, recipient, post: subject }, key),
-        notificationMailContext({ subject, user: recipient }).is({ title, url }),
-        compute(computations.notificationMailSubject, { kind, title }, mailSubject),
-        compute(computations.notificationMailText, { kind, title, url }, text),
-        compute(computations.notificationMailHtml, { kind, title, url }, html),
+        notificationMailContext({ subject, user: recipient, kind }).is({ mailSubject, text, html }),
       )
       .then(
         Mailing.enqueue({
@@ -193,6 +230,7 @@ export const ReplyNotifiesParentAuthor = reaction(
           kind: "reply",
           subject: item,
           link: item,
+          actor: null,
           at,
         }),
       ),
@@ -216,6 +254,7 @@ export const ReplyNotifiesWatchers = reaction(
           kind: "followed_reply",
           subject: item,
           link: item,
+          actor: null,
           at,
         }),
       ),
@@ -235,6 +274,7 @@ export const RootMentionsNotify = reaction(({ conversation, node, item, mentione
         kind: "mention",
         subject: item,
         link: item,
+        actor: null,
         at,
       }),
     ),
@@ -253,6 +293,7 @@ export const ReplyMentionsNotify = reaction(({ item, parent, mentioned, parentIt
         kind: "mention",
         subject: item,
         link: item,
+        actor: null,
         at,
       }),
     ),
@@ -270,6 +311,7 @@ export const EditMentionsNotify = reaction(({ post, mentioned, at }) =>
         kind: "mention",
         subject: post,
         link: post,
+        actor: null,
         at,
       }),
     ),
@@ -288,6 +330,7 @@ export const AcceptNotifiesAnswerAuthor = reaction(({ answer, by, answerAuthor, 
         kind: "accepted",
         subject: answer,
         link: answer,
+        actor: null,
         at,
       }),
     ),
@@ -469,7 +512,16 @@ export const RootNotifiesAddressedAccounts = reaction(
         no(staffNotificationRecipient({ user: recipient, holders })),
         now(at),
       )
-      .then(Notifying.notify({ recipient, kind: "addressed", subject: item, link: item, at })),
+      .then(
+        Notifying.notify({
+          recipient,
+          kind: "addressed",
+          subject: item,
+          link: item,
+          actor: null,
+          at,
+        }),
+      ),
 );
 
 export const RootNotifiesStaff = reaction(({ conversation, holders, recipient, node, item, at }) =>
@@ -484,5 +536,14 @@ export const RootNotifiesStaff = reaction(({ conversation, holders, recipient, n
       isNotMentionedIn({ user: recipient, post: item }),
       now(at),
     )
-    .then(Notifying.notify({ recipient, kind: "staff_message", subject: item, link: item, at })),
+    .then(
+      Notifying.notify({
+        recipient,
+        kind: "staff_message",
+        subject: item,
+        link: item,
+        actor: null,
+        at,
+      }),
+    ),
 );

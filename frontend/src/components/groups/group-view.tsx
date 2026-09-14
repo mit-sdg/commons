@@ -14,7 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { GroupDiscussions } from "@/components/groups/group-discussions";
@@ -442,9 +442,11 @@ function MemberList({
 export function GroupView({
   list,
   tab = "discussions",
+  focusTask,
 }: {
   list: string;
   tab?: GroupTab;
+  focusTask?: string;
 }) {
   const router = useRouter();
   const { me, session } = useAuth();
@@ -452,7 +454,7 @@ export function GroupView({
 
   const page = useQuery<TaskListPage>(
     session ? () => loadTaskListPage(list) : null,
-    [session, list],
+    [session, list, focusTask],
   );
 
   const detail = page.data?.list ?? null;
@@ -485,6 +487,39 @@ export function GroupView({
     [allTasks],
   );
   const details = useExpandedTasks(expandable);
+  const { expand } = details;
+  const focused = useRef<string | null>(null);
+  useEffect(() => {
+    if (tab !== "tasks" || !focusTask) {
+      focused.current = null;
+      return;
+    }
+    if (
+      !detail ||
+      page.loading ||
+      page.error ||
+      !allTasks.some((task) => String(task.task) === focusTask)
+    )
+      return;
+    const key = JSON.stringify([viewer, list, focusTask]);
+    if (focused.current === key) return;
+    const target = document.getElementById(`task-${focusTask}`);
+    if (!target) return;
+    focused.current = key;
+    expand(focusTask);
+    target.scrollIntoView({ block: "start" });
+    target.focus({ preventScroll: true });
+  }, [
+    tab,
+    focusTask,
+    viewer,
+    list,
+    detail,
+    page.loading,
+    page.error,
+    allTasks,
+    expand,
+  ]);
 
   const openTasks = allTasks.filter((task) => task.state === "OPEN");
   const activeAndOverdue = openTasks
@@ -583,6 +618,14 @@ export function GroupView({
                 />
               </div>
 
+              {focusTask &&
+              !page.loading &&
+              !allTasks.some((task) => String(task.task) === focusTask) ? (
+                <p role="status" className="text-sm text-muted-foreground">
+                  The linked task is no longer available in this group.
+                </p>
+              ) : null}
+
               {allTasks.length === 0 ? (
                 <EmptyState
                   icon={ListChecks}
@@ -604,6 +647,7 @@ export function GroupView({
                       {activeAndOverdue.map((task) => (
                         <TaskCard
                           key={String(task.task)}
+                          highlighted={String(task.task) === focusTask}
                           expanded={details.isExpanded(String(task.task))}
                           onToggleExpanded={() =>
                             details.toggle(String(task.task))
@@ -626,6 +670,7 @@ export function GroupView({
                       {upcoming.map((task) => (
                         <TaskCard
                           key={String(task.task)}
+                          highlighted={String(task.task) === focusTask}
                           expanded={details.isExpanded(String(task.task))}
                           onToggleExpanded={() =>
                             details.toggle(String(task.task))
@@ -658,6 +703,7 @@ export function GroupView({
                       {settled.map((task) => (
                         <TaskCard
                           key={String(task.task)}
+                          highlighted={String(task.task) === focusTask}
                           expanded={details.isExpanded(String(task.task))}
                           onToggleExpanded={() =>
                             details.toggle(String(task.task))

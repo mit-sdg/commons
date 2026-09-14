@@ -3,6 +3,9 @@ import { authenticate, scrollToEdge, test } from "./support/browser";
 
 async function signInAsStaff(page: Page) {
   await authenticate(page);
+  // Compile the routes this menu navigates to: Next dev reloads a page the
+  // first time it compiles a route, and the reload swallows the press.
+  for (const route of ["/staff/class", "/settings"]) await page.request.get(route);
   await page.goto("/staff/class");
   await expect(page.getByRole("heading", { name: "Class settings", exact: true })).toBeVisible();
 }

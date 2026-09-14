@@ -294,3 +294,406 @@ describe("the edge reads a bounded amount before it decides anything", () => {
     expect((await post(edge, "/live/p/arrive", { token })).status).toBe(200);
   });
 });
+
+async function liveFixture(form: "quiz" | "survey" | "relay", requireSignIn?: boolean) {
+  if (form === "relay") {
+    const relay = (
+      await json(await post(edge, "/live/relays/plan", { title: "Restricted relay" }, host.cookie))
+    ).relay;
+    const added = await json(
+      await post(
+        edge,
+        "/live/relays/add-round",
+        {
+          relay,
+          title: "One word",
+          prompt: "One word?",
+          parts: [],
+          cap: 0,
+          choices: [],
+        },
+        host.cookie,
+      ),
+    );
+    const launched = await json(
+      await post(
+        edge,
+        "/live/relays/launch",
+        { relay, ...(requireSignIn === undefined ? {} : { requireSignIn }) },
+        host.cookie,
+      ),
+    );
+    return {
+      run: launched.run as string,
+      token: launched.token as string,
+      leg: added.leg,
+      material: relay,
+      form,
+    };
+  }
+  const questionnaire = (
+    await json(
+      await post(edge, "/live/quizzes/create", { title: "Restricted question", form }, host.cookie),
+    )
+  ).questionnaire;
+  await post(
+    edge,
+    "/live/quizzes/add-question",
+    { questionnaire, prompt: "Pick A", choices: ["A", "B"], expected: form === "quiz" ? "A" : "" },
+    host.cookie,
+  );
+  const launched = await json(
+    await post(
+      edge,
+      "/live/runs/launch",
+      { questionnaire, ...(requireSignIn === undefined ? {} : { requireSignIn }) },
+      host.cookie,
+    ),
+  );
+  return {
+    run: launched.run as string,
+    token: launched.token as string,
+    leg: "",
+    material: questionnaire,
+    form,
+  };
+}
+
+describe("require sign-in", () => {
+  for (const form of ["quiz", "survey", "relay"] as const) {
+    test(`${form}: restricted routes reject anonymous requests and preserve signed participation`, async () => {
+      const fixture = await liveFixture(form, true);
+      const { token, run } = fixture;
+      expect(typeof token).toBe("string");
+      const participant = await register(edge, `restricted-${form}`);
+      const denied = await post(
+        edge,
+        "/live/p/begin",
+        { token, device: `device-${form}` },
+        participant.cookie,
+      );
+      expect(denied.status).toBe(401); // Also before a relay opens any round.
+      expect(await denied.json()).toEqual({ error: "UNAUTHORIZED" });
+      expect(denied.headers.get("set-cookie")).toBeNull();
+      expect((await post(edge, "/auth/me", {}, participant.cookie)).status).toBe(200);
+      if (form === "relay") {
+        expect(
+          (await post(edge, "/live/relays/open-round", { run, leg: fixture.leg }, host.cookie))
+            .status,
+        ).toBe(200);
+      }
+      const arrival = await json(await post(edge, "/live/p/arrive", { token }));
+      const face = (form === "relay" ? arrival.relay : arrival.face) as unknown as {
+        requireSignIn: boolean;
+        questions: { question: string }[];
+        openRound?: string;
+      };
+      expect(face.requireSignIn).toBe(true);
+      const subject = face.openRound ?? run;
+      const item = face.questions[0].question;
+      const { response: anonymous } = await edge.application.concepts.Responding.begin({
+        participant: `seed-${form}`,
+        subject,
+        at: new Date(),
+      });
+      // Reach guards independently of begin, including unfinished and invalid-item branches.
+      for (const [path, body] of [
+        ["answer", { response: anonymous, question: item, value: "A" }],
+        ["answer", { response: anonymous, question: "wrong", value: "A" }],
+        ["submit", { response: anonymous }],
+        ["outcome", { response: anonymous }],
+        ["wall", { response: anonymous }],
+      ] as const) {
+        for (const cookie of [undefined, participant.cookie]) {
+          const denial = await post(edge, `/live/p/${path}`, body, cookie);
+          expect(denial.status, path).toBe(401);
+          expect(denial.headers.get("set-cookie"), path).toBeNull();
+        }
+      }
+      expect((await post(edge, "/auth/me", {}, participant.cookie)).status).toBe(200);
+      expect(await edge.application.concepts.Responding._answers({ response: anonymous })).toEqual(
+        [],
+      );
+      const begun = await json(
+        await post(edge, "/live/p/begin-signed", { token }, participant.cookie),
+      );
+      expect(begun.participant).toBe(participant.user);
+      expect(
+        (
+          await post(
+            edge,
+            "/live/p/answer-signed",
+            { response: begun.response, question: item, value: "A" },
+            participant.cookie,
+          )
+        ).status,
+      ).toBe(200);
+      expect(
+        (
+          await post(
+            edge,
+            "/live/p/submit-signed",
+            { response: begun.response },
+            participant.cookie,
+          )
+        ).status,
+      ).toBe(200);
+      expect(
+        (
+          await post(
+            edge,
+            "/live/p/outcome-signed",
+            { response: begun.response },
+            participant.cookie,
+          )
+        ).status,
+      ).toBe(200);
+      expect((await post(edge, "/live/p/outcome", { response: begun.response })).status).toBe(404);
+      expect(
+        (await post(edge, "/live/p/submit-signed", { response: begun.response }, host.cookie))
+          .status,
+      ).toBe(404);
+      if (form === "relay") {
+        const wall = await json(
+          await post(edge, "/live/p/wall-signed", { response: begun.response }, participant.cookie),
+        );
+        expect(wall.wall).toMatchObject({
+          cards: [expect.objectContaining({ value: "A", mine: true })],
+        });
+        expect(JSON.stringify(wall.wall)).not.toContain(participant.user);
+        // A snapshot makes this round look like a questionnaire too; no self-fallback.
+        expect(await edge.application.concepts.Accessing._holders({ resource: subject })).toEqual(
+          [],
+        );
+        await edge.application.concepts.Linking.clearLinks({ source: subject });
+        expect(
+          (await post(edge, "/live/p/answer", { response: anonymous, question: item, value: "B" }))
+            .status,
+        ).toBe(404);
+        expect(
+          (
+            await post(
+              edge,
+              "/live/p/wall-signed",
+              { response: begun.response },
+              participant.cookie,
+            )
+          ).status,
+        ).toBe(404);
+        await edge.application.concepts.Linking.setLinks({ source: subject, targets: [run] });
+        const second = await json(
+          await post(
+            edge,
+            "/live/relays/add-round",
+            {
+              relay: fixture.material,
+              title: "Second",
+              prompt: "Another word?",
+              parts: [],
+              cap: 0,
+              choices: [],
+            },
+            host.cookie,
+          ),
+        );
+        expect(
+          (await post(edge, "/live/relays/close-round", { round: subject }, host.cookie)).status,
+        ).toBe(200);
+        expect(
+          (await post(edge, "/live/relays/open-round", { run, leg: second.leg }, host.cookie))
+            .status,
+        ).toBe(200);
+        expect(
+          (await post(edge, "/live/p/begin", { token, device: "second-round-phone" })).status,
+        ).toBe(401);
+        const nextResponse = await json(
+          await post(edge, "/live/p/begin-signed", { token }, participant.cookie),
+        );
+        expect(nextResponse.participant).toBe(participant.user);
+        expect(nextResponse.response).not.toBe(begun.response);
+      }
+      await post(
+        edge,
+        form === "relay" ? "/live/relays/close" : "/live/runs/close",
+        { run },
+        host.cookie,
+      );
+      expect((await post(edge, "/live/p/begin", { token, device: "closed-phone" })).status).toBe(
+        409,
+      );
+      const closed = await json(await post(edge, "/live/p/arrive", { token }));
+      expect(form === "relay" ? closed.relay : closed.face).toMatchObject({ requireSignIn: true });
+      const relaunched = await json(
+        await post(
+          edge,
+          form === "relay" ? "/live/relays/launch" : "/live/runs/launch",
+          { [form === "relay" ? "relay" : "questionnaire"]: fixture.material },
+          host.cookie,
+        ),
+      );
+      const next = await json(await post(edge, "/live/p/arrive", { token: relaunched.token }));
+      expect(form === "relay" ? next.relay : next.face).toMatchObject({ requireSignIn: false });
+    });
+  }
+
+  test("false and omitted options allow anonymous participation; non-booleans are rejected", async () => {
+    for (const form of ["quiz", "survey", "relay"] as const) {
+      for (const option of [false, undefined]) {
+        const fixture = await liveFixture(form, option);
+        if (form === "relay")
+          expect(
+            (
+              await post(
+                edge,
+                "/live/relays/open-round",
+                { run: fixture.run, leg: fixture.leg },
+                host.cookie,
+              )
+            ).status,
+          ).toBe(200);
+        const arrival = await json(await post(edge, "/live/p/arrive", { token: fixture.token }));
+        const face = (form === "relay" ? arrival.relay : arrival.face) as unknown as {
+          requireSignIn: boolean;
+          questions: { question: string }[];
+        };
+        expect(face.requireSignIn).toBe(false);
+        const begun = await json(
+          await post(edge, "/live/p/begin", { token: fixture.token, device: "open-phone" }),
+        );
+        expect(begun.response).toBeTruthy();
+        expect(
+          (
+            await post(edge, "/live/p/answer", {
+              response: begun.response,
+              question: face.questions[0].question,
+              value: "A",
+            })
+          ).status,
+        ).toBe(200);
+        expect((await post(edge, "/live/p/submit", { response: begun.response })).status).toBe(200);
+        expect((await post(edge, "/live/p/outcome", { response: begun.response })).status).toBe(
+          200,
+        );
+      }
+    }
+    for (const option of ["true", 1, null, []]) {
+      for (const [path, material] of [
+        ["/live/runs/launch", "questionnaire"],
+        ["/live/relays/launch", "relay"],
+      ]) {
+        expect(
+          (await post(edge, path, { [material]: "unused", requireSignIn: option }, host.cookie))
+            .status,
+        ).toBe(400);
+      }
+    }
+  });
+
+  test("legacy absence is open, but malformed or retired policies fail closed", async () => {
+    const { Publishing, Questioning, RunSnapshotting, Sharing, Accessing } =
+      edge.application.concepts;
+    const template = await liveFixture("survey");
+    const [{ value }] = await RunSnapshotting._snapshot({ subject: template.run });
+    for (const holders of [
+      null,
+      [],
+      ["unknown"],
+      ["standing:everyone", "standing:authenticated"],
+      ["retired"],
+    ]) {
+      const { questionnaire } = await Questioning.compose({
+        author: host.user,
+        title: "Legacy",
+        form: "survey",
+        disclosure: "score",
+        at: new Date(),
+      });
+      const { edition: run } = await Publishing.publish({
+        author: host.user,
+        material: questionnaire,
+        at: new Date(),
+      });
+      await RunSnapshotting.capture({ subject: run, value });
+      const { token } = await Sharing.issue({ subject: run });
+      if (holders?.[0] === "retired") await Accessing.retire({ resource: run });
+      else if (holders !== null) await Accessing.establish({ resource: run, holders });
+      expect((await post(edge, "/live/p/arrive", { token })).status).toBe(
+        holders === null ? 200 : 404,
+      );
+      expect((await post(edge, "/live/p/begin", { token, device: "legacy-phone" })).status).toBe(
+        holders === null ? 200 : 404,
+      );
+      expect((await post(edge, "/live/p/begin-signed", { token }, host.cookie)).status).toBe(
+        holders === null ? 200 : 404,
+      );
+    }
+  });
+});
+
+test("failed access establishment exposes no address and staff can close and relaunch", async () => {
+  const floor = mongoImplementations(await testDb());
+  const retainedEstablish = floor.Accessing.establish.bind(floor.Accessing);
+  let fail = true;
+  floor.Accessing.establish = async function establish(input) {
+    if (fail) throw new Error("access storage unavailable");
+    return retainedEstablish(input);
+  };
+  const local = createEdge(floor);
+  const staff = await register(local, "recovery-host");
+  const { role } = await floor.Roling.ensureRole({ name: "Host", capabilities: ["live:host"] });
+  await floor.Roling.assign({ user: staff.user, context: "commons", role });
+  for (const form of ["quiz", "survey", "relay"] as const) {
+    fail = true;
+    const created = await json(
+      await post(
+        local,
+        form === "relay" ? "/live/relays/plan" : "/live/quizzes/create",
+        { title: "Recovery", ...(form === "relay" ? {} : { form }) },
+        staff.cookie,
+      ),
+    );
+    const field = form === "relay" ? "relay" : "questionnaire";
+    if (form === "quiz")
+      await post(
+        local,
+        "/live/quizzes/add-question",
+        {
+          questionnaire: created.questionnaire,
+          prompt: "Pick A",
+          choices: ["A", "B"],
+          expected: "A",
+        },
+        staff.cookie,
+      );
+    const launchPath = form === "relay" ? "/live/relays/launch" : "/live/runs/launch";
+    const input = { [field]: created[field], requireSignIn: true };
+    expect((await post(local, launchPath, input, staff.cookie)).status).toBe(500);
+    const editions = await floor.Publishing._openEditions();
+    const run = editions.find((edition) => edition.material === created[field])?.edition;
+    expect(run).toBeDefined();
+    if (run === undefined) throw new Error("Missing recoverable run");
+    expect(await floor.Sharing._sharesFor({ subject: run })).toEqual([]);
+    expect(await floor.Locating._for({ subject: run })).toEqual([]);
+    const board = await json(
+      await post(
+        local,
+        form === "relay" ? "/live/relays/run" : "/live/runs/results",
+        { run },
+        staff.cookie,
+      ),
+    );
+    expect(form === "relay" ? board.run : board.board).toMatchObject({ run, open: true });
+    expect(
+      (
+        await post(
+          local,
+          form === "relay" ? "/live/relays/close" : "/live/runs/close",
+          { run },
+          staff.cookie,
+        )
+      ).status,
+    ).toBe(200);
+    fail = false;
+    expect((await post(local, launchPath, input, staff.cookie)).status).toBe(200);
+  }
+});

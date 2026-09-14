@@ -8,6 +8,7 @@ import { Link } from "@/components/link";
 import { useDrafting } from "@/components/live/ai-panel";
 import { RELAY_LINES } from "@/components/live/brief-chips";
 import { RelayGuideEditor } from "@/components/live/host-guide";
+import { LaunchOptions } from "@/components/live/launch-options";
 import { refusalSentence } from "@/components/live/refusals";
 import {
   ActButton,
@@ -327,9 +328,12 @@ function RelaySetup({
     onChanged();
   }
 
-  async function launch() {
+  async function launch(requireSignIn: boolean) {
     setBusy(true);
-    const result = await api["/live/relays/launch"]({ relay: relay.relay });
+    const result = await api["/live/relays/launch"]({
+      relay: relay.relay,
+      requireSignIn,
+    });
     if (isApiError(result)) {
       setBusy(false);
       toast.error(launchRefusal(result.error));
@@ -401,13 +405,15 @@ function RelaySetup({
           <div className="flex flex-wrap items-center gap-2">
             {openRun === null ? (
               <span className="inline-flex" title={notYet}>
-                <ActButton
-                  out={notYet !== undefined}
+                <LaunchOptions
                   busy={busy}
-                  onClick={() => void launch()}
-                >
-                  Launch
-                </ActButton>
+                  onLaunch={launch}
+                  trigger={
+                    <ActButton out={notYet !== undefined} busy={busy}>
+                      Launch
+                    </ActButton>
+                  }
+                />
               </span>
             ) : (
               <Button asChild>

@@ -7,6 +7,7 @@ export const commonsPublicErrors: Readonly<Record<string, HttpPublicErrorCategor
     COMMISSION_NOT_PREPARED: "CONFLICT",
     INVALID_REQUEST: "INVALID_REQUEST",
     UNAUTHORIZED: "UNAUTHORIZED",
+    SIGN_IN_REQUIRED: "UNAUTHORIZED",
     FORBIDDEN: "FORBIDDEN",
     NOT_FOUND: "NOT_FOUND",
     CONFLICT: "CONFLICT",

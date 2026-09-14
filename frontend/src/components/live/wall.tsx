@@ -1307,7 +1307,8 @@ function VoteBars({
       <SpreadPanel
         key="spread"
         name={spreading.choice}
-        count={spreading.count}
+        count={spreading.cards.length}
+        supporting
         cards={spreading.cards}
         big={big}
         onClose={() => setSpread(null)}
@@ -1344,6 +1345,7 @@ function VoteBars({
               <span className="relative z-10 inline-flex flex-none">
                 <SpreadButton
                   name={row.choice}
+                  supporting
                   open={spread === row.choice}
                   onClick={() =>
                     setSpread((open) =>
@@ -1354,13 +1356,18 @@ function VoteBars({
               </span>
             );
           const count = (
-            <Count
-              value={row.count}
-              className={cn(
-                "flex-none font-mono tabular-nums",
-                big ? "text-3xl" : "text-lg",
-              )}
-            />
+            <span className="flex-none whitespace-nowrap">
+              <Count
+                value={row.count}
+                className={cn(
+                  "font-mono tabular-nums",
+                  big ? "text-3xl" : "text-lg",
+                )}
+              />{" "}
+              <span className="text-muted-foreground text-sm">
+                {row.count === 1 ? "vote" : "votes"}
+              </span>
+            </span>
           );
           const bar = (
             <span className={cn("block min-w-0", side ? "flex-1" : "w-full")}>

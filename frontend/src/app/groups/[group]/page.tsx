@@ -5,16 +5,17 @@ export default async function GroupPage({
   searchParams,
 }: {
   params: Promise<{ group: string }>;
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ view?: string; task?: string | string[] }>;
 }) {
   const { group } = await params;
-  const { view } = await searchParams;
+  const { view, task } = await searchParams;
   return (
     <RequireAuth>
       <GroupView
         key={group}
         list={group}
         tab={view === "tasks" || view === "members" ? view : "discussions"}
+        focusTask={typeof task === "string" ? task : undefined}
       />
     </RequireAuth>
   );

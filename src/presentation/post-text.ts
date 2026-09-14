@@ -23,9 +23,17 @@ export function excerpt(content: string, max = 180): string {
   return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
 }
 
-export function bodyExcerpt(content: string, max = 180): string {
+/** An opening post carries its title on its first nonblank line; this is everything under it. */
+export function bodyAfterTitle(content: string): string {
   const lines = content.split("\n");
   const titleLine = lines.findIndex((line) => line.trim().length > 0);
   if (titleLine === -1) return "";
-  return excerpt(lines.slice(titleLine + 1).join("\n"), max);
+  return lines
+    .slice(titleLine + 1)
+    .join("\n")
+    .trim();
+}
+
+export function bodyExcerpt(content: string, max = 180): string {
+  return excerpt(bodyAfterTitle(content), max);
 }
