@@ -23,27 +23,31 @@ export function SpreadButton({
   open,
   onClick,
   phone = false,
+  supporting = false,
 }: {
   name: string;
   open: boolean;
   onClick: () => void;
   /** A phone is opened with a thumb, so the word takes a thumb's room. */
   phone?: boolean;
+  /** These cards support a vote choice rather than being the ballots. */
+  supporting?: boolean;
 }) {
+  const responses = supporting ? "supporting responses" : "responses";
   return (
     <Button
       type="button"
       variant="ghost"
       size={phone ? "sm" : "xs"}
       aria-expanded={open}
-      aria-label={`${open ? "Hide responses in" : "View responses in"} ${name}`}
+      aria-label={`${open ? "Hide" : "View"} ${responses} in ${name}`}
       className="text-muted-foreground max-sm:h-9 max-sm:px-3"
       onClick={(event) => {
         event.stopPropagation();
         onClick();
       }}
     >
-      {open ? "Hide responses" : "View responses"}
+      {open ? "Hide" : "View"} {responses}
     </Button>
   );
 }
@@ -187,6 +191,7 @@ export function SpreadPanel({
   description = "",
   big = false,
   phone = false,
+  supporting = false,
   onClose,
 }: {
   name: string;
@@ -196,6 +201,8 @@ export function SpreadPanel({
   description?: string;
   big?: boolean;
   phone?: boolean;
+  /** Count the source responses behind a vote choice. */
+  supporting?: boolean;
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -237,6 +244,11 @@ export function SpreadPanel({
           )}
         >
           {count}
+          {supporting ? (
+            <span className="font-sans text-sm">
+              {count === 1 ? " supporting response" : " supporting responses"}
+            </span>
+          ) : null}
         </span>
         <Button
           type="button"

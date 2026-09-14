@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PROJECTOR, ProjectorFit } from "@/components/live/projector-fit";
 import { JoinCode, joinUrl } from "@/components/live/qr-code";
 import { refusalSentence } from "@/components/live/refusals";
@@ -12,7 +12,7 @@ import {
 } from "@/components/live/rounds";
 import { modelSilent } from "@/components/live/run-relay-board";
 import { Wall } from "@/components/live/wall";
-import { LoadingState } from "@/components/states";
+import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -42,20 +42,27 @@ export function RelayProjector({
   run,
   refetch,
   ended = false,
+  error = null,
 }: {
   run: RelayRun;
   refetch: () => void;
   /** The page's sign-in ended: it says so once; the wall says nothing else. */
   ended?: boolean;
+  error?: string | null;
 }) {
   const { session } = useAuth();
   const [joinExpanded, setJoinExpanded] = useState(false);
 
-  const { data: relayData } = useQuery(
+  const {
+    data: relayData,
+    error: relayError,
+    refetch: refetchRelay,
+  } = useQuery(
     session
       ? () => api["/live/relays/get"]({ relay: run.relay }).then(unwrap)
       : null,
-    [session, run.relay, run],
+    [session, run.relay],
+    { retainOnTransportError: true },
   );
   const relay = relayData?.relay ?? null;
 
@@ -85,7 +92,11 @@ export function RelayProjector({
 
   // When the wall was last answered, which only an answer moves.
   const [answeredAt, setAnsweredAt] = useState(() => Date.now());
-  const { data: wallData, refetch: refetchWall } = useQuery(
+  const {
+    data: wallData,
+    error: wallError,
+    refetch: refetchWall,
+  } = useQuery(
     session && shownRound !== null
       ? () =>
           api["/live/walls/read"]({ round: shownRound })
@@ -96,16 +107,33 @@ export function RelayProjector({
             })
       : null,
     [session, shownRound, run.openRound],
+    { retainOnTransportError: true },
   );
-  const { data: sourceData } = useQuery(
+  const {
+    data: sourceData,
+    error: sourceError,
+    refetch: refetchSource,
+  } = useQuery(
     session && sourceRound !== null
       ? () => api["/live/walls/read"]({ round: sourceRound }).then(unwrap)
       : null,
     [session, sourceRound],
+    { retainOnTransportError: true },
   );
 
   const wall: WallShape | null = wallData?.wall ?? null;
   const sourceWall: WallShape | null = sourceData?.wall ?? null;
+
+  // Polls and actions refresh these resources without changing their identity.
+  // Keep the source cards mounted while their replacements are being read.
+  const previousRun = useRef(run);
+  useEffect(() => {
+    const previous = previousRun.current;
+    previousRun.current = run;
+    if (previous === run || previous.relay !== run.relay) return;
+    refetchRelay();
+    refetchSource();
+  }, [run, refetchRelay, refetchSource]);
 
   useEffect(() => {
     if (!run.open) return;
@@ -138,6 +166,7 @@ export function RelayProjector({
 
   const url = run.token === null ? null : joinUrl(run.token);
   const code = run.code;
+  const readError = error ?? relayError ?? wallError ?? sourceError;
 
   if (shownRound === null) {
     return (
@@ -153,6 +182,11 @@ export function RelayProjector({
         ) : url === null || code === null ? null : (
           <JoinCode audience="room" url={url} code={code} wall />
         )}
+        {readError === null ? null : (
+          <p role="status" className="text-muted-foreground">
+            {readError} This view is stale.
+          </p>
+        )}
       </div>
     );
   }
@@ -160,7 +194,11 @@ export function RelayProjector({
   if (wall === null) {
     return (
       <div className="flex h-dvh items-center justify-center">
-        <LoadingState label="Loading the wall…" />
+        {wallError === null ? (
+          <LoadingState label="Loading the wall…" />
+        ) : (
+          <ErrorState message={wallError} onRetry={refetchWall} />
+        )}
       </div>
     );
   }
@@ -190,11 +228,13 @@ export function RelayProjector({
   // is not reaching the server at all is said before anything read off it.
   const word = ended
     ? null
-    : gone
-      ? "No connection."
-      : modelSilent(wall, now)
-        ? "The model is not answering."
-        : null;
+    : readError
+      ? `${readError} This wall is stale.`
+      : gone
+        ? "No connection. This wall is stale."
+        : modelSilent(wall, now)
+          ? "The model is not answering."
+          : null;
 
   return (
     <Dialog open={joinExpanded && joining} onOpenChange={setJoinExpanded}>

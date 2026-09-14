@@ -45,6 +45,7 @@ function RunDashboardContent() {
   const { data, loading, error, refused, refetch } = useQuery(
     session ? () => api["/live/relays/run"]({ run }).then(unwrap) : null,
     [session, run],
+    { retainOnTransportError: true },
   );
 
   const relayRun = data?.run ?? null;
@@ -92,6 +93,7 @@ function QuizRunDashboard() {
   const { data, loading, error, refused, refetch } = useQuery(
     session ? () => api["/live/runs/results"]({ run }).then(unwrap) : null,
     [session, run],
+    { retainOnTransportError: true },
   );
 
   const board = data?.board ?? null;
