@@ -158,3 +158,7 @@ The generated relay description and each round’s purpose remain visible while 
 roundMaterialIsValid(title: String, prompt: String, choices: Strings, parts: Strings, cap: Number) : Boolean
   Checks a complete authored round against Questioning's title, material, and parts rules before creation or revision.
 ```
+
+A relay launch accepts `requireSignIn`, default false, and establishes its Accessing
+holder before issuing addresses. Every round inherits this parent policy exclusively.
+The participant face exposes the Boolean sign-in requirement.

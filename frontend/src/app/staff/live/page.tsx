@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Link } from "@/components/link";
 import { KIND_PHRASES } from "@/components/live/brief-chips";
+import { LaunchOptions } from "@/components/live/launch-options";
 import {
   FormTag,
   QUIZ_NOT_READY_MESSAGE,
@@ -147,9 +148,9 @@ function LiveListContent() {
     refetchRelays();
   }
 
-  async function launch(relay: string) {
+  async function launch(relay: string, requireSignIn: boolean) {
     setBusy(true);
-    const result = await api["/live/relays/launch"]({ relay });
+    const result = await api["/live/relays/launch"]({ relay, requireSignIn });
     if (isApiError(result)) {
       setBusy(false);
       toast.error(launchRefusal(result.error));
@@ -254,7 +255,9 @@ function LiveListContent() {
                 relay={entry.relay}
                 stateColumn={anyLive}
                 busy={busy}
-                onLaunch={() => void launch(entry.relay.relay)}
+                onLaunch={(requireSignIn) =>
+                  launch(entry.relay.relay, requireSignIn)
+                }
                 onRetire={() => retireRelay(entry.relay.relay)}
               />
             ) : (
@@ -322,7 +325,7 @@ function RelayEntry({
   relay: Relay;
   stateColumn: boolean;
   busy: boolean;
-  onLaunch: () => void;
+  onLaunch: (requireSignIn: boolean) => Promise<void>;
   onRetire: () => Promise<void>;
 }) {
   const live = relay.run !== null;
@@ -411,16 +414,21 @@ function RelayEntry({
             >
               {/* Busy, the button keeps its focus: it is out by aria, not by
                   a disabled that hands the focus back to the page. */}
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={relay.rounds.length === 0}
-                aria-disabled={busy || undefined}
-                onClick={busy ? undefined : onLaunch}
-              >
-                <Radio /> Launch
-                <Named title={relay.title} />
-              </Button>
+              <LaunchOptions
+                busy={busy}
+                onLaunch={onLaunch}
+                trigger={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={relay.rounds.length === 0}
+                    aria-disabled={busy || undefined}
+                  >
+                    <Radio /> Launch
+                    <Named title={relay.title} />
+                  </Button>
+                }
+              />
             </span>
             <ConfirmAction
               trigger={

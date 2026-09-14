@@ -14,6 +14,7 @@ import {
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { activeUser } from "../access/session.ts";
 import {
+  liveLaunchInput,
   mayHostLive,
   mayNotHostLive,
   participantIsSeated,
@@ -32,12 +33,14 @@ import {
   theOpenRoundOf,
   theRoundOfLegInRun,
   theRunOf,
+  theParticipationAccess,
   theTakeOf,
 } from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
 import { SORTING_USE } from "./rounds.ts";
 
 const {
+  Accessing,
   Categorizing,
   Commissioning,
   Guiding,
@@ -378,6 +381,8 @@ export const theRelayFace = former(
   (
     { run },
     {
+      mode,
+      requireSignIn,
       relay,
       title,
       open,
@@ -393,6 +398,8 @@ export const theRelayFace = former(
     },
   ) =>
     where(
+      theParticipationAccess({ subject: run }).is({ mode }),
+      compute(computations.liveRequiresSignIn, { mode }, requireSignIn),
       Publishing._edition({ edition: run }).is({ material: relay, open }),
       Relaying._relay({ relay }).is({ title }),
       whether(theOpenRoundOf({ run }).is({ round: openRound })),
@@ -400,6 +407,7 @@ export const theRelayFace = former(
       compute(computations.participantQuestions, { value: presentation }, questions),
     ).form({
       run,
+      requireSignIn,
       title,
       open,
       openRound,
@@ -985,24 +993,14 @@ export const SetKind = endpoint(
  * The relay itself is the run's material; nothing is captured until a round
  * opens. A relay holding a vote with nothing to vote on is refused, since the
  * round would open as a write round with the vote's word on it.
+ * Access modes use explicit branches: the engine cannot carry computed holders
+ * through this action chain. The computed holders select the branch; its access
+ * write uses the matching literal before either participation address is issued.
  */
 export const Launch = endpoint(
   "/live/relays/launch",
-  ({ session, relay, user, at, run, token, code }) =>
-    receive({ session, relay }).then(
-      where(
-        now(at),
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        Relaying._relay({ relay }),
-        relayIsNotRetired({ relay }),
-        no(relayHasABareVote({ relay })),
-      )
-        .then(Publishing.publish({ author: user, material: relay, at }).responds({ edition: run }))
-        .then(Sharing.issue({ subject: run }).responds({ token }))
-        .then(Locating.ensure({ subject: run }).responds({ code }))
-        .then(respond({ run, token, code }))
-        .named("success"),
+  ({ session, relay, requireSignIn, holders, user, at, run, token, code }) =>
+    receive({ session, relay, requireSignIn }).then(
       where(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
@@ -1030,8 +1028,53 @@ export const Launch = endpoint(
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
+      where(
+        compute(computations.liveAccessHolders, { requireSignIn }, holders),
+        is.among("standing:everyone", holders),
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._relay({ relay }),
+        relayIsNotRetired({ relay }),
+        no(relayHasABareVote({ relay })),
+      )
+        .then(Publishing.publish({ author: user, material: relay, at }).responds({ edition: run }))
+        .then(
+          Accessing.establish({
+            resource: run,
+            holders: ["standing:everyone"],
+          }).responds(),
+        )
+        .then(Sharing.issue({ subject: run }).responds({ token }))
+        .then(Locating.ensure({ subject: run }).responds({ code }))
+        .then(respond({ run, token, code }))
+        .named("success"),
+      where(
+        compute(computations.liveAccessHolders, { requireSignIn }, holders),
+        is.among("standing:authenticated", holders),
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        Relaying._relay({ relay }),
+        relayIsNotRetired({ relay }),
+        no(relayHasABareVote({ relay })),
+      )
+        .then(Publishing.publish({ author: user, material: relay, at }).responds({ edition: run }))
+        .then(
+          Accessing.establish({
+            resource: run,
+            holders: ["standing:authenticated"],
+          }).responds(),
+        )
+        .then(Sharing.issue({ subject: run }).responds({ token }))
+        .then(Locating.ensure({ subject: run }).responds({ code }))
+        .then(respond({ run, token, code }))
+        .named("success-signed"),
     ),
-  { input: { required: ["session", "relay"] } },
+  {
+    input: { required: ["session", "relay"], defaults: { requireSignIn: false } },
+    validators: { input: liveLaunchInput },
+  },
 );
 
 /** Resolve the source and its picked material in one optional observation. */

@@ -1448,7 +1448,7 @@ export type CommonsWire = {
     output: {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["answer"]>>, ["response"]>>;
     };
-    error: { error: AppWideError | "ALREADY_SUBMITTED" | "BLANK_ANSWER" | "CLOSED" | "INVALID_INPUT" | "NOT_FOUND" | "NOT_PART" | "RESPONSE_NOT_FOUND" };
+    error: { error: AppWideError | "ALREADY_SUBMITTED" | "BLANK_ANSWER" | "CLOSED" | "INVALID_INPUT" | "NOT_FOUND" | "NOT_PART" | "RESPONSE_NOT_FOUND" | "SIGN_IN_REQUIRED" };
   };
   "/live/p/answer-signed": {
     input: {
@@ -1471,7 +1471,8 @@ export type CommonsWire = {
         "form": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["snapshotForm"]["fn"]>>, []>>;
         "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
         "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
-        "run": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>>, ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>>;
+        "requireSignIn": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["liveRequiresSignIn"]["fn"]>>, []>>;
+        "run": Jsonify<OneOf<[AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>>, ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>, AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>>, ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_isRetired"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>]>>;
         "title": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["snapshotTitle"]["fn"]>>, []>>;
       } | null;
     } | {
@@ -1479,6 +1480,7 @@ export type CommonsWire = {
         "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
         "openRound": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
         "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
+        "requireSignIn": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["liveRequiresSignIn"]["fn"]>>, []>>;
         "rounds": ({
           "leg": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>]>>;
           "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["position"]>>;
@@ -1486,11 +1488,11 @@ export type CommonsWire = {
           "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
           "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
         })[];
-        "run": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>>, ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>>;
+        "run": Jsonify<OneOf<[AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>>, ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>, AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>>, ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_isRetired"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>>>, ["title"]>>;
       } | null;
     };
-    error: { error: AppWideError | "INVALID_INPUT" | "NOTHING_SHARED" };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOTHING_SHARED" | "NOT_FOUND" };
   };
   "/live/p/begin": {
     input: {
@@ -1504,7 +1506,7 @@ export type CommonsWire = {
       "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>[0], ["participant"]>>;
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>>, ["response"]>>;
     };
-    error: { error: AppWideError | "ALREADY_SUBMITTED" | "CLOSED" | "INVALID_INPUT" | "NOTHING_SHARED" | "NOT_FOUND" | "NO_OPEN_ROUND" | "NO_PARTICIPANT" };
+    error: { error: AppWideError | "ALREADY_SUBMITTED" | "CLOSED" | "INVALID_INPUT" | "NOTHING_SHARED" | "NOT_FOUND" | "NO_OPEN_ROUND" | "NO_PARTICIPANT" | "SIGN_IN_REQUIRED" };
   };
   "/live/p/begin-signed": {
     input: {
@@ -1518,7 +1520,7 @@ export type CommonsWire = {
       "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>[0], ["participant"]>>;
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>>, ["response"]>>;
     };
-    error: { error: AppWideError | "ALREADY_SUBMITTED" | "CLOSED" | "INVALID_INPUT" | "NOTHING_SHARED" | "NO_OPEN_ROUND" | "NO_PARTICIPANT" };
+    error: { error: AppWideError | "ALREADY_SUBMITTED" | "CLOSED" | "INVALID_INPUT" | "NOTHING_SHARED" | "NOT_FOUND" | "NO_OPEN_ROUND" | "NO_PARTICIPANT" };
   };
   "/live/p/locate": {
     input: {
@@ -1562,7 +1564,7 @@ export type CommonsWire = {
     } | {
       "received": true;
     };
-    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "NOT_SUBMITTED" };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "NOT_SUBMITTED" | "SIGN_IN_REQUIRED" };
   };
   "/live/p/outcome-signed": {
     input: {
@@ -1611,7 +1613,7 @@ export type CommonsWire = {
     } | {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
     };
-    error: { error: AppWideError | "ALREADY_GRADED" | "ALREADY_SUBMITTED" | "CLOSED" | "INCOMPLETE" | "INVALID_INPUT" | "KEY_NOT_FOUND" | "NOT_FOUND" | "RESPONSE_NOT_FOUND" };
+    error: { error: AppWideError | "ALREADY_GRADED" | "ALREADY_SUBMITTED" | "CLOSED" | "INCOMPLETE" | "INVALID_INPUT" | "KEY_NOT_FOUND" | "NOT_FOUND" | "RESPONSE_NOT_FOUND" | "SIGN_IN_REQUIRED" };
   };
   "/live/p/submit-signed": {
     input: {
@@ -1668,7 +1670,7 @@ export type CommonsWire = {
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
       } | null;
     };
-    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "NOT_SUBMITTED" };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "NOT_SUBMITTED" | "SIGN_IN_REQUIRED" };
   };
   "/live/p/wall-signed": {
     input: {
@@ -2014,14 +2016,19 @@ export type CommonsWire = {
   "/live/relays/launch": {
     input: {
       "relay": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>>;
+      "requireSignIn"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["liveAccessHolders"]["fn"]>[0], ["requireSignIn"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "code": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>>, ["code"]>>;
       "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>[0], ["subject"]>]>>;
       "token": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>>, ["token"]>>;
+    } | {
+      "code": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>>, ["code"]>>;
+      "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>[0], ["subject"]>]>>;
+      "token": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>>, ["token"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "MATERIAL_ALREADY_SHARED" | "NO_CHOICES" | "RELAY_NOT_FOUND" | "RELAY_RETIRED" };
+    error: { error: AppWideError | "ACCESS_ALREADY_ESTABLISHED" | "ALREADY_SUBMITTED" | "ALREADY_SUBSCRIBED" | "FORBIDDEN" | "INVALID_INPUT" | "MAIL_RECIPIENT_INVALID" | "MATERIAL_ALREADY_SHARED" | "NO_CHOICES" | "NO_PARTICIPANT" | "RELAY_NOT_FOUND" | "RELAY_RETIRED" };
   };
   "/live/relays/list": {
     input: {
@@ -2438,6 +2445,7 @@ export type CommonsWire = {
   "/live/runs/launch": {
     input: {
       "questionnaire": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["present"]>[0], ["questionnaire"]>>;
+      "requireSignIn"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["liveAccessHolders"]["fn"]>[0], ["requireSignIn"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
@@ -2448,8 +2456,16 @@ export type CommonsWire = {
       "code": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>>, ["code"]>>;
       "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>[0], ["subject"]>]>>;
       "token": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>>, ["token"]>>;
+    } | {
+      "code": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>>, ["code"]>>;
+      "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>[0], ["subject"]>]>>;
+      "token": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>>, ["token"]>>;
+    } | {
+      "code": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>>, ["code"]>>;
+      "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>[0], ["subject"]>]>>;
+      "token": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>>, ["token"]>>;
     };
-    error: { error: AppWideError | "ALREADY_SUBMITTED" | "FORBIDDEN" | "INVALID_GUIDANCE" | "INVALID_INPUT" | "INVALID_TITLE" | "INVALID_USE" | "ITEM_ALREADY_PINNED" | "KEY_EXISTS" | "MATERIAL_ALREADY_SHARED" | "NOT_QUIZ_READY" | "NO_PARTICIPANT" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "SNAPSHOT_EXISTS" | "UNKNOWN_DISCLOSURE" };
+    error: { error: AppWideError | "ACCESS_ALREADY_ESTABLISHED" | "ALREADY_SUBMITTED" | "ALREADY_SUBSCRIBED" | "FORBIDDEN" | "INVALID_GUIDANCE" | "INVALID_INPUT" | "INVALID_TITLE" | "INVALID_USE" | "ITEM_ALREADY_PINNED" | "KEY_EXISTS" | "MAIL_RECIPIENT_INVALID" | "MATERIAL_ALREADY_SHARED" | "NOT_QUIZ_READY" | "NO_PARTICIPANT" | "QUESTIONNAIRE_NOT_FOUND" | "QUESTIONNAIRE_RETIRED" | "SNAPSHOT_EXISTS" | "UNKNOWN_DISCLOSURE" };
   };
   "/live/runs/open": {
     input: {
@@ -6194,7 +6210,7 @@ export type CommonsWireHttp = {
     output: {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["answer"]>>, ["response"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
   "/live/p/answer-signed": {
     input: {
@@ -6216,7 +6232,8 @@ export type CommonsWireHttp = {
         "form": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["snapshotForm"]["fn"]>>, []>>;
         "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
         "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
-        "run": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>>, ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>>;
+        "requireSignIn": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["liveRequiresSignIn"]["fn"]>>, []>>;
+        "run": Jsonify<OneOf<[AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>>, ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>, AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>>, ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_isRetired"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>]>>;
         "title": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["snapshotTitle"]["fn"]>>, []>>;
       } | null;
     } | {
@@ -6224,6 +6241,7 @@ export type CommonsWireHttp = {
         "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
         "openRound": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
         "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
+        "requireSignIn": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["liveRequiresSignIn"]["fn"]>>, []>>;
         "rounds": ({
           "leg": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>]>>;
           "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["position"]>>;
@@ -6231,7 +6249,7 @@ export type CommonsWireHttp = {
           "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
           "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
         })[];
-        "run": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>>, ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>>;
+        "run": Jsonify<OneOf<[AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>>, ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>, AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["open"]>>, ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_isRetired"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>]>]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>>>, ["title"]>>;
       } | null;
     };
@@ -6249,7 +6267,7 @@ export type CommonsWireHttp = {
       "participant": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>[0], ["participant"]>>;
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["begin"]>>, ["response"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
   "/live/p/begin-signed": {
     input: {
@@ -6306,7 +6324,7 @@ export type CommonsWireHttp = {
     } | {
       "received": true;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
   "/live/p/outcome-signed": {
     input: {
@@ -6354,7 +6372,7 @@ export type CommonsWireHttp = {
     } | {
       "response": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["submit"]>>, ["response"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
   "/live/p/submit-signed": {
     input: {
@@ -6410,7 +6428,7 @@ export type CommonsWireHttp = {
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
       } | null;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
   "/live/p/wall-signed": {
     input: {
@@ -6736,13 +6754,18 @@ export type CommonsWireHttp = {
   "/live/relays/launch": {
     input: {
       "relay": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relay"]>[0], ["relay"]>>;
+      "requireSignIn"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["liveAccessHolders"]["fn"]>[0], ["requireSignIn"]>>;
     };
     output: {
       "code": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>>, ["code"]>>;
       "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>[0], ["subject"]>]>>;
       "token": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>>, ["token"]>>;
+    } | {
+      "code": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>>, ["code"]>>;
+      "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>[0], ["subject"]>]>>;
+      "token": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>>, ["token"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/relays/list": {
     input: Record<string, never>;
@@ -7129,6 +7152,7 @@ export type CommonsWireHttp = {
   "/live/runs/launch": {
     input: {
       "questionnaire": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Questioning"]["present"]>[0], ["questionnaire"]>>;
+      "requireSignIn"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["liveAccessHolders"]["fn"]>[0], ["requireSignIn"]>>;
     };
     output: {
       "code": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>>, ["code"]>>;
@@ -7138,8 +7162,16 @@ export type CommonsWireHttp = {
       "code": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>>, ["code"]>>;
       "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>[0], ["subject"]>]>>;
       "token": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>>, ["token"]>>;
+    } | {
+      "code": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>>, ["code"]>>;
+      "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>[0], ["subject"]>]>>;
+      "token": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>>, ["token"]>>;
+    } | {
+      "code": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>>, ["code"]>>;
+      "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locating"]["ensure"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>[0], ["subject"]>]>>;
+      "token": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["issue"]>>, ["token"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/live/runs/open": {
     input: Record<string, never>;

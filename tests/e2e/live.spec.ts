@@ -72,6 +72,7 @@ test("a drafted quiz is adopted, launched, taken on a phone, graded, and closed"
 
   // Launch, landing on the run dashboard with the room code on screen.
   await page.getByRole("button", { name: "Launch" }).first().click();
+  await page.getByRole("dialog").getByRole("button", { name: "Launch", exact: true }).click();
   await page.waitForURL(/\/staff\/live\/run\//, { timeout: 20_000 });
   await expect(page.getByText("Handed in", { exact: true })).toBeVisible();
   const code = await page.locator("figcaption span").first().innerText();
@@ -351,3 +352,218 @@ test("a concurrent launch and edit keep the participant face and scoring key coh
   );
   await postApi("/live/runs/close", { run: launch.run });
 });
+
+for (const form of ["quiz", "survey", "relay"] as const) {
+  test(`${form}: require sign-in redirects before restored progress or auto-join can participate`, async ({
+    page,
+    browser,
+  }) => {
+    test.setTimeout(120_000);
+    await warmRoutes(page);
+    await signIn(page);
+    async function call(path: string, data: unknown) {
+      const cookie = (await page.context().cookies())
+        .map((entry) => `${entry.name}=${entry.value}`)
+        .join("; ");
+      const result = await page.request.post(`/api${path}`, { data, headers: { Cookie: cookie } });
+      expect(result.ok(), path).toBe(true);
+      return result.json();
+    }
+    let material: string;
+    let leg: string | undefined;
+    if (form === "relay") {
+      material = (await call("/live/relays/plan", { title: "Sign-in relay" })).relay;
+      leg = (
+        await call("/live/relays/add-round", {
+          relay: material,
+          title: "Choose",
+          prompt: "Choose A",
+          parts: [],
+          cap: 0,
+          choices: ["A", "B"],
+        })
+      ).leg;
+      await page.goto(`/staff/live/relay/${material}`);
+    } else {
+      material = (await call("/live/quizzes/create", { title: `Sign-in ${form}`, form }))
+        .questionnaire;
+      await call("/live/quizzes/add-question", {
+        questionnaire: material,
+        prompt: "Choose A",
+        choices: ["A", "B"],
+        expected: "A",
+      });
+      await page.goto(`/staff/live/${material}`);
+    }
+    await page.getByRole("button", { name: "Launch", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    const toggle = dialog.getByRole("checkbox", { name: /Require sign-in/ });
+    await expect(toggle).not.toBeChecked();
+    await toggle.check();
+    // Cancel creates no run, and each new launch starts with the default choice.
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+    await page.getByRole("button", { name: "Launch", exact: true }).click();
+    await expect(toggle).not.toBeChecked();
+    await toggle.check();
+    const launchResponse = page.waitForResponse((response) =>
+      response
+        .url()
+        .endsWith(form === "relay" ? "/api/live/relays/launch" : "/api/live/runs/launch"),
+    );
+    await dialog.getByRole("button", { name: "Launch", exact: true }).click();
+    const { run, token } = await (await launchResponse).json();
+    await page.waitForURL(/\/staff\/live\/run\//);
+    if (form === "relay") await call("/live/relays/open-round", { run, leg });
+
+    const phone = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    let releaseAuth = () => {};
+    let releaseArrival = () => {};
+    try {
+      await phone.addInitScript(
+        ({ token }) => {
+          localStorage.setItem("commons-live-device", "restored-phone");
+          localStorage.setItem(
+            `commons-live-${token}:device:restored-phone`,
+            JSON.stringify({ response: "old-anonymous-response", answers: {}, submitted: true }),
+          );
+        },
+        { token },
+      );
+      const participant = await phone.newPage();
+      const authGate = new Promise<void>((resolve) => {
+        releaseAuth = resolve;
+      });
+      await participant.route("**/api/auth/me", async (route) => {
+        await authGate;
+        await route.continue();
+      });
+      const responseRequests: string[] = [];
+      participant.on("request", (request) => {
+        if (/\/api\/live\/p\/(begin|answer|submit|outcome|wall)/.test(request.url()))
+          responseRequests.push(request.url());
+      });
+      const arrivalGate = new Promise<void>((resolve) => {
+        releaseArrival = resolve;
+      });
+      await participant.route("**/api/live/p/arrive", async (route) => {
+        await arrivalGate;
+        await route.continue();
+      });
+      const arriving = participant.waitForRequest((request) =>
+        request.url().endsWith("/api/live/p/arrive"),
+      );
+      await participant.goto(`/q/${token}?by=code`);
+      await expect(participant.getByText("Checking your session…")).toBeVisible();
+      expect(responseRequests).toEqual([]);
+      releaseAuth();
+      await arriving;
+      await expect(participant.getByText("Opening…")).toBeVisible();
+      expect(responseRequests).toEqual([]);
+      releaseArrival();
+      await participant.waitForURL(/\/login\?next=/);
+      expect(new URL(participant.url()).searchParams.get("next")).toBe(`/q/${token}?by=code`);
+      expect(responseRequests).toEqual([]);
+      await expect(participant.getByRole("textbox", { name: "Username" })).toBeVisible();
+      await participant.getByRole("textbox", { name: "Username" }).fill(NOAH.username);
+      await participant.getByRole("textbox", { name: "Password" }).fill(NOAH.password);
+      await participant.getByRole("button", { name: "Sign in" }).click();
+      await participant.waitForURL(new RegExp(`/q/${token}`));
+      if (form !== "relay")
+        await participant.getByRole("button", { name: "Join", exact: true }).click();
+      const answered = participant.waitForResponse((response) =>
+        response.url().endsWith("/api/live/p/answer-signed"),
+      );
+      await participant.getByRole("button", { name: "A", exact: true }).click();
+      expect((await answered).ok()).toBe(true);
+      if (form === "quiz") {
+        // End the session externally while this tab still holds its identity.
+        // The participant must retain the answer and resume the same response.
+        expect(
+          await participant.evaluate(
+            async () =>
+              (
+                await fetch("/api/auth/logout", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: "{}",
+                })
+              ).status,
+          ),
+        ).toBe(200);
+        await participant.getByRole("button", { name: "Hand in", exact: true }).click();
+        await expect(participant.getByText("Your sign-in ended.")).toBeVisible();
+        await expect(participant.getByRole("button", { name: "A", exact: true })).toHaveAttribute(
+          "aria-pressed",
+          "true",
+        );
+        await participant.getByRole("link", { name: "Sign in", exact: true }).click();
+        await participant.getByRole("textbox", { name: "Username" }).fill(NOAH.username);
+        await participant.getByRole("textbox", { name: "Password" }).fill(NOAH.password);
+        await participant.getByRole("button", { name: "Sign in", exact: true }).click();
+        await participant.waitForURL(new RegExp(`/q/${token}`));
+        await expect(participant.getByRole("button", { name: "A", exact: true })).toHaveAttribute(
+          "aria-pressed",
+          "true",
+        );
+      }
+      await participant.getByRole("button", { name: "Hand in", exact: true }).click();
+      if (form === "quiz") await expect(participant.getByText("Your score")).toBeVisible();
+      else if (form === "survey")
+        await expect(
+          participant.getByRole("heading", { name: "Handed in", exact: true }),
+        ).toBeVisible();
+      else if (form === "relay")
+        await expect
+          .poll(async () => {
+            const data = await call("/live/relays/run", { run });
+            return data.run.rounds[0].figure.handedIn;
+          })
+          .toBe(1);
+      expect(responseRequests.some((url) => url.endsWith("/begin-signed"))).toBe(true);
+      expect(responseRequests.every((url) => url.endsWith("-signed"))).toBe(true);
+      // A refused anonymous request must not clear an existing browser session.
+      const sessionBefore = (await phone.cookies()).find(
+        (cookie) => cookie.name === "__Host-commons-session",
+      );
+      expect(sessionBefore).toBeDefined();
+      const authResult = await participant.evaluate(async (token) => {
+        const denied = await fetch("/api/live/p/begin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, device: "stray-anonymous-request" }),
+        });
+        const me = await fetch("/api/auth/me", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        });
+        return { denied: denied.status, me: me.status };
+      }, token);
+      expect(authResult).toEqual({ denied: 401, me: 200 });
+      expect(
+        (await phone.cookies()).find((cookie) => cookie.name === "__Host-commons-session")?.value,
+      ).toBe(sessionBefore?.value);
+      responseRequests.length = 0; // Observe only UI requests again after the deliberate probe.
+      await participant.reload();
+      await expect(participant.getByRole("button", { name: "Sign in", exact: true })).toHaveCount(
+        0,
+      );
+      if (form === "quiz") {
+        await expect(participant.getByText("Your score")).toBeVisible();
+      } else if (form === "survey") {
+        await expect(
+          participant.getByRole("heading", { name: "Handed in", exact: true }),
+        ).toBeVisible();
+      } else {
+        await expect(
+          participant.getByRole("heading", { name: "Response received", exact: true }),
+        ).toBeVisible();
+      }
+      expect(responseRequests.every((url) => url.endsWith("-signed"))).toBe(true);
+    } finally {
+      releaseAuth();
+      releaseArrival();
+      await phone.close();
+    }
+  });
+}

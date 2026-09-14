@@ -1,8 +1,9 @@
-import { compute, count, is, no, view, where } from "@mit-sdg/sync-engine/language";
+import { compute, count, is, no, view, where, whether } from "@mit-sdg/sync-engine/language";
 import { computations, concepts } from "../../concepts.ts";
 import { ADMINISTER, COMMONS } from "../access/capabilities.ts";
 
 const {
+  Accessing,
   Authenticating,
   Drafting,
   Publishing,
@@ -345,3 +346,54 @@ export const cardIsNotOfAClosedRun = view(
   "(card) is in no pile of a closed run",
   ({ card }, _outputs, _bindings) => where(no(cardIsOfAClosedRun({ card }))),
 ).holds();
+
+/** One captured access choice on the owning run. */
+const theRunAccess = view(
+  "the access mode of live (run)",
+  ({ run }, { mode }, { holders, retired }) =>
+    where(
+      whether(Accessing._holders({ resource: run }).is({ holders })),
+      Accessing._isRetired({ resource: run }).is({ retired }),
+      compute(computations.liveAccessMode, { holders, retired }, mode),
+    ),
+).one();
+
+/** A round inherits its parent exclusively; an orphaned leg never becomes legacy-open. */
+export const theParticipationAccess = view(
+  "the participation access of (subject)",
+  ({ subject }, { mode }, { run, material }) => [
+    where(
+      theRunOf({ round: subject }).is({ run }),
+      runIsARelayRun({ run }),
+      theRunAccess({ run }).is({ mode }),
+    ),
+    where(
+      no(theRunOf({ round: subject })),
+      Publishing._edition({ edition: subject }).is({ material }),
+      no(Relaying._legFor({ material })),
+      theRunAccess({ run: subject }).is({ mode }),
+    ),
+  ],
+).optional();
+
+export const participationAvailable = view(
+  "(subject) has available participation",
+  ({ subject }, _outputs, { mode }) =>
+    where(theParticipationAccess({ subject }).is({ mode }), is.among(mode, ["open", "signed"])),
+).holds();
+
+export const anonymousParticipationAllowed = view(
+  "(subject) allows anonymous participation",
+  ({ subject }) => where(theParticipationAccess({ subject }).is({ mode: "open" })),
+).holds();
+
+/** Admission rejects malformed toggle values before any launch action runs. */
+export function liveLaunchInput(value: unknown) {
+  return {
+    ok:
+      typeof value === "object" &&
+      value !== null &&
+      !Array.isArray(value) &&
+      (!("requireSignIn" in value) || typeof value.requireSignIn === "boolean"),
+  };
+}

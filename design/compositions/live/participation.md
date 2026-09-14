@@ -1,7 +1,7 @@
 # Participation
 
-A participant needs nothing but the token: no account, no roster seat, no
-login. Scanning the code or typing the short address lands on the join page,
+A participant needs the token and, when the run requires it, an active sign-in.
+Open runs still need no account or roster seat. Scanning the code or typing the short address lands on the join page,
 which calls these endpoints. Identity is hybrid: every device mints and keeps
 a participant identifier, and when a Commons session rides along, the response
 is bound to that account instead — so a signed-in student's participation
@@ -128,3 +128,12 @@ Live.participation.SubmitSigned at /live/p/submit-signed
 Live.participation.Wall at /live/p/wall
 Live.participation.WallSigned at /live/p/wall-signed
 ```
+
+Arrival exposes `requireSignIn`; unavailable access refuses the arrival. Prompts
+remain public. Anonymous begin, answer, submit, outcome, and wall requests require
+open participation; signed routes require an available policy and keep their
+existing ownership checks. SIGN_IN_REQUIRED projects to HTTP UNAUTHORIZED.
+Round subjects resolve to their parent, never to their own absent access record;
+an orphaned round is unavailable. Ownership refusals remain NOT_FOUND and access
+guards keep all outcome branches exclusive. Signed-out phones redirect through
+the existing login-return path before mounting the relay or requesting responses.

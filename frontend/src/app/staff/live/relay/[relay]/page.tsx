@@ -8,6 +8,7 @@ import { ConfirmAction } from "@/components/confirm-action";
 import { Fact, Facts } from "@/components/facts";
 import { Link } from "@/components/link";
 import { GuideText, RelayBasics } from "@/components/live/host-guide";
+import { LaunchOptions } from "@/components/live/launch-options";
 import { FormTag, RETIRE_NOTE } from "@/components/live/quiz-meta";
 import { refusalSentence } from "@/components/live/refusals";
 import { bareVote } from "@/components/live/round-preview";
@@ -91,9 +92,9 @@ function RelayOverviewContent() {
         ? refusalSentence("NO_CHOICES")
         : undefined;
 
-  async function launch() {
+  async function launch(requireSignIn: boolean) {
     setBusy(true);
-    const result = await api["/live/relays/launch"]({ relay });
+    const result = await api["/live/relays/launch"]({ relay, requireSignIn });
     if (isApiError(result)) {
       setBusy(false);
       toast.error(launchRefusal(result.error));
@@ -144,13 +145,18 @@ function RelayOverviewContent() {
               <span className="inline-flex" title={notYet}>
                 {/* Busy, the button keeps its focus: it is out by aria, not
                     by a disabled that hands the focus back to the page. */}
-                <Button
-                  disabled={found.retired || notYet !== undefined}
-                  aria-disabled={busy || undefined}
-                  onClick={busy ? undefined : () => void launch()}
-                >
-                  <Radio /> Launch
-                </Button>
+                <LaunchOptions
+                  busy={busy}
+                  onLaunch={launch}
+                  trigger={
+                    <Button
+                      disabled={found.retired || notYet !== undefined}
+                      aria-disabled={busy || undefined}
+                    >
+                      <Radio /> Launch
+                    </Button>
+                  }
+                />
               </span>
             )}
             {openRun === null && !found.retired ? (

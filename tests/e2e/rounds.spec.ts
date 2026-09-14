@@ -99,6 +99,7 @@ test("a relay runs its room: forty phones, a model participant, sorting, picks, 
   await page.goto(`/staff/live/relay/${planned.relay}/edit`);
   await expect(page.getByRole("textbox", { name: "Title" }).nth(2)).toHaveValue("The stranger");
   await page.getByRole("button", { name: "Launch" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Launch", exact: true }).click();
   await page.waitForURL(/\/staff\/live\/run\/[0-9a-f-]{36}$/, { timeout: 20_000 });
   const run = page.url().split("/").pop() as string;
 
