@@ -240,6 +240,14 @@ test("reply trash leaves a removed position; thread trash, restore and purge act
       "This reply was removed by a moderator.",
     );
 
+    // A removed reply with nothing beneath it leaves no notice behind.
+    await mara.call("/trash/trash", { item: leaf.post });
+    await noah.page.reload();
+    await expect(noah.page.locator(`#post-${leaf.post}`)).toHaveCount(0);
+    await expect(noah.page.locator(`#post-${middle.post}`)).toHaveCount(0);
+    await expect(noah.page.getByText("removed by a moderator")).toHaveCount(0);
+    await mara.call("/trash/restore", { item: leaf.post });
+
     // Purging the thread from the bin removes everything for good.
     await mara.call("/trash/trash", { item: root.conversation });
     await mara.page.goto("/moderation");

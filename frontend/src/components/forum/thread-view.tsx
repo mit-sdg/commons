@@ -68,6 +68,11 @@ function visibleDescendants(branch: ThreadBranch): string[] {
   ]);
 }
 
+/** A removed reply is shown only while something beneath it still needs its context. */
+function showsAnything(branch: ThreadBranch): boolean {
+  return branch.node !== null || branch.children.some(showsAnything);
+}
+
 /** A removed reply keeps its place so the replies beneath it stay in context. */
 function RemovedPost({
   item,
@@ -402,7 +407,9 @@ function ThreadBranchView({
   onChanged: () => void;
 }) {
   const isRoot = branch.position.node === rootNodeId;
-  const hasChildren = branch.children.length > 0;
+  const children = branch.children.filter(showsAnything);
+  const hasChildren = children.length > 0;
+  if (!isRoot && !branch.node && !hasChildren) return null;
 
   return (
     <li className={cn("thread-branch", level > 0 && "thread-branch--child")}>
@@ -436,7 +443,7 @@ function ThreadBranchView({
             level >= 5 && "thread-children--compact",
           )}
         >
-          {branch.children.map((child) => (
+          {children.map((child) => (
             <ThreadBranchView
               key={child.position.node}
               branch={child}
