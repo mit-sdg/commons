@@ -10,13 +10,6 @@ that cannot read the post sees `NOT_FOUND`, the same answer the post gives every
 other reader who is not admitted. Roots and replies are alike here: any readable
 post may notify, including one published long before.
 
-Both the sender's permission and the recipient set are the ordinary post read, so
-an administrator's discussion-wide read access counts on both sides: an
-administrator may notify a private discussion they are not addressed in, and an
-administrator receives a notice sent in one. That follows from treating "allowed
-to read" as one rule rather than keeping a second definition of the audience
-beside it.
-
 [Forum.notices.Preview](reaction:Forum.notices.Preview) answers
 [how many people the notice would reach](former:Forum.notices.theNoticeAudienceOf)
 together with whether that post has already notified, so the sender confirms a
@@ -45,7 +38,8 @@ independent action, and the capture is already stored: a fault for one recipient
 leaves the notice sent to the others and does not make the post notifiable again.
 Every such notification then follows the ordinary forum mail path, which already
 carries the post's content, its author, and a direct discussion link; this kind
-adds only its own event wording.
+adds only its own event wording. Administrators retain the in-app notice when
+they belong to the audience, but announcement emails are not queued for them.
 
 [Forum.notices.ForConversation](reaction:Forum.notices.ForConversation) forms
 [the notified posts of one discussion](former:Forum.notices.theNoticedPostsOf) so

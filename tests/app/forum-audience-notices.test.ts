@@ -57,7 +57,7 @@ async function refuse(app: App, path: string, body: Record<string, unknown>, cod
 
 const kindsOf = (rows: { kind: string }[], kind: string) => rows.filter((row) => row.kind === kind);
 
-test("staff notify a post's audience once, with the post itself, excluding its author", async () => {
+test("staff notify a post's audience once, without emailing administrators", async () => {
   const {
     app,
     people: [student, admin, tutor, outsider],
@@ -101,10 +101,8 @@ test("staff notify a post's audience once, with the post itself, excluding its a
   const queued = (await app.concepts.Mailing._getPending({})).filter(
     (message) => !pendingBefore.some((earlier) => earlier.message === message.message),
   );
-  expect(queued.map((message) => message.recipient).sort()).toEqual(
-    [admin!.email, tutor!.email].sort(),
-  );
-  const mail = queued.find((message) => message.recipient === tutor!.email);
+  expect(queued.map((message) => message.recipient)).toEqual([tutor!.email]);
+  const mail = queued[0];
   expect(mail?.subject).toBe("Staff shared a post: Lab timing");
   expect(mail?.text).toContain("Correction: the second bench is broken.");
   expect(mail?.text).toContain("From: @student");
@@ -112,6 +110,33 @@ test("staff notify a post's audience once, with the post itself, excluding its a
   expect(mail?.html).toContain("Correction: the second bench is broken.");
   // One post, not the thread it sits in.
   expect(`${mail?.text}${mail?.html}`).not.toContain("When does the lab open?");
+});
+
+test("an administrator outside a private audience receives neither a notice nor email", async () => {
+  const {
+    app,
+    people: [student, admin, tutor],
+  } = await fixture();
+  const thread = await invoke(app, "/threads/create", {
+    session: student!.session,
+    content: "# Private question\n\nOnly the selected staff should see this.",
+    holders: [`account:${student!.user}`, `account:${tutor!.user}`],
+  });
+  const pendingBefore = await app.concepts.Mailing._getPending({});
+
+  expect(
+    await invoke(app, "/notices/notify", { session: tutor!.session, post: thread.post }),
+  ).toEqual({ post: thread.post, recipients: 1 });
+  expect(
+    kindsOf(
+      (await invoke(app, "/notifications/inbox", { session: admin!.session })).notifications,
+      "audience_notice",
+    ),
+  ).toEqual([]);
+  const queued = (await app.concepts.Mailing._getPending({})).filter(
+    (message) => !pendingBefore.some((earlier) => earlier.message === message.message),
+  );
+  expect(queued.map((message) => message.recipient)).toEqual([tutor!.email]);
 });
 
 test("a post notifies once; a second send and a later edit add nothing", async () => {

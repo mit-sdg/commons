@@ -1681,7 +1681,7 @@ Concrete types:
 - `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 541.
 - `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 150.
 - `failureStanding(failedAt: Date, at: Date) : String` — [The wall](../design/compositions/live/walls.md), line 73.
-- `forumMailKey(notification: String, recipient: String, post: String) : String` — [Notifications](../design/compositions/forum/notifications.md), line 77.
+- `forumMailKey(notification: String, recipient: String, post: String) : String` — [Notifications](../design/compositions/forum/notifications.md), line 80.
 - `forumNotificationMailBody(content: String, post: String, opening: Any) : String` — [Commons application](../design/application.md), line 510.
 - `forumNotificationMailHtml(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 516.
 - `forumNotificationMailText(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 513.
@@ -1810,15 +1810,6 @@ Concrete types:
 
 _Views name reusable conditions. Multiple `where` blocks are alternatives._
 
-### (user) is an available audience account
-
-```view
-(user) is an available audience account — inputs (user); outputs (); bindings ()
-  where
-    Authenticating._getById (user)
-    Archiving._isTrashed (item: user) has (trashed: false)
-```
-
 ### (holders) admit (user)
 
 ```view
@@ -1836,29 +1827,23 @@ _Views name reusable conditions. Multiple `where` blocks are alternatives._
     allowed is among [true]
 ```
 
-### (user) may administer
+### (user) is an available audience account
 
 ```view
-(user) may administer — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
+(user) is an available audience account — inputs (user); outputs (); bindings ()
+  where
+    Authenticating._getById (user)
+    Archiving._isTrashed (item: user) has (trashed: false)
 ```
 
-### (user) may read discussions addressed to (holders)
+### (user) belongs to the established audience of (conversation)
 
 ```view
-(user) may read discussions addressed to (holders) — inputs (user, holders); outputs (); bindings ()
-  where view "(user) may administer" with (user)
-  where view "(holders) admit (user)" with (holders, user)
-```
-
-### (user) may read established conversation (conversation)
-
-```view
-(user) may read established conversation (conversation) — inputs (user, conversation); outputs (); bindings (holders)
+(user) belongs to the established audience of (conversation) — inputs (user, conversation); outputs (); bindings (holders)
   where
     view "(user) is an available audience account" with (user)
     Accessing._holders (resource: conversation) has (holders)
-    view "(user) may read discussions addressed to (holders)" with (holders, user)
+    view "(holders) admit (user)" with (holders, user)
     Conversing._exists (conversation) has (exists: true)
 ```
 
@@ -1877,7 +1862,7 @@ the structural conversation containing post (post) — inputs (post); outputs (c
 (user) may read forum post (post) — inputs (user, post); outputs (); bindings (conversation)
   where
     view "the structural conversation containing post (post)" with (post) has (conversation)
-    view "(user) may read established conversation (conversation)" with (conversation, user)
+    view "(user) belongs to the established audience of (conversation)" with (conversation, user)
     Posting._getPost (post)
     Trashing._isTrashed (item: post) has (trashed: false)
 ```
@@ -2000,7 +1985,7 @@ Authored path: `Forum.notices.noticeable`.
 ```view
 the stored posts in (conversation) for (user) — inputs (user, conversation); outputs (nodes, posts); bindings (items) — answers at most one (nodes, posts)
   where
-    view "(user) may read established conversation (conversation)" with (conversation, user)
+    view "(user) belongs to the established audience of (conversation)" with (conversation, user)
     Conversing._threadNodes (conversation) has (nodes)
     items is threadPostIds (nodes)
     Posting._postMetadata (posts: items) has (posts)
@@ -2029,7 +2014,7 @@ Authored path: `Forum.threads.readableConversation`.
 ### (holders) include the whole course
 
 Authored path: `Forum.notifications.courseWideNotificationAudience`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 89.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 87.
 
 ```view
 (holders) include the whole course — inputs (holders); outputs (); bindings ()
@@ -2193,7 +2178,7 @@ the round of (leg) in (run) — inputs (run, leg); outputs (round, open); bindin
 ### (user) may read notification subject (subject)
 
 Authored path: `Forum.notifications.notificationSubjectReader`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 94.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 92.
 
 ```view
 (user) may read notification subject (subject) — inputs (user, subject); outputs (); bindings ()
@@ -2208,7 +2193,7 @@ Authored path: `Forum.notifications.notificationSubjectReader`.
 ### (notification) is available to (user)
 
 Authored path: `Forum.notifications.readableNotification`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 74.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 77.
 
 ```view
 (notification) is available to (user) — inputs (notification, user); outputs (); bindings (subject, link)
@@ -2276,7 +2261,7 @@ Authored path: `Forum.threads.forumPost`.
 ### (post) has notified its audience
 
 Authored path: `Forum.notices.noticed`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 36.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 29.
 
 ```view
 (post) has notified its audience — inputs (post); outputs (); bindings ()
@@ -2667,6 +2652,25 @@ Authored path: `Forum.threads.publicTarget`.
   where no Roling._getRole (context, user)
 ```
 
+### (user) may administer
+
+```view
+(user) may administer — inputs (user); outputs (); bindings ()
+  where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
+```
+
+### (user) is an administrator receiving audience notice kind (kind)
+
+Authored path: `Forum.notifications.administratorAudienceNotice`.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 39.
+
+```view
+(user) is an administrator receiving audience notice kind (kind) — inputs (user, kind); outputs (); bindings ()
+  where
+    kind is among ["audience_notice"]
+    view "(user) may administer" with (user)
+```
+
 ### (user) is archived
 
 ```view
@@ -2833,7 +2837,7 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
 (user) may inspect stored forum post (post) — inputs (user, post); outputs (); bindings (conversation)
   where
     view "the structural conversation containing post (post)" with (post) has (conversation)
-    view "(user) may read established conversation (conversation)" with (conversation, user)
+    view "(user) belongs to the established audience of (conversation)" with (conversation, user)
     Posting._getPost (post)
 ```
 
@@ -3052,7 +3056,7 @@ Authored path: `Course.assignments.maySubmitAssignment`.
 ### (user) receives a staff notification for (holders)
 
 Authored path: `Forum.notifications.staffNotificationRecipient`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 89.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 87.
 
 ```view
 (user) receives a staff notification for (holders) — inputs (user, holders); outputs (); bindings ()
@@ -3395,7 +3399,7 @@ the conversation placing (item) for (reader) — inputs (item, reader); outputs 
 ### the readable opening of (conversation) for (reader)
 
 Authored path: `Forum.notifications.readableDiscussionOpening`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 51.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 54.
 
 ```view
 the readable opening of (conversation) for (reader) — inputs (conversation, reader); outputs (content); bindings (item) — answers at most one (content)
@@ -3408,7 +3412,7 @@ the readable opening of (conversation) for (reader) — inputs (conversation, re
 ### the discussion context of (post) for (reader)
 
 Authored path: `Forum.notifications.notificationDiscussion`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 50.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 53.
 
 ```view
 the discussion context of (post) for (reader) — inputs (post, reader); outputs (conversation, discussionTitle); bindings (content) — answers at most one (conversation, discussionTitle)
@@ -3422,7 +3426,7 @@ the discussion context of (post) for (reader) — inputs (post, reader); outputs
 ### the effective invitation copy ()
 
 Authored path: `Access.mail.invitationCopy`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 47.
+- Covered by [Mail](../design/compositions/access/mail.md), line 43.
 
 ```view
 the effective invitation copy () — inputs (); outputs (subject, body); bindings (wordedSubject, wordedBody) — answers exactly one (subject, body)
@@ -3435,7 +3439,7 @@ the effective invitation copy () — inputs (); outputs (subject, body); binding
 ### the notification detail of (assignment)
 
 Authored path: `Forum.notifications.assignmentNotificationDetail`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 96.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 94.
 
 ```view
 the notification detail of (assignment) — inputs (assignment); outputs (assignmentTitle, assignmentAuthor, dueAt); bindings () — answers at most one (assignmentTitle, assignmentAuthor, dueAt)
@@ -4199,7 +4203,7 @@ Former "the assigned population for (assignment)" — inputs (assignment); bindi
 ### the assignment notification presentation of (assignment) for (user)
 
 Authored path: `Forum.notifications.theAssignmentNotificationPresentation`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 96.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 94.
 
 ```former
 Former "the assignment notification presentation of (assignment) for (user)" — inputs (assignment, user); bindings (assignmentTitle); promises at most one record — forms:
@@ -4523,7 +4527,7 @@ Former "the current audience options of (user)" — inputs (user); bindings (hol
 ### the current mail eligibility of (recipient) for (post) at (queued)
 
 Authored path: `Forum.notifications.theMailEligibility`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 74.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 77.
 
 ```former
 Former "the current mail eligibility of (recipient) for (post) at (queued)" — inputs (recipient, post, queued); bindings (); promises at most one record — forms:
@@ -4588,7 +4592,7 @@ Former "the defined roles ()" — inputs (); bindings (role, name, capabilities)
 ### the discussion notification presentation of (post) for (reader)
 
 Authored path: `Forum.notifications.theDiscussionNotificationPresentation`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 48.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 51.
 
 ```former
 Former "the discussion notification presentation of (post) for (reader)" — inputs (post, reader); bindings (conversation, discussionTitle); promises at most one record — forms:
@@ -4997,7 +5001,7 @@ Former "the home feed by creation ()" — inputs (reader); bindings (conversatio
 ### the notification presentation of (item)
 
 Authored path: `Forum.notifications.theNotificationPresentationOf`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 46.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 49.
 
 ```former
 Former "the notification presentation of (item)" — inputs (item, reader); bindings (author, content, createdAt, editedAt, username, displayName, avatar); promises at most one record — forms:
@@ -5021,7 +5025,7 @@ Former "the notification presentation of (item)" — inputs (item, reader); bind
 ### the inbox of (user)
 
 Authored path: `Forum.notifications.theInboxOf`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 45.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 48.
 
 ```former
 Former "the inbox of (user)" — inputs (user); bindings (notification, kind, link, createdAt, read); promises exactly one record — forms:
@@ -5055,7 +5059,7 @@ Former "the invitation details of (invitation) with (credential)" — inputs (in
 ### the invitation email preview of (subject) and (body)
 
 Authored path: `Access.mail.theInvitationPreview`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 64.
+- Covered by [Mail](../design/compositions/access/mail.md), line 60.
 
 ```former
 Former "the invitation email preview of (subject) and (body)" — inputs (subject, body); bindings (shownSubject, shownBody, text, html); promises exactly one record — forms:
@@ -5072,7 +5076,7 @@ Former "the invitation email preview of (subject) and (body)" — inputs (subjec
 ### the invitation email template ()
 
 Authored path: `Access.mail.theInvitationTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 43.
+- Covered by [Mail](../design/compositions/access/mail.md), line 39.
 
 ```former
 Former "the invitation email template ()" — inputs (); bindings (subject, body); promises exactly one record — forms:
@@ -5261,7 +5265,7 @@ Former "the notes shown to (learner)" — inputs (learner); bindings (note, auth
 ### the notice audience of (post)
 
 Authored path: `Forum.notices.theNoticeAudienceOf`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 21.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 14.
 
 ```former
 Former "the notice audience of (post)" — inputs (post); bindings (user); promises exactly one record — forms:
@@ -5282,7 +5286,7 @@ Former "the notification actor presentation of (actor)" — inputs (actor); bind
 ### the notifications of (user)
 
 Authored path: `Forum.notifications.theNotificationsOf`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 43.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 46.
 
 ```former
 Former "the notifications of (user)" — inputs (user); bindings (notification, kind, subject, link, createdAt, read); promises exactly one record — forms:
@@ -5300,13 +5304,13 @@ Former "the notifications of (user)" — inputs (user); bindings (notification, 
 ### the notified posts of (conversation) for (reader)
 
 Authored path: `Forum.notices.theNoticedPostsOf`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 51.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 45.
 
 ```former
 Former "the notified posts of (conversation) for (reader)" — inputs (conversation, reader); bindings (item); promises exactly one record — forms:
   each Conversing._getThread (conversation) has (item)
     where view "(user) belongs to Staff" with (user: reader)
-    where view "(user) may read established conversation (conversation)" with (conversation, user: reader)
+    where view "(user) belongs to the established audience of (conversation)" with (conversation, user: reader)
     where view "(post) has notified its audience" with (post: item)
     form a record of
       post: item
@@ -6315,7 +6319,7 @@ Authored path: `Forum.threads.theThread`.
 ```former
 Former "the thread (conversation) for (reader)" — inputs (conversation, reader); bindings (node, item, parent, depth, author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
   each Conversing._getThread (conversation) has (depth, item, node, parent)
-    where view "(user) may read established conversation (conversation)" with (conversation, user: reader)
+    where view "(user) belongs to the established audience of (conversation)" with (conversation, user: reader)
     where Trashing._isTrashed (item) has (trashed: false)
     where Posting._getPost (post: item) has (author, content, createdAt, editedAt)
     where Formatting._getRendered (target: item) has (rendered)
@@ -6440,7 +6444,7 @@ Former "the user search (query)" — inputs (query); bindings (user, username); 
 ### the visible unread notifications of (user)
 
 Authored path: `Forum.notifications.theUnreadCount`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 74.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 77.
 
 ```former
 Former "the visible unread notifications of (user)" — inputs (user); bindings (notification); promises exactly one record — forms:
@@ -7384,7 +7388,7 @@ then
 
 Authored path: `Access.mail.List`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 18.
-- Covered by [Mail](../design/compositions/access/mail.md), line 77.
+- Covered by [Mail](../design/compositions/access/mail.md), line 73.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/list", requestId, session)
@@ -7399,7 +7403,7 @@ then
 
 Authored path: `Access.mail.List`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 18.
-- Covered by [Mail](../design/compositions/access/mail.md), line 77.
+- Covered by [Mail](../design/compositions/access/mail.md), line 73.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/list", requestId, session)
@@ -7413,8 +7417,8 @@ then
 ### Access.mail.PreviewTemplate:forbidden
 
 Authored path: `Access.mail.PreviewTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 63.
-- Covered by [Mail](../design/compositions/access/mail.md), line 82.
+- Covered by [Mail](../design/compositions/access/mail.md), line 59.
+- Covered by [Mail](../design/compositions/access/mail.md), line 78.
 
 ```reaction
 when RequestBoundary.request (body, path: "/mail/preview-template", requestId, session, subject)
@@ -7428,8 +7432,8 @@ then
 ### Access.mail.PreviewTemplate:success
 
 Authored path: `Access.mail.PreviewTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 63.
-- Covered by [Mail](../design/compositions/access/mail.md), line 82.
+- Covered by [Mail](../design/compositions/access/mail.md), line 59.
+- Covered by [Mail](../design/compositions/access/mail.md), line 78.
 
 ```reaction
 when RequestBoundary.request (body, path: "/mail/preview-template", requestId, session, subject)
@@ -7444,7 +7448,7 @@ then
 
 Authored path: `Access.mail.Read`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 24.
-- Covered by [Mail](../design/compositions/access/mail.md), line 78.
+- Covered by [Mail](../design/compositions/access/mail.md), line 74.
 
 ```reaction
 when RequestBoundary.request (message, path: "/mail/read", requestId, session)
@@ -7459,7 +7463,7 @@ then
 
 Authored path: `Access.mail.Read`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 24.
-- Covered by [Mail](../design/compositions/access/mail.md), line 78.
+- Covered by [Mail](../design/compositions/access/mail.md), line 74.
 
 ```reaction
 when RequestBoundary.request (message, path: "/mail/read", requestId, session)
@@ -7475,7 +7479,7 @@ then
 
 Authored path: `Access.mail.Read`.
 - Covered by [Mail](../design/compositions/access/mail.md), line 24.
-- Covered by [Mail](../design/compositions/access/mail.md), line 78.
+- Covered by [Mail](../design/compositions/access/mail.md), line 74.
 
 ```reaction
 when RequestBoundary.request (message, path: "/mail/read", requestId, session)
@@ -7491,8 +7495,8 @@ then
 ### Access.mail.ResetTemplate:forbidden
 
 Authored path: `Access.mail.ResetTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 51.
-- Covered by [Mail](../design/compositions/access/mail.md), line 81.
+- Covered by [Mail](../design/compositions/access/mail.md), line 47.
+- Covered by [Mail](../design/compositions/access/mail.md), line 77.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/reset-template", requestId, session)
@@ -7506,8 +7510,8 @@ then
 ### Access.mail.ResetTemplate:success
 
 Authored path: `Access.mail.ResetTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 51.
-- Covered by [Mail](../design/compositions/access/mail.md), line 81.
+- Covered by [Mail](../design/compositions/access/mail.md), line 47.
+- Covered by [Mail](../design/compositions/access/mail.md), line 77.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/reset-template", requestId, session)
@@ -7521,8 +7525,8 @@ then
 ### Access.mail.ResetTemplate:success#2
 
 Authored path: `Access.mail.ResetTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 51.
-- Covered by [Mail](../design/compositions/access/mail.md), line 81.
+- Covered by [Mail](../design/compositions/access/mail.md), line 47.
+- Covered by [Mail](../design/compositions/access/mail.md), line 77.
 
 ```reaction
 when Wording.withdraw (place: "invitation"), asked by Access.mail.ResetTemplate:success
@@ -7535,8 +7539,8 @@ then
 ### Access.mail.SaveTemplate:forbidden
 
 Authored path: `Access.mail.SaveTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 49.
-- Covered by [Mail](../design/compositions/access/mail.md), line 80.
+- Covered by [Mail](../design/compositions/access/mail.md), line 45.
+- Covered by [Mail](../design/compositions/access/mail.md), line 76.
 
 ```reaction
 when RequestBoundary.request (body, path: "/mail/save-template", requestId, session, subject)
@@ -7550,8 +7554,8 @@ then
 ### Access.mail.SaveTemplate:success
 
 Authored path: `Access.mail.SaveTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 49.
-- Covered by [Mail](../design/compositions/access/mail.md), line 80.
+- Covered by [Mail](../design/compositions/access/mail.md), line 45.
+- Covered by [Mail](../design/compositions/access/mail.md), line 76.
 
 ```reaction
 when RequestBoundary.request (body, path: "/mail/save-template", requestId, session, subject)
@@ -7565,8 +7569,8 @@ then
 ### Access.mail.SaveTemplate:success#2
 
 Authored path: `Access.mail.SaveTemplate`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 49.
-- Covered by [Mail](../design/compositions/access/mail.md), line 80.
+- Covered by [Mail](../design/compositions/access/mail.md), line 45.
+- Covered by [Mail](../design/compositions/access/mail.md), line 76.
 
 ```reaction
 when Wording.word (heading: subject, passage: body, place: "invitation", result.heading: savedSubject, result.passage: savedBody), asked by Access.mail.SaveTemplate:success
@@ -7579,8 +7583,8 @@ then
 ### Access.mail.Template:default
 
 Authored path: `Access.mail.Template`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 42.
-- Covered by [Mail](../design/compositions/access/mail.md), line 79.
+- Covered by [Mail](../design/compositions/access/mail.md), line 38.
+- Covered by [Mail](../design/compositions/access/mail.md), line 75.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/template", requestId, session)
@@ -7595,8 +7599,8 @@ then
 ### Access.mail.Template:forbidden
 
 Authored path: `Access.mail.Template`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 42.
-- Covered by [Mail](../design/compositions/access/mail.md), line 79.
+- Covered by [Mail](../design/compositions/access/mail.md), line 38.
+- Covered by [Mail](../design/compositions/access/mail.md), line 75.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/template", requestId, session)
@@ -7610,8 +7614,8 @@ then
 ### Access.mail.Template:worded
 
 Authored path: `Access.mail.Template`.
-- Covered by [Mail](../design/compositions/access/mail.md), line 42.
-- Covered by [Mail](../design/compositions/access/mail.md), line 79.
+- Covered by [Mail](../design/compositions/access/mail.md), line 38.
+- Covered by [Mail](../design/compositions/access/mail.md), line 75.
 
 ```reaction
 when RequestBoundary.request (path: "/mail/template", requestId, session)
@@ -12151,7 +12155,7 @@ then
 
 Authored path: `Forum.audiences.ForConversation`.
 - Covered by [Audiences](../design/compositions/forum/audiences.md), line 10.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 36.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 29.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/audiences/forConversation", requestId, session)
@@ -12165,7 +12169,7 @@ then
 
 Authored path: `Forum.audiences.ForConversation`.
 - Covered by [Audiences](../design/compositions/forum/audiences.md), line 10.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 36.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 29.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/audiences/forConversation", requestId, session)
@@ -12180,7 +12184,7 @@ then
 
 Authored path: `Forum.audiences.Options`.
 - Covered by [Audiences](../design/compositions/forum/audiences.md), line 3.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 35.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 28.
 
 ```reaction
 when RequestBoundary.request (path: "/audiences/options", requestId, session)
@@ -12195,7 +12199,7 @@ then
 
 Authored path: `Forum.audiences.Options`.
 - Covered by [Audiences](../design/compositions/forum/audiences.md), line 3.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 35.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 28.
 
 ```reaction
 when RequestBoundary.request (path: "/audiences/options", requestId, session)
@@ -12210,7 +12214,7 @@ then
 
 Authored path: `Forum.audiences.Options`.
 - Covered by [Audiences](../design/compositions/forum/audiences.md), line 3.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 35.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 28.
 
 ```reaction
 when RequestBoundary.request (path: "/audiences/options", requestId, session)
@@ -12225,7 +12229,7 @@ then
 
 Authored path: `Forum.audiences.Preview`.
 - Covered by [Audiences](../design/compositions/forum/audiences.md), line 17.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 34.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 27.
 
 ```reaction
 when RequestBoundary.request (holders, path: "/audiences/preview", requestId, session)
@@ -12240,7 +12244,7 @@ then
 
 Authored path: `Forum.audiences.Preview`.
 - Covered by [Audiences](../design/compositions/forum/audiences.md), line 17.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 34.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 27.
 
 ```reaction
 when RequestBoundary.request (holders, path: "/audiences/preview", requestId, session)
@@ -12255,7 +12259,7 @@ then
 
 Authored path: `Forum.audiences.Preview`.
 - Covered by [Audiences](../design/compositions/forum/audiences.md), line 17.
-- Covered by [Audiences](../design/compositions/forum/audiences.md), line 34.
+- Covered by [Audiences](../design/compositions/forum/audiences.md), line 27.
 
 ```reaction
 when RequestBoundary.request (holders, path: "/audiences/preview", requestId, session)
@@ -13603,14 +13607,14 @@ then
 ### Forum.notices.ForConversation:hidden
 
 Authored path: `Forum.notices.ForConversation`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 50.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 68.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 44.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 62.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/notices/forConversation", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  no view "(user) may read established conversation (conversation)" with (conversation, user)
+  no view "(user) belongs to the established audience of (conversation)" with (conversation, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -13618,15 +13622,15 @@ then
 ### Forum.notices.ForConversation:reader
 
 Authored path: `Forum.notices.ForConversation`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 50.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 68.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 44.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 62.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/notices/forConversation", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   no view "(user) belongs to Staff" with (user)
-  view "(user) may read established conversation (conversation)" with (conversation, user)
+  view "(user) belongs to the established audience of (conversation)" with (conversation, user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -13634,15 +13638,15 @@ then
 ### Forum.notices.ForConversation:staff
 
 Authored path: `Forum.notices.ForConversation`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 50.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 68.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 44.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 62.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/notices/forConversation", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) belongs to Staff" with (user)
-  view "(user) may read established conversation (conversation)" with (conversation, user)
+  view "(user) belongs to the established audience of (conversation)" with (conversation, user)
 then
   RequestBoundary.respond (notices: former "the notified posts of (conversation) for (reader)" with (conversation, reader: user), requestId)
 ```
@@ -13650,7 +13654,7 @@ then
 ### Forum.notices.NoticeNotifiesAudience
 
 Authored path: `Forum.notices.NoticeNotifiesAudience`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 40.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 33.
 
 ```reaction
 when NoticeSnapshotting.capture (subject: post)
@@ -13666,8 +13670,8 @@ then
 ### Forum.notices.Notify:already
 
 Authored path: `Forum.notices.Notify`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 29.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 69.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 22.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 63.
 
 ```reaction
 when RequestBoundary.request (path: "/notices/notify", post, requestId, session)
@@ -13682,8 +13686,8 @@ then
 ### Forum.notices.Notify:hidden
 
 Authored path: `Forum.notices.Notify`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 29.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 69.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 22.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 63.
 
 ```reaction
 when RequestBoundary.request (path: "/notices/notify", post, requestId, session)
@@ -13697,8 +13701,8 @@ then
 ### Forum.notices.Notify:notify
 
 Authored path: `Forum.notices.Notify`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 29.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 69.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 22.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 63.
 
 ```reaction
 when RequestBoundary.request (path: "/notices/notify", post, requestId, session)
@@ -13716,8 +13720,8 @@ then
 ### Forum.notices.Notify:notify#2
 
 Authored path: `Forum.notices.Notify`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 29.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 69.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 22.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 63.
 
 ```reaction
 when NoticeSnapshotting.capture (subject: post, value, snapshot), asked by Forum.notices.Notify:notify
@@ -13730,8 +13734,8 @@ then
 ### Forum.notices.Preview:hidden
 
 Authored path: `Forum.notices.Preview`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 20.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 70.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 13.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 64.
 
 ```reaction
 when RequestBoundary.request (path: "/notices/preview", post, requestId, session)
@@ -13745,8 +13749,8 @@ then
 ### Forum.notices.Preview:pending
 
 Authored path: `Forum.notices.Preview`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 20.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 70.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 13.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 64.
 
 ```reaction
 when RequestBoundary.request (path: "/notices/preview", post, requestId, session)
@@ -13761,8 +13765,8 @@ then
 ### Forum.notices.Preview:sent
 
 Authored path: `Forum.notices.Preview`.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 20.
-- Covered by [Audience notices](../design/compositions/forum/notices.md), line 70.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 13.
+- Covered by [Audience notices](../design/compositions/forum/notices.md), line 64.
 
 ```reaction
 when RequestBoundary.request (path: "/notices/preview", post, requestId, session)
@@ -13792,8 +13796,8 @@ then
 ### Forum.notifications.Dismiss:dismiss
 
 Authored path: `Forum.notifications.Dismiss`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 59.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 66.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 62.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 69.
 
 ```reaction
 when RequestBoundary.request (notification, path: "/notifications/dismiss", requestId, session)
@@ -13807,8 +13811,8 @@ then
 ### Forum.notifications.Dismiss:dismiss#2
 
 Authored path: `Forum.notifications.Dismiss`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 59.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 66.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 62.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 69.
 
 ```reaction
 when Notifying.dismiss (notification, recipient: user, result.notification: dismissed), asked by Forum.notifications.Dismiss:dismiss
@@ -13821,8 +13825,8 @@ then
 ### Forum.notifications.Dismiss:hidden
 
 Authored path: `Forum.notifications.Dismiss`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 59.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 66.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 62.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 69.
 
 ```reaction
 when RequestBoundary.request (notification, path: "/notifications/dismiss", requestId, session)
@@ -13850,8 +13854,8 @@ then
 ### Forum.notifications.ListNotifications
 
 Authored path: `Forum.notifications.ListNotifications`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 42.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 67.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 45.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 70.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/list", requestId, session)
@@ -13864,8 +13868,8 @@ then
 ### Forum.notifications.MarkAllRead:answer
 
 Authored path: `Forum.notifications.MarkAllRead`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 58.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 68.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 61.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 71.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/markAllRead", requestId, session)
@@ -13878,8 +13882,8 @@ then
 ### Forum.notifications.MarkAllRead:visible
 
 Authored path: `Forum.notifications.MarkAllRead`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 58.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 68.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 61.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 71.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/markAllRead", requestId, session)
@@ -13894,8 +13898,8 @@ then
 ### Forum.notifications.MarkRead:hidden
 
 Authored path: `Forum.notifications.MarkRead`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 58.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 69.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 61.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 72.
 
 ```reaction
 when RequestBoundary.request (notification, path: "/notifications/markRead", requestId, session)
@@ -13909,8 +13913,8 @@ then
 ### Forum.notifications.MarkRead:read
 
 Authored path: `Forum.notifications.MarkRead`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 58.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 69.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 61.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 72.
 
 ```reaction
 when RequestBoundary.request (notification, path: "/notifications/markRead", requestId, session)
@@ -13924,8 +13928,8 @@ then
 ### Forum.notifications.MarkRead:read#2
 
 Authored path: `Forum.notifications.MarkRead`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 58.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 69.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 61.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 72.
 
 ```reaction
 when Notifying.markRead (notification, recipient: user, result.notification: marked), asked by Forum.notifications.MarkRead:read
@@ -13943,6 +13947,7 @@ Authored path: `Forum.notifications.NotificationQueuesEmail`.
 ```reaction
 when Notifying.notify (at, kind, recipient, subject, notification)
 where
+  no view "(user) is an administrator receiving audience notice kind (kind)" with (kind, user: recipient)
   view "(user) may read notification subject (subject)" with (subject, user: recipient)
   Authenticating._getById (user: recipient) has (email)
   key is forumMailKey (notification, post: subject, recipient)
@@ -13954,7 +13959,7 @@ then
 ### Forum.notifications.PurgeClearsNotifications
 
 Authored path: `Forum.notifications.PurgeClearsNotifications`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 63.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 66.
 
 ```reaction
 when Trashing.purge (item)
@@ -13965,8 +13970,8 @@ then
 ### Forum.notifications.ReadInbox
 
 Authored path: `Forum.notifications.ReadInbox`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 44.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 70.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 47.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 73.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/inbox", requestId, session)
@@ -14045,7 +14050,7 @@ then
 ### Forum.notifications.RootNotifiesAddressedAccounts
 
 Authored path: `Forum.notifications.RootNotifiesAddressedAccounts`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 81.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 84.
 
 ```reaction
 when Accessing.establish (holders, resource: conversation)
@@ -14066,7 +14071,7 @@ then
 ### Forum.notifications.RootNotifiesStaff
 
 Authored path: `Forum.notifications.RootNotifiesStaff`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 88.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 86.
 
 ```reaction
 when Accessing.establish (holders, resource: conversation)
@@ -14086,8 +14091,8 @@ then
 ### Forum.notifications.UnreadCount
 
 Authored path: `Forum.notifications.UnreadCount`.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 54.
-- Covered by [Notifications](../design/compositions/forum/notifications.md), line 71.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 57.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 74.
 
 ```reaction
 when RequestBoundary.request (path: "/notifications/unreadCount", requestId, session)
