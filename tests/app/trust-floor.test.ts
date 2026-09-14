@@ -436,7 +436,12 @@ describe("HTTP authorization and privacy", () => {
       ["/revisions/latest", { item }],
     ] as const)
       expect((await call(path, body, learner.cookie)).status).toBe(200);
-    await call("/trash/trash", { item }, admin.cookie);
+    // The opening is only ever trashed with its thread.
+    expect(await call("/trash/trash", { item }, admin.cookie)).toMatchObject({
+      status: 409,
+      body: { error: "CONFLICT" },
+    });
+    await call("/trash/trash", { item: thread.body.conversation as string }, admin.cookie);
     for (const [publicPath, moderationPath, body] of [
       ["/revisions/list", "/moderation/revisions/list", { item }],
       ["/revisions/get", "/moderation/revisions/get", { item, number: 1 }],
@@ -624,16 +629,17 @@ describe("HTTP authorization and privacy", () => {
       body: { error: "UNAUTHORIZED" },
     });
 
-    expect((await call("/trash/trash", { item }, admin.cookie)).status).toBe(200);
+    expect((await call("/trash/trash", { item: conversation }, admin.cookie)).status).toBe(200);
     for (const [path, bodyOf, cookie] of probes) {
       expect(await call(path, bodyOf(item), cookie), `${path} trashed`).toEqual(
         await call(path, bodyOf(unknown), cookie),
       );
     }
     for (const [path, bodyOf, cookie] of conversationProbes) {
-      expect((await call(path, bodyOf(conversation), cookie ?? learner.cookie)).status).toBe(200);
-      expect((await call(path, bodyOf(unknownConversation), cookie ?? learner.cookie)).status).toBe(
-        404,
+      const hidden = await call(path, bodyOf(conversation), cookie ?? learner.cookie);
+      expect(hidden).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
+      expect(hidden).toEqual(
+        await call(path, bodyOf(unknownConversation), cookie ?? learner.cookie),
       );
     }
     const hiddenMutations = [
@@ -665,10 +671,15 @@ describe("HTTP authorization and privacy", () => {
       body: { error: "NOT_FOUND" },
     });
 
-    expect((await call("/trash/purge", { item }, admin.cookie)).status).toBe(200);
+    expect((await call("/trash/purge", { item: conversation }, admin.cookie)).status).toBe(200);
     for (const [path, bodyOf, cookie] of probes) {
       expect(await call(path, bodyOf(item), cookie), `${path} purged`).toEqual(
         await call(path, bodyOf(unknown), cookie),
+      );
+    }
+    for (const [path, bodyOf, cookie] of conversationProbes) {
+      expect(await call(path, bodyOf(conversation), cookie ?? learner.cookie)).toEqual(
+        await call(path, bodyOf(unknownConversation), cookie ?? learner.cookie),
       );
     }
     expect(await call("/threads/forItem", { item })).toEqual(

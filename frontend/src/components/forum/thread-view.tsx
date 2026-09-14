@@ -36,6 +36,7 @@ import { useAuth } from "@/lib/auth";
 import { replyScope } from "@/lib/drafts";
 import { count, titleFromContent } from "@/lib/format";
 import { loadThreadPage, type ThreadPage } from "@/lib/loaders";
+import type { ThreadNode } from "@/lib/models";
 import { loadMyLists } from "@/lib/tasks";
 import {
   ancestorNodes,
@@ -44,8 +45,58 @@ import {
   postAnchorItem,
   summarizeBranches,
   type ThreadBranch,
+  visibleDescendants,
 } from "@/lib/thread-tree";
 import { cn } from "@/lib/utils";
+
+/** A removed reply keeps its place so the replies beneath it stay in context. */
+function RemovedPost({
+  item,
+  isRoot,
+  onChanged,
+}: {
+  item: string;
+  isRoot: boolean;
+  onChanged: () => void;
+}) {
+  const { session, permissions } = useAuth();
+  const canModerate = !!session && permissions.can("moderate");
+  const trashed = useQuery<{ trashed: boolean }>(
+    canModerate ? () => api.trash.isTrashed({ item }) : null,
+    [item, canModerate],
+  );
+  async function restore() {
+    const result = await api.trash.restore({ item });
+    if ("error" in result) toast.error(publicErrorMessage(result.error));
+    else {
+      toast.success("Reply restored");
+      onChanged();
+    }
+  }
+  return (
+    <div
+      id={`post-${item}`}
+      data-removed-post={item}
+      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground"
+    >
+      <span>
+        {isRoot
+          ? "Opening post unavailable"
+          : "This reply was removed by a moderator."}
+      </span>
+      {canModerate && trashed.data?.trashed ? (
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={restore}>
+            Restore
+          </Button>
+          <Link href="/moderation" className="text-xs hover:underline">
+            Trash bin
+          </Link>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export function ThreadView({
   conversation,
@@ -418,7 +469,7 @@ function ThreadBranchView({
   onCollapsedChange,
   onChanged,
 }: {
-  branch: ThreadBranch;
+  branch: ThreadBranch<ThreadNode>;
   level: number;
   rootNodeId: string;
   questionId: string;
@@ -436,7 +487,8 @@ function ThreadBranchView({
 }) {
   const nodeId = String(branch.position.node);
   const isRoot = branch.position.node === rootNodeId;
-  const hasChildren = branch.children.length > 0;
+  const children = branch.children;
+  const hasChildren = children.length > 0;
   const summary = summaries.get(nodeId) ?? { replies: 0, unread: 0 };
   const collapsed = hasChildren && collapsedNodes.has(nodeId);
   const childrenId = `thread-children-${nodeId}`;
@@ -453,6 +505,7 @@ function ThreadBranchView({
             acceptedAnswer={acceptedAnswer}
             locked={locked}
             scope={scope}
+            getDescendants={() => visibleDescendants(branch)}
             isUnread={unreadItems.has(String(branch.node.item))}
             notified={notifiedPosts.has(String(branch.node.item))}
             onNotified={onNotified}
@@ -460,12 +513,11 @@ function ThreadBranchView({
             onReplied={() => onCollapsedChange(nodeId, false)}
           />
         ) : (
-          <p
-            id={`post-${branch.position.item}`}
-            className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground"
-          >
-            {isRoot ? "Opening post unavailable" : "Post unavailable"}
-          </p>
+          <RemovedPost
+            item={String(branch.position.item)}
+            isRoot={isRoot}
+            onChanged={onChanged}
+          />
         )}
         {hasChildren ? (
           <div className="mt-2">
@@ -505,7 +557,7 @@ function ThreadBranchView({
             collapsed && "hidden",
           )}
         >
-          {branch.children.map((child) => (
+          {children.map((child) => (
             <ThreadBranchView
               key={child.position.node}
               branch={child}

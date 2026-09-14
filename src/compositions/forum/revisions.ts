@@ -1,11 +1,10 @@
-import { storedPostReader } from "./audience-policy.ts";
+import { hiddenPost, storedPostReader } from "./audience-policy.ts";
 import { activeUser } from "../access/session.ts";
 import { each, former, no, reaction, when, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts.ts";
 import { mayModerate, mayNotModerate } from "../access/policy.ts";
 import { notReadable, readable } from "./posts.ts";
-import { intact } from "./threads.ts";
 
 const { Posting, Revising, Trashing } = concepts;
 
@@ -120,7 +119,7 @@ export const ModeratorListRevisions = endpoint(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         storedPostReader({ post: item, user }),
-        Trashing._isTrashed({ item }).is({ trashed: true }),
+        hiddenPost({ post: item }),
       )
         .then(respond({ revisions: theRevisionHistoryOf({ item, reader: user }) }))
         .named("revisions"),
@@ -138,7 +137,7 @@ export const ModeratorListRevisions = endpoint(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         storedPostReader({ post: item, user }),
-        intact({ item }),
+        no(hiddenPost({ post: item })),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("live"),
@@ -152,7 +151,7 @@ export const ModeratorGetRevision = endpoint(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         storedPostReader({ post: item, user }),
-        Trashing._isTrashed({ item }).is({ trashed: true }),
+        hiddenPost({ post: item }),
       )
         .then(respond({ revision: theRevisionNumberedOf({ number, item, reader: user }) }))
         .named("revision"),
@@ -170,7 +169,7 @@ export const ModeratorGetRevision = endpoint(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         storedPostReader({ post: item, user }),
-        intact({ item }),
+        no(hiddenPost({ post: item })),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("live"),
@@ -184,7 +183,7 @@ export const ModeratorLatestRevision = endpoint(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         storedPostReader({ post: item, user }),
-        Trashing._isTrashed({ item }).is({ trashed: true }),
+        hiddenPost({ post: item }),
       )
         .then(respond({ revision: theLatestRevisionOf({ item, reader: user }) }))
         .named("revision"),
@@ -202,7 +201,7 @@ export const ModeratorLatestRevision = endpoint(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         storedPostReader({ post: item, user }),
-        intact({ item }),
+        no(hiddenPost({ post: item })),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("live"),

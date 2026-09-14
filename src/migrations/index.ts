@@ -1,3 +1,4 @@
+import { threadTrash } from "./20260914T000100-thread-trash.ts";
 import { runSnapshotStore } from "./20260913T000100-run-snapshot-store.ts";
 import { competencyAssessments } from "./20260909T000100-competency-assessments.ts";
 import { responseIdentity } from "./20260906T000200-response-identity.ts";
@@ -27,4 +28,5 @@ export const commonsMigrations: readonly Migration[] = [
   responseIdentity,
   competencyAssessments,
   runSnapshotStore,
+  threadTrash,
 ];

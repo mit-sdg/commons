@@ -1,5 +1,6 @@
 import type { Collection, Db } from "mongodb";
 import {
+  ConversationNotFound,
   ItemAlreadyInConversation,
   NodeHasChildren,
   NodeNotFound,
@@ -142,6 +143,16 @@ export class MongoConversingConcept {
     const remaining = await this.nodes.countDocuments({ conversation: doc.conversation });
     if (remaining === 0) await this.conversations.deleteOne({ _id: doc.conversation });
     return { node };
+  }
+
+  async dissolve({ conversation }: { conversation: string }) {
+    const doc = await this.conversations.findOne({ _id: conversation }, { projection: { _id: 1 } });
+    if (doc === null) {
+      throw new ConversationNotFound(`No conversation named ${conversation}`);
+    }
+    await this.nodes.deleteMany({ conversation });
+    await this.conversations.deleteOne({ _id: conversation });
+    return { conversation };
   }
 
   async _getNodeByItem({ item }: { item: string }) {

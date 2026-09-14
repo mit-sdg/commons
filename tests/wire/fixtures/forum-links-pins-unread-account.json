@@ -887,6 +887,12 @@
                 "item": "uuid#10",
                 "parent": null,
                 "depth": 0
+              },
+              {
+                "node": "uuid#16",
+                "item": "uuid#15",
+                "parent": "uuid#12",
+                "depth": 1
               }
             ],
             "audience": [
@@ -922,6 +928,12 @@
           "item": "uuid#10",
           "parent": null,
           "depth": 0
+        },
+        {
+          "node": "uuid#16",
+          "item": "uuid#15",
+          "parent": "uuid#12",
+          "depth": 1
         }
       ]
     },

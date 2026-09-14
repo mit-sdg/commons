@@ -2,7 +2,7 @@
 
 [Forum.threads.CreateThread](reaction:Forum.threads.CreateThread) resolves the session account, validates its fixed complete audience, creates a Posting post, starts a conversation, then establishes its audience atomically. Until establishment succeeds, every forum read is closed to the conversation.
 
-[Forum.threads.ReplyToThread](reaction:Forum.threads.ReplyToThread) requires current audience access and an untrashed, existing parent post before creating and placing a reply. A locked conversation returns `FORBIDDEN`; missing and inaccessible parents both return `NOT_FOUND`. Placement is a separate action, so its failure after Posting creation can leave an inaccessible unplaced post. [placementOf](view:Forum.threads.placementOf) and [readableConversation](view:Forum.threads.readableConversation) require the current reader.
+[Forum.threads.ReplyToThread](reaction:Forum.threads.ReplyToThread) requires current audience access to an untrashed conversation and an untrashed, existing parent post before creating and placing a reply. A locked conversation returns `FORBIDDEN`; missing and inaccessible parents both return `NOT_FOUND`. Placement is a separate action, so its failure after Posting creation can leave an inaccessible unplaced post. [placementOf](view:Forum.threads.placementOf) and [readableConversation](view:Forum.threads.readableConversation) require the current reader.
 
 The [forumPost view](view:Forum.threads.forumPost) distinguishes Posting records placed in a conversation from records used by other features, such as assignment artifacts. Forum read and moderation rules use this boundary so those other records do not become public posts merely because they share Posting storage.
 
@@ -18,8 +18,9 @@ The author is not automatically marked as having seen the post.
 `null`. It uses [publicTarget](view:Forum.threads.publicTarget) to resolve placement only while that post's Posting
 record exists, is not trashed, and admits the current reader. Thread presentation forms
 [the current thread](former:Forum.threads.theThread) by applying [intact](view:Forum.threads.intact) to each node
-independently: a missing or trashed root is omitted without automatically hiding
-intact replies.
+independently: a trashed or purged reply is omitted while its own replies remain,
+and the structural outline still carries its position. A trashed conversation
+has no current thread at all.
 
 ```endpoints
 Forum.threads.CreateThread at /threads/create

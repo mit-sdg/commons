@@ -11,12 +11,12 @@ adds each followed conversation's root-post summary and current thread statistic
 reports that account's state for one readable conversation.
 
 [Forum.subscriptions.Subscribers](reaction:Forum.subscriptions.Subscribers) forms
-[the current followers](former:Forum.subscriptions.theSubscribersOf) only while the session account belongs to the conversation’s current audience. Root trash or missing root content does not by itself hide subscription state. Successful
+[the current followers](former:Forum.subscriptions.theSubscribersOf) only while the session account belongs to the conversation’s current audience. A trashed conversation hides subscription state with the rest of its thread; the records are retained, so restoring the conversation brings the follows back, and [purging it clears them](reaction:Forum.subscriptions.PurgeClearsThreadSubscriptions). Successful
 replies consult the retained subscribers when creating followed-reply
 notifications, with author and mention exclusions defined by notification
 behavior.
 
-Root removal with surviving replies preserves following. A delayed following record cannot make an absent conversation readable.
+Reply removal preserves following. A delayed following record cannot make an absent or trashed conversation readable.
 
 ```endpoints
 Forum.subscriptions.IsSubscribed at /subscriptions/isSubscribed

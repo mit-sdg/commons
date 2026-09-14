@@ -9,6 +9,7 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Fact } from "@/components/facts";
@@ -23,6 +24,10 @@ import { PostLinks } from "@/components/forum/post-links";
 import { ReactionBar } from "@/components/forum/reaction-bar";
 import { RenderedMarkdown } from "@/components/forum/rendered-markdown";
 import { RevisionsDialog } from "@/components/forum/revisions-dialog";
+import {
+  TrashPostDialog,
+  type TrashTarget,
+} from "@/components/forum/trash-post-dialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -34,7 +39,6 @@ import {
 import { UserAvatar } from "@/components/user-avatar";
 import { UserName } from "@/components/user-name";
 import { UserRole } from "@/components/user-role";
-import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { hasDraft, replyScope } from "@/lib/drafts";
@@ -49,6 +53,8 @@ interface PostCardProps {
   acceptedAnswer: string | null;
   locked: boolean;
   scope: string;
+  /** Collect a snapshot only when the moderator opens the confirmation. */
+  getDescendants?: () => string[];
   isUnread?: boolean;
   /** Whether this post has already notified its audience, as staff see it. */
   notified?: boolean;
@@ -66,6 +72,7 @@ export function PostCard({
   acceptedAnswer,
   locked,
   scope,
+  getDescendants,
   isUnread = false,
   notified = false,
   onNotified,
@@ -73,6 +80,8 @@ export function PostCard({
   onReplied,
 }: PostCardProps) {
   const { session, me, permissions } = useAuth();
+  const router = useRouter();
+  const [trashTarget, setTrashTarget] = useState<TrashTarget | null>(null);
   const [editing, setEditing] = useState(false);
   const [replying, setReplying] = useState(false);
   const [resumedReply, setResumedReply] = useState(false);
@@ -106,12 +115,7 @@ export function PostCard({
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [locked, myId, replyDraft]);
 
-  const trashed = useQuery<{ trashed: boolean }>(
-    canModerate ? () => api.trash.isTrashed({ item: postId }) : null,
-    [postId, session, canModerate],
-  );
-  const isTrashed = trashed.data?.trashed ?? false;
-  const highlightUnread = isUnread && !isTrashed && !isAccepted;
+  const highlightUnread = isUnread && !isAccepted;
 
   async function saveEdit(content: string) {
     if (!session) return;
@@ -153,8 +157,9 @@ export function PostCard({
           : publicErrorMessage(result.error),
       );
     } else {
-      toast.success("Post deleted");
-      onChanged();
+      toast.success(isRoot ? "Thread deleted" : "Post deleted");
+      if (isRoot) router.replace("/");
+      else onChanged();
     }
   }
 
@@ -173,39 +178,18 @@ export function PostCard({
     }
   }
 
-  async function moderatorTrash() {
-    if (!session) return;
-    const result = isTrashed
-      ? await api.trash.restore({ item: postId })
-      : await api.trash.trash({ item: postId });
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      toast.success(isTrashed ? "Post restored" : "Post moved to trash");
-      trashed.refetch();
-      onChanged();
-    }
-  }
-
   return (
     <article
       id={`post-${postId}`}
       className={cn(
         "scroll-mt-24 rounded-xl border bg-card p-4 shadow-sm transition-colors sm:p-5",
-        isTrashed
-          ? "border-destructive/40 opacity-75"
-          : isAccepted
-            ? "border-emerald-500/50 ring-1 ring-emerald-500/20"
-            : highlightUnread
-              ? "border-primary/40 bg-primary/[0.04] ring-1 ring-primary/10"
-              : "border-border",
+        isAccepted
+          ? "border-emerald-500/50 ring-1 ring-emerald-500/20"
+          : highlightUnread
+            ? "border-primary/40 bg-primary/[0.04] ring-1 ring-primary/10"
+            : "border-border",
       )}
     >
-      {isTrashed ? (
-        <p className="mb-3 inline-flex items-center gap-1.5 rounded-md bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive">
-          <Trash2 className="size-3.5" />
-          Removed by a moderator
-        </p>
-      ) : null}
       <header className="mb-3 flex items-center gap-3">
         <UserAvatar user={author} />
         <div className="min-w-0 flex-1">
@@ -309,13 +293,11 @@ export function PostCard({
                 controls={sharedControls}
               />
             ) : null}
-            {!isTrashed ? (
-              <NoticeControl
-                post={postId}
-                notified={notified}
-                onNotified={onNotified}
-              />
-            ) : null}
+            <NoticeControl
+              post={postId}
+              notified={notified}
+              onNotified={onNotified}
+            />
             {session && !locked ? (
               <Button
                 variant="ghost"
@@ -363,9 +345,20 @@ export function PostCard({
                   {canModerate ? (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={moderatorTrash}>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          setTrashTarget({
+                            item: postId,
+                            conversation: scope,
+                            isRoot,
+                            descendants: isRoot
+                              ? []
+                              : (getDescendants?.() ?? []),
+                          })
+                        }
+                      >
                         <Trash2 className="size-4" />
-                        {isTrashed ? "Restore post" : "Move to trash"}
+                        {isRoot ? "Move thread to trash" : "Move to trash"}
                       </DropdownMenuItem>
                     </>
                   ) : null}
@@ -397,6 +390,16 @@ export function PostCard({
         </div>
       ) : null}
 
+      {trashTarget ? (
+        <TrashPostDialog
+          target={trashTarget}
+          onClose={() => setTrashTarget(null)}
+          onChanged={() => {
+            if (isRoot) router.replace("/");
+            else onChanged();
+          }}
+        />
+      ) : null}
       <FlagDialog target={postId} open={flagOpen} onOpenChange={setFlagOpen} />
       {pendingNotice ? (
         <NoticeDialog
