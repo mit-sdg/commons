@@ -1,47 +1,43 @@
 import { afterAll, expect, test } from "vite-plus/test";
-import { assembleCommons } from "../../src/assembly/application.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { createEdge } from "../../src/edge.ts";
 import { forumMailEligibility } from "../../src/email/forum-policy.ts";
 
 const missing = { ok: false, error: { kind: "domain", value: "NOT_FOUND" } };
-const forbidden = { ok: false, error: { kind: "domain", value: "FORBIDDEN" } };
+const origin = "https://commons.example.edu";
 afterAll(stopTestDb);
 
 async function fixture() {
   const instances = mongoImplementations(await testDb());
   const people = [];
-  for (const username of ["author", "recipient", "administrator", "moderator"]) {
+  for (const username of ["author", "recipient", "administrator"]) {
+    const email = `${username}@example.edu`;
     const { user } = await instances.Authenticating.register({
       username,
       password: "long-password",
-      email: `${username}@example.edu`,
+      email,
     });
     const { session } = await instances.Sessioning.start({ user });
-    // Administration must not depend on a student seat or group membership.
-    if (username === "author" || username === "recipient") {
-      await instances.Rostering.enrol({
-        user,
-        email: `${username}@example.edu`,
-        kind: "STUDENT",
-        section: null,
-      });
+    // An administrator need not have a roster seat; only the audience grants access.
+    if (username !== "administrator") {
+      await instances.Rostering.enrol({ user, email, kind: "STUDENT", section: null });
     }
-    people.push({ user, session });
+    people.push({ user, session, email });
   }
-  const [author, recipient, administrator, moderator] = people;
-  const { role: adminRole } = await instances.Roling.defineRole({
+  const [author, recipient, administrator] = people;
+  const { role } = await instances.Roling.defineRole({
     name: "Operations",
     capabilities: ["administer"],
   });
-  const { role: staffRole } = await instances.Roling.defineRole({
-    name: "Teaching staff",
-    capabilities: ["grade", "moderate"],
-  });
-  await instances.Roling.assign({ user: administrator.user, context: "commons", role: adminRole });
-  await instances.Roling.assign({ user: moderator.user, context: "commons", role: staffRole });
-  const app = assembleCommons(instances);
-  const invoke = (path: string, input: Record<string, unknown>) => app.invoker.invoke(path, input);
+  await instances.Roling.assign({ user: administrator.user, context: "commons", role });
+  const edge = createEdge(instances, origin);
+  const app = edge.application;
+  const invoke = async (path: string, input: Record<string, unknown>) => {
+    const result = await app.invoker.invoke(path, input);
+    await app.whenIdle();
+    return result;
+  };
   const holders = [`account:${author.user}`, `account:${recipient.user}`].sort();
   async function thread(selected = holders, content = "# Private discussion\n\nPrivate message.") {
     const result = await invoke("/threads/create", {
@@ -53,10 +49,10 @@ async function fixture() {
     if (!result.ok) throw new Error("Thread creation failed");
     return result.value as { post: string; conversation: string; node: string };
   }
-  return { app, invoke, author, recipient, administrator, moderator, adminRole, holders, thread };
+  return { app, edge, invoke, author, recipient, administrator, holders, thread };
 }
 
-test("administrators read direct, group, and section discussions without joining their audiences", async () => {
+test("administrators outside direct, group, and section audiences cannot read or act on their discussions", async () => {
   const f = await fixture();
   const { group } = await f.app.concepts.Grouping.create({
     creator: f.author.user,
@@ -72,50 +68,47 @@ test("administrators read direct, group, and section discussions without joining
   await f.app.concepts.Rostering.moveSection({ seat, section: section._id });
   const session = f.administrator.session;
   const conversations: string[] = [];
-  // Read access does not make an administrator a member who can address this group.
   expect(
     await f.invoke("/audiences/preview", { session, holders: [`group:${group}`] }),
-  ).toMatchObject(forbidden);
-  expect(
-    await f.invoke("/threads/create", {
-      session,
-      holders: [`group:${group}`],
-      content: "Not a member",
-    }),
-  ).toMatchObject(forbidden);
+  ).toMatchObject({ ok: false, error: { value: "FORBIDDEN" } });
   for (const holders of [f.holders, [`group:${group}`], [`section:${section._id}`]]) {
-    const { post, conversation } = await f.thread(holders);
+    const { post, conversation, node } = await f.thread(
+      holders,
+      "# Private discussion\n\nA mention of @administrator does not grant access.",
+    );
     conversations.push(conversation);
-    expect(await f.invoke("/posts/get", { session, post })).toMatchObject({
+    expect(await f.invoke("/posts/get", { session: f.author.session, post })).toMatchObject({
       ok: true,
-      value: { post: { content: "# Private discussion\n\nPrivate message." } },
-    });
-    expect(await f.invoke("/threads/get", { session, conversation })).toMatchObject({
-      ok: true,
-      value: { thread: [expect.objectContaining({ item: post })] },
     });
     for (const [path, input] of [
+      ["/posts/get", { post }],
+      ["/threads/get", { conversation }],
+      ["/threads/post-controls", { conversation, posts: [post] }],
+      ["/audiences/forConversation", { conversation }],
       ["/revisions/latest", { item: post }],
       ["/links/forward", { source: post }],
       ["/unread/count", { scope: conversation }],
       ["/subscriptions/subscribers", { target: conversation }],
+      ["/notices/preview", { post }],
+      ["/notices/notify", { post }],
+      ["/threads/reply", { parent: node, content: "Intrusion" }],
+      ["/locks/lock", { target: conversation }],
+      ["/trash/trash", { item: post }],
     ] as const) {
-      expect(await f.invoke(path, { session, ...input }), path).toMatchObject({ ok: true });
+      expect(
+        await f.invoke(path, { session, ...input, user: f.author.user, reader: f.author.user }),
+        path,
+      ).toMatchObject(missing);
     }
-    const audience = await f.invoke("/audiences/forConversation", { session, conversation });
-    expect(audience).toMatchObject({
-      ok: true,
-      value: { holders: holders.map((holder) => expect.objectContaining({ holder })) },
+    expect(await f.app.concepts.Accessing._holders({ resource: conversation })).toEqual([
+      { holders },
+    ]);
+    expect(await f.app.concepts.Locking._isLocked({ target: conversation })).toEqual({
+      locked: false,
     });
-    expect(JSON.stringify(audience)).not.toContain(f.administrator.user);
-    // Staff and moderation capabilities alone still provide no audience bypass.
-    expect(
-      await f.invoke("/posts/get", {
-        session: f.moderator.session,
-        post,
-        user: f.administrator.user,
-      }),
-    ).toMatchObject(missing);
+    expect(await f.app.concepts.Trashing._isTrashed({ item: post })).toEqual({ trashed: false });
+    await f.app.concepts.Trashing.trash({ item: post, by: f.author.user, at: new Date() });
+    expect(await f.invoke("/moderation/posts/get", { session, item: post })).toMatchObject(missing);
   }
   for (const [path, input] of [
     ["/threads/latest", {}],
@@ -126,13 +119,13 @@ test("administrators read direct, group, and section discussions without joining
   ] as const) {
     expect(await f.invoke(path, { session, ...input }), path).toMatchObject({
       ok: true,
-      value: {
-        conversations: expect.arrayContaining(
-          conversations.map((conversation) => expect.objectContaining({ conversation })),
-        ),
-      },
+      value: { conversations: [] },
     });
   }
+  expect(await f.invoke("/trash/list", { session })).toMatchObject({
+    ok: true,
+    value: { trashed: [] },
+  });
   expect(await f.app.concepts.Grouping._isMember({ group, member: f.administrator.user })).toEqual({
     isMember: false,
   });
@@ -141,82 +134,57 @@ test("administrators read direct, group, and section discussions without joining
     await f.app.concepts.Subscribing._getSubscriptions({ user: f.administrator.user }),
   ).toEqual([]);
   expect(
-    (await f.app.concepts.Mailing._getPending({})).every(
-      (mail) => mail.recipient === "recipient@example.edu",
+    (await f.app.concepts.Mailing._getPending({})).some(
+      (mail) => mail.recipient === f.administrator.email,
     ),
-  ).toBe(true);
+  ).toBe(false);
 });
 
-test("administrators can open private mail's source, reply, and moderate without bypassing edit or lock rules", async () => {
+test("administrator membership controls mentions, notices, and queued mail after leaving a group", async () => {
   const f = await fixture();
-  const content = "# Private discussion\n\nCONFIDENTIAL-MESSAGE for @recipient";
-  const { post, conversation, node } = await f.thread(f.holders, content);
-  const session = f.administrator.session;
-  const [mail] = await f.app.concepts.Mailing._getPending({});
-  expect(mail).toBeDefined();
-  expect(await f.invoke("/mail/read", { session, message: mail.message })).toMatchObject({
-    ok: true,
-    value: { text: expect.stringContaining("CONFIDENTIAL-MESSAGE") },
+  const { group } = await f.app.concepts.Grouping.create({
+    creator: f.author.user,
+    title: "Study group",
+    at: new Date(),
   });
-  expect(await f.invoke("/posts/get", { session, post })).toMatchObject({
-    ok: true,
-    value: { post: { content } },
+  await f.app.concepts.Grouping.addMember({
+    group,
+    member: f.author.user,
+    candidate: f.administrator.user,
+    at: new Date(),
   });
-  expect(await f.invoke("/posts/edit", { session, post, content: "Overwritten" })).toMatchObject(
-    forbidden,
-  );
-  expect(
-    await f.invoke("/threads/reply", { session, parent: node, content: "Administrator reply" }),
-  ).toMatchObject({ ok: true });
-  expect(await f.app.concepts.Accessing._holders({ resource: conversation })).toEqual([
-    { holders: f.holders },
-  ]);
-  expect(await f.invoke("/locks/lock", { session, target: conversation })).toMatchObject({
-    ok: true,
-  });
-  expect(
-    await f.invoke("/threads/reply", { session, parent: node, content: "Locked reply" }),
-  ).toMatchObject(forbidden);
-  expect(await f.invoke("/trash/trash", { session, item: post })).toMatchObject({ ok: true });
-  expect(await f.invoke("/posts/get", { session, post })).toMatchObject(missing);
-  expect(await f.invoke("/moderation/posts/get", { session, item: post })).toMatchObject({
-    ok: true,
-    value: { post: { content } },
-  });
-  expect(await f.invoke("/threads/get", { session, conversation })).toMatchObject({
-    ok: true,
-    value: {
-      thread: [
-        expect.objectContaining({
-          post: expect.objectContaining({ content: "Administrator reply" }),
-        }),
-      ],
-    },
-  });
-});
-
-test("administrator mentions, inboxes, and mail eligibility follow current authority and account availability", async () => {
-  const f = await fixture();
   const { post, conversation } = await f.thread(
-    f.holders,
-    "# Private discussion\n\nPlease review, @administrator.",
+    [`group:${group}`],
+    "# Group discussion\n\nPlease review, @administrator.",
   );
   const session = f.administrator.session;
-  const admin = { user: f.administrator.user, context: "commons" };
-  const [notification] = await f.app.concepts.Notifying._getInbox({ recipient: admin.user });
-  expect(notification).toMatchObject({ kind: "mention", subject: post });
-  const mail = (await f.app.concepts.Mailing._getPending({})).find(
-    (mail) => mail.recipient === "administrator@example.edu",
-  );
-  expect(mail).toBeDefined();
-  if (!mail) throw new Error("Administrator mention email was not queued");
-  const eligible = forumMailEligibility(f.app);
-  expect(await eligible(mail)).toBe(true);
-  expect(await f.invoke("/notifications/unreadCount", { session })).toMatchObject({
+  expect(await f.invoke("/posts/get", { session, post })).toMatchObject({ ok: true });
+  expect(await f.invoke("/notices/notify", { session, post })).toMatchObject({
     ok: true,
-    value: { count: 1 },
+    value: { post, recipients: 1 },
   });
-  await f.app.concepts.Roling.revoke(admin);
+  const notifications = await f.app.concepts.Notifying._getInbox({
+    recipient: f.administrator.user,
+  });
+  expect(notifications.map((notification) => notification.kind).sort()).toEqual([
+    "audience_notice",
+    "mention",
+  ]);
+  const mail = (await f.app.concepts.Mailing._getPending({})).filter(
+    (message) => message.recipient === f.administrator.email && message.key.startsWith("forum:"),
+  );
+  expect(mail).toHaveLength(2);
+  const eligible = forumMailEligibility(f.app);
+  for (const message of mail) expect(await eligible(message)).toBe(true);
+
+  await f.app.concepts.Grouping.leave({ group, member: f.administrator.user, at: new Date() });
+  expect(
+    await f.app.concepts.Roling._hasCapability({
+      user: f.administrator.user,
+      context: "commons",
+      capability: "administer",
+    }),
+  ).toEqual({ allowed: true });
   expect(await f.invoke("/posts/get", { session, post })).toMatchObject(missing);
   expect(await f.invoke("/threads/get", { session, conversation })).toMatchObject(missing);
   expect(await f.invoke("/notifications/inbox", { session })).toMatchObject({
@@ -227,10 +195,39 @@ test("administrator mentions, inboxes, and mail eligibility follow current autho
     ok: true,
     value: { count: 0 },
   });
-  expect(await eligible(mail)).toBe(false);
-  await f.app.concepts.Roling.assign({ ...admin, role: f.adminRole });
-  expect(await eligible(mail)).toBe(true);
-  await f.app.concepts.Archiving.trash({ item: admin.user, by: f.author.user, at: new Date() });
-  expect((await f.invoke("/posts/get", { session, post })).ok).toBe(false);
-  expect(await eligible(mail)).toBe(false);
+  for (const message of mail) expect(await eligible(message)).toBe(false);
+});
+
+test("administrator outbox inspection intentionally exposes snapshots without granting forum access", async () => {
+  const f = await fixture();
+  const { post } = await f.thread(f.holders, "# Private discussion\n\nCONFIDENTIAL-MESSAGE");
+  const [mail] = await f.app.concepts.Mailing._getPending({});
+  expect(mail).toBeDefined();
+  expect(mail.recipient).toBe(f.recipient.email);
+  const request = async (path: string, input: Record<string, unknown>) => {
+    const response = await f.edge.fetch(
+      new Request(`${origin}/api${path}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: origin,
+          Cookie: `__Host-commons-session=${f.administrator.session}`,
+        },
+        body: JSON.stringify(input),
+      }),
+    );
+    return { status: response.status, body: (await response.json()) as unknown };
+  };
+  expect(await request("/posts/get", { post })).toEqual({
+    status: 404,
+    body: { error: "NOT_FOUND" },
+  });
+  expect(await request("/mail/list", {})).toMatchObject({
+    status: 200,
+    body: { messages: [expect.objectContaining({ message: mail.message, subject: mail.subject })] },
+  });
+  expect(await request("/mail/read", { message: mail.message })).toMatchObject({
+    status: 200,
+    body: { recipient: f.recipient.email, text: expect.stringContaining("CONFIDENTIAL-MESSAGE") },
+  });
 });

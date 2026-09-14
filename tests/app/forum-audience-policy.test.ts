@@ -143,7 +143,7 @@ test("production Staff classification excludes moderate and changes with the cur
 test.each([false, true])(
   "production conversation admission survives root removal but never missing grants (administrator=%s)",
   async (administrator) => {
-    const f = await fixture((people) => [`account:${people[administrator ? 0 : 1].user}`]);
+    const f = await fixture((people) => [`account:${people[1].user}`]);
     if (administrator) await grantAdministration(f.instances, f.people[1].user);
     const { post } = await f.instances.Posting.create({
       author: f.people[1].user,
@@ -161,6 +161,17 @@ test.each([false, true])(
     ).toBeNull();
   },
 );
+
+test("administration does not bypass a private discussion's audience", async () => {
+  const f = await fixture((people) => [`account:${people[0].user}`]);
+  const administrator = f.people[1];
+  await grantAdministration(f.instances, administrator.user);
+  expect(
+    await f.app.form(admission({ session: administrator.session, conversation: f.conversation })),
+  ).toBeNull();
+  expect(await f.app.form(postAdmission({ user: administrator.user, post: f.post }))).toBeNull();
+  expect(await f.app.form(storedAdmission({ user: administrator.user, post: f.post }))).toBeNull();
+});
 
 test("the production options and full selection agree on people, groups, sections and Staff-only Students", async () => {
   const f = await fixture((people) => [`account:${people[1].user}`]);
@@ -378,7 +389,7 @@ test.each(["grade", "administer"])(
 test.each([false, true])(
   "post and conversation admission retain their distinct existence conditions (administrator=%s)",
   async (administrator) => {
-    const f = await fixture((people) => [`account:${people[administrator ? 0 : 1].user}`]);
+    const f = await fixture((people) => [`account:${people[1].user}`]);
     const reader = f.people[1];
     if (administrator) await grantAdministration(f.instances, reader.user);
     const postInput = { user: reader.user, post: f.post };

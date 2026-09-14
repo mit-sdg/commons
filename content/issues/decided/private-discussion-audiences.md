@@ -15,7 +15,7 @@ concepts:
 
 ## Current behavior
 
-Audiences are implemented through Accessing and audience-gated forum composition. New conversations establish a fixed complete holder set, and current collective membership determines access. There are no deployed conversations requiring backfill. Completion robustness remains tracked in [audience operation completion](../open/audience-operation-completion.md).
+Audiences are implemented through Accessing and audience-gated forum composition. New conversations establish a fixed complete holder set, and current collective membership determines access. Completion robustness remains tracked in [audience operation completion](../open/audience-operation-completion.md).
 
 ## Desired behavior
 
@@ -58,8 +58,11 @@ The shared feed supports All, Course-wide, and Private. Course-wide explicitly i
 email about every event.
 
 Inbox content and metadata, unread counts, links, and mutations follow current
-access. Private email contains no post content and is authorized again before
-dispatch. Already viewed or delivered material cannot be recalled. The exact
+access. Notification email includes the post's content and is authorized again
+for its recipient before dispatch. Administrators may inspect the outbox's
+rendered snapshots without joining the discussion; this separate operational
+access does not admit them to forum reads or notifications. Already viewed or
+delivered material cannot be recalled. The exact
 failure and delivery contract is tracked in
 [audience operation completion](../open/audience-operation-completion.md).
 
@@ -76,4 +79,4 @@ exercise content, placement, author history, statistics, categories, tags, pins,
 reactions, resolutions, links, revisions, subscriptions, bookmarks, notifications,
 unread counts, moderation, trash, and mutation refusal behavior.
 
-Creation failure before audience establishment keeps content closed. Withheld mail remains queued. Robust completion after interrupted or repeated operations has its own [application issue](../open/audience-operation-completion.md). An installation with zero discussions needs no audience backfill; absent grants always deny access.
+Creation failure before audience establishment keeps content closed. Withheld mail remains queued. Robust completion after interrupted or repeated operations has its own [application issue](../open/audience-operation-completion.md). Existing grants use the current audience policy without a backfill or administrator-specific migration; absent grants always deny access.
