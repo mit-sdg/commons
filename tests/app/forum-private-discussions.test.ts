@@ -237,7 +237,15 @@ test("failed purge deletion keeps the post trashed and unreadable", async () => 
   });
   expect(created.ok).toBe(true);
   if (!created.ok) return;
-  const { post } = created.value as { post: string };
+  const { node } = created.value as { node: string };
+  const reply = await app.invoker.invoke("/threads/reply", {
+    session: author.session,
+    parent: node,
+    content: "Must remain hidden",
+  });
+  expect(reply.ok).toBe(true);
+  if (!reply.ok) return;
+  const { post } = reply.value as { post: string };
   await instances.Trashing.trash({ item: post, by: author.user, at: new Date() });
   instances.Posting.delete = async function deletePost() {
     throw new Error("storage unavailable");

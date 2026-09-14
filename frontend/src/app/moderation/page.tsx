@@ -6,6 +6,8 @@ import { ConfirmAction } from "@/components/confirm-action";
 import { Fact, Facts } from "@/components/facts";
 import { PostPreview } from "@/components/forum/post-preview";
 import { RevisionsDialog } from "@/components/forum/revisions-dialog";
+import { FlagTrashButton } from "@/components/forum/trash-post-dialog";
+import { TrashedThreadDialog } from "@/components/forum/trashed-thread-dialog";
 import { Link } from "@/components/link";
 import { PageContainer, PageHeader } from "@/components/page";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
@@ -71,21 +73,6 @@ function FlagsQueue() {
     }
   }
 
-  async function trash(item: string) {
-    if (!session) return;
-    const result = await api.trash.trash({ item });
-    if ("error" in result)
-      toast.error(
-        result.error === "CONFLICT"
-          ? "This is a thread's opening post. Move the whole thread to trash from its page."
-          : publicErrorMessage(result.error),
-      );
-    else {
-      toast.success("Post moved to trash");
-      refetch();
-    }
-  }
-
   if (loading && !data) return <LoadingState />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;
   if (!data || data.targets.length === 0)
@@ -130,22 +117,10 @@ function FlagsQueue() {
                   >
                     Dismiss
                   </Button>
-                  <ConfirmAction
-                    title="Move this post to trash?"
-                    description="Its text is hidden and its place in the discussion shows as removed. Replies to it stay visible. A thread's opening post is moved to trash with its whole thread from the thread page."
-                    confirmLabel="Move to trash"
-                    destructive
-                    onConfirm={() => trash(item)}
-                    trigger={
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="gap-1.5 text-destructive"
-                      >
-                        <Trash2 className="size-4" />
-                        Move to trash
-                      </Button>
-                    }
+                  <FlagTrashButton
+                    item={item}
+                    conversation={index.data?.[item] ?? null}
+                    onChanged={refetch}
                   />
                 </div>
               </div>
@@ -249,13 +224,7 @@ function TrashBin() {
   if (loading && !data) return <LoadingState />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;
   if (!data || data.trashed.length === 0)
-    return (
-      <EmptyState
-        icon={Trash2}
-        title="Trash is empty"
-        description="Threads and replies in trash can be restored or permanently deleted from here."
-      />
-    );
+    return <EmptyState icon={Trash2} title="Trash is empty" />;
 
   return (
     <div className="space-y-4">
@@ -268,6 +237,11 @@ function TrashBin() {
             key={item}
             item={preview}
             moderator
+            unavailable={
+              entry.thread
+                ? `Thread ${shortId(item)} — opening text unavailable`
+                : "Reply text unavailable"
+            }
             meta={
               <span>
                 {entry.thread ? (
@@ -285,6 +259,9 @@ function TrashBin() {
             }
             action={
               <div className="flex flex-wrap items-center justify-end gap-2">
+                {entry.thread ? (
+                  <TrashedThreadDialog conversation={item} />
+                ) : null}
                 <RevisionsDialog item={preview} moderator />
                 <Button
                   size="sm"

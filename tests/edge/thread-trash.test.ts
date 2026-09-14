@@ -183,8 +183,21 @@ for (const audience of ["private", "everyone"] as const) {
         expect(await call("/reactions/add", { target: leaf.post, kind: "like" })).toEqual(missing);
       }
 
+      // Both scopes can be inspected, without disclosing moderation state to other readers.
+      expect(await ok("/trash/isTrashed", { item: root.conversation }, moderator)).toEqual({
+        trashed: false,
+      });
+      expect(await call("/trash/isTrashed", { item: root.conversation })).toEqual(missing);
+      if (audience === "private")
+        expect(await call("/trash/isTrashed", { item: root.conversation }, outsider)).toEqual(
+          missing,
+        );
+
       // Trashing the conversation hides the whole thread with one marker.
       await ok("/trash/trash", { item: root.conversation }, moderator);
+      expect(await ok("/trash/isTrashed", { item: root.conversation }, moderator)).toEqual({
+        trashed: true,
+      });
       await assertHidden();
       expect((await ok("/trash/list", {}, moderator)).trashed).toEqual([
         expect.objectContaining({
@@ -239,6 +252,7 @@ for (const audience of ["private", "everyone"] as const) {
       ).toEqual([root.post, leaf.post]);
 
       // Purging the thread purges every post, trashed or not, and dissolves the conversation.
+      await ok("/locks/lock", { target: root.conversation }, moderator);
       await ok("/trash/trash", { item: root.conversation }, moderator);
       await ok("/trash/purge", { item: root.conversation }, moderator);
       await edge.application.whenIdle();
@@ -254,6 +268,9 @@ for (const audience of ["private", "everyone"] as const) {
         expect(await floor.Trashing._isTrashed({ item: post })).toEqual({ trashed: false });
         expect(await call("/moderation/posts/get", { item: post }, moderator)).toEqual(missing);
       }
+      expect(await floor.Locking._isLocked({ target: root.conversation })).toEqual({
+        locked: false,
+      });
       expect(await floor.Subscribing._getSubscribers({ target: root.conversation })).toEqual([]);
       expect(await floor.Accessing._holders({ resource: root.conversation })).toEqual([]);
       expect(await floor.Revising._getRevisions({ item: leaf.post })).toEqual([]);

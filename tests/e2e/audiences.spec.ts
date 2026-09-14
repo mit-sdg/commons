@@ -226,6 +226,13 @@ test("reply trash leaves a removed position; thread trash, restore and purge act
       .filter({ has: mara.page.getByText("Whole thread", { exact: true }) })
       .filter({ hasText: "Survivor discussion" });
     await expect(threadEntry).toBeVisible();
+    await threadEntry.getByRole("button", { name: "Review thread" }).click();
+    const review = mara.page.getByRole("dialog", { name: "Survivor discussion" });
+    await expect(review).toContainText("SECRET opening text");
+    await expect(review).toContainText("SECRET intermediate text");
+    await expect(review).toContainText("A surviving nested reply");
+    await expect(review.getByRole("button", { name: "Reply", exact: true })).toHaveCount(0);
+    await review.getByRole("button", { name: "Close", exact: true }).click();
     // Every card loads its post separately; let the list settle so the click lands on this card.
     await mara.page.waitForLoadState("networkidle");
     await threadEntry.getByRole("button", { name: "Restore", exact: true }).click();
@@ -240,13 +247,20 @@ test("reply trash leaves a removed position; thread trash, restore and purge act
       "This reply was removed by a moderator.",
     );
 
-    // A removed reply with nothing beneath it leaves no notice behind.
+    // Every removed reply keeps a notice, including a leaf and a fully removed branch.
     await mara.call("/trash/trash", { item: leaf.post });
     await noah.page.reload();
-    await expect(noah.page.locator(`#post-${leaf.post}`)).toHaveCount(0);
-    await expect(noah.page.locator(`#post-${middle.post}`)).toHaveCount(0);
-    await expect(noah.page.getByText("removed by a moderator")).toHaveCount(0);
-    await mara.call("/trash/restore", { item: leaf.post });
+    for (const post of [middle.post, leaf.post]) {
+      await expect(noah.page.locator(`#post-${post}`)).toContainText(
+        "This reply was removed by a moderator.",
+      );
+    }
+    await mara.page.goto(`/t/${root.conversation}`);
+    await mara.page
+      .locator(`#post-${leaf.post}`)
+      .getByRole("button", { name: "Restore", exact: true })
+      .click();
+    await expect(mara.page.locator(`#post-${leaf.post}`)).toContainText("A surviving nested reply");
 
     // Purging the thread from the bin removes everything for good.
     await mara.call("/trash/trash", { item: root.conversation });

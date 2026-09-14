@@ -25,53 +25,12 @@ import { count, titleFromContent } from "@/lib/format";
 import { loadThreadPage, type ThreadPage } from "@/lib/loaders";
 import type { ThreadNode } from "@/lib/models";
 import { loadMyLists } from "@/lib/tasks";
+import {
+  buildThreadTree,
+  type ThreadBranch,
+  visibleDescendants,
+} from "@/lib/thread-tree";
 import { cn } from "@/lib/utils";
-
-interface ThreadBranch {
-  node: ThreadNode | null;
-  position: ThreadPage["structure"][number];
-  children: ThreadBranch[];
-}
-
-function buildThreadTree(
-  nodes: ThreadNode[],
-  structure: ThreadPage["structure"],
-): ThreadBranch[] {
-  const visible = new Map(nodes.map((node) => [node.node, node]));
-  const branches = new Map(
-    structure.map((position) => [
-      position.node,
-      {
-        node: visible.get(position.node) ?? null,
-        position,
-        children: [] as ThreadBranch[],
-      },
-    ]),
-  );
-  const roots: ThreadBranch[] = [];
-  for (const branch of branches.values()) {
-    const parent =
-      branch.position.parent == null
-        ? null
-        : branches.get(branch.position.parent);
-    if (parent) parent.children.push(branch);
-    else roots.push(branch);
-  }
-  return roots;
-}
-
-/** The visible posts beneath a branch, in thread order, for a one-confirmation branch trash. */
-function visibleDescendants(branch: ThreadBranch): string[] {
-  return branch.children.flatMap((child) => [
-    ...(child.node ? [String(child.node.item)] : []),
-    ...visibleDescendants(child),
-  ]);
-}
-
-/** A removed reply is shown only while something beneath it still needs its context. */
-function showsAnything(branch: ThreadBranch): boolean {
-  return branch.node !== null || branch.children.some(showsAnything);
-}
 
 /** A removed reply keeps its place so the replies beneath it stay in context. */
 function RemovedPost({
@@ -106,9 +65,7 @@ function RemovedPost({
       <span>
         {isRoot
           ? "Opening post unavailable"
-          : trashed.data?.trashed === false
-            ? "This reply was permanently deleted by a moderator."
-            : "This reply was removed by a moderator."}
+          : "This reply was removed by a moderator."}
       </span>
       {canModerate && trashed.data?.trashed ? (
         <div className="flex items-center gap-2">
@@ -395,7 +352,7 @@ function ThreadBranchView({
   unreadItems,
   onChanged,
 }: {
-  branch: ThreadBranch;
+  branch: ThreadBranch<ThreadNode>;
   level: number;
   rootNodeId: string;
   questionId: string;
@@ -407,9 +364,8 @@ function ThreadBranchView({
   onChanged: () => void;
 }) {
   const isRoot = branch.position.node === rootNodeId;
-  const children = branch.children.filter(showsAnything);
+  const children = branch.children;
   const hasChildren = children.length > 0;
-  if (!isRoot && !branch.node && !hasChildren) return null;
 
   return (
     <li className={cn("thread-branch", level > 0 && "thread-branch--child")}>
@@ -423,7 +379,7 @@ function ThreadBranchView({
             acceptedAnswer={acceptedAnswer}
             locked={locked}
             scope={scope}
-            descendants={visibleDescendants(branch)}
+            getDescendants={() => visibleDescendants(branch)}
             isUnread={unreadItems.has(String(branch.node.item))}
             onChanged={onChanged}
           />

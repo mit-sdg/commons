@@ -166,6 +166,18 @@ export const moderationTarget = view(
     where(admittedConversation({ user, conversation: item })),
   ],
 ).holds();
+/** A failed purge may leave only the marker and placement; keep it reachable for retry. */
+export const trashTarget = view(
+  "(user) may inspect forum trash target (item)",
+  ({ user, item }, _out, { conversation }) => [
+    where(moderationTarget({ user, item })),
+    where(
+      postConversation({ post: item }).is({ conversation }),
+      admittedConversation({ user, conversation }),
+      Trashing._isTrashed({ item }).is({ trashed: true }),
+    ),
+  ],
+).holds();
 export const postReader = view(
   "(user) may read forum post (post)",
   ({ user, post }, _out, { conversation }) =>

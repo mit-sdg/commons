@@ -15,6 +15,7 @@ const {
   Reacting,
   Tagging,
   Tracking,
+  Trashing,
 } = concepts;
 
 export const readable = view("(post) is readable", ({ post, reader }, _outputs, _bindings) =>
@@ -72,6 +73,7 @@ export const DeletedPostClearsSatellites = reaction(({ post, node }) =>
     where(
       Conversing._getNodeByItem({ item: post }).is({ node }),
       Conversing._hasChildren({ node }).is({ present: false }),
+      Trashing._isTrashed({ item: post }).is({ trashed: false }),
     )
       .then(Conversing.remove({ node }))
       .named("leaf-node"),

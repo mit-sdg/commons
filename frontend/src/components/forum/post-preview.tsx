@@ -32,6 +32,7 @@ export function PostPreview({
   action,
   showTitle = true,
   moderator = false,
+  unavailable,
 }: {
   item: string;
   conversation?: string | null;
@@ -39,6 +40,8 @@ export function PostPreview({
   action?: React.ReactNode;
   showTitle?: boolean;
   moderator?: boolean;
+  /** The trash entry owns its controls even if retained content cannot be loaded. */
+  unavailable?: React.ReactNode;
 }) {
   const router = useRouter();
   const { data, loading } = useQuery<{ post: PostView }>(
@@ -49,8 +52,8 @@ export function PostPreview({
     [item, moderator],
   );
   const location = useQuery<{ conversation: string | null }>(
-    conversation ? null : () => api.threads.forItem({ item }),
-    [item, conversation],
+    moderator || conversation ? null : () => api.threads.forItem({ item }),
+    [item, conversation, moderator],
   );
 
   if (loading && !data) {
@@ -63,6 +66,16 @@ export function PostPreview({
     );
   }
   if (!data) {
+    if (unavailable)
+      return (
+        <article className="rounded-xl border border-dashed border-border bg-card/40 p-4 text-sm text-muted-foreground">
+          {action ? (
+            <div className="mb-3 flex justify-end">{action}</div>
+          ) : null}
+          <p>{unavailable}</p>
+          {meta ? <div className="mt-3 text-xs">{meta}</div> : null}
+        </article>
+      );
     return (
       <div className="rounded-xl border border-dashed border-border bg-card/40 p-4 text-sm text-muted-foreground">
         This post is no longer available.

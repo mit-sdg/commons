@@ -5,7 +5,6 @@ import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts.ts";
 import { mayModerate, mayNotModerate } from "../access/policy.ts";
 import { notReadable, readable } from "./posts.ts";
-import { intact } from "./threads.ts";
 
 const { Posting, Revising, Trashing } = concepts;
 
@@ -138,7 +137,7 @@ export const ModeratorListRevisions = endpoint(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         storedPostReader({ post: item, user }),
-        intact({ item }),
+        no(hiddenPost({ post: item })),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("live"),
@@ -170,7 +169,7 @@ export const ModeratorGetRevision = endpoint(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         storedPostReader({ post: item, user }),
-        intact({ item }),
+        no(hiddenPost({ post: item })),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("live"),
@@ -202,7 +201,7 @@ export const ModeratorLatestRevision = endpoint(
         activeUser({ session }).is({ user }),
         mayModerate({ user }),
         storedPostReader({ post: item, user }),
-        intact({ item }),
+        no(hiddenPost({ post: item })),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("live"),

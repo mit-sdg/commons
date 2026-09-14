@@ -1,3 +1,4 @@
+import { threadTrash } from "./20260914T000100-thread-trash.ts";
 import { competencyAssessments } from "./20260909T000100-competency-assessments.ts";
 import { responseIdentity } from "./20260906T000200-response-identity.ts";
 import { referenceSelections } from "./20260906T000100-reference-selections.ts";
@@ -25,4 +26,5 @@ export const commonsMigrations: readonly Migration[] = [
   referenceSelections,
   responseIdentity,
   competencyAssessments,
+  threadTrash,
 ];

@@ -1985,6 +1985,21 @@ Authored path: `Forum.threads.readableConversation`.
   where view "(user) may read audience conversation (conversation)" with (conversation, user: reader)
 ```
 
+### (conversation) still has post content or post trash records
+
+Authored path: `Forum.moderation.unfinishedThreadPurge`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 27.
+
+```view
+(conversation) still has post content or post trash records — inputs (conversation); outputs (); bindings (post)
+  where
+    Conversing._getThread (conversation) has (item: post)
+    Posting._getPost (post)
+  where
+    Conversing._getThread (conversation) has (item: post)
+    Trashing._isTrashed (item: post) has (trashed: true)
+```
+
 ### (holders) include the whole course
 
 Authored path: `Forum.notifications.courseWideNotificationAudience`.
@@ -2755,6 +2770,25 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
     Posting._getPost (post)
 ```
 
+### (user) may moderate forum target (item)
+
+```view
+(user) may moderate forum target (item) — inputs (user, item); outputs (); bindings ()
+  where view "(user) may inspect stored forum post (post)" with (post: item, user)
+  where view "(user) belongs to the audience of (conversation)" with (conversation: item, user)
+```
+
+### (user) may inspect forum trash target (item)
+
+```view
+(user) may inspect forum trash target (item) — inputs (user, item); outputs (); bindings (conversation)
+  where view "(user) may moderate forum target (item)" with (item, user)
+  where
+    view "the structural conversation containing post (post)" with (post: item) has (conversation)
+    view "(user) belongs to the audience of (conversation)" with (conversation, user)
+    Trashing._isTrashed (item) has (trashed: true)
+```
+
 ### (user) may manage student records
 
 ```view
@@ -2769,14 +2803,6 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
 (user) may moderate — inputs (user); outputs (); bindings ()
   where Roling._hasCapability (capability: "moderate", context: "commons", user) has (allowed: true)
   where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
-```
-
-### (user) may moderate forum target (item)
-
-```view
-(user) may moderate forum target (item) — inputs (user, item); outputs (); bindings ()
-  where view "(user) may inspect stored forum post (post)" with (post: item, user)
-  where view "(user) belongs to the audience of (conversation)" with (conversation: item, user)
 ```
 
 ### (user) may not use task scope (list)
@@ -4743,7 +4769,7 @@ Former "the figure of (round)" — inputs (round); bindings (open, openedAt, clo
 ### the flags on (target)
 
 Authored path: `Forum.moderation.theFlagsOn`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 52.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 71.
 
 ```former
 Former "the flags on (target)" — inputs (target, reader); bindings (flag, reporter, reason, status, createdAt); promises exactly one record — forms:
@@ -5070,7 +5096,7 @@ Former "the latest revision of (item)" — inputs (item, reader); bindings (revi
 ### the locked list ()
 
 Authored path: `Forum.moderation.theLockedList`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 40.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 59.
 
 ```former
 Former "the locked list ()" — inputs (reader); bindings (target, lockedAt); promises exactly one record — forms:
@@ -5103,7 +5129,7 @@ Former "the mail messages ()" — inputs (); bindings (message, recipient, subje
 ### the moderation queue ()
 
 Authored path: `Forum.moderation.theModerationQueue`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 49.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 68.
 
 ```former
 Former "the moderation queue ()" — inputs (reader); bindings (target, count, node, conversation, author, content, createdAt, editedAt, rendered, flag, reporter, reason, status, flaggedAt); promises exactly one record — forms:
@@ -5195,7 +5221,7 @@ Former "the offerings about (relay)" — inputs (relay); bindings (offering, off
 ### the open flags ()
 
 Authored path: `Forum.moderation.theOpenFlags`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 48.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 67.
 
 ```former
 Former "the open flags ()" — inputs (reader); bindings (target, count); promises exactly one record — forms:
@@ -5892,10 +5918,10 @@ Former "the staff notes on (learner)" — inputs (learner); bindings (note, auth
 ### the stored post (post) for (reader)
 
 Authored path: `Forum.moderation.theStoredPost`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 72.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 44.
 
 ```former
-Former "the stored post (post) for (reader)" — inputs (post, reader); bindings (author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
+Former "the stored post (post) for (reader)" — inputs (post, reader); bindings (author, content, createdAt, editedAt, rendered); promises at most one record — forms:
   a record of
     where view "(user) may inspect stored forum post (post)" with (post, user: reader)
     where Posting._getPost (post) has (author, content, createdAt, editedAt)
@@ -5905,6 +5931,25 @@ Former "the stored post (post) for (reader)" — inputs (post, reader); bindings
     createdAt
     editedAt
     rendered
+```
+
+### the stored thread (conversation) for (reader)
+
+Authored path: `Forum.moderation.theStoredThread`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 43.
+
+```former
+Former "the stored thread (conversation) for (reader)" — inputs (conversation, reader); bindings (node, item, parent, depth, trashed); promises exactly one record — forms:
+  each Conversing._getThread (conversation) has (depth, item, node, parent)
+    where view "(user) belongs to the audience of (conversation)" with (conversation, user: reader)
+    where Trashing._isTrashed (item) has (trashed)
+    form a record of
+      depth
+      item
+      node
+      parent
+      post: whether former "the stored post (post) for (reader)" with (post: item, reader)
+      trashed
 ```
 
 ### the submissions by (submitter)
@@ -6226,12 +6271,12 @@ Former "the thread context (conversation)" — inputs (conversation, reader); bi
 ### the trash bin ()
 
 Authored path: `Forum.moderation.theTrashBin`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 28.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 35.
 
 ```former
 Former "the trash bin ()" — inputs (reader); bindings (item, trashedBy, trashedAt, thread, opening); promises exactly one record — forms:
   each Trashing._getTrashed () has (item, trashedAt, trashedBy)
-    where view "(user) may moderate forum target (item)" with (item, user: reader)
+    where view "(user) may inspect forum trash target (item)" with (item, user: reader)
     where Conversing._exists (conversation: item) has (exists: thread)
     where whether Conversing._getRoot (conversation: item) has (item: opening)
     form a record of
@@ -12753,11 +12798,45 @@ then
   RequestBoundary.respond (requestId, targets: former "the forward links of (source) for (reader)" with (reader, source))
 ```
 
+### Forum.moderation.FinishThreadPurge
+
+Authored path: `Forum.moderation.FinishThreadPurge`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 25.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 81.
+
+```reaction
+when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
+at the flow's settlement frontier
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  view "(user) belongs to the audience of (conversation)" with (conversation: item, user)
+  Trashing._isTrashed (item) has (trashed: true)
+  no view "(conversation) still has post content or post trash records" with (conversation: item)
+then
+  Trashing.purge (item)
+```
+
+### Forum.moderation.FinishThreadPurge#2
+
+Authored path: `Forum.moderation.FinishThreadPurge`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 25.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 81.
+
+```reaction
+when Trashing.purge (item), asked by Forum.moderation.FinishThreadPurge
+at the flow's settlement frontier
+where
+  earlier, RequestBoundary.request (item, path: "/trash/purge", requestId, session)
+then
+  RequestBoundary.respond (item, requestId)
+```
+
 ### Forum.moderation.FlagRaise:hidden
 
 Authored path: `Forum.moderation.FlagRaise`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 44.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 56.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 63.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 75.
 
 ```reaction
 when RequestBoundary.request (path: "/flags/raise", reason, requestId, session, target)
@@ -12771,8 +12850,8 @@ then
 ### Forum.moderation.FlagRaise:success
 
 Authored path: `Forum.moderation.FlagRaise`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 44.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 56.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 63.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 75.
 
 ```reaction
 when RequestBoundary.request (path: "/flags/raise", reason, requestId, session, target)
@@ -12787,8 +12866,8 @@ then
 ### Forum.moderation.FlagRaise:success#2
 
 Authored path: `Forum.moderation.FlagRaise`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 44.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 56.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 63.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 75.
 
 ```reaction
 when Flagging.flag (at, reason, reporter: user, target, flag), asked by Forum.moderation.FlagRaise:success
@@ -12801,8 +12880,8 @@ then
 ### Forum.moderation.FlagResolve:forbidden
 
 Authored path: `Forum.moderation.FlagResolve`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 46.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 57.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 65.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 76.
 
 ```reaction
 when RequestBoundary.request (outcome, path: "/flags/resolve", requestId, session, target)
@@ -12817,8 +12896,8 @@ then
 ### Forum.moderation.FlagResolve:hidden
 
 Authored path: `Forum.moderation.FlagResolve`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 46.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 57.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 65.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 76.
 
 ```reaction
 when RequestBoundary.request (outcome, path: "/flags/resolve", requestId, session, target)
@@ -12832,8 +12911,8 @@ then
 ### Forum.moderation.FlagResolve:success
 
 Authored path: `Forum.moderation.FlagResolve`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 46.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 57.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 65.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 76.
 
 ```reaction
 when RequestBoundary.request (outcome, path: "/flags/resolve", requestId, session, target)
@@ -12848,8 +12927,8 @@ then
 ### Forum.moderation.FlagResolve:success#2
 
 Authored path: `Forum.moderation.FlagResolve`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 46.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 57.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 65.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 76.
 
 ```reaction
 when Flagging.resolve (outcome, target), asked by Forum.moderation.FlagResolve:success
@@ -12862,8 +12941,8 @@ then
 ### Forum.moderation.FlagsForTarget:missing-target
 
 Authored path: `Forum.moderation.FlagsForTarget`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 51.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 58.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 70.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 77.
 
 ```reaction
 when RequestBoundary.request (path: "/flags/forTarget", requestId, session, target)
@@ -12878,8 +12957,8 @@ then
 ### Forum.moderation.FlagsForTarget:target
 
 Authored path: `Forum.moderation.FlagsForTarget`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 51.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 58.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 70.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 77.
 
 ```reaction
 when RequestBoundary.request (path: "/flags/forTarget", requestId, session, target)
@@ -12894,8 +12973,8 @@ then
 ### Forum.moderation.FlagsForTarget:target-hidden
 
 Authored path: `Forum.moderation.FlagsForTarget`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 51.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 58.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 70.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 77.
 
 ```reaction
 when RequestBoundary.request (path: "/flags/forTarget", requestId, session, target)
@@ -12909,8 +12988,8 @@ then
 ### Forum.moderation.FlagsOpen:hidden
 
 Authored path: `Forum.moderation.FlagsOpen`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 47.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 59.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 66.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 78.
 
 ```reaction
 when RequestBoundary.request (path: "/flags/open", requestId, session)
@@ -12924,8 +13003,8 @@ then
 ### Forum.moderation.FlagsOpen:success
 
 Authored path: `Forum.moderation.FlagsOpen`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 47.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 59.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 66.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 78.
 
 ```reaction
 when RequestBoundary.request (path: "/flags/open", requestId, session)
@@ -12939,8 +13018,8 @@ then
 ### Forum.moderation.GetTrashedPost:hidden
 
 Authored path: `Forum.moderation.GetTrashedPost`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 30.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 60.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 40.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 79.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/posts/get", requestId, session)
@@ -12954,8 +13033,8 @@ then
 ### Forum.moderation.GetTrashedPost:live
 
 Authored path: `Forum.moderation.GetTrashedPost`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 30.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 60.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 40.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 79.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/posts/get", requestId, session)
@@ -12971,8 +13050,8 @@ then
 ### Forum.moderation.GetTrashedPost:missing
 
 Authored path: `Forum.moderation.GetTrashedPost`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 30.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 60.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 40.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 79.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/posts/get", requestId, session)
@@ -12987,8 +13066,8 @@ then
 ### Forum.moderation.GetTrashedPost:success
 
 Authored path: `Forum.moderation.GetTrashedPost`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 30.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 60.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 40.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 79.
 
 ```reaction
 when RequestBoundary.request (item, path: "/moderation/posts/get", requestId, session)
@@ -12997,15 +13076,82 @@ where
   view "(user) may moderate" with (user)
   view "(user) may inspect stored forum post (post)" with (post: item, user)
   view "(post) is trashed or sits in a trashed conversation" with (post: item)
+  Posting._getPost (post: item) has (author, content, createdAt, editedAt)
+  Formatting._getRendered (target: item) has (rendered)
 then
-  RequestBoundary.respond (post: former "the stored post (post) for (reader)" with (post: item, reader: user), requestId)
+  RequestBoundary.respond (post: (author, content, createdAt, editedAt, rendered), requestId)
+```
+
+### Forum.moderation.GetTrashedThread:forbidden
+
+Authored path: `Forum.moderation.GetTrashedThread`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 42.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 80.
+
+```reaction
+when RequestBoundary.request (conversation, path: "/moderation/threads/get", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not moderate" with (user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Forum.moderation.GetTrashedThread:live
+
+Authored path: `Forum.moderation.GetTrashedThread`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 42.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 80.
+
+```reaction
+when RequestBoundary.request (conversation, path: "/moderation/threads/get", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  view "(user) belongs to the audience of (conversation)" with (conversation, user)
+  Trashing._isTrashed (item: conversation) has (trashed: false)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Forum.moderation.GetTrashedThread:missing
+
+Authored path: `Forum.moderation.GetTrashedThread`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 42.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 80.
+
+```reaction
+when RequestBoundary.request (conversation, path: "/moderation/threads/get", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  no view "(user) belongs to the audience of (conversation)" with (conversation, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Forum.moderation.GetTrashedThread:thread
+
+Authored path: `Forum.moderation.GetTrashedThread`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 42.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 80.
+
+```reaction
+when RequestBoundary.request (conversation, path: "/moderation/threads/get", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  view "(user) belongs to the audience of (conversation)" with (conversation, user)
+  Trashing._isTrashed (item: conversation) has (trashed: true)
+then
+  RequestBoundary.respond (requestId, thread: former "the stored thread (conversation) for (reader)" with (conversation, reader: user))
 ```
 
 ### Forum.moderation.IsLocked:hidden
 
 Authored path: `Forum.moderation.IsLocked`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 40.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 61.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 59.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 82.
 
 ```reaction
 when RequestBoundary.request (path: "/locks/isLocked", requestId, session, target)
@@ -13019,8 +13165,8 @@ then
 ### Forum.moderation.IsLocked:success
 
 Authored path: `Forum.moderation.IsLocked`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 40.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 61.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 59.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 82.
 
 ```reaction
 when RequestBoundary.request (path: "/locks/isLocked", requestId, session, target)
@@ -13035,15 +13181,15 @@ then
 ### Forum.moderation.IsTrashed:hidden
 
 Authored path: `Forum.moderation.IsTrashed`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 28.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 62.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 38.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 83.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/isTrashed", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not moderate" with (user)
-  view "(user) may inspect stored forum post (post)" with (post: item, user)
+  view "(user) may moderate forum target (item)" with (item, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -13051,14 +13197,14 @@ then
 ### Forum.moderation.IsTrashed:missing
 
 Authored path: `Forum.moderation.IsTrashed`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 28.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 62.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 38.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 83.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/isTrashed", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  no view "(user) may inspect stored forum post (post)" with (post: item, user)
+  no view "(user) may moderate forum target (item)" with (item, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -13066,15 +13212,15 @@ then
 ### Forum.moderation.IsTrashed:success
 
 Authored path: `Forum.moderation.IsTrashed`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 28.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 62.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 38.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 83.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/isTrashed", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
-  view "(user) may inspect stored forum post (post)" with (post: item, user)
+  view "(user) may moderate forum target (item)" with (item, user)
   Trashing._isTrashed (item) has (trashed)
 then
   RequestBoundary.respond (requestId, trashed)
@@ -13083,8 +13229,8 @@ then
 ### Forum.moderation.LockList
 
 Authored path: `Forum.moderation.LockList`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 39.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 63.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 58.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 84.
 
 ```reaction
 when RequestBoundary.request (path: "/locks/list", requestId, session)
@@ -13097,8 +13243,8 @@ then
 ### Forum.moderation.LockTarget:forbidden
 
 Authored path: `Forum.moderation.LockTarget`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 35.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 64.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 54.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 85.
 
 ```reaction
 when RequestBoundary.request (path: "/locks/lock", requestId, session, target)
@@ -13113,8 +13259,8 @@ then
 ### Forum.moderation.LockTarget:hidden
 
 Authored path: `Forum.moderation.LockTarget`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 35.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 64.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 54.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 85.
 
 ```reaction
 when RequestBoundary.request (path: "/locks/lock", requestId, session, target)
@@ -13128,8 +13274,8 @@ then
 ### Forum.moderation.LockTarget:success
 
 Authored path: `Forum.moderation.LockTarget`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 35.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 64.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 54.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 85.
 
 ```reaction
 when RequestBoundary.request (path: "/locks/lock", requestId, session, target)
@@ -13145,8 +13291,8 @@ then
 ### Forum.moderation.LockTarget:success#2
 
 Authored path: `Forum.moderation.LockTarget`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 35.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 64.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 54.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 85.
 
 ```reaction
 when Locking.lock (at, target), asked by Forum.moderation.LockTarget:success
@@ -13156,18 +13302,71 @@ then
   RequestBoundary.respond (requestId, target)
 ```
 
+### Forum.moderation.PurgeItem:deleted-post
+
+Authored path: `Forum.moderation.PurgeItem`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 23.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 86.
+
+```reaction
+when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  view "(user) may inspect forum trash target (item)" with (item, user)
+  view "the structural conversation containing post (post)" with (post: item)
+  no Posting._getPost (post: item)
+  Trashing._isTrashed (item) has (trashed: true)
+then
+  Trashing.purge (item)
+```
+
+### Forum.moderation.PurgeItem:deleted-post#2
+
+Authored path: `Forum.moderation.PurgeItem`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 23.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 86.
+
+```reaction
+when Trashing.purge (item), asked by Forum.moderation.PurgeItem:deleted-post
+where
+  earlier, RequestBoundary.request (item, path: "/trash/purge", requestId, session)
+then
+  RequestBoundary.respond (item, requestId)
+```
+
+### Forum.moderation.PurgeItem:deleted-posts
+
+Authored path: `Forum.moderation.PurgeItem`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 23.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 86.
+
+```reaction
+when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  view "(user) belongs to the audience of (conversation)" with (conversation: item, user)
+  Trashing._isTrashed (item) has (trashed: true)
+  Conversing._getThread (conversation: item) has (item: post)
+  no Posting._getPost (post)
+  Trashing._isTrashed (item: post) has (trashed: true)
+then
+  Trashing.purge (item: post)
+```
+
 ### Forum.moderation.PurgeItem:forbidden
 
 Authored path: `Forum.moderation.PurgeItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 12.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 65.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 23.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 86.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not moderate" with (user)
-  view "(user) may moderate forum target (item)" with (item, user)
+  view "(user) may inspect forum trash target (item)" with (item, user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -13175,14 +13374,14 @@ then
 ### Forum.moderation.PurgeItem:hidden
 
 Authored path: `Forum.moderation.PurgeItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 12.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 65.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 23.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 86.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  no view "(user) may moderate forum target (item)" with (item, user)
+  no view "(user) may inspect forum trash target (item)" with (item, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -13190,8 +13389,8 @@ then
 ### Forum.moderation.PurgeItem:live-posts
 
 Authored path: `Forum.moderation.PurgeItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 12.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 65.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 23.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 86.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
@@ -13211,8 +13410,8 @@ then
 ### Forum.moderation.PurgeItem:live-posts#2
 
 Authored path: `Forum.moderation.PurgeItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 12.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 65.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 23.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 86.
 
 ```reaction
 when Trashing.trash (at, by: user, item: post), asked by Forum.moderation.PurgeItem:live-posts
@@ -13223,8 +13422,8 @@ then
 ### Forum.moderation.PurgeItem:live-posts#3
 
 Authored path: `Forum.moderation.PurgeItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 12.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 65.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 23.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 86.
 
 ```reaction
 when Posting.delete (post), asked by Forum.moderation.PurgeItem:live-posts#2
@@ -13235,25 +13434,25 @@ then
 ### Forum.moderation.PurgeItem:not-trashed
 
 Authored path: `Forum.moderation.PurgeItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 12.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 65.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 23.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 86.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may moderate forum target (item)" with (item, user)
+  view "(user) may inspect forum trash target (item)" with (item, user)
   view "(user) may moderate" with (user)
   Trashing._isTrashed (item) has (trashed: false)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### Forum.moderation.PurgeItem:post
+### Forum.moderation.PurgeItem:opening
 
 Authored path: `Forum.moderation.PurgeItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 12.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 65.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 23.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 86.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
@@ -13261,6 +13460,25 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
   view "(user) may inspect stored forum post (post)" with (post: item, user)
+  view "(post) opens its conversation" with (post: item)
+  Trashing._isTrashed (item) has (trashed: true)
+then
+  RequestBoundary.respond (error: "THREAD_OPENING", requestId)
+```
+
+### Forum.moderation.PurgeItem:post
+
+Authored path: `Forum.moderation.PurgeItem`.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 23.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 86.
+
+```reaction
+when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may moderate" with (user)
+  view "(user) may inspect stored forum post (post)" with (post: item, user)
+  no view "(post) opens its conversation" with (post: item)
   Trashing._isTrashed (item) has (trashed: true)
 then
   Posting.delete (post: item)
@@ -13269,8 +13487,8 @@ then
 ### Forum.moderation.PurgeItem:post#2
 
 Authored path: `Forum.moderation.PurgeItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 12.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 65.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 23.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 86.
 
 ```reaction
 when Posting.delete (post: item), asked by Forum.moderation.PurgeItem:post
@@ -13281,8 +13499,8 @@ then
 ### Forum.moderation.PurgeItem:post#3
 
 Authored path: `Forum.moderation.PurgeItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 12.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 65.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 23.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 86.
 
 ```reaction
 when Trashing.purge (item), asked by Forum.moderation.PurgeItem:post#2
@@ -13292,42 +13510,11 @@ then
   RequestBoundary.respond (item, requestId)
 ```
 
-### Forum.moderation.PurgeItem:thread
-
-Authored path: `Forum.moderation.PurgeItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 12.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 65.
-
-```reaction
-when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may moderate" with (user)
-  view "(user) belongs to the audience of (conversation)" with (conversation: item, user)
-  Trashing._isTrashed (item) has (trashed: true)
-then
-  Trashing.purge (item)
-```
-
-### Forum.moderation.PurgeItem:thread#2
-
-Authored path: `Forum.moderation.PurgeItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 12.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 65.
-
-```reaction
-when Trashing.purge (item), asked by Forum.moderation.PurgeItem:thread
-where
-  earlier, RequestBoundary.request (item, path: "/trash/purge", requestId, session)
-then
-  RequestBoundary.respond (item, requestId)
-```
-
 ### Forum.moderation.PurgeItem:trashed-posts
 
 Authored path: `Forum.moderation.PurgeItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 12.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 65.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 23.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 86.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/purge", requestId, session)
@@ -13346,8 +13533,8 @@ then
 ### Forum.moderation.PurgeItem:trashed-posts#2
 
 Authored path: `Forum.moderation.PurgeItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 12.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 65.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 23.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 86.
 
 ```reaction
 when Posting.delete (post), asked by Forum.moderation.PurgeItem:trashed-posts
@@ -13358,8 +13545,8 @@ then
 ### Forum.moderation.RestoreItem:forbidden
 
 Authored path: `Forum.moderation.RestoreItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 11.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 66.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 16.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 87.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/restore", requestId, session)
@@ -13374,8 +13561,8 @@ then
 ### Forum.moderation.RestoreItem:hidden
 
 Authored path: `Forum.moderation.RestoreItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 11.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 66.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 16.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 87.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/restore", requestId, session)
@@ -13389,8 +13576,8 @@ then
 ### Forum.moderation.RestoreItem:success
 
 Authored path: `Forum.moderation.RestoreItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 11.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 66.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 16.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 87.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/restore", requestId, session)
@@ -13405,8 +13592,8 @@ then
 ### Forum.moderation.RestoreItem:success#2
 
 Authored path: `Forum.moderation.RestoreItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 11.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 66.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 16.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 87.
 
 ```reaction
 when Trashing.restore (item), asked by Forum.moderation.RestoreItem:success
@@ -13419,8 +13606,8 @@ then
 ### Forum.moderation.TrashItem:forbidden
 
 Authored path: `Forum.moderation.TrashItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 4.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 67.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 8.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 88.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/trash", requestId, session)
@@ -13435,8 +13622,8 @@ then
 ### Forum.moderation.TrashItem:missing
 
 Authored path: `Forum.moderation.TrashItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 4.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 67.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 8.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 88.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/trash", requestId, session)
@@ -13450,8 +13637,8 @@ then
 ### Forum.moderation.TrashItem:opening
 
 Authored path: `Forum.moderation.TrashItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 4.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 67.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 8.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 88.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/trash", requestId, session)
@@ -13467,8 +13654,8 @@ then
 ### Forum.moderation.TrashItem:post
 
 Authored path: `Forum.moderation.TrashItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 4.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 67.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 8.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 88.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/trash", requestId, session)
@@ -13485,8 +13672,8 @@ then
 ### Forum.moderation.TrashItem:post#2
 
 Authored path: `Forum.moderation.TrashItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 4.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 67.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 8.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 88.
 
 ```reaction
 when Trashing.trash (at, by: user, item), asked by Forum.moderation.TrashItem:post
@@ -13499,8 +13686,8 @@ then
 ### Forum.moderation.TrashItem:thread
 
 Authored path: `Forum.moderation.TrashItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 4.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 67.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 8.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 88.
 
 ```reaction
 when RequestBoundary.request (item, path: "/trash/trash", requestId, session)
@@ -13516,8 +13703,8 @@ then
 ### Forum.moderation.TrashItem:thread#2
 
 Authored path: `Forum.moderation.TrashItem`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 4.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 67.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 8.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 88.
 
 ```reaction
 when Trashing.trash (at, by: user, item), asked by Forum.moderation.TrashItem:thread
@@ -13530,8 +13717,8 @@ then
 ### Forum.moderation.TrashList:hidden
 
 Authored path: `Forum.moderation.TrashList`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 27.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 68.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 34.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 89.
 
 ```reaction
 when RequestBoundary.request (path: "/trash/list", requestId, session)
@@ -13545,8 +13732,8 @@ then
 ### Forum.moderation.TrashList:success
 
 Authored path: `Forum.moderation.TrashList`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 27.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 68.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 34.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 89.
 
 ```reaction
 when RequestBoundary.request (path: "/trash/list", requestId, session)
@@ -13560,8 +13747,8 @@ then
 ### Forum.moderation.UnlockTarget:forbidden
 
 Authored path: `Forum.moderation.UnlockTarget`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 36.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 69.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 55.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 90.
 
 ```reaction
 when RequestBoundary.request (path: "/locks/unlock", requestId, session, target)
@@ -13576,8 +13763,8 @@ then
 ### Forum.moderation.UnlockTarget:hidden
 
 Authored path: `Forum.moderation.UnlockTarget`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 36.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 69.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 55.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 90.
 
 ```reaction
 when RequestBoundary.request (path: "/locks/unlock", requestId, session, target)
@@ -13591,8 +13778,8 @@ then
 ### Forum.moderation.UnlockTarget:success
 
 Authored path: `Forum.moderation.UnlockTarget`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 36.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 69.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 55.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 90.
 
 ```reaction
 when RequestBoundary.request (path: "/locks/unlock", requestId, session, target)
@@ -13607,8 +13794,8 @@ then
 ### Forum.moderation.UnlockTarget:success#2
 
 Authored path: `Forum.moderation.UnlockTarget`.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 36.
-- Covered by [Moderation](../design/compositions/forum/moderation.md), line 69.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 55.
+- Covered by [Moderation](../design/compositions/forum/moderation.md), line 90.
 
 ```reaction
 when Locking.unlock (target), asked by Forum.moderation.UnlockTarget:success
@@ -14398,6 +14585,7 @@ when Posting.delete (post)
 where
   Conversing._getNodeByItem (item: post) has (node)
   Conversing._hasChildren (node) has (present: false)
+  Trashing._isTrashed (item: post) has (trashed: false)
 then
   Conversing.remove (node)
 ```
@@ -14886,21 +15074,6 @@ then
   Locking.unlock (target: item)
 ```
 
-### Forum.purge.PurgeClearsCoreForumState:leaf-node
-
-Authored path: `Forum.purge.PurgeClearsCoreForumState`.
-- Covered by [Permanent forum cleanup](../design/compositions/forum/purge.md), line 4.
-
-```reaction
-when Trashing.purge (item)
-where
-  no Posting._getPost (post: item)
-  Conversing._getNodeByItem (item) has (node)
-  Conversing._hasChildren (node) has (present: false)
-then
-  Conversing.remove (node)
-```
-
 ### Forum.purge.PurgeClearsCoreForumState:links
 
 Authored path: `Forum.purge.PurgeClearsCoreForumState`.
@@ -14947,20 +15120,6 @@ where
   Conversing._exists (conversation: item) has (exists: true)
 then
   Accessing.retire (resource: item)
-```
-
-### Forum.purge.PurgeDissolvesConversation:lock
-
-Authored path: `Forum.purge.PurgeDissolvesConversation`.
-- Covered by [Permanent forum cleanup](../design/compositions/forum/purge.md), line 16.
-
-```reaction
-when Trashing.purge (item)
-where
-  Conversing._exists (conversation: item) has (exists: true)
-  Locking._isLocked (target: item) has (locked: true)
-then
-  Locking.unlock (target: item)
 ```
 
 ### Forum.purge.PurgeDissolvesConversation:structure
@@ -15465,7 +15624,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
   view "(user) may inspect stored forum post (post)" with (post: item, user)
-  view "(item) is intact" with (item)
+  no view "(post) is trashed or sits in a trashed conversation" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -15530,7 +15689,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
   view "(user) may inspect stored forum post (post)" with (post: item, user)
-  view "(item) is intact" with (item)
+  no view "(post) is trashed or sits in a trashed conversation" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -15595,7 +15754,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may moderate" with (user)
   view "(user) may inspect stored forum post (post)" with (post: item, user)
-  view "(item) is intact" with (item)
+  no view "(post) is trashed or sits in a trashed conversation" with (post: item)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -28729,6 +28888,7 @@ not listed here have no explicit input contract.
 - `/moderation/revisions/get` — requires `item`, `number`, `session`
 - `/moderation/revisions/latest` — requires `item`, `session`
 - `/moderation/revisions/list` — requires `item`, `session`
+- `/moderation/threads/get` — requires `conversation`, `session`
 - `/notifications/dismiss` — requires `notification`, `session`
 - `/notifications/inbox` — requires `session`
 - `/notifications/list` — requires `session`

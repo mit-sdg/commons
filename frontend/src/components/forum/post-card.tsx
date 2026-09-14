@@ -12,7 +12,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ConfirmAction } from "@/components/confirm-action";
 import { Fact } from "@/components/facts";
 import { BookmarkButton } from "@/components/forum/bookmark-button";
 import { Composer } from "@/components/forum/composer";
@@ -23,6 +22,10 @@ import { PostLinks } from "@/components/forum/post-links";
 import { ReactionBar } from "@/components/forum/reaction-bar";
 import { RenderedMarkdown } from "@/components/forum/rendered-markdown";
 import { RevisionsDialog } from "@/components/forum/revisions-dialog";
+import {
+  TrashPostDialog,
+  type TrashTarget,
+} from "@/components/forum/trash-post-dialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -36,7 +39,6 @@ import { UserName } from "@/components/user-name";
 import { UserRole } from "@/components/user-role";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { count } from "@/lib/format";
 import type { ThreadNode } from "@/lib/models";
 import { cn } from "@/lib/utils";
 
@@ -48,8 +50,8 @@ interface PostCardProps {
   acceptedAnswer: string | null;
   locked: boolean;
   scope: string;
-  /** Visible posts beneath this one, so a moderator can trash the branch in one confirmation. */
-  descendants?: string[];
+  /** Collect a snapshot only when the moderator opens the confirmation. */
+  getDescendants?: () => string[];
   isUnread?: boolean;
   onChanged: () => void;
 }
@@ -62,14 +64,13 @@ export function PostCard({
   acceptedAnswer,
   locked,
   scope,
-  descendants = [],
+  getDescendants,
   isUnread = false,
   onChanged,
 }: PostCardProps) {
   const { session, me, permissions } = useAuth();
   const router = useRouter();
-  const [trashOpen, setTrashOpen] = useState(false);
-  const [withReplies, setWithReplies] = useState(false);
+  const [trashTarget, setTrashTarget] = useState<TrashTarget | null>(null);
   const [editing, setEditing] = useState(false);
   const [replying, setReplying] = useState(false);
   const [flagOpen, setFlagOpen] = useState(false);
@@ -148,40 +149,6 @@ export function PostCard({
       toast.success(isAccepted ? "Answer unmarked" : "Marked as the answer");
       onChanged();
     }
-  }
-
-  async function moderatorTrash() {
-    if (!session) return;
-    if (isRoot) {
-      const result = await api.trash.trash({ item: scope });
-      if ("error" in result) toast.error(publicErrorMessage(result.error));
-      else {
-        toast.success("Thread moved to trash");
-        router.replace("/");
-      }
-      return;
-    }
-    // Deeper replies first, so a failure part-way never hides a reply's context before the reply.
-    const targets = withReplies
-      ? [...descendants].reverse().concat(postId)
-      : [postId];
-    let failed = 0;
-    for (const item of targets) {
-      const result = await api.trash.trash({ item });
-      if ("error" in result) failed += 1;
-    }
-    if (failed > 0)
-      toast.error(
-        `${count(failed, "post")} of ${targets.length} could not be moved to trash.`,
-      );
-    else
-      toast.success(
-        targets.length > 1
-          ? `Reply and ${count(descendants.length, "reply", "replies")} moved to trash`
-          : "Reply moved to trash",
-      );
-    setWithReplies(false);
-    onChanged();
   }
 
   return (
@@ -336,7 +303,18 @@ export function PostCard({
                   {canModerate ? (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => setTrashOpen(true)}>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          setTrashTarget({
+                            item: postId,
+                            conversation: scope,
+                            isRoot,
+                            descendants: isRoot
+                              ? []
+                              : (getDescendants?.() ?? []),
+                          })
+                        }
+                      >
                         <Trash2 className="size-4" />
                         {isRoot ? "Move thread to trash" : "Move to trash"}
                       </DropdownMenuItem>
@@ -363,54 +341,16 @@ export function PostCard({
         </div>
       ) : null}
 
-      <ConfirmAction
-        open={trashOpen}
-        onOpenChange={(open) => {
-          setTrashOpen(open);
-          if (!open) setWithReplies(false);
-        }}
-        title={
-          isRoot ? "Move this thread to trash?" : "Move this reply to trash?"
-        }
-        description={
-          isRoot ? (
-            <p>
-              The whole discussion, including every reply, is hidden until a
-              moderator restores it from the trash.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              <p>
-                Its text is hidden and its place in the discussion shows as
-                removed. Replies to it stay visible.
-              </p>
-              {descendants.length > 0 ? (
-                <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm text-foreground">
-                  <input
-                    type="checkbox"
-                    className="mt-0.5 size-4 accent-primary"
-                    checked={withReplies}
-                    onChange={(event) => setWithReplies(event.target.checked)}
-                  />
-                  <span>
-                    Also move {count(descendants.length, "reply", "replies")}{" "}
-                    beneath it to trash. Each can be restored on its own.
-                  </span>
-                </label>
-              ) : null}
-            </div>
-          )
-        }
-        confirmLabel={
-          isRoot
-            ? "Move thread to trash"
-            : withReplies && descendants.length > 0
-              ? `Move ${count(descendants.length + 1, "post")} to trash`
-              : "Move to trash"
-        }
-        destructive
-        onConfirm={moderatorTrash}
-      />
+      {trashTarget ? (
+        <TrashPostDialog
+          target={trashTarget}
+          onClose={() => setTrashTarget(null)}
+          onChanged={() => {
+            if (isRoot) router.replace("/");
+            else onChanged();
+          }}
+        />
+      ) : null}
       <FlagDialog target={postId} open={flagOpen} onOpenChange={setFlagOpen} />
     </article>
   );
