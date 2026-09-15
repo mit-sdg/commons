@@ -155,7 +155,10 @@ test("attempts retain frozen point setups, corrections, and scoped excusals", as
   await expect(assignmentPage.getByText("8 / 10", { exact: true }).first()).toBeVisible();
 
   await staffPage.goto(`${baseURL}/staff/assignments/${assignment}#attempt-${second.submission}`);
-  await staffPage.getByRole("button", { name: "Assess this attempt", exact: true }).click();
+  await staffPage.reload();
+  const secondAttempt = staffPage.locator(`#attempt-${second.submission}`);
+  await expect(secondAttempt).toContainText("Attempt #2");
+  await secondAttempt.getByRole("button", { name: "Assess this attempt", exact: true }).click();
   await staffPage.getByRole("button", { name: "Start assessment", exact: true }).click();
   await staffPage.getByRole("spinbutton", { name: "Score / 12" }).fill("10");
   await staffPage.getByRole("spinbutton", { name: "Score / 8" }).fill("7");
@@ -212,7 +215,12 @@ test("attempts retain frozen point setups, corrections, and scoped excusals", as
     content: "A third attempt for scoped excusal",
   });
   await staffPage.goto(`${baseURL}/staff/assignments/${assignment}#attempt-${third.submission}`);
-  await staffPage.getByRole("button", { name: "Assess this attempt", exact: true }).click();
+  // A hash-only navigation keeps the existing assignment page mounted. Reload
+  // once so this API-seeded submission is present before following its anchor.
+  await staffPage.reload();
+  const thirdAttempt = staffPage.locator(`#attempt-${third.submission}`);
+  await expect(thirdAttempt).toContainText("Attempt #3");
+  await thirdAttempt.getByRole("button", { name: "Assess this attempt", exact: true }).click();
   await staffPage.getByRole("button", { name: "Start assessment", exact: true }).click();
   await staffPage.getByRole("button", { name: "Excuse this assessment", exact: true }).click();
   await staffPage.getByRole("button", { name: "Confirm excusal to learner" }).click();
