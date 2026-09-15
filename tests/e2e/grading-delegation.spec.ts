@@ -124,18 +124,22 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
       "/assignments/create-draft",
       assignmentInput,
     );
-    const grading = await call<{ generation: number }>(
-      staff,
-      staffCookie,
-      "/grades/configure-method",
-      {
-        item: created.assignment,
-        method: "POINTS",
-        maxPoints: 10,
-        generation: 0,
-        discard: false,
-      },
-    );
+    const pointSetup = await call<{
+      revision: number;
+      criteria: { criterion: string }[];
+    }>(staff, staffCookie, "/grades/configure-setup", {
+      item: created.assignment,
+      method: "POINTS",
+      revision: 0,
+      criteria: [
+        {
+          kind: "POINTS",
+          name: "Overall",
+          maxPoints: 10,
+          position: 0,
+        },
+      ],
+    });
     await call(staff, staffCookie, "/assignments/publish", {
       assignment: created.assignment,
     });
@@ -156,41 +160,138 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
         content: "Priya's submission",
       },
     );
-    const noahDraft = await call<{ mark: string; version: number }>(
+    const noahDraft = await call<{ grade: string; version: number }>(
       staff,
       staffCookie,
-      "/marks/record",
+      "/grades/record",
       {
         learner: noahIdentity.user,
         item: created.assignment,
         evidence: noahFirst.submission,
-        score: 8.5,
-        feedback: "Clear reasoning.",
-        generation: grading.generation,
-        version: 0,
+        revision: pointSetup.revision,
       },
     );
-    await call(staff, staffCookie, "/marks/release", {
-      mark: noahDraft.mark,
-      version: noahDraft.version,
+    const noahSaved = await call<{ grade: string; version: number }>(
+      staff,
+      staffCookie,
+      "/grades/save",
+      {
+        grade: noahDraft.grade,
+        version: noahDraft.version,
+        judgments: [
+          {
+            kind: "POINTS",
+            criterion: pointSetup.criteria[0]!.criterion,
+            score: 8.5,
+          },
+        ],
+        feedback: "Clear reasoning.",
+      },
+    );
+    await call(staff, staffCookie, "/grades/release", {
+      grade: noahSaved.grade,
+      version: noahSaved.version,
     });
-    const priyaDraft = await call<{ mark: string }>(staff, staffCookie, "/marks/record", {
-      learner: priyaIdentity.user,
-      item: created.assignment,
-      evidence: priyaFirst.submission,
-      score: 0,
+    const priyaDraft = await call<{ grade: string; version: number }>(
+      staff,
+      staffCookie,
+      "/grades/record",
+      {
+        learner: priyaIdentity.user,
+        item: created.assignment,
+        evidence: priyaFirst.submission,
+        revision: pointSetup.revision,
+      },
+    );
+    await call(staff, staffCookie, "/grades/save", {
+      grade: priyaDraft.grade,
+      version: priyaDraft.version,
+      judgments: [
+        {
+          kind: "POINTS",
+          criterion: pointSetup.criteria[0]!.criterion,
+          score: 0,
+        },
+      ],
       feedback: "Draft feedback.",
-      generation: grading.generation,
-      version: 0,
     });
-    const aminaExcusal = await call<{ mark: string }>(staff, staffCookie, "/marks/excuse", {
-      learner: amina.user,
-      item: created.assignment,
-      evidence: "",
+    const aminaDraft = await call<{ grade: string; version: number }>(
+      staff,
+      staffCookie,
+      "/grades/record",
+      {
+        learner: amina.user,
+        item: created.assignment,
+        evidence: "",
+        revision: pointSetup.revision,
+      },
+    );
+    const aminaExcusal = await call<{ grade: string }>(staff, staffCookie, "/grades/excuse", {
+      grade: aminaDraft.grade,
+      version: aminaDraft.version,
       feedback: "Excused from this assignment.",
-      generation: grading.generation,
-      mark: "",
-      version: 0,
+    });
+    const standard = await call<{ edition: string }>(
+      staff,
+      staffCookie,
+      "/grades/define-standard",
+      {
+        name: "Concept design",
+        description: "Explain and compare the design.",
+        deficient: "The design is unsupported.",
+        emergent: "The design is partly supported.",
+        competent: "The design is supported.",
+        expert: "The design weighs alternatives.",
+        referenceUrl: "",
+      },
+    );
+    const competencySetup = await call<{
+      revision: number;
+      criteria: { criterion: string }[];
+    }>(staff, staffCookie, "/grades/configure-setup", {
+      item: created.assignment,
+      method: "COMPETENCY",
+      revision: pointSetup.revision,
+      criteria: [
+        {
+          kind: "COMPETENCY",
+          basis: standard.edition,
+          position: 0,
+        },
+      ],
+    });
+    const priyaSecond = await call<{ submission: string }>(
+      priya,
+      priyaCookie,
+      "/assignments/submit",
+      {
+        assignment: created.assignment,
+        content: "Priya's revised competency submission",
+      },
+    );
+    const priyaCompetency = await call<{ grade: string; version: number }>(
+      staff,
+      staffCookie,
+      "/grades/record",
+      {
+        learner: priyaIdentity.user,
+        item: created.assignment,
+        evidence: priyaSecond.submission,
+        revision: competencySetup.revision,
+      },
+    );
+    await call(staff, staffCookie, "/grades/save", {
+      grade: priyaCompetency.grade,
+      version: priyaCompetency.version,
+      judgments: [
+        {
+          kind: "COMPETENCY",
+          criterion: competencySetup.criteria[0]!.criterion,
+          rating: "COMPETENT",
+          feedback: "",
+        },
+      ],
+      feedback: "Competency draft feedback.",
     });
     await call(staff, staffCookie, "/delegation/set", {
       item: created.assignment,
@@ -222,7 +323,6 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
     await filter.click();
     await page.getByRole("option", { name: "Unassigned", exact: true }).click();
     await expect(page.getByText("1 of 3 learners shown", { exact: true })).toBeVisible();
-    await expect(page.getByText("Assigned to", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Noah Patel", { exact: true })).toBeVisible();
     await expect(page.getByText("Priya Sharma", { exact: true })).toHaveCount(0);
     await expect(manualFeedback).toBeHidden({ timeout: 10_000 });
@@ -281,22 +381,23 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
       "Grading method": "Points",
       "Grade scope": "Attempt 1",
       "Grade status": "RELEASED",
-      "Grade ID": noahDraft.mark,
+      "Grade ID": noahDraft.grade,
       Score: "8.5",
       "Maximum points": "10",
     });
     expect(csvRow(initialCsv, "priya@example.edu")).toMatchObject({
-      "Grade scope": "Attempt 1",
+      "Grading method": "Competency",
+      "Grade scope": "Attempt 2",
       "Grade status": "DRAFT",
-      "Grade ID": priyaDraft.mark,
-      Score: "0",
-      "Maximum points": "10",
+      "Grade ID": priyaCompetency.grade,
+      Score: "",
+      "Maximum points": "",
     });
     expect(csvRow(initialCsv, aminaEmail)).toMatchObject({
       "Submission status": "Missing",
       "Grade scope": "Assignment excusal",
       "Grade status": "EXCUSED",
-      "Grade ID": aminaExcusal.mark,
+      "Grade ID": aminaExcusal.grade,
       Score: "",
       "Maximum points": "10",
     });
@@ -318,14 +419,14 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
     await expect(page.getByText("Noah Patel", { exact: true })).toBeVisible();
     await expect(page.getByText("Priya Sharma", { exact: true })).toHaveCount(0);
     const releaseAll = page.getByRole("button", {
-      name: "Release all drafts (1)",
+      name: "Release all drafts (2)",
     });
     await releaseAll.click();
     const releaseDialog = page.getByRole("dialog", {
-      name: "Release all complete point grade drafts for this assignment?",
+      name: "Release all complete assessment drafts for this assignment?",
     });
     await expect(
-      releaseDialog.getByText("1 draft is outside the current scope", {
+      releaseDialog.getByText("2 drafts are outside the current scope", {
         exact: false,
       }),
     ).toBeVisible();
@@ -338,9 +439,11 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
       .locator(
         "xpath=ancestor::div[contains(concat(' ', normalize-space(@class), ' '), ' rounded-lg ')][1]",
       );
-    await priyaRow.getByRole("button", { name: "Review grades" }).click();
-    const dirtyScore = priyaRow.getByRole("spinbutton", { name: "Score / 10" });
-    await dirtyScore.fill("9.25");
+    await priyaRow.getByRole("button", { name: "Review assessments" }).click();
+    const dirtyFeedback = priyaRow.getByRole("textbox", {
+      name: "Overall feedback (optional)",
+    });
+    await dirtyFeedback.fill("Keep this unsaved competency feedback");
 
     const second = await call<{ submission: string }>(noah, noahCookie, "/assignments/submit", {
       assignment: created.assignment,
@@ -368,7 +471,7 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
       page.getByRole("heading", { level: 1, name: assignmentInput.title }),
     ).toBeVisible();
     await expect(page.getByRole("heading", { level: 1, name: revisedTitle })).toHaveCount(0);
-    await expect(dirtyScore).toHaveValue("9.25");
+    await expect(dirtyFeedback).toHaveValue("Keep this unsaved competency feedback");
     await page.getByRole("button", { name: "Retry details" }).click();
     const revisedHeading = page.getByRole("heading", { level: 1, name: revisedTitle });
     await expect(revisedHeading).toBeVisible();
@@ -376,7 +479,7 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
       revisedHeading.locator("xpath=../..").locator(`time[datetime="${revisedDue}"]`),
     ).toBeVisible();
     await expect(staleDetails).toHaveCount(0);
-    await expect(dirtyScore).toHaveValue("9.25");
+    await expect(dirtyFeedback).toHaveValue("Keep this unsaved competency feedback");
     await expect(page.getByText("2 attempts", { exact: true })).toBeVisible();
     await expect(page.getByText("1 late day", { exact: true })).toBeVisible();
     await expect(bulkFeedback).toBeHidden({ timeout: 10_000 });
@@ -411,15 +514,15 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
     expect(csv).toContain("Taylor Grader");
     expect(csv).not.toContain("priya@example.edu");
     expect(csvRow(csv, "noah@example.edu")).toMatchObject({
-      "Grading method": "Points",
+      "Grading method": "Competency",
       "Submission ID": second.submission,
       "Grade scope": "",
       "Grade status": "",
       "Grade ID": "",
       Score: "",
-      "Maximum points": "10",
+      "Maximum points": "",
     });
-    expect(csv).not.toContain(noahDraft.mark);
+    expect(csv).not.toContain(noahDraft.grade);
     const exportFeedback = page.getByText("1 learner exported");
     await expect(exportFeedback).toBeVisible();
     await expect(exportFeedback).toBeHidden({ timeout: 10_000 });

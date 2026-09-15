@@ -451,21 +451,19 @@ function StaffAssignmentDetailPageContent({
 
       const [freshSections, freshLateDays, latePolicy, freshGrades] =
         await Promise.all([
-        canManage ? loadSections() : Promise.resolve(null),
-        canReadStudentRecords
-          ? loadLateDaysForAssignment(assignment)
-          : Promise.resolve(null),
-        canReadStudentRecords
-          ? api["late-days"].policy({}).then(unwrap)
-          : Promise.resolve(null),
-        loadGradesForItem(assignment),
-      ]);
+          canManage ? loadSections() : Promise.resolve(null),
+          canReadStudentRecords
+            ? loadLateDaysForAssignment(assignment)
+            : Promise.resolve(null),
+          canReadStudentRecords
+            ? api["late-days"].policy({}).then(unwrap)
+            : Promise.resolve(null),
+          loadGradesForItem(assignment),
+        ]);
       const confirmedGrading = await api.grades
         .item({ item: assignment })
         .then(unwrap);
-      if (
-        confirmedGrading.revision !== observedGrading.revision
-      ) {
+      if (confirmedGrading.revision !== observedGrading.revision) {
         toast.info(
           "CSV was not downloaded because the grading setup changed. Try again.",
         );
@@ -1092,7 +1090,9 @@ function StaffAssignmentDetailPageContent({
                                 <div className="space-y-1 pb-2 text-right text-sm">
                                   <div className="flex items-center justify-end gap-2">
                                     {visibleAssessment ? (
-                                      <StatusBadge status={visibleAssessment.status} />
+                                      <StatusBadge
+                                        status={visibleAssessment.status}
+                                      />
                                     ) : null}
                                     <span className="text-muted-foreground tabular-nums">
                                       {!visibleAssessment
@@ -1101,7 +1101,8 @@ function StaffAssignmentDetailPageContent({
                                           ? visibleAssessment.evidence
                                             ? "Attempt excused"
                                             : "Assignment excused"
-                                          : visibleAssessment.method === "POINTS" &&
+                                          : visibleAssessment.method ===
+                                                "POINTS" &&
                                               visibleAssessment.scored
                                             ? `${visibleAssessment.score} / ${visibleAssessment.outOf}`
                                             : `${learnerGrades.length} assessment${learnerGrades.length === 1 ? "" : "s"}`}
@@ -1109,7 +1110,8 @@ function StaffAssignmentDetailPageContent({
                                   </div>
                                   {visibleAssessment?.attempt ? (
                                     <p className="text-xs text-muted-foreground">
-                                      Assessed attempt #{visibleAssessment.attempt}
+                                      Assessed attempt #
+                                      {visibleAssessment.attempt}
                                     </p>
                                   ) : null}
                                   {newAttemptNeedsReview ? (

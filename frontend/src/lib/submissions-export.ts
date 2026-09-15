@@ -131,10 +131,7 @@ function exportedGrade<
     createdAt: string;
     updatedAt: string;
   },
->(
-  records: readonly T[],
-  attempt: LearnerAttempt | undefined,
-) {
+>(records: readonly T[], attempt: LearnerAttempt | undefined) {
   return selectExportAssessment(records, attempt);
 }
 
@@ -193,9 +190,7 @@ export function submissionsCsv(source: SubmissionsExportSource): {
       grade?.method === "POINTS" && grade.scored && grade.status !== "EXCUSED"
         ? grade.score
         : "";
-    const maximum = isPoints
-      ? (grade?.outOf ?? source.grading.maxPoints)
-      : "";
+    const maximum = isPoints ? (grade?.outOf ?? source.grading.maxPoints) : "";
     const delegation = delegationByLearner.get(learnerId);
     const grader = delegation
       ? availableById.get(String(delegation.grader))

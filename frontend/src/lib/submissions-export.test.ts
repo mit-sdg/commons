@@ -72,8 +72,7 @@ const source = {
     },
   ],
   grades: [],
-  marks: [],
-  grading: { method: "COMPETENCY", generation: 0, maxPoints: 100 },
+  grading: { method: "COMPETENCY", revision: 0, maxPoints: 0 },
   delegations: [
     {
       learner: "learner-1",
@@ -395,12 +394,13 @@ describe("submission export", () => {
           submission: "ten-point-attempt",
         },
       ],
-      grading: { method: "POINTS", generation: 4, maxPoints: 20 },
-      marks: [
+      grading: { method: "POINTS", revision: 4, maxPoints: 20 },
+      grades: [
         {
-          mark: "ten-point-mark",
+          grade: "ten-point-grade",
           learner: "learner-1",
           evidence: "ten-point-attempt",
+          method: "POINTS",
           score: 8,
           scored: true,
           outOf: 10,
@@ -408,9 +408,9 @@ describe("submission export", () => {
           createdAt: "2026-09-11T00:00:00Z",
           updatedAt: "2026-09-11T01:00:00Z",
         },
-      ] as unknown as SubmissionsExportSource["marks"],
+      ] as unknown as SubmissionsExportSource["grades"],
     });
-    expect(csv).toContain("Attempt 1,RELEASED,ten-point-mark");
+    expect(csv).toContain("Attempt 1,RELEASED,ten-point-grade");
     expect(csv).toContain(",8,10,https://commons.example/");
     expect(csv).not.toContain(",8,20,https://commons.example/");
   });
@@ -437,7 +437,7 @@ describe("submission export", () => {
     const numericSource = {
       ...source,
       title: "Numeric lab",
-      grading: { method: "POINTS", generation: 3, maxPoints: 10 },
+      grading: { method: "COMPETENCY", revision: 3, maxPoints: 0 },
       sectionNames: new Map(),
       assigned: [
         {
@@ -498,19 +498,10 @@ describe("submission export", () => {
       ],
       grades: [
         {
-          grade: "ignored-competency-grade",
+          grade: "released-grade",
           learner: "learner-1",
           evidence: "released-attempt",
-          status: "RELEASED",
-          createdAt: "2026-09-11T00:00:00Z",
-          updatedAt: "2026-09-11T01:00:00Z",
-        },
-      ],
-      marks: [
-        {
-          mark: "released-mark",
-          learner: "learner-1",
-          evidence: "released-attempt",
+          method: "POINTS",
           score: 8.5,
           scored: true,
           outOf: 10,
@@ -519,9 +510,10 @@ describe("submission export", () => {
           updatedAt: "2026-09-11T01:00:00Z",
         },
         {
-          mark: "zero-draft-mark",
+          grade: "zero-draft-grade",
           learner: "learner-2",
           evidence: "zero-attempt",
+          method: "POINTS",
           score: 0,
           scored: true,
           outOf: 10,
@@ -530,9 +522,10 @@ describe("submission export", () => {
           updatedAt: "2026-09-11T01:00:00Z",
         },
         {
-          mark: "old-released-mark",
+          grade: "old-released-grade",
           learner: "learner-3",
           evidence: "old-scored-attempt",
+          method: "POINTS",
           score: 7,
           scored: true,
           outOf: 10,
@@ -541,9 +534,10 @@ describe("submission export", () => {
           updatedAt: "2026-09-11T01:00:00Z",
         },
         {
-          mark: "assignment-excusal-mark",
+          grade: "assignment-excusal-grade",
           learner: "learner-4",
-          evidence: "excusal-evidence-attempt",
+          evidence: "",
+          method: "POINTS",
           score: 0,
           scored: false,
           outOf: 10,
@@ -571,13 +565,13 @@ describe("submission export", () => {
       "Grading method": "Points",
       "Grade scope": "Attempt 1",
       "Grade status": "RELEASED",
-      "Grade ID": "released-mark",
+      "Grade ID": "released-grade",
       Score: "8.5",
       "Maximum points": "10",
     });
     expect(row("noah")).toMatchObject({
       "Grade status": "DRAFT",
-      "Grade ID": "zero-draft-mark",
+      "Grade ID": "zero-draft-grade",
       Score: "0",
       "Maximum points": "10",
     });
@@ -587,7 +581,7 @@ describe("submission export", () => {
       "Grade status": "",
       "Grade ID": "",
       Score: "",
-      "Maximum points": "10",
+      "Maximum points": "",
     });
     expect(row("iris")).toMatchObject({
       "Section ID": "section-unreadable",
@@ -595,11 +589,10 @@ describe("submission export", () => {
       "Submission ID": "after-excusal-attempt",
       "Grade scope": "Assignment excusal",
       "Grade status": "EXCUSED",
-      "Grade ID": "assignment-excusal-mark",
+      "Grade ID": "assignment-excusal-grade",
       Score: "",
       "Maximum points": "10",
     });
-    expect(csv).not.toContain("ignored-competency-grade");
-    expect(csv).not.toContain("old-released-mark");
+    expect(csv).not.toContain("old-released-grade");
   });
 });
