@@ -1,63 +1,62 @@
-# Grading setup, assessments, and standards
+# Grading setup and assessment lifecycle
 
-This composition joins opaque criteria to immutable standard editions. The fixed
-criteria of an assessment are captured when staff start it, so subsequent setup
-changes apply to new assessments. There is no computed current or highest level.
+This composition presents competency and point grading as two setup methods of
+one assessment lifecycle. `Itemizing` supplies one coherent revisioned current
+setup; competency rubric editions are immutable and expanded into complete
+criterion definitions before `Grading` starts an assessment. Once started, an
+assessment is interpreted entirely from its stored snapshot.
 
-Each item is competency graded by default. Staff can switch it to an assignment-level
-point score with a finite positive maximum. Changing the method or an existing
-point maximum deletes records, including released results, only after explicit
-confirmation. The caller supplies the observed configuration generation; a stale
-request fails even if the item has since switched away and back. Rubric selections
-and point setup are retained while inactive, but retired grades are not.
+[Extract competency edition identities from setup input](computation:competencyEditionIds).
 
-Staff holding `grade` manage standards and assessments; all new learner/item/evidence
-relationships are checked before an assessment is created. Empty evidence is a
-placeholder for excusal and cannot be released as an assessed attempt. Existing
-assessments remain attributable after evidence withdrawal; staff corrections refer
-to that retained work. Grade creation is idempotent per learner, item, and evidence.
-All edits and individual transitions require the version the editor observed.
+[Expand current criteria with immutable rubric editions](computation:resolveGradingCriteria).
 
-Learners can see only their own currently released or excused assessments. A
-retracted assessment and its correction history are hidden until it is released
-again. The application returns frozen criterion definitions along with judgments,
-including previous releases when the current assessment is visible. Assignment
-audience changes do not revoke ownership of already released assessment history.
-Standard management and its full catalog are staff-only; students read standards
-selected for their assigned work or included in their own released assessments.
+[Compare two setup revisions without coercion](computation:gradingRevisionMatches).
 
-The gradebook lists competency assessments and point grades, not a representative learner level. Bulk release
-is explicitly partial: it releases complete observed drafts and reports incomplete
-or concurrently changed drafts individually as skipped. The export route remains
-an empty placeholder, with the same staff permission.
+Staff save the whole setup draft in one compare-and-swap. Missing criterion
+identities are allocated by Itemizing. The composition verifies every selected
+competency basis names an existing immutable edition before the setup write.
+Setup writes never inspect or change assessments, and revisions apply only to
+setup concurrency and first creation. A delayed first creation must match the
+observed current revision. Opening an existing learner/item/evidence assessment
+takes precedence and never depends on the current setup.
 
-[Authorize item definitions through staff authority, assigned published work, or owned released history](view:Course.grades.mayReadItem).
+An assessment belongs to one learner, item, and exact evidence identity. Empty
+evidence is reserved for an assignment-wide excusal. Separate attempts stay
+separate. Staff authority, active enrollment, assignment audience, and submitted
+evidence govern first creation; an existing assessment can still be corrected
+after archival. The authenticated session supplies the grader on every write.
 
-[Authorize an assessment through staff authority or learner ownership and release status](view:Course.grades.mayReadAssessment).
+Both methods use the same draft, feedback, version, release, retract, correction,
+excusal, and history actions. Point drafts may omit judgments, while entered zero
+is a real judgment. Release requires every immutable criterion to be complete.
+Point totals and denominators derive from the snapshot and are finite. Excused
+public rows hide private draft judgments and scores. Learners see only their own
+released or excused records.
 
-[Resolve selected item criteria to their standard editions](former:Course.grades.theCriteriaOf).
+Consumers selecting one result for an attempt use its exact evidence assessment
+first. Only when none exists may an empty-evidence `EXCUSED` assessment serve as
+the assignment-wide fallback; an attempt-specific excusal never applies to other
+attempts.
 
-[Resolve the fixed criterion set, including retired criteria, to immutable editions](former:Course.grades.theAssessmentCriteria).
+[Authorize current item setup through staff authority or assigned published work](view:Course.grades.mayReadItem).
 
-[Capture the ordered criterion identities for a new assessment](former:Course.grades.selectedCriteria).
+[Authorize one assessment through staff authority or learner ownership and public status](view:Course.grades.mayReadAssessment).
 
-[Form the learner-visible history with only released and excused assessments](former:Course.grades.theReleasedGradesOf).
+[Authorize first creation through active enrollment, assigned published work, and matching submitted evidence or the empty excusal marker](view:Course.grades.mayStartAssessment).
 
-[Form all assessments of a learner for authorized staff](former:Course.grades.theGradesOf).
+[Resolve one coherent Itemizing setup into complete criterion definitions](former:Course.grades.theSetupOf).
 
-[Form every assessment on an item for authorized staff](former:Course.grades.theGradesOn).
+[Form the learner-visible released and excused assessment history](former:Course.grades.theReleasedGradesOf).
 
-[Form one assessment with its evidence dates and correction history](former:Course.grades.theAssessment).
+[Form all assessments of one learner for staff](former:Course.grades.theGradesOf).
 
-[Form learner-visible released point grades](former:Course.grades.theReleasedMarksOf).
+[Form every assessment on one item for staff](former:Course.grades.theGradesOn).
 
-[Form point grades of one learner for staff](former:Course.grades.theMarksOf).
+[Form one assessment with supporting-work metadata](former:Course.grades.theAssessment).
 
-[Form point grades on one item for staff](former:Course.grades.theMarksOn).
+[Join active roster learners to their shared assessment histories](former:Course.grades.theGradebookLearners).
 
-[Join roster identities and profiles to their assessment histories](former:Course.grades.theGradebookLearners).
-
-[Form active item and learner lists without totals or proficiency aggregation](former:Course.grades.theGradebook).
+[Form current item setup summaries and learner histories](former:Course.grades.theGradebook).
 
 [Form the current standard catalog](former:Course.grades.theStandards).
 
@@ -65,62 +64,51 @@ an empty placeholder, with the same staff permission.
 
 [Issue a new standard edition with an expected-edition concurrency check](reaction:Course.grades.GradesReviseStandard).
 
-[Reorder a selected criterion without changing its basis](reaction:Course.grades.GradesReviseCriterion).
+[Configure an existing assignment as a default assessment item](reaction:Course.grades.GradesConfigureItem).
 
-[Retire a criterion without deleting historical meaning](reaction:Course.grades.GradesRemoveCriterion).
+[Atomically save the complete method and ordered criterion setup after edition validation](reaction:Course.grades.GradesConfigureSetup).
 
-[Atomically save draft judgments and feedback at the observed version](reaction:Course.grades.GradesSave).
+[Save draft competency or point judgments and shared feedback at the observed assessment version](reaction:Course.grades.GradesSave).
 
-[Release a complete draft at its observed version](reaction:Course.grades.GradesRelease).
+[Release a complete draft and append immutable history](reaction:Course.grades.GradesRelease).
 
-[Retract a release for correction while retaining its historical values](reaction:Course.grades.GradesRetract).
+[Retract a release for correction while retaining its history and snapshot](reaction:Course.grades.GradesRetract).
 
-[Return an excusal to draft for correction](reaction:Course.grades.GradesRestoreExcused).
+[Restore an excusal to its private draft values](reaction:Course.grades.GradesRestoreExcused).
 
-[Release an explicit excusal from draft](reaction:Course.grades.GradesExcuse).
+[Release an explicit excusal without exposing private draft values](reaction:Course.grades.GradesExcuse).
 
-[Release complete drafts and report skips](reaction:Course.grades.GradesReleaseItem).
+[Release complete drafts across stored methods and snapshots while reporting skips and uncertain writes](reaction:Course.grades.GradesReleaseItem).
 
-[Change an item's method or point maximum with generation and deletion guards](reaction:Course.grades.GradesConfigureMethod).
-
-[Configure an existing assignment as an assessment item](reaction:Course.grades.GradesConfigureItem).
-
-[Select a verified standard edition as an item criterion](reaction:Course.grades.GradesAddCriterion).
-
-[Read an authorized item and its selected definitions](reaction:Course.grades.GradesItem).
+[Read an authorized current item setup](reaction:Course.grades.GradesItem).
 
 [Read one authorized assessment](reaction:Course.grades.GradesDetail).
 
-[Require active enrollment, assigned published accepting work, and matching submitted evidence or an empty excusal placeholder](view:Course.grades.mayStartAssessment).
+[Open an existing exact assessment first, or start one from the caller-observed current setup](reaction:Course.grades.GradesRecord).
 
-[Start or find an assessment with validated evidence, fixed criteria, and the staff-observed grading generation](reaction:Course.grades.GradesRecord).
-
-[Read the signed-in active learner’s released history](reaction:Course.grades.GradesForMe).
+[Read the signed-in active learner's released and excused history](reaction:Course.grades.GradesForMe).
 
 [Read the staff standard catalog](reaction:Course.grades.GradesStandards).
 
-[Read learner assessment history as staff](reaction:Course.grades.GradesForStudent).
+[Read one learner's assessment history as staff](reaction:Course.grades.GradesForStudent).
 
-[Read item assessment history as staff](reaction:Course.grades.GradesForItem).
+[Read one item's assessment history as staff](reaction:Course.grades.GradesForItem).
 
-[Read the staff assessment book](reaction:Course.grades.GradesGradebook).
+[Read the staff gradebook](reaction:Course.grades.GradesGradebook).
 
-[Keep the guarded export placeholder](reaction:Course.grades.GradesExport).
+[Keep the guarded whole-gradebook export placeholder](reaction:Course.grades.GradesExport).
 
 ```endpoints
 Course.grades.GradesDefineStandard at /grades/define-standard
 Course.grades.GradesReviseStandard at /grades/revise-standard
-Course.grades.GradesReviseCriterion at /grades/revise-criterion
-Course.grades.GradesRemoveCriterion at /grades/remove-criterion
+Course.grades.GradesConfigureItem at /grades/configure-item
+Course.grades.GradesConfigureSetup at /grades/configure-setup
 Course.grades.GradesSave at /grades/save
 Course.grades.GradesRelease at /grades/release
 Course.grades.GradesRetract at /grades/retract
 Course.grades.GradesRestoreExcused at /grades/restore-excused
 Course.grades.GradesExcuse at /grades/excuse
 Course.grades.GradesReleaseItem at /grades/release-item
-Course.grades.GradesConfigureMethod at /grades/configure-method
-Course.grades.GradesConfigureItem at /grades/configure-item
-Course.grades.GradesAddCriterion at /grades/add-criterion
 Course.grades.GradesItem at /grades/item
 Course.grades.GradesDetail at /grades/detail
 Course.grades.GradesRecord at /grades/record
@@ -132,4 +120,11 @@ Course.grades.GradesGradebook at /grades/gradebook
 Course.grades.GradesExport at /grades/export
 ```
 
-Current item setup is available only to grading staff or active learners with published assigned work. Historical-only access uses the fixed criteria inside owned released assessments; it does not grant the current item setup. Bulk release reports `unconfirmed` records separately when a persistence outcome cannot be confirmed, preserves known successes and skips, and asks staff to inspect refreshed state before retrying.
+```computations
+competencyEditionIds(criteria: Json) : Strings
+  Extracts distinct-candidate competency basis identifiers for immutable-edition validation before a setup write.
+resolveGradingCriteria(criteria: Json, editions: Json) : Json
+  Expands one coherent Itemizing criterion list with complete immutable competency editions while preserving point definitions.
+gradingRevisionMatches(left: Number, right: Number) : Bool
+  Compares an observed setup revision with the current revision without coercion.
+```

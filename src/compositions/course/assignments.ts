@@ -351,12 +351,6 @@ export const mayReadLearnerAssignment = view(
       Grading._getGradesForLearner({ learner: user }).is({ item: assignment, status }),
       is.among(status, ["RELEASED", "EXCUSED"]),
     ),
-    where(
-      isActiveStudent({ user }),
-      Assigning._getAssignments({}).is({ assignment, status: "ARCHIVED" }),
-      Grading._getMarksForLearner({ learner: user }).is({ item: assignment, status }),
-      is.among(status, ["RELEASED", "EXCUSED"]),
-    ),
   ],
 ).holds();
 

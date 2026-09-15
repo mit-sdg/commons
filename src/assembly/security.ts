@@ -12,8 +12,6 @@ const TEXT_WRITE_FIELDS: Record<string, readonly string[]> = {
   "/threads/reply": ["content"],
   "/posts/edit": ["content"],
   "/assignments/submit": ["content"],
-  "/marks/record": ["feedback"],
-  "/marks/excuse": ["feedback"],
   "/tags/create": ["name"],
   "/reactions/add": ["kind"],
   "/flags/raise": ["reason"],
