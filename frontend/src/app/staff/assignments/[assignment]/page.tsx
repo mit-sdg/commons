@@ -14,6 +14,7 @@ import {
 } from "@/components/lms/assignment-reading";
 import { GradeInput } from "@/components/lms/grade-input";
 import { GradeSetup } from "@/components/lms/grade-setup";
+import { GradingDataNotice } from "@/components/lms/grading-data-notice";
 import { MarkInput } from "@/components/lms/mark-input";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { BackLink, PageContainer } from "@/components/page";
@@ -212,14 +213,18 @@ function StaffAssignmentDetailPageContent({
     [subsData],
   );
 
-  const { data: gradesData, refetch: refetchGrades } = useQuery(
+  const gradesQuery = useQuery(
     session && canGrade ? () => loadGradesForItem(assignment) : null,
     [session, assignment],
+    { retainOnTransportError: true },
   );
-  const { data: marksData, refetch: refetchMarks } = useQuery(
+  const marksQuery = useQuery(
     session && canGrade ? () => loadMarksForItem(assignment) : null,
     [session, assignment],
+    { retainOnTransportError: true },
   );
+  const { refetch: refetchGrades } = gradesQuery;
+  const { refetch: refetchMarks } = marksQuery;
 
   const { data: lateData } = useQuery<{
     users: { learner: string; days: number }[];
@@ -228,21 +233,45 @@ function StaffAssignmentDetailPageContent({
     assignment,
   ]);
 
-  const previewSkills = useQuery(
+  const gradingSetup = useQuery(
     session && canGrade
       ? () => api.grades.item({ item: assignment }).then(unwrap)
       : null,
     [session, assignment],
+    { retainOnTransportError: true },
   );
   const detail = asgnData?.summary;
   const assigned = subsData?.assigned ?? [];
-  const grades = gradesData?.grades ?? [];
-  const marks = marksData?.marks ?? [];
-  const gradingMethod = previewSkills.data?.method ?? "COMPETENCY";
+  const grades = gradesQuery.data?.grades ?? [];
+  const marks = marksQuery.data?.marks ?? [];
+  const gradingMethod = gradingSetup.data?.method;
+  const resultsQuery =
+    gradingMethod === "POINTS"
+      ? marksQuery
+      : gradingMethod === "COMPETENCY"
+        ? gradesQuery
+        : null;
+  const gradingDataReady = Boolean(gradingSetup.data && resultsQuery?.data);
+  const gradingDataLoading =
+    gradingSetup.loading || Boolean(resultsQuery?.loading);
+  const gradingDataError = gradingSetup.error ?? resultsQuery?.error ?? null;
+  const gradingDataRefused = !gradingSetup.data
+    ? gradingSetup.refused
+    : resultsQuery?.refused;
+  const gradingDataUnavailable =
+    !gradingDataReady || gradingDataLoading || Boolean(gradingDataError);
   const lateUsers = lateData?.users ?? [];
-  const draftCount = (gradingMethod === "POINTS" ? marks : grades).filter(
-    (record) => record.status === "DRAFT",
-  ).length;
+  const draftCount = gradingDataReady
+    ? (gradingMethod === "POINTS" ? marks : grades).filter(
+        (record) => record.status === "DRAFT",
+      ).length
+    : 0;
+
+  function refetchGradingData() {
+    gradingSetup.refetch();
+    refetchGrades();
+    refetchMarks();
+  }
 
   useEffect(() => {
     let frame = 0;
@@ -296,17 +325,17 @@ function StaffAssignmentDetailPageContent({
 
   async function releaseAll() {
     if (!session) return;
-    if (!previewSkills.data) return;
+    if (!gradingSetup.data || gradingDataUnavailable) return;
     try {
       const result =
         gradingMethod === "POINTS"
           ? await api.marks["release-item"]({
               item: assignment,
-              generation: previewSkills.data.generation,
+              generation: gradingSetup.data.generation,
             })
           : await api.grades["release-item"]({
               item: assignment,
-              generation: previewSkills.data.generation,
+              generation: gradingSetup.data.generation,
             });
       if ("error" in result) toast.error(publicErrorMessage(result.error));
       else {
@@ -447,7 +476,7 @@ function StaffAssignmentDetailPageContent({
         className="gap-6"
         onValueChange={(value) => {
           setTab(value);
-          if (value === "preview") previewSkills.refetch();
+          if (value === "preview") gradingSetup.refetch();
         }}
       >
         <TabsList variant="line">
@@ -502,11 +531,7 @@ function StaffAssignmentDetailPageContent({
               published={detail.status === "PUBLISHED"}
               readOnly={detail.status === "ARCHIVED"}
               onMethodChange={() => {
-                void Promise.all([
-                  previewSkills.refetch(),
-                  refetchGrades(),
-                  refetchMarks(),
-                ]);
+                refetchGradingData();
               }}
             />
           )}
@@ -522,8 +547,27 @@ function StaffAssignmentDetailPageContent({
               {detail.instructions && (
                 <AssignmentInstructions instructions={detail.instructions} />
               )}
-              {previewSkills.data?.method === "COMPETENCY" && (
-                <AssignmentSkills criteria={previewSkills.data.criteria} />
+              {canGrade && gradingSetup.loading && !gradingSetup.data ? (
+                <LoadingState label="Loading grading setup…" />
+              ) : canGrade && gradingSetup.error && !gradingSetup.data ? (
+                <ErrorState
+                  message={gradingSetup.error}
+                  refused={gradingSetup.refused}
+                  onRetry={gradingSetup.refetch}
+                />
+              ) : (
+                <>
+                  {canGrade && gradingSetup.data ? (
+                    <GradingDataNotice
+                      loading={gradingSetup.loading}
+                      error={gradingSetup.error}
+                      onRetry={gradingSetup.refetch}
+                    />
+                  ) : null}
+                  {gradingSetup.data?.method === "COMPETENCY" ? (
+                    <AssignmentSkills criteria={gradingSetup.data.criteria} />
+                  ) : null}
+                </>
               )}
               {detail.acceptsSubmissions && (
                 <Card density="compact">
@@ -571,7 +615,7 @@ function StaffAssignmentDetailPageContent({
             </Facts>
             {canGrade && (
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between gap-3">
+                <CardHeader className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <CardTitle className="text-base">
                       Learner work and grades
@@ -581,26 +625,45 @@ function StaffAssignmentDetailPageContent({
                     title="Release complete draft grades?"
                     description="Complete drafts will become visible to learners. Incomplete or concurrently changed drafts will be skipped and reported."
                     confirmLabel="Release grades"
+                    confirmDisabled={gradingDataUnavailable || draftCount === 0}
                     onConfirm={releaseAll}
                     trigger={
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={draftCount === 0}
+                        className="w-full sm:w-auto"
+                        disabled={gradingDataUnavailable || draftCount === 0}
                       >
-                        <Send className="size-4" /> Release drafts ({draftCount}
-                        )
+                        <Send className="size-4" /> Release drafts
+                        {gradingDataReady ? ` (${draftCount})` : ""}
                       </Button>
                     }
                   />
                 </CardHeader>
                 <CardContent>
-                  {assigned.length === 0 ? (
+                  {!gradingDataReady ? (
+                    gradingDataLoading ? (
+                      <LoadingState label="Loading grading data…" />
+                    ) : (
+                      <ErrorState
+                        message={
+                          gradingDataError ?? "Grading data is unavailable."
+                        }
+                        refused={gradingDataRefused}
+                        onRetry={refetchGradingData}
+                      />
+                    )
+                  ) : assigned.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
                       No learners are assigned yet.
                     </p>
                   ) : (
                     <div className="space-y-3">
+                      <GradingDataNotice
+                        loading={gradingDataLoading}
+                        error={gradingDataError}
+                        onRetry={refetchGradingData}
+                      />
                       {assigned.map((learner) => {
                         const learnerId = String(learner.assignee);
                         const attempts = submissions
@@ -705,17 +768,18 @@ function StaffAssignmentDetailPageContent({
                                             size="sm"
                                             variant="outline"
                                             disabled={
-                                              attempt.status !== "SUBMITTED" &&
-                                              !learnerGrades.some(
-                                                (g) =>
-                                                  g.evidence ===
-                                                  attempt.submission,
-                                              ) &&
-                                              !learnerMarks.some(
-                                                (mark) =>
-                                                  mark.evidence ===
-                                                  attempt.submission,
-                                              )
+                                              gradingDataUnavailable ||
+                                              (attempt.status !== "SUBMITTED" &&
+                                                !learnerGrades.some(
+                                                  (g) =>
+                                                    g.evidence ===
+                                                    attempt.submission,
+                                                ) &&
+                                                !learnerMarks.some(
+                                                  (mark) =>
+                                                    mark.evidence ===
+                                                    attempt.submission,
+                                                ))
                                             }
                                             onClick={() => {
                                               setGradingEvidence(
@@ -793,6 +857,7 @@ function StaffAssignmentDetailPageContent({
                                 </Label>
                                 <Select
                                   value={gradingEvidence ?? EXCUSAL}
+                                  disabled={gradingDataUnavailable}
                                   onValueChange={(value) =>
                                     setGradingEvidence(
                                       value === EXCUSAL ? null : value,
@@ -836,9 +901,9 @@ function StaffAssignmentDetailPageContent({
                             )}
                             {isGrading ? (
                               gradingMethod === "POINTS" &&
-                              previewSkills.data ? (
+                              gradingSetup.data ? (
                                 <MarkInput
-                                  key={`points-${previewSkills.data.generation}-${learnerId}-${gradingEvidence ?? "excusal"}`}
+                                  key={`points-${gradingSetup.data.generation}-${learnerId}-${gradingEvidence ?? "excusal"}`}
                                   learner={learnerId}
                                   learnerLabel={
                                     learner.displayName ?? learner.assignee
@@ -846,15 +911,18 @@ function StaffAssignmentDetailPageContent({
                                   item={assignment}
                                   itemLabel={detail.title}
                                   evidence={gradingEvidence ?? ""}
-                                  generation={previewSkills.data.generation}
-                                  maxPoints={previewSkills.data.maxPoints}
+                                  generation={gradingSetup.data.generation}
+                                  maxPoints={gradingSetup.data.maxPoints}
+                                  recordVersion={pointMark?.version}
+                                  disabled={gradingDataUnavailable}
                                   onSaved={() => {
                                     refetchMarks();
                                   }}
                                 />
-                              ) : (
+                              ) : gradingMethod === "COMPETENCY" &&
+                                gradingSetup.data ? (
                                 <GradeInput
-                                  key={`competency-${previewSkills.data?.generation ?? 0}-${learnerId}-${gradingEvidence ?? "excusal"}-${learnerGrades.find((g) => g.evidence === (gradingEvidence ?? ""))?.version ?? "new"}`}
+                                  key={`competency-${gradingSetup.data.generation}-${learnerId}-${gradingEvidence ?? "excusal"}`}
                                   learner={learnerId}
                                   learnerLabel={
                                     learner.displayName ?? learner.assignee
@@ -862,15 +930,24 @@ function StaffAssignmentDetailPageContent({
                                   item={assignment}
                                   itemLabel={detail.title}
                                   evidence={gradingEvidence ?? ""}
+                                  recordVersion={
+                                    learnerGrades.find(
+                                      (grade) =>
+                                        grade.evidence ===
+                                        (gradingEvidence ?? ""),
+                                    )?.version
+                                  }
+                                  disabled={gradingDataUnavailable}
                                   onSaved={() => {
                                     refetchGrades();
                                   }}
                                 />
-                              )
+                              ) : null
                             ) : (
                               <Button
                                 size="sm"
                                 variant="outline"
+                                disabled={gradingDataUnavailable}
                                 onClick={() => {
                                   setGradingEvidence(
                                     latest?.submission ?? null,

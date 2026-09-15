@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Fact, Facts } from "@/components/facts";
@@ -10,8 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@/hooks/use-query";
-import { api, publicErrorMessage, unwrap } from "@/lib/api";
+import { api, isClientErrorCode, publicErrorMessage, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { GradingDataNotice } from "./grading-data-notice";
 import { type Mark, MarkCard } from "./mark-history";
 
 export function MarkInput({
@@ -22,7 +23,9 @@ export function MarkInput({
   evidence = "",
   generation,
   maxPoints,
+  recordVersion,
   onSaved,
+  disabled = false,
 }: {
   learner: string;
   learnerLabel: string;
@@ -31,34 +34,65 @@ export function MarkInput({
   evidence?: string;
   generation: number;
   maxPoints: number;
+  recordVersion?: number;
   onSaved: () => void;
+  disabled?: boolean;
 }) {
   const { session } = useAuth();
   const query = useQuery(
     session ? async () => unwrap(await api.marks["for-item"]({ item })) : null,
     [session, learner, item, generation],
+    { retainOnTransportError: true },
   );
   const mark = query.data?.marks.find((entry) => entry.learner === learner);
+  const loaded = Boolean(query.data);
+  const refetchRecord = query.refetch;
+  useEffect(() => {
+    if (
+      loaded &&
+      recordVersion !== undefined &&
+      recordVersion !== mark?.version
+    )
+      refetchRecord();
+  }, [loaded, refetchRecord, recordVersion, mark?.version]);
   if (query.loading && !query.data)
     return <LoadingState label="Loading point grade…" />;
-  if (query.error)
-    return <ErrorState message={query.error} onRetry={query.refetch} />;
+  if (query.error && !query.data)
+    return (
+      <ErrorState
+        message={query.error}
+        refused={query.refused}
+        onRetry={query.refetch}
+      />
+    );
+  if (!query.data) return <LoadingState label="Loading point grade…" />;
+  const unavailable = disabled || query.loading || Boolean(query.error);
   return (
-    <MarkEditor
-      key={`${mark?.mark ?? "new"}-${mark?.version ?? 0}-${evidence}`}
-      mark={mark}
-      learner={learner}
-      learnerLabel={learnerLabel}
-      item={item}
-      itemLabel={itemLabel}
-      evidence={evidence}
-      generation={generation}
-      maxPoints={maxPoints}
-      onSaved={() => {
-        query.refetch();
-        onSaved();
-      }}
-    />
+    <div className="space-y-3">
+      {!disabled ? (
+        <GradingDataNotice
+          loading={query.loading}
+          error={query.error}
+          onRetry={query.refetch}
+        />
+      ) : null}
+      <MarkEditor
+        key={`${mark?.mark ?? "new"}-${mark?.version ?? 0}-${evidence}`}
+        mark={mark}
+        learner={learner}
+        learnerLabel={learnerLabel}
+        item={item}
+        itemLabel={itemLabel}
+        evidence={evidence}
+        generation={generation}
+        maxPoints={maxPoints}
+        disabled={unavailable}
+        onSaved={() => {
+          query.refetch();
+          onSaved();
+        }}
+      />
+    </div>
   );
 }
 
@@ -72,6 +106,7 @@ function MarkEditor({
   generation,
   maxPoints,
   onSaved,
+  disabled,
 }: {
   mark?: Mark;
   learner: string;
@@ -82,6 +117,7 @@ function MarkEditor({
   generation: number;
   maxPoints: number;
   onSaved: () => void;
+  disabled: boolean;
 }) {
   const [score, setScore] = useState(mark?.scored ? String(mark.score) : "");
   const [feedback, setFeedback] = useState(mark?.feedback ?? "");
@@ -110,13 +146,19 @@ function MarkEditor({
         generation,
         version: mark?.version ?? 0,
       });
-      if ("error" in result)
-        toast.error(
-          result.error === "CONFLICT"
-            ? "This grade or its grading setup changed. Reload before saving."
-            : publicErrorMessage(result.error),
-        );
-      else {
+      if ("error" in result) {
+        if (isClientErrorCode(result.error)) {
+          toast.error(
+            "The save outcome could not be confirmed. Grades were refreshed before retrying.",
+          );
+          onSaved();
+        } else
+          toast.error(
+            result.error === "CONFLICT"
+              ? "This grade or its grading setup changed. Reload before saving."
+              : publicErrorMessage(result.error),
+          );
+      } else {
         toast.success("Point grade saved as a draft");
         onSaved();
       }
@@ -138,8 +180,14 @@ function MarkEditor({
         mark: mark.mark,
         version: mark.version,
       });
-      if ("error" in result) toast.error(publicErrorMessage(result.error));
-      else {
+      if ("error" in result) {
+        if (isClientErrorCode(result.error)) {
+          toast.error(
+            "The update outcome could not be confirmed. Grades were refreshed before retrying.",
+          );
+          onSaved();
+        } else toast.error(publicErrorMessage(result.error));
+      } else {
         toast.success(
           kind === "release" ? "Point grade released" : "Point grade updated",
         );
@@ -167,8 +215,14 @@ function MarkEditor({
         mark: mark?.mark ?? "",
         version: mark?.version ?? 0,
       });
-      if ("error" in result) toast.error(publicErrorMessage(result.error));
-      else {
+      if ("error" in result) {
+        if (isClientErrorCode(result.error)) {
+          toast.error(
+            "The excusal outcome could not be confirmed. Grades were refreshed before retrying.",
+          );
+          onSaved();
+        } else toast.error(publicErrorMessage(result.error));
+      } else {
         toast.success("Assignment marked excused");
         onSaved();
       }
@@ -189,7 +243,7 @@ function MarkEditor({
         <Button
           size="sm"
           variant="outline"
-          disabled={busy}
+          disabled={busy || disabled}
           onClick={() =>
             void transition(
               mark.status === "EXCUSED" ? "restore-excused" : "retract",
@@ -221,7 +275,7 @@ function MarkEditor({
           step="any"
           className="w-36"
           value={score}
-          disabled={busy}
+          disabled={busy || disabled}
           aria-invalid={score !== "" && !scoreValid}
           onChange={(event) => setScore(event.target.value)}
           placeholder="Not graded"
@@ -240,14 +294,15 @@ function MarkEditor({
           id={`point-feedback-${learner}-${item}`}
           maxLength={20000}
           value={feedback}
-          disabled={busy}
+          disabled={busy || disabled}
           onChange={(event) => setFeedback(event.target.value)}
         />
       </div>
       <div className="flex flex-wrap gap-2">
         <Button
           size="sm"
-          disabled={busy || !evidence || !scoreValid || !dirty}
+          variant={dirty ? "default" : "outline"}
+          disabled={busy || disabled || !evidence || !scoreValid || !dirty}
           onClick={() => void save()}
         >
           Save draft
@@ -256,12 +311,13 @@ function MarkEditor({
           title={`Release ${score || "this grade"} / ${maxPoints}?`}
           description="The score and feedback will become visible to the learner."
           confirmLabel="Release grade"
+          confirmDisabled={busy || disabled || !mark?.scored || dirty}
           onConfirm={() => transition("release")}
           trigger={
             <Button
               size="sm"
-              variant="outline"
-              disabled={busy || !mark?.scored || dirty}
+              variant={!dirty && mark?.scored ? "default" : "outline"}
+              disabled={busy || disabled || !mark?.scored || dirty}
             >
               Release
             </Button>
@@ -271,9 +327,10 @@ function MarkEditor({
           title={`Excuse ${learnerLabel}?`}
           description="The learner will see an excused result and the feedback shown here, but no score."
           confirmLabel="Mark excused"
+          confirmDisabled={busy || disabled}
           onConfirm={excuse}
           trigger={
-            <Button size="sm" variant="ghost" disabled={busy}>
+            <Button size="sm" variant="ghost" disabled={busy || disabled}>
               Excuse assignment
             </Button>
           }
@@ -283,6 +340,13 @@ function MarkEditor({
         <p className="text-xs text-muted-foreground">
           Select a submitted attempt before saving a score. Excusal does not
           require an attempt.
+        </p>
+      ) : null}
+      {evidence && scoreValid && (!mark?.scored || dirty) ? (
+        <p className="text-xs text-muted-foreground">
+          {!mark?.scored
+            ? "Save this score as a draft before releasing it."
+            : "Save your changes before releasing this grade."}
         </p>
       ) : null}
     </div>

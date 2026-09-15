@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Fact, Facts } from "@/components/facts";
 import { ErrorState, LoadingState } from "@/components/states";
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@/hooks/use-query";
-import { api, publicErrorMessage, unwrap } from "@/lib/api";
+import { api, isClientErrorCode, publicErrorMessage, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import {
   type Assessment,
@@ -24,6 +24,7 @@ import {
   levelLabel,
   RubricDescription,
 } from "./assessment-history";
+import { GradingDataNotice } from "./grading-data-notice";
 
 interface Props {
   learner: string;
@@ -31,8 +32,10 @@ interface Props {
   evidence?: string;
   learnerLabel?: string;
   itemLabel?: string;
+  recordVersion?: number;
   onSaved: () => void;
   className?: string;
+  disabled?: boolean;
 }
 export function GradeInput({
   learner,
@@ -40,22 +43,36 @@ export function GradeInput({
   evidence = "",
   learnerLabel,
   itemLabel,
+  recordVersion,
   onSaved,
   className,
+  disabled = false,
 }: Props) {
   const { session } = useAuth();
   const query = useQuery(
     session ? async () => unwrap(await api.grades["for-item"]({ item })) : null,
     [session, learner, item, evidence],
+    { retainOnTransportError: true },
   );
   const setup = useQuery(
     session ? async () => unwrap(await api.grades.item({ item })) : null,
     [session, item],
+    { retainOnTransportError: true },
   );
   const [busy, setBusy] = useState(false);
   const assessment = query.data?.grades.find(
     (a) => a.learner === learner && a.evidence === evidence,
   );
+  const loaded = Boolean(query.data);
+  const refetchRecord = query.refetch;
+  useEffect(() => {
+    if (
+      loaded &&
+      recordVersion !== undefined &&
+      recordVersion !== assessment?.version
+    )
+      refetchRecord();
+  }, [loaded, refetchRecord, recordVersion, assessment?.version]);
   async function start() {
     if (!setup.data) return;
     setBusy(true);
@@ -66,30 +83,66 @@ export function GradeInput({
         evidence,
         generation: setup.data.generation,
       });
-      if ("error" in result)
-        toast.error(
-          result.error === "INVALID_REQUEST"
-            ? "Select rubrics first and use a valid level or Not assessed for each skill."
-            : publicErrorMessage(result.error),
-        );
-      else query.refetch();
+      if ("error" in result) {
+        if (isClientErrorCode(result.error)) {
+          toast.error(
+            "The assessment start could not be confirmed. Grading data was refreshed before retrying.",
+          );
+          query.refetch();
+          setup.refetch();
+          onSaved();
+        } else
+          toast.error(
+            result.error === "INVALID_REQUEST"
+              ? "Select rubrics first and use a valid level or Not assessed for each skill."
+              : publicErrorMessage(result.error),
+          );
+      } else {
+        query.refetch();
+        onSaved();
+      }
+    } catch {
+      toast.error(
+        "The assessment start could not be confirmed. Grading data was refreshed before retrying.",
+      );
+      query.refetch();
+      setup.refetch();
+      onSaved();
     } finally {
       setBusy(false);
     }
   }
   if ((query.loading && !query.data) || (setup.loading && !setup.data))
     return <LoadingState label="Loading assessment…" />;
-  if (query.error || setup.error)
+  if ((query.error && !query.data) || (setup.error && !setup.data))
     return (
       <ErrorState
         message={query.error ?? setup.error ?? "Could not load grading setup."}
+        refused={!query.data ? query.refused : setup.refused}
         onRetry={() => {
           void Promise.all([query.refetch(), setup.refetch()]);
         }}
       />
     );
+  if (!query.data || !setup.data)
+    return <LoadingState label="Loading assessment…" />;
+  const unavailable =
+    disabled ||
+    query.loading ||
+    setup.loading ||
+    Boolean(query.error || setup.error);
   return (
     <div className={className}>
+      {!disabled ? (
+        <GradingDataNotice
+          loading={query.loading || setup.loading}
+          error={query.error ?? setup.error}
+          onRetry={() => {
+            query.refetch();
+            setup.refetch();
+          }}
+        />
+      ) : null}
       <Facts className="mb-3 text-sm">
         <span className="font-medium">{learnerLabel ?? "Learner"}</span>
         <Fact.Where>{itemLabel ?? "Assignment"}</Fact.Where>
@@ -98,6 +151,7 @@ export function GradeInput({
         <AssessmentEditor
           key={`${assessment.grade}-${assessment.version}`}
           assessment={assessment}
+          disabled={unavailable}
           onSaved={() => {
             query.refetch();
             onSaved();
@@ -110,7 +164,7 @@ export function GradeInput({
               ? "Start an assessment of the selected attempt. Its rubric editions are fixed when you start."
               : "No attempt selected. You can record an assignment excusal; assessing work requires selecting a submitted attempt."}
           </p>
-          <Button disabled={busy || !setup.data} onClick={start}>
+          <Button disabled={busy || unavailable} onClick={start}>
             {evidence ? "Start assessment" : "Record assignment excusal"}
           </Button>
         </div>
@@ -121,9 +175,11 @@ export function GradeInput({
 function AssessmentEditor({
   assessment: a,
   onSaved,
+  disabled,
 }: {
   assessment: Assessment;
   onSaved: () => void;
+  disabled: boolean;
 }) {
   const [feedback, setFeedback] = useState(a.feedback);
   const [judgments, setJudgments] = useState(a.judgments);
@@ -174,13 +230,19 @@ function AssessmentEditor({
               })
             : await api.grades[kind]({ grade: a.grade, version: a.version });
       if ("error" in result) {
-        toast.error(
-          result.error === "CONFLICT"
-            ? "This assessment changed, is locked, or is incomplete. Reload and check every skill before releasing."
-            : result.error === "INVALID_REQUEST"
-              ? "Select rubrics first and use a valid level or Not assessed for each skill."
-              : publicErrorMessage(result.error),
-        );
+        if (isClientErrorCode(result.error)) {
+          toast.error(
+            "The update outcome could not be confirmed. Grading data was refreshed before retrying.",
+          );
+          onSaved();
+        } else
+          toast.error(
+            result.error === "CONFLICT"
+              ? "This assessment changed, is locked, or is incomplete. Reload and check every skill before releasing."
+              : result.error === "INVALID_REQUEST"
+                ? "Select rubrics first and use a valid level or Not assessed for each skill."
+                : publicErrorMessage(result.error),
+          );
       } else {
         toast.success(
           kind === "release"
@@ -192,7 +254,10 @@ function AssessmentEditor({
         onSaved();
       }
     } catch {
-      toast.error("Could not save. Reload before retrying.");
+      toast.error(
+        "The update outcome could not be confirmed. Grading data was refreshed before retrying.",
+      );
+      onSaved();
     } finally {
       setBusy(false);
     }
@@ -202,7 +267,7 @@ function AssessmentEditor({
       <div className="space-y-3">
         <AssessmentCard assessment={a} staff />
         <Button
-          disabled={busy}
+          disabled={busy || disabled}
           variant="outline"
           onClick={() =>
             action(a.status === "EXCUSED" ? "restore-excused" : "retract")
@@ -244,7 +309,7 @@ function AssessmentEditor({
               </Label>
               <Select
                 value={j?.rating ?? ""}
-                disabled={busy}
+                disabled={busy || disabled}
                 onValueChange={(value) => update(c.criterion, "rating", value)}
               >
                 <SelectTrigger
@@ -277,7 +342,7 @@ function AssessmentEditor({
                   <Textarea
                     id={`${a.grade}-${c.criterion}-feedback`}
                     maxLength={20000}
-                    disabled={busy}
+                    disabled={busy || disabled}
                     value={j?.feedback ?? ""}
                     onChange={(e) =>
                       update(c.criterion, "feedback", e.target.value)
@@ -294,19 +359,22 @@ function AssessmentEditor({
       <Textarea
         id={`feedback-${a.grade}`}
         maxLength={20000}
-        disabled={busy}
+        disabled={busy || disabled}
         value={feedback}
         onChange={(e) => setFeedback(e.target.value)}
       />
       <div className="flex flex-wrap gap-2">
         {a.evidence && (
           <>
-            <Button disabled={busy || !dirty} onClick={() => action("save")}>
+            <Button
+              disabled={busy || disabled || !dirty}
+              onClick={() => action("save")}
+            >
               Save draft
             </Button>
             <Button
               variant="outline"
-              disabled={busy || dirty || !complete}
+              disabled={busy || disabled || dirty || !complete}
               onClick={() =>
                 setPreview(preview === "release" ? null : "release")
               }
@@ -317,7 +385,7 @@ function AssessmentEditor({
         )}
         <Button
           variant="outline"
-          disabled={busy}
+          disabled={busy || disabled}
           onClick={() => setPreview(preview === "excuse" ? null : "excuse")}
         >
           Excuse {a.evidence ? "this assessment" : "assignment"}
@@ -344,7 +412,7 @@ function AssessmentEditor({
             staff
             preview
           />
-          <Button disabled={busy} onClick={() => action(preview)}>
+          <Button disabled={busy || disabled} onClick={() => action(preview)}>
             {preview === "excuse"
               ? "Confirm excusal to learner"
               : "Confirm release to learner"}
