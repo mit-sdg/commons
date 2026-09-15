@@ -58,13 +58,16 @@ async function setup() {
   await app.concepts.Assigning.publish({ ...draft, at });
   const standard = await call("/grades/define-standard", { session: staff.session, ...content });
   if ("error" in standard) throw new Error(String(standard.error));
-  const criterion = await call("/grades/add-criterion", {
+  const configured = await call("/grades/configure-setup", {
     session: staff.session,
     item: draft.assignment,
-    basis: standard.edition,
-    position: 0,
+    method: "COMPETENCY",
+    revision: 0,
+    criteria: [{ kind: "COMPETENCY", basis: standard.edition, position: 0 }],
   });
-  if ("error" in criterion) throw new Error(String(criterion.error));
+  if ("error" in configured) throw new Error(String(configured.error));
+  const criterion = configured.criteria[0];
+  if (!criterion || criterion.kind !== "COMPETENCY") throw new Error("missing criterion");
   const sub = await call("/assignments/submit", {
     session: maya.session,
     assignment: draft.assignment,
@@ -80,17 +83,18 @@ async function setup() {
     item: draft.assignment,
     standard,
     criterion: criterion.criterion,
+    revision: configured.revision,
     evidence: sub.submission,
   };
 }
-test("released assessments retain standard editions, evidence, and correction history without cross-student disclosure", async () => {
-  const { call, staff, maya, noah, item, standard, criterion, evidence } = await setup();
+test("released assessments retain standard editions, correction history, privacy, and one gradebook collection", async () => {
+  const { call, staff, maya, noah, item, standard, criterion, revision, evidence } = await setup();
   const started = await call("/grades/record", {
     session: staff.session,
     learner: maya.user,
     item,
     evidence,
-    generation: 0,
+    revision,
   });
   if ("error" in started) throw new Error(String(started.error));
   expect(await call("/grades/for-me", { session: maya.session })).toEqual({ grades: [] });
@@ -103,7 +107,7 @@ test("released assessments retain standard editions, evidence, and correction hi
       learner: noah.user,
       item,
       evidence,
-      generation: 0,
+      revision,
     }),
   ).toEqual({ error: "NOT_FOUND" });
   expect(
@@ -117,7 +121,9 @@ test("released assessments retain standard editions, evidence, and correction hi
   const saved = await call("/grades/save", {
     session: staff.session,
     ...started,
-    judgments: [{ criterion, rating: "EMERGENT", feedback: "Connect the evidence." }],
+    judgments: [
+      { kind: "COMPETENCY", criterion, rating: "EMERGENT", feedback: "Connect the evidence." },
+    ],
     feedback: "Try again.",
   });
   if ("error" in saved) throw new Error(String(saved.error));
@@ -130,17 +136,32 @@ test("released assessments retain standard editions, evidence, and correction hi
     expectedEdition: standard.edition,
     emergent: "Changed meaning",
   });
-  await call("/grades/remove-criterion", { session: staff.session, criterion });
+  const cleared = await call("/grades/configure-setup", {
+    session: staff.session,
+    item,
+    method: "COMPETENCY",
+    revision,
+    criteria: [],
+  });
+  if ("error" in cleared) throw new Error(String(cleared.error));
+  expect(cleared).toMatchObject({ revision: revision + 1, criteria: [] });
   const visible = await call("/grades/for-me", { session: maya.session });
   if ("error" in visible) throw new Error(String(visible.error));
   expect(visible.grades).toHaveLength(1);
   expect(visible.grades[0]).toMatchObject({
     evidence,
     attempt: 1,
-    judgments: [{ criterion, rating: "EMERGENT", feedback: "Connect the evidence." }],
+    judgments: [
+      { kind: "COMPETENCY", criterion, rating: "EMERGENT", feedback: "Connect the evidence." },
+    ],
+    score: 0,
+    outOf: 0,
+    scored: false,
   });
-  expect(visible.grades[0].criteria[0].emergent).toBe(content.emergent);
-  expect(visible.grades[0]).not.toHaveProperty("score");
+  const frozenCriterion = visible.grades[0].criteria[0];
+  expect(frozenCriterion?.kind).toBe("COMPETENCY");
+  if (frozenCriterion?.kind !== "COMPETENCY") throw new Error("wrong frozen criterion kind");
+  expect(frozenCriterion.emergent).toBe(content.emergent);
   const retracted = await call("/grades/retract", { session: staff.session, ...released });
   if ("error" in retracted) throw new Error(String(retracted.error));
   expect(await call("/grades/for-me", { session: maya.session })).toEqual({ grades: [] });
@@ -150,7 +171,7 @@ test("released assessments retain standard editions, evidence, and correction hi
   const corrected = await call("/grades/save", {
     session: staff.session,
     ...retracted,
-    judgments: [{ criterion, rating: "COMPETENT", feedback: "Correction" }],
+    judgments: [{ kind: "COMPETENCY", criterion, rating: "COMPETENT", feedback: "Correction" }],
     feedback: "Corrected",
   });
   if ("error" in corrected) throw new Error(String(corrected.error));
@@ -159,7 +180,40 @@ test("released assessments retain standard editions, evidence, and correction hi
   if ("error" in after) throw new Error(String(after.error));
   expect(after.grades).toHaveLength(1);
   expect(after.grades[0].history).toHaveLength(2);
-  expect(after.grades[0].history[0].judgments[0].rating).toBe("EMERGENT");
+  const firstJudgment = after.grades[0].history[0].judgments[0];
+  expect(firstJudgment?.kind).toBe("COMPETENCY");
+  if (firstJudgment?.kind !== "COMPETENCY") throw new Error("wrong history judgment kind");
+  expect(firstJudgment.rating).toBe("EMERGENT");
+  expect(after.grades[0].history).toMatchObject([
+    { score: 0, outOf: 0, scored: false },
+    { score: 0, outOf: 0, scored: false },
+  ]);
+
+  const gradebook = await call("/grades/gradebook", { session: staff.session });
+  if ("error" in gradebook) throw new Error(String(gradebook.error));
+  expect(gradebook.gradebook.items).toContainEqual({
+    item,
+    label: "Paper",
+    method: "COMPETENCY",
+    revision: revision + 1,
+    maxPoints: 0,
+  });
+  const mayaRow = gradebook.gradebook.learners.find(({ user }) => user === maya.user);
+  const noahRow = gradebook.gradebook.learners.find(({ user }) => user === noah.user);
+  expect(mayaRow?.grades).toHaveLength(1);
+  expect(mayaRow?.grades[0]).toMatchObject({
+    grade: corrected.grade,
+    learner: maya.user,
+    method: "COMPETENCY",
+    setupRevision: revision,
+    score: 0,
+    outOf: 0,
+    scored: false,
+    history: [{ revision: 1 }, { revision: 2 }],
+  });
+  expect(noahRow?.grades).toEqual([]);
+  expect(gradebook.gradebook).not.toHaveProperty("marks");
+  expect(mayaRow).not.toHaveProperty("marks");
   expect(await call("/grades/for-me", { session: noah.session })).toEqual({ grades: [] });
   expect(await call("/grades/gradebook", { session: noah.session })).toEqual({
     error: "FORBIDDEN",
@@ -214,7 +268,7 @@ test("submission policy refuses unknown, early, closed, nonaccepting and narrowe
   expect(list.submissions).toHaveLength(1);
 });
 
-test("draft criteria are staff-only, survive publication, and are retained when a draft is revised", async () => {
+test("draft setup is staff-only, survives publication, and is retained when a draft is revised", async () => {
   const { app, call, staff, maya, standard } = await setup();
   const fields = {
     title: "Draft preparation",
@@ -229,13 +283,20 @@ test("draft criteria are staff-only, survive publication, and are retained when 
   };
   const draft = await call("/assignments/create-draft", { session: staff.session, ...fields });
   if ("error" in draft) throw new Error(String(draft.error));
-  const criterion = await call("/grades/add-criterion", {
+  const configured = await call("/grades/configure-setup", {
     session: staff.session,
     item: draft.assignment,
-    basis: standard.edition,
-    position: 0,
+    method: "COMPETENCY",
+    revision: 0,
+    criteria: [{ kind: "COMPETENCY", basis: standard.edition, position: 0 }],
   });
-  expect(criterion).toHaveProperty("criterion");
+  if ("error" in configured) throw new Error(String(configured.error));
+  expect(configured).toMatchObject({
+    item: draft.assignment,
+    method: "COMPETENCY",
+    revision: 1,
+    criteria: [{ kind: "COMPETENCY", basis: standard.edition, position: 0 }],
+  });
   expect(await call("/grades/item", { session: maya.session, item: draft.assignment })).toEqual({
     error: "NOT_FOUND",
   });
