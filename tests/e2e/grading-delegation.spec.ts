@@ -480,8 +480,13 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
     ).toBeVisible();
     await expect(staleDetails).toHaveCount(0);
     await expect(dirtyFeedback).toHaveValue("Keep this unsaved competency feedback");
-    await expect(page.getByText("2 attempts", { exact: true })).toBeVisible();
-    await expect(page.getByText("1 late day", { exact: true })).toBeVisible();
+    const refreshedNoahRow = page
+      .getByText("Noah Patel", { exact: true })
+      .locator(
+        "xpath=ancestor::div[contains(concat(' ', normalize-space(@class), ' '), ' rounded-lg ')][1]",
+      );
+    await expect(refreshedNoahRow.getByText("2 attempts", { exact: true })).toBeVisible();
+    await expect(refreshedNoahRow.getByText("1 late day", { exact: true })).toBeVisible();
     await expect(bulkFeedback).toBeHidden({ timeout: 10_000 });
 
     await page.reload();
