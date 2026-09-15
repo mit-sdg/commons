@@ -14,7 +14,7 @@ import type { Capability } from "@/lib/models";
 
 const STUDENT_NAV = [
   { href: "/assignments", label: "Assignments", icon: BookOpen },
-  { href: "/grades", label: "Assessments", icon: GraduationCap },
+  { href: "/grades", label: "Grades", icon: GraduationCap },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/notes", label: "Notes", icon: StickyNote },
 ];
@@ -49,7 +49,7 @@ const STAFF_NAV: {
   },
   {
     href: "/staff/gradebook",
-    label: "Assessments",
+    label: "Gradebook",
     icon: FileText,
     needs: ["grade"],
   },

@@ -449,6 +449,15 @@ for (const form of ["quiz", "survey", "relay"] as const) {
         await arrivalGate;
         await route.continue();
       });
+      if (form === "relay") {
+        // Make the server-committed/browser-not-yet-settled window deterministic:
+        // restoration is meaningful only after this phone has received its receipt.
+        await participant.route("**/api/live/p/submit-signed", async (route) => {
+          const response = await route.fetch();
+          await new Promise((resolve) => setTimeout(resolve, 250));
+          await route.fulfill({ response });
+        });
+      }
       const arriving = participant.waitForRequest((request) =>
         request.url().endsWith("/api/live/p/arrive"),
       );
@@ -512,13 +521,17 @@ for (const form of ["quiz", "survey", "relay"] as const) {
         await expect(
           participant.getByRole("heading", { name: "Handed in", exact: true }),
         ).toBeVisible();
-      else if (form === "relay")
+      else if (form === "relay") {
         await expect
           .poll(async () => {
             const data = await call("/live/relays/run", { run });
             return data.run.rounds[0].figure.handedIn;
           })
           .toBe(1);
+        await expect(
+          participant.getByRole("heading", { name: "Response received", exact: true }),
+        ).toBeVisible();
+      }
       expect(responseRequests.some((url) => url.endsWith("/begin-signed"))).toBe(true);
       expect(responseRequests.every((url) => url.endsWith("-signed"))).toBe(true);
       // A refused anonymous request must not clear an existing browser session.

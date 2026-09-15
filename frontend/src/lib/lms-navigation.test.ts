@@ -22,6 +22,13 @@ describe("Commons navigation", () => {
       ({ label }) => label === "Assignments",
     );
     expect(assignments?.href).toBe("/assignments");
+    expect(
+      lmsNavigation(false).find(({ href }) => href === "/grades")?.label,
+    ).toBe("Grades");
+    expect(
+      lmsNavigation(true).find(({ href }) => href === "/staff/gradebook")
+        ?.label,
+    ).toBe("Gradebook");
   });
 
   test("class settings is offered only to a course manager", () => {
