@@ -90,6 +90,7 @@ test("released assessments retain standard editions, evidence, and correction hi
     learner: maya.user,
     item,
     evidence,
+    generation: 0,
   });
   if ("error" in started) throw new Error(String(started.error));
   expect(await call("/grades/for-me", { session: maya.session })).toEqual({ grades: [] });
@@ -97,7 +98,13 @@ test("released assessments retain standard editions, evidence, and correction hi
     error: "NOT_FOUND",
   });
   expect(
-    await call("/grades/record", { session: staff.session, learner: noah.user, item, evidence }),
+    await call("/grades/record", {
+      session: staff.session,
+      learner: noah.user,
+      item,
+      evidence,
+      generation: 0,
+    }),
   ).toEqual({ error: "NOT_FOUND" });
   expect(
     await call("/grades/save", {

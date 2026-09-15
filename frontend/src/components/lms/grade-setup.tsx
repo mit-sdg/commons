@@ -346,11 +346,13 @@ export function GradeSetup({
   title,
   published = false,
   readOnly = false,
+  onMethodChange,
 }: {
   item: string;
   title: string;
   published?: boolean;
   readOnly?: boolean;
+  onMethodChange?: () => void;
 }) {
   const { session } = useAuth();
   const query = useQuery(
@@ -368,6 +370,97 @@ export function GradeSetup({
     type: "add" | "remove";
     value: string;
   } | null>(null);
+  const [maximum, setMaximum] = useState<string | null>(null);
+  const [switching, setSwitching] = useState<{
+    method: "COMPETENCY" | "POINTS";
+    generation: number;
+    total: number;
+    released: number;
+    drafts: number;
+    excused: number;
+  } | null>(null);
+  const method = query.data?.method ?? "COMPETENCY";
+  const maximumValue = maximum ?? String(query.data?.maxPoints ?? 100);
+  const numericMaximum = Number(maximumValue);
+  const maximumValid =
+    maximumValue.trim() !== "" &&
+    Number.isFinite(numericMaximum) &&
+    numericMaximum > 0;
+
+  async function requestConfiguration(next: "COMPETENCY" | "POINTS") {
+    if (!query.data || busy) return;
+    if (
+      next === method &&
+      (next !== "POINTS" || numericMaximum === query.data.maxPoints)
+    )
+      return;
+    setBusy(true);
+    try {
+      const result =
+        method === "POINTS"
+          ? await api.marks["for-item"]({ item })
+          : await api.grades["for-item"]({ item });
+      if ("error" in result) {
+        toast.error(publicErrorMessage(result.error));
+        return;
+      }
+      const rows = "marks" in result ? result.marks : result.grades;
+      setSwitching({
+        method: next,
+        generation: query.data.generation,
+        total: rows.length,
+        released: rows.filter((row) => row.status === "RELEASED").length,
+        drafts: rows.filter((row) => row.status === "DRAFT").length,
+        excused: rows.filter((row) => row.status === "EXCUSED").length,
+      });
+    } catch {
+      toast.error("Could not check existing grades. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function applyConfiguration() {
+    if (!switching || (switching.method === "POINTS" && !maximumValid)) return;
+    setBusy(true);
+    try {
+      const result = await api.grades["configure-method"]({
+        item,
+        method: switching.method,
+        maxPoints: numericMaximum,
+        generation: switching.generation,
+        discard: switching.total > 0,
+        expectedCount: switching.total,
+      });
+      if ("error" in result) {
+        toast.error(
+          result.error === "CONFLICT"
+            ? "The grading setup or its grades changed. Reload and review before trying again."
+            : publicErrorMessage(result.error),
+        );
+        await query.refetch();
+        setMaximum(null);
+        onMethodChange?.();
+        return;
+      }
+      toast.success(
+        result.method === "POINTS"
+          ? `This assignment is graded out of ${result.maxPoints} points`
+          : "This assignment is graded by competency",
+      );
+      setSwitching(null);
+      setMaximum(null);
+      await query.refetch();
+      onMethodChange?.();
+    } catch {
+      toast.error("Could not change the grading setup. Try again.");
+      await query.refetch();
+      setMaximum(null);
+      onMethodChange?.();
+    } finally {
+      setBusy(false);
+    }
+  }
   async function change(action: { type: "add" | "remove"; value: string }) {
     setBusy(true);
     try {
@@ -415,12 +508,12 @@ export function GradeSetup({
     }
   }
   if (query.loading && !query.data)
-    return <LoadingState label="Loading skills…" />;
+    return <LoadingState label="Loading grading setup…" />;
   return (
     <section className="space-y-3">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="font-medium">Skills assessed</h2>
-        {!readOnly && (
+        <h2 className="font-medium">Grading</h2>
+        {!readOnly && method === "COMPETENCY" && (
           <Button
             size="sm"
             variant="ghost"
@@ -436,116 +529,170 @@ export function GradeSetup({
           <ErrorState message={query.error} onRetry={query.refetch} />
           {!readOnly && !published && (
             <Button variant="outline" disabled={busy} onClick={prepare}>
-              Set up skills
+              Set up grading
             </Button>
           )}
         </div>
       ) : (
         <>
-          <div className="divide-y rounded-lg border">
-            {(query.data?.criteria ?? []).map((c) => (
-              <div key={c.criterion} className="space-y-2 p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-medium">{c.name}</span>
-                  {editing && !readOnly && (
-                    <Button
-                      aria-label={`Remove ${c.name}`}
-                      size="sm"
-                      variant="ghost"
-                      disabled={busy}
-                      onClick={() =>
-                        request({ type: "remove", value: c.criterion })
-                      }
-                    >
-                      Remove
-                    </Button>
-                  )}
-                </div>
-                <RubricDescription rubric={c} showEdition={false} />
-                {standards.data?.standards.some(
-                  (r) => r.standard === c.standard && r.edition !== c.basis,
-                ) && (
-                  <p className="text-xs text-muted-foreground">
-                    A newer rubric is available in{" "}
-                    <Link className="underline" href="/staff/skills">
-                      Skills and rubrics
-                    </Link>
-                    .
-                    {editing
-                      ? " Remove this selection and add the skill again to adopt it for future assessments."
-                      : ""}
+          <div className="flex flex-wrap gap-2" aria-label="Grading method">
+            {(
+              [
+                ["COMPETENCY", "Competency"],
+                ["POINTS", "Points"],
+              ] as const
+            ).map(([value, label]) => (
+              <Button
+                key={value}
+                size="sm"
+                variant={method === value ? "default" : "outline"}
+                aria-pressed={method === value}
+                disabled={busy || readOnly}
+                onClick={() => void requestConfiguration(value)}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+          {method === "POINTS" ? (
+            <div className="space-y-3 rounded-lg border p-4">
+              <div className="space-y-2">
+                <Label htmlFor={`maximum-${item}`}>Maximum points</Label>
+                <Input
+                  id={`maximum-${item}`}
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="any"
+                  className="w-32"
+                  value={maximumValue}
+                  disabled={busy || readOnly}
+                  aria-invalid={!maximumValid}
+                  onChange={(event) => setMaximum(event.target.value)}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Staff enter one assignment-level score per learner.
+              </p>
+              {!readOnly && numericMaximum !== query.data?.maxPoints && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={busy || !maximumValid}
+                  onClick={() => void requestConfiguration("POINTS")}
+                >
+                  Change maximum
+                </Button>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="divide-y rounded-lg border">
+                {(query.data?.criteria ?? []).map((c) => (
+                  <div key={c.criterion} className="space-y-2 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-medium">{c.name}</span>
+                      {editing && !readOnly && (
+                        <Button
+                          aria-label={`Remove ${c.name}`}
+                          size="sm"
+                          variant="ghost"
+                          disabled={busy}
+                          onClick={() =>
+                            request({ type: "remove", value: c.criterion })
+                          }
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                    <RubricDescription rubric={c} showEdition={false} />
+                    {standards.data?.standards.some(
+                      (r) => r.standard === c.standard && r.edition !== c.basis,
+                    ) && (
+                      <p className="text-xs text-muted-foreground">
+                        A newer rubric is available in{" "}
+                        <Link className="underline" href="/staff/skills">
+                          Skills and rubrics
+                        </Link>
+                        .
+                        {editing
+                          ? " Remove this selection and add the skill again to adopt it for future assessments."
+                          : ""}
+                      </p>
+                    )}
+                  </div>
+                ))}
+                {query.data?.criteria.length === 0 && (
+                  <p className="p-3 text-sm text-muted-foreground">
+                    No skills selected.
                   </p>
                 )}
               </div>
-            ))}
-            {query.data?.criteria.length === 0 && (
-              <p className="p-3 text-sm text-muted-foreground">
-                No skills selected.
-              </p>
-            )}
-          </div>
-          {editing && !readOnly && (
-            <div className="space-y-3">
-              {standards.error ? (
-                <ErrorState
-                  message={standards.error}
-                  onRetry={standards.refetch}
-                />
-              ) : (
-                <div className="flex gap-2">
-                  <Select
-                    value={basis}
-                    disabled={busy || standards.loading}
-                    onValueChange={setBasis}
+              {editing && !readOnly && (
+                <div className="space-y-3">
+                  {standards.error ? (
+                    <ErrorState
+                      message={standards.error}
+                      onRetry={standards.refetch}
+                    />
+                  ) : (
+                    <div className="flex gap-2">
+                      <Select
+                        value={basis}
+                        disabled={busy || standards.loading}
+                        onValueChange={setBasis}
+                      >
+                        <SelectTrigger
+                          aria-label="Add a skill"
+                          className="min-w-0 flex-1"
+                        >
+                          <SelectValue placeholder="Select a skill…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(() => {
+                            const available = (
+                              standards.data?.standards ?? []
+                            ).filter(
+                              (r) =>
+                                !query.data?.criteria.some(
+                                  (c) => c.standard === r.standard,
+                                ),
+                            );
+                            return available.length === 0 ? (
+                              <SelectGroup>
+                                <SelectLabel>
+                                  Every course skill is selected
+                                </SelectLabel>
+                              </SelectGroup>
+                            ) : (
+                              available.map((r) => (
+                                <SelectItem key={r.edition} value={r.edition}>
+                                  {r.name}
+                                </SelectItem>
+                              ))
+                            );
+                          })()}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        size="sm"
+                        disabled={!basis || busy}
+                        onClick={() => request({ type: "add", value: basis })}
+                      >
+                        Add skill
+                      </Button>
+                    </div>
+                  )}
+                  <Link
+                    className="text-xs text-muted-foreground underline"
+                    href="/staff/skills"
                   >
-                    <SelectTrigger
-                      aria-label="Add a skill"
-                      className="min-w-0 flex-1"
-                    >
-                      <SelectValue placeholder="Select a skill…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(() => {
-                        const available = (
-                          standards.data?.standards ?? []
-                        ).filter(
-                          (r) =>
-                            !query.data?.criteria.some(
-                              (c) => c.standard === r.standard,
-                            ),
-                        );
-                        return available.length === 0 ? (
-                          <SelectGroup>
-                            <SelectLabel>
-                              Every course skill is selected
-                            </SelectLabel>
-                          </SelectGroup>
-                        ) : (
-                          available.map((r) => (
-                            <SelectItem key={r.edition} value={r.edition}>
-                              {r.name}
-                            </SelectItem>
-                          ))
-                        );
-                      })()}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    size="sm"
-                    disabled={!basis || busy}
-                    onClick={() => request({ type: "add", value: basis })}
-                  >
-                    Add skill
-                  </Button>
+                    Manage skills and rubrics
+                  </Link>
                 </div>
               )}
-              <Link
-                className="text-xs text-muted-foreground underline"
-                href="/staff/skills"
-              >
-                Manage skills and rubrics
-              </Link>
-            </div>
+            </>
           )}
         </>
       )}
@@ -560,6 +707,74 @@ export function GradeSetup({
         onConfirm={async () => {
           if (pending) await change(pending);
         }}
+      />
+      <ConfirmAction
+        open={switching !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSwitching(null);
+            setMaximum(null);
+          }
+        }}
+        destructive={(switching?.total ?? 0) > 0}
+        confirmDisabled={switching?.method === "POINTS" && !maximumValid}
+        title={
+          switching?.method === "POINTS"
+            ? method === "POINTS"
+              ? "Change the maximum points?"
+              : "Grade this assignment by points?"
+            : "Grade this assignment by competency?"
+        }
+        description={
+          switching === null ? null : (
+            <div className="space-y-2">
+              {switching.total > 0 ? (
+                <p>
+                  This will permanently delete {switching.total} existing
+                  {switching.total === 1 ? " grade" : " grades"} (
+                  {switching.released} released, {switching.drafts} draft,{" "}
+                  {switching.excused} excused). Released results will disappear
+                  from students immediately.
+                </p>
+              ) : (
+                <p>
+                  No grades have been entered, so no results will be deleted.
+                </p>
+              )}
+              <p>
+                Changing grading also clears unsaved scores, judgments, and
+                feedback in open grading forms.
+              </p>
+              {switching.method === "POINTS" && (
+                <div className="space-y-1">
+                  <Label htmlFor="switch-maximum">Maximum points</Label>
+                  <Input
+                    id="switch-maximum"
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step="any"
+                    className="w-32"
+                    value={maximumValue}
+                    aria-invalid={!maximumValid}
+                    onChange={(event) => setMaximum(event.target.value)}
+                  />
+                  {!maximumValid && (
+                    <p className="text-xs text-destructive">
+                      Enter a maximum greater than zero.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        }
+        confirmLabel={
+          switching && switching.total > 0
+            ? `Delete ${switching.total} and change grading`
+            : "Change grading"
+        }
+        onConfirm={applyConfiguration}
       />
     </section>
   );

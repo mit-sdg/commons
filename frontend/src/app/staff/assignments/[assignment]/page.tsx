@@ -14,6 +14,7 @@ import {
 } from "@/components/lms/assignment-reading";
 import { GradeInput } from "@/components/lms/grade-input";
 import { GradeSetup } from "@/components/lms/grade-setup";
+import { MarkInput } from "@/components/lms/mark-input";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { BackLink, PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
@@ -41,6 +42,7 @@ import { dueTime, fromZonedInput, toZonedInput } from "@/lib/format";
 import {
   loadGradesForItem,
   loadLateDaysForAssignment,
+  loadMarksForItem,
   loadSubmissionsForAssignment,
 } from "@/lib/lms";
 
@@ -214,6 +216,10 @@ function StaffAssignmentDetailPageContent({
     session && canGrade ? () => loadGradesForItem(assignment) : null,
     [session, assignment],
   );
+  const { data: marksData, refetch: refetchMarks } = useQuery(
+    session && canGrade ? () => loadMarksForItem(assignment) : null,
+    [session, assignment],
+  );
 
   const { data: lateData } = useQuery<{
     users: { learner: string; days: number }[];
@@ -231,8 +237,12 @@ function StaffAssignmentDetailPageContent({
   const detail = asgnData?.summary;
   const assigned = subsData?.assigned ?? [];
   const grades = gradesData?.grades ?? [];
+  const marks = marksData?.marks ?? [];
+  const gradingMethod = previewSkills.data?.method ?? "COMPETENCY";
   const lateUsers = lateData?.users ?? [];
-  const draftCount = grades.filter((grade) => grade.status === "DRAFT").length;
+  const draftCount = (gradingMethod === "POINTS" ? marks : grades).filter(
+    (record) => record.status === "DRAFT",
+  ).length;
 
   useEffect(() => {
     let frame = 0;
@@ -264,7 +274,12 @@ function StaffAssignmentDetailPageContent({
     const result = await api.assignments.publish({ assignment });
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
-      await Promise.all([refetch(), refetchSubmissions(), refetchGrades()]);
+      await Promise.all([
+        refetch(),
+        refetchSubmissions(),
+        refetchGrades(),
+        refetchMarks(),
+      ]);
       toast.success("Assignment published");
     }
   }
@@ -281,18 +296,34 @@ function StaffAssignmentDetailPageContent({
 
   async function releaseAll() {
     if (!session) return;
-    const result = await api.grades["release-item"]({
-      item: assignment,
-    });
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      const summary = `${result.released.length} assessments released; ${result.skipped.length} skipped (incomplete or changed).`;
-      if (result.unconfirmed.length)
-        toast.error(
-          `${summary} ${result.unconfirmed.length} outcomes could not be confirmed. Review the refreshed assessments before retrying.`,
-        );
-      else toast.success(summary);
-      refetchGrades();
+    if (!previewSkills.data) return;
+    try {
+      const result =
+        gradingMethod === "POINTS"
+          ? await api.marks["release-item"]({
+              item: assignment,
+              generation: previewSkills.data.generation,
+            })
+          : await api.grades["release-item"]({
+              item: assignment,
+              generation: previewSkills.data.generation,
+            });
+      if ("error" in result) toast.error(publicErrorMessage(result.error));
+      else {
+        const noun = gradingMethod === "POINTS" ? "grades" : "assessments";
+        const summary = `${result.released.length} ${noun} released; ${result.skipped.length} skipped (incomplete or changed).`;
+        if (result.unconfirmed.length)
+          toast.error(
+            `${summary} ${result.unconfirmed.length} outcomes could not be confirmed. Review the refreshed grades before retrying.`,
+          );
+        else toast.success(summary);
+      }
+    } catch {
+      toast.error(
+        "Release outcomes could not be confirmed. Grades were refreshed before retrying.",
+      );
+    } finally {
+      void Promise.all([refetchGrades(), refetchMarks()]);
     }
   }
 
@@ -470,6 +501,13 @@ function StaffAssignmentDetailPageContent({
               title={detail.title}
               published={detail.status === "PUBLISHED"}
               readOnly={detail.status === "ARCHIVED"}
+              onMethodChange={() => {
+                void Promise.all([
+                  previewSkills.refetch(),
+                  refetchGrades(),
+                  refetchMarks(),
+                ]);
+              }}
             />
           )}
         </TabsContent>
@@ -484,7 +522,7 @@ function StaffAssignmentDetailPageContent({
               {detail.instructions && (
                 <AssignmentInstructions instructions={detail.instructions} />
               )}
-              {previewSkills.data && (
+              {previewSkills.data?.method === "COMPETENCY" && (
                 <AssignmentSkills criteria={previewSkills.data.criteria} />
               )}
               {detail.acceptsSubmissions && (
@@ -536,13 +574,13 @@ function StaffAssignmentDetailPageContent({
                 <CardHeader className="flex flex-row items-center justify-between gap-3">
                   <div>
                     <CardTitle className="text-base">
-                      Learner work and assessments
+                      Learner work and grades
                     </CardTitle>
                   </div>
                   <ConfirmAction
-                    title="Release complete draft assessments?"
-                    description="Complete drafts will become visible to learners. Incomplete or concurrently changed assessments will be skipped and reported."
-                    confirmLabel="Release assessments"
+                    title="Release complete draft grades?"
+                    description="Complete drafts will become visible to learners. Incomplete or concurrently changed drafts will be skipped and reported."
+                    confirmLabel="Release grades"
                     onConfirm={releaseAll}
                     trigger={
                       <Button
@@ -576,6 +614,19 @@ function StaffAssignmentDetailPageContent({
                         const learnerGrades = grades.filter(
                           (g) => g.learner === learnerId,
                         );
+                        const learnerMarks = marks.filter(
+                          (mark) => mark.learner === learnerId,
+                        );
+                        const pointMark = learnerMarks[0];
+                        const newAttemptNeedsReview = Boolean(
+                          latest &&
+                            pointMark &&
+                            latest.submission !== pointMark.evidence,
+                        );
+                        const learnerRecords =
+                          gradingMethod === "POINTS"
+                            ? learnerMarks
+                            : learnerGrades;
                         const lateDays = lateMap.get(learnerId) ?? 0;
                         const isGrading = gradingUser === learnerId;
 
@@ -659,6 +710,11 @@ function StaffAssignmentDetailPageContent({
                                                 (g) =>
                                                   g.evidence ===
                                                   attempt.submission,
+                                              ) &&
+                                              !learnerMarks.some(
+                                                (mark) =>
+                                                  mark.evidence ===
+                                                  attempt.submission,
                                               )
                                             }
                                             onClick={() => {
@@ -676,11 +732,38 @@ function StaffAssignmentDetailPageContent({
                                   </div>
                                 ) : null}
                               </div>
-                              <span className="text-sm text-muted-foreground">
-                                {learnerGrades.length
-                                  ? `${learnerGrades.length} assessment${learnerGrades.length === 1 ? "" : "s"}`
-                                  : "Not assessed"}
-                              </span>
+                              {gradingMethod === "POINTS" ? (
+                                <div className="space-y-1 text-right text-sm">
+                                  <div className="flex items-center justify-end gap-2">
+                                    {pointMark ? (
+                                      <StatusBadge status={pointMark.status} />
+                                    ) : null}
+                                    <span className="text-muted-foreground tabular-nums">
+                                      {!pointMark || !pointMark.scored
+                                        ? pointMark?.status === "EXCUSED"
+                                          ? "Excused"
+                                          : "Not graded"
+                                        : `${pointMark.score} / ${pointMark.outOf}`}
+                                    </span>
+                                  </div>
+                                  {pointMark?.attempt ? (
+                                    <p className="text-xs text-muted-foreground">
+                                      Graded attempt #{pointMark.attempt}
+                                    </p>
+                                  ) : null}
+                                  {newAttemptNeedsReview ? (
+                                    <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                                      New attempt needs review
+                                    </p>
+                                  ) : null}
+                                </div>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">
+                                  {learnerRecords.length
+                                    ? `${learnerGrades.length} assessment${learnerGrades.length === 1 ? "" : "s"}`
+                                    : "Not graded"}
+                                </span>
+                              )}
                             </div>
 
                             {canManage && (
@@ -732,6 +815,10 @@ function StaffAssignmentDetailPageContent({
                                           a.status === "SUBMITTED" ||
                                           learnerGrades.some(
                                             (g) => g.evidence === a.submission,
+                                          ) ||
+                                          learnerMarks.some(
+                                            (mark) =>
+                                              mark.evidence === a.submission,
                                           ),
                                       )
                                       .map((a) => (
@@ -748,19 +835,38 @@ function StaffAssignmentDetailPageContent({
                               </div>
                             )}
                             {isGrading ? (
-                              <GradeInput
-                                key={`${learnerId}-${gradingEvidence ?? "excusal"}-${learnerGrades.find((g) => g.evidence === (gradingEvidence ?? ""))?.version ?? "new"}`}
-                                learner={learnerId}
-                                learnerLabel={
-                                  learner.displayName ?? learner.assignee
-                                }
-                                item={assignment}
-                                itemLabel={detail.title}
-                                evidence={gradingEvidence ?? ""}
-                                onSaved={() => {
-                                  refetchGrades();
-                                }}
-                              />
+                              gradingMethod === "POINTS" &&
+                              previewSkills.data ? (
+                                <MarkInput
+                                  key={`points-${previewSkills.data.generation}-${learnerId}-${gradingEvidence ?? "excusal"}`}
+                                  learner={learnerId}
+                                  learnerLabel={
+                                    learner.displayName ?? learner.assignee
+                                  }
+                                  item={assignment}
+                                  itemLabel={detail.title}
+                                  evidence={gradingEvidence ?? ""}
+                                  generation={previewSkills.data.generation}
+                                  maxPoints={previewSkills.data.maxPoints}
+                                  onSaved={() => {
+                                    refetchMarks();
+                                  }}
+                                />
+                              ) : (
+                                <GradeInput
+                                  key={`competency-${previewSkills.data?.generation ?? 0}-${learnerId}-${gradingEvidence ?? "excusal"}-${learnerGrades.find((g) => g.evidence === (gradingEvidence ?? ""))?.version ?? "new"}`}
+                                  learner={learnerId}
+                                  learnerLabel={
+                                    learner.displayName ?? learner.assignee
+                                  }
+                                  item={assignment}
+                                  itemLabel={detail.title}
+                                  evidence={gradingEvidence ?? ""}
+                                  onSaved={() => {
+                                    refetchGrades();
+                                  }}
+                                />
+                              )
                             ) : (
                               <Button
                                 size="sm"
@@ -772,7 +878,7 @@ function StaffAssignmentDetailPageContent({
                                   setGradingUser(learnerId);
                                 }}
                               >
-                                Review assessments
+                                Review grades
                               </Button>
                             )}
                           </div>

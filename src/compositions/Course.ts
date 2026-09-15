@@ -2,6 +2,7 @@ import * as assignments from "./course/assignments.ts";
 import * as calendar from "./course/calendar.ts";
 import * as gradeItems from "./course/grade-items.ts";
 import * as grades from "./course/grades.ts";
+import * as marks from "./course/marks.ts";
 import * as lateDays from "./course/late-days.ts";
 import * as notes from "./course/notes.ts";
 import * as roster from "./course/roster.ts";
@@ -12,6 +13,7 @@ export const compositions = {
   calendar,
   gradeItems,
   grades,
+  marks,
   lateDays,
   notes,
   roster,

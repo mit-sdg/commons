@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Fact, Facts } from "@/components/facts";
 import { AssessmentHistory } from "@/components/lms/assessment-history";
+import { MarkHistory } from "@/components/lms/mark-history";
 import { BackLink, PageContainer, PageHeader } from "@/components/page";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,7 @@ export default function GradebookPage() {
     <Suspense
       fallback={
         <PageContainer>
-          <LoadingState label="Loading assessments…" />
+          <LoadingState label="Loading gradebook…" />
         </PageContainer>
       }
     >
@@ -52,17 +53,17 @@ function GradebookContent() {
       )}
       <PageHeader
         eyebrow="Staff"
-        title={learner ? (learner.displayName ?? learner.email) : "Assessments"}
+        title={learner ? (learner.displayName ?? learner.email) : "Gradebook"}
         description={
           learner
             ? undefined
-            : "The skills each learner has demonstrated, and the work behind them."
+            : "Point grades and competency assessments for every learner."
         }
       />
       {permissions.can("grade") && query.data && !query.error && (
         <details className="mb-5 text-sm">
           <summary className="cursor-pointer text-muted-foreground">
-            Assess an assignment
+            Grade an assignment
           </summary>
           {query.data.gradebook.items.length ? (
             <ul className="mt-2 max-h-64 space-y-2 overflow-y-auto">
@@ -73,19 +74,20 @@ function GradebookContent() {
                     href={`/staff/assignments/${item.item}`}
                   >
                     {item.label}
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {item.method === "POINTS" ? "Points" : "Competency"}
+                    </span>
                   </Link>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-2 text-muted-foreground">
-              No assessment items yet.
-            </p>
+            <p className="mt-2 text-muted-foreground">No grading items yet.</p>
           )}
         </details>
       )}
       {query.loading ? (
-        <LoadingState label="Loading assessments…" />
+        <LoadingState label="Loading gradebook…" />
       ) : query.error ? (
         <ErrorState message={query.error} onRetry={query.refetch} />
       ) : selected ? (
@@ -105,10 +107,11 @@ function GradebookContent() {
               assessments={learner.grades}
               staff
             />
+            <MarkHistory marks={learner.marks} staff />
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            This learner is not available in the assessment list.
+            This learner is not available in the gradebook.
           </p>
         )
       ) : (
@@ -142,7 +145,10 @@ function GradebookContent() {
                   )}
                 </div>
                 <Facts as="div" className="text-xs text-muted-foreground">
-                  <Fact.Count n={l.grades.length} noun="assessment" />
+                  <Fact.Count
+                    n={l.grades.length + l.marks.length}
+                    noun="grade"
+                  />
                   <ChevronRight className="size-4" />
                 </Facts>
               </Link>

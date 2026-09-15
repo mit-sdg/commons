@@ -2,18 +2,19 @@ import { expect, test } from "@playwright/test";
 
 test("skills refresh without clearing a draft, and graders can open unassessed assignments", async ({
   browser,
+  baseURL,
 }) => {
   test.setTimeout(120_000);
   const staff = await browser.newContext();
   const grader = await browser.newContext();
   try {
-    const login = await staff.request.post("http://127.0.0.1:3755/api/auth/login", {
+    const login = await staff.request.post(`${baseURL}/api/auth/login`, {
       data: { username: "mara", password: "password123" },
     });
     expect(login.ok()).toBe(true);
     const cookie = login.headers()["set-cookie"]!.split(";")[0]!;
     const call = async (path: string, data: unknown) => {
-      const response = await staff.request.post(`http://127.0.0.1:3755/api${path}`, {
+      const response = await staff.request.post(`${baseURL}/api${path}`, {
         headers: { Cookie: cookie },
         data,
       });
@@ -24,9 +25,9 @@ test("skills refresh without clearing a draft, and graders can open unassessed a
     };
     // Warm routes before typing so dev compilation cannot reload away the draft.
     for (const route of ["/staff/skills", "/staff/assignments/new", "/staff/gradebook"])
-      await staff.request.get(`http://127.0.0.1:3755${route}`);
+      await staff.request.get(`${baseURL}${route}`);
     const page = await staff.newPage();
-    await page.goto("http://127.0.0.1:3755/staff/assignments/new");
+    await page.goto(`${baseURL}/staff/assignments/new`);
     await page.getByRole("textbox", { name: "Title", exact: true }).fill("Unassessed work");
     const popup = staff.waitForEvent("page");
     await page.getByRole("link", { name: "Manage skills and rubrics" }).click();
@@ -73,13 +74,13 @@ test("skills refresh without clearing a draft, and graders can open unassessed a
       capabilities: ["grade"],
     });
     await call("/roles/assign", { user: "noah@example.edu", context: "commons", role });
-    const graderLogin = await grader.request.post("http://127.0.0.1:3755/api/auth/login", {
+    const graderLogin = await grader.request.post(`${baseURL}/api/auth/login`, {
       data: { username: "noah", password: "password123" },
     });
     expect(graderLogin.ok()).toBe(true);
     const review = await grader.newPage();
-    await review.goto("http://127.0.0.1:3755/staff/gradebook");
-    await review.getByText("Assess an assignment", { exact: true }).click();
+    await review.goto(`${baseURL}/staff/gradebook`);
+    await review.getByText("Grade an assignment", { exact: true }).click();
     await review.getByRole("link", { name: "Unassessed work", exact: true }).click();
     await expect(
       review.getByRole("heading", { name: "Unassessed work", exact: true }),

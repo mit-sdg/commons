@@ -1,8 +1,15 @@
-# Assessments and standards
+# Grading setup, assessments, and standards
 
 This composition joins opaque criteria to immutable standard editions. The fixed
 criteria of an assessment are captured when staff start it, so subsequent setup
 changes apply to new assessments. There is no computed current or highest level.
+
+Each item is competency graded by default. Staff can switch it to an assignment-level
+point score with a finite positive maximum. Changing the method or an existing
+point maximum deletes records, including released results, only after explicit
+confirmation. The caller supplies the observed configuration generation; a stale
+request fails even if the item has since switched away and back. Rubric selections
+and point setup are retained while inactive, but retired grades are not.
 
 Staff holding `grade` manage standards and assessments; all new learner/item/evidence
 relationships are checked before an assessment is created. Empty evidence is a
@@ -19,7 +26,7 @@ audience changes do not revoke ownership of already released assessment history.
 Standard management and its full catalog are staff-only; students read standards
 selected for their assigned work or included in their own released assessments.
 
-The gradebook lists assessments, not a representative learner level. Bulk release
+The gradebook lists competency assessments and point grades, not a representative learner level. Bulk release
 is explicitly partial: it releases complete observed drafts and reports incomplete
 or concurrently changed drafts individually as skipped. The export route remains
 an empty placeholder, with the same staff permission.
@@ -41,6 +48,12 @@ an empty placeholder, with the same staff permission.
 [Form every assessment on an item for authorized staff](former:Course.grades.theGradesOn).
 
 [Form one assessment with its evidence dates and correction history](former:Course.grades.theAssessment).
+
+[Form learner-visible released point grades](former:Course.grades.theReleasedMarksOf).
+
+[Form point grades of one learner for staff](former:Course.grades.theMarksOf).
+
+[Form point grades on one item for staff](former:Course.grades.theMarksOn).
 
 [Join roster identities and profiles to their assessment histories](former:Course.grades.theGradebookLearners).
 
@@ -68,6 +81,8 @@ an empty placeholder, with the same staff permission.
 
 [Release complete drafts and report skips](reaction:Course.grades.GradesReleaseItem).
 
+[Change an item's method or point maximum with generation and deletion guards](reaction:Course.grades.GradesConfigureMethod).
+
 [Configure an existing assignment as an assessment item](reaction:Course.grades.GradesConfigureItem).
 
 [Select a verified standard edition as an item criterion](reaction:Course.grades.GradesAddCriterion).
@@ -78,7 +93,7 @@ an empty placeholder, with the same staff permission.
 
 [Require active enrollment, assigned published accepting work, and matching submitted evidence or an empty excusal placeholder](view:Course.grades.mayStartAssessment).
 
-[Start or find an assessment with validated evidence and fixed criteria](reaction:Course.grades.GradesRecord).
+[Start or find an assessment with validated evidence, fixed criteria, and the staff-observed grading generation](reaction:Course.grades.GradesRecord).
 
 [Read the signed-in active learner’s released history](reaction:Course.grades.GradesForMe).
 
@@ -103,6 +118,7 @@ Course.grades.GradesRetract at /grades/retract
 Course.grades.GradesRestoreExcused at /grades/restore-excused
 Course.grades.GradesExcuse at /grades/excuse
 Course.grades.GradesReleaseItem at /grades/release-item
+Course.grades.GradesConfigureMethod at /grades/configure-method
 Course.grades.GradesConfigureItem at /grades/configure-item
 Course.grades.GradesAddCriterion at /grades/add-criterion
 Course.grades.GradesItem at /grades/item

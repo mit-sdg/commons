@@ -452,7 +452,12 @@ for (const [floor, makeFloor] of floorCases) {
       const recorded = await post(
         edge,
         "/grades/record",
-        { item: assignment, learner: tara.user, evidence: submitted.body.submission },
+        {
+          item: assignment,
+          learner: tara.user,
+          evidence: submitted.body.submission,
+          generation: 0,
+        },
         admin.cookie,
       );
       expect(recorded.status).toBe(200);

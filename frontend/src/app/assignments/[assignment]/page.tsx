@@ -13,6 +13,7 @@ import {
   AssignmentSkills,
 } from "@/components/lms/assignment-reading";
 import { LateDayControls } from "@/components/lms/late-day-controls";
+import { MarkHistory } from "@/components/lms/mark-history";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { PageContainer } from "@/components/page";
 import { ErrorState, LoadingState } from "@/components/states";
@@ -29,6 +30,7 @@ import {
   loadGradesForMe,
   loadLateDayBalance,
   loadLateDaysList,
+  loadMarksForMe,
   loadSubmissionAttempts,
   loadSubmissionLatest,
 } from "@/lib/lms";
@@ -127,6 +129,10 @@ export default function AssignmentDetailPage({
     me && session ? () => loadGradesForMe() : null,
     [me, session],
   );
+  const { data: marksData, refetch: refetchMarks } = useQuery(
+    me && session ? () => loadMarksForMe() : null,
+    [me, session],
+  );
 
   const { data: gradeItemData } = useQuery(
     me && session ? () => api.grades.item({ item: assignment }) : null,
@@ -167,6 +173,7 @@ export default function AssignmentDetailPage({
     refetchLate();
     refetchLateUse();
     refetchGrades();
+    refetchMarks();
   };
 
   if (loading)
@@ -203,6 +210,14 @@ export default function AssignmentDetailPage({
     Boolean(asgnData && "canSubmit" in asgnData && asgnData.canSubmit) &&
     !isPastClose &&
     new Date(detail.availableAt) <= now;
+  const assignmentMarks = (marksData?.marks ?? []).filter(
+    (mark) => mark.item === assignment,
+  );
+  const usesPoints =
+    (gradeItemData &&
+      !("error" in gradeItemData) &&
+      gradeItemData.method === "POINTS") ||
+    assignmentMarks.length > 0;
 
   return (
     <PageContainer>
@@ -227,7 +242,7 @@ export default function AssignmentDetailPage({
         </div>
         <Button asChild variant="outline" size="sm" className="shrink-0">
           <Link href="/grades">
-            <GraduationCap className="size-4 mr-1" /> View assessments
+            <GraduationCap className="size-4 mr-1" /> View grades
           </Link>
         </Button>
       </div>
@@ -238,9 +253,11 @@ export default function AssignmentDetailPage({
             <AssignmentInstructions instructions={detail.instructions} />
           )}
 
-          {gradeItemData && !("error" in gradeItemData) && (
-            <AssignmentSkills criteria={gradeItemData.criteria} />
-          )}
+          {gradeItemData &&
+            !("error" in gradeItemData) &&
+            gradeItemData.method === "COMPETENCY" && (
+              <AssignmentSkills criteria={gradeItemData.criteria} />
+            )}
 
           {canSubmit && (
             <Card density="compact">
@@ -334,13 +351,17 @@ export default function AssignmentDetailPage({
           )}
 
           <section className="space-y-4">
-            <h2 className="text-lg font-semibold">Assessments</h2>
-            <AssessmentHistory
-              assessments={(gradesData?.grades ?? []).filter(
-                (g) => g.item === assignment,
-              )}
-              toggle={false}
-            />
+            <h2 className="text-lg font-semibold">Grade</h2>
+            {usesPoints ? (
+              <MarkHistory marks={assignmentMarks} />
+            ) : (
+              <AssessmentHistory
+                assessments={(gradesData?.grades ?? []).filter(
+                  (grade) => grade.item === assignment,
+                )}
+                toggle={false}
+              />
+            )}
           </section>
         </div>
 

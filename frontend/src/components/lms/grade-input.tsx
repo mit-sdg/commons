@@ -48,14 +48,24 @@ export function GradeInput({
     session ? async () => unwrap(await api.grades["for-item"]({ item })) : null,
     [session, learner, item, evidence],
   );
+  const setup = useQuery(
+    session ? async () => unwrap(await api.grades.item({ item })) : null,
+    [session, item],
+  );
   const [busy, setBusy] = useState(false);
   const assessment = query.data?.grades.find(
     (a) => a.learner === learner && a.evidence === evidence,
   );
   async function start() {
+    if (!setup.data) return;
     setBusy(true);
     try {
-      const result = await api.grades.record({ learner, item, evidence });
+      const result = await api.grades.record({
+        learner,
+        item,
+        evidence,
+        generation: setup.data.generation,
+      });
       if ("error" in result)
         toast.error(
           result.error === "INVALID_REQUEST"
@@ -67,10 +77,17 @@ export function GradeInput({
       setBusy(false);
     }
   }
-  if (query.loading && !query.data)
+  if ((query.loading && !query.data) || (setup.loading && !setup.data))
     return <LoadingState label="Loading assessment…" />;
-  if (query.error)
-    return <ErrorState message={query.error} onRetry={query.refetch} />;
+  if (query.error || setup.error)
+    return (
+      <ErrorState
+        message={query.error ?? setup.error ?? "Could not load grading setup."}
+        onRetry={() => {
+          void Promise.all([query.refetch(), setup.refetch()]);
+        }}
+      />
+    );
   return (
     <div className={className}>
       <Facts className="mb-3 text-sm">
@@ -93,7 +110,7 @@ export function GradeInput({
               ? "Start an assessment of the selected attempt. Its rubric editions are fixed when you start."
               : "No attempt selected. You can record an assignment excusal; assessing work requires selecting a submitted attempt."}
           </p>
-          <Button disabled={busy} onClick={start}>
+          <Button disabled={busy || !setup.data} onClick={start}>
             {evidence ? "Start assessment" : "Record assignment excusal"}
           </Button>
         </div>

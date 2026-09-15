@@ -78,6 +78,10 @@ export function AssignmentForm({
     () => existing?.targets?.map(String) ?? [],
   );
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [gradingMethod, setGradingMethod] = useState<"COMPETENCY" | "POINTS">(
+    "COMPETENCY",
+  );
+  const [maxPoints, setMaxPoints] = useState("100");
   const [showClose, setShowClose] = useState(Boolean(existing?.closeAt));
   const [loading, setLoading] = useState(false);
   const { data: sectionsData, loading: sectionsLoading } = useQuery(
@@ -97,6 +101,14 @@ export function AssignmentForm({
       : "";
   const scheduleValid =
     Boolean(availableAt && dueAt) && !availableError && !dueError;
+  const numericMaximum = Number(maxPoints);
+  const maximumValid =
+    Boolean(existing) ||
+    !acceptsSubmissions ||
+    gradingMethod !== "POINTS" ||
+    (maxPoints.trim() !== "" &&
+      Number.isFinite(numericMaximum) &&
+      numericMaximum > 0);
 
   function toggleTarget(section: string) {
     setTargets((current) =>
@@ -107,7 +119,7 @@ export function AssignmentForm({
   }
 
   async function save() {
-    if (!session || !scheduleValid) return;
+    if (!session || !scheduleValid || !maximumValid) return;
     setLoading(true);
     try {
       const rawPayload = {
@@ -168,7 +180,22 @@ export function AssignmentForm({
         const savedAssignment =
           existing?.assignment ??
           ("assignment" in result ? result.assignment : "");
-        if (!existing && acceptsSubmissions) {
+        if (!existing && acceptsSubmissions && gradingMethod === "POINTS") {
+          try {
+            const configured = await api.grades["configure-method"]({
+              item: savedAssignment,
+              method: "POINTS",
+              maxPoints: numericMaximum,
+              generation: 0,
+            });
+            if ("error" in configured) throw new Error(configured.error);
+          } catch {
+            toast.error(
+              "Draft saved, but points grading could not be configured. Review its grading setup before publishing.",
+            );
+          }
+        }
+        if (!existing && acceptsSubmissions && gradingMethod === "COMPETENCY") {
           for (const [position, basis] of selectedSkills.entries()) {
             try {
               const added = await api.grades["add-criterion"]({
@@ -314,12 +341,73 @@ export function AssignmentForm({
       ) : null}
 
       {!existing && acceptsSubmissions && permissions.can("grade") && (
-        <CreationSkills
-          selected={selectedSkills}
-          onChange={setSelectedSkills}
-          disabled={loading}
-        />
+        <section className="space-y-3 border-t pt-6">
+          <h2 className="font-medium">Grading</h2>
+          <div className="flex flex-wrap gap-2" aria-label="Grading method">
+            {(
+              [
+                ["COMPETENCY", "Competency"],
+                ["POINTS", "Points"],
+              ] as const
+            ).map(([value, label]) => (
+              <Button
+                key={value}
+                type="button"
+                size="sm"
+                variant={gradingMethod === value ? "default" : "outline"}
+                aria-pressed={gradingMethod === value}
+                disabled={loading}
+                onClick={() => setGradingMethod(value)}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {gradingMethod === "POINTS"
+              ? "Enter one assignment-level score for each learner."
+              : "Assess the selected skills against their rubrics."}
+          </p>
+          {gradingMethod === "POINTS" && (
+            <div className="space-y-2">
+              <Label htmlFor="asgn-max-points">Maximum points</Label>
+              <Input
+                id="asgn-max-points"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="any"
+                className="w-32"
+                value={maxPoints}
+                disabled={loading}
+                aria-invalid={!maximumValid}
+                aria-describedby={
+                  maximumValid ? undefined : "asgn-max-points-error"
+                }
+                onChange={(event) => setMaxPoints(event.target.value)}
+              />
+              {!maximumValid && (
+                <p
+                  id="asgn-max-points-error"
+                  className="text-xs text-destructive"
+                >
+                  Enter a maximum greater than zero.
+                </p>
+              )}
+            </div>
+          )}
+        </section>
       )}
+      {!existing &&
+        acceptsSubmissions &&
+        permissions.can("grade") &&
+        gradingMethod === "COMPETENCY" && (
+          <CreationSkills
+            selected={selectedSkills}
+            onChange={setSelectedSkills}
+            disabled={loading}
+          />
+        )}
       <section className="space-y-4 border-t pt-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="font-medium">Schedule</h2>
@@ -422,6 +510,7 @@ export function AssignmentForm({
             loading ||
             !title.trim() ||
             !scheduleValid ||
+            !maximumValid ||
             (audience === "TARGETS" && targets.length === 0)
           }
         >

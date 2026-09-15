@@ -392,7 +392,12 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 
 #### Actions
 
-- `record(learner: Learner, item: Item, evidence: Evidence, grader: Grader, criteria: Json, at: Date) : return (grade: Grade, version: Number)`
+- `configure(item: Item, method: String, maxPoints: Number, generation: Number, discard: Bool, expectedCount: Number) : return (item: Item, method: String, maxPoints: Number, generation: Number, discarded: Number)`
+  - Refuses `INVALID_GRADING_CONFIGURATION`: Choose competency or points grading with a positive finite maximum.
+  - Refuses `GRADE_CONFLICT`: The grading setup or grades changed. Reload and review before trying again.
+  - Refuses `GRADING_RECORDS_EXIST`: Changing this grading setup will delete existing grades. Confirm the deletion and try again.
+- `record(learner: Learner, item: Item, evidence: Evidence, grader: Grader, criteria: Json, generation: Number, at: Date) : return (grade: Grade, version: Number)`
+  - Refuses `GRADE_CONFLICT`: The grading method changed. Reload before editing this assessment.
   - Refuses `INVALID_JUDGMENTS`: Select distinct criteria.
 - `save(grade: Grade, version: Number, grader: Grader, judgments: Json, feedback: String, at: Date) : return (grade: Grade, version: Number)`
   - Refuses `GRADE_NOT_FOUND`: There is no assessment.
@@ -402,7 +407,8 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
   - Refuses `GRADE_NOT_FOUND`: There is no assessment.
   - Refuses `GRADE_CONFLICT`: This assessment changed or is locked. Reload before editing.
   - Refuses `GRADE_INCOMPLETE`: Assess every criterion or explicitly mark it Not assessed before release.
-- `releaseItem(item: Item, grader: Grader, at: Date) : return (released: Json, skipped: Json, unconfirmed: Json)`
+- `releaseItem(item: Item, generation: Number, grader: Grader, at: Date) : return (released: Json, skipped: Json, unconfirmed: Json)`
+  - Refuses `GRADE_CONFLICT`: The grading method changed. Reload before editing this assessment.
 - `retract(grade: Grade, version: Number, grader: Grader, at: Date) : return (grade: Grade, version: Number)`
   - Refuses `GRADE_NOT_FOUND`: There is no assessment.
   - Refuses `GRADE_CONFLICT`: This assessment changed or is locked. Reload before editing.
@@ -413,13 +419,35 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
   - Refuses `GRADE_NOT_FOUND`: There is no assessment.
   - Refuses `GRADE_CONFLICT`: This assessment changed or is locked. Reload before editing.
   - Refuses `INVALID_JUDGMENTS`: Feedback must be at most 20000 characters.
+- `recordMark(learner: Learner, item: Item, evidence: Evidence, grader: Grader, score: Number, feedback: String, generation: Number, version: Number, at: Date) : return (mark: Mark, version: Number)`
+  - Refuses `MARK_CONFLICT`: This point grade changed or is locked. Reload before editing.
+  - Refuses `INVALID_MARK`: Use a finite score from zero through the maximum and feedback of at most 20000 characters.
+- `releaseMark(mark: Mark, version: Number, at: Date) : return (mark: Mark, version: Number)`
+  - Refuses `MARK_NOT_FOUND`: There is no point grade.
+  - Refuses `MARK_CONFLICT`: This point grade changed or is locked. Reload before editing.
+  - Refuses `MARK_INCOMPLETE`: Enter a score before releasing this grade.
+- `retractMark(mark: Mark, version: Number, at: Date) : return (mark: Mark, version: Number)`
+  - Refuses `MARK_NOT_FOUND`: There is no point grade.
+  - Refuses `MARK_CONFLICT`: This point grade changed or is locked. Reload before editing.
+- `restoreExcusedMark(mark: Mark, version: Number, at: Date) : return (mark: Mark, version: Number)`
+  - Refuses `MARK_NOT_FOUND`: There is no point grade.
+  - Refuses `MARK_CONFLICT`: This point grade changed or is locked. Reload before editing.
+- `excuseMark(learner: Learner, item: Item, evidence: Evidence, grader: Grader, feedback: String, generation: Number, mark: Mark, version: Number, at: Date) : return (mark: Mark, version: Number)`
+  - Refuses `INVALID_MARK`: Feedback must be at most 20000 characters.
+  - Refuses `MARK_CONFLICT`: This point grade changed or is locked. Reload before editing.
+- `releaseMarks(item: Item, generation: Number, at: Date) : return (released: Json, skipped: Json, unconfirmed: Json)`
+  - Refuses `MARK_CONFLICT`: The grading method changed. Reload before editing this grade.
 
 #### Queries
 
+- `_getConfiguration(item: String) : optional (item: String, method: String, generation: Number, maxPoints: Number)`
 - `_getCriteria(grade: String) : many (criterion: String)`
 - `_getGrade(grade: String) : optional (grade: String, learner: String, item: String, evidence: String, grader: String, criteria: Json, judgments: Json, feedback: String, status: String, version: Number, createdAt: Date, updatedAt: Date, releasedAt: Date, history: Json)`
 - `_getGradesForLearner(learner: String) : many (grade: String, learner: String, item: String, evidence: String, grader: String, criteria: Json, judgments: Json, feedback: String, status: String, version: Number, createdAt: Date, updatedAt: Date, releasedAt: Date, history: Json)`
 - `_getGradesForItem(item: String) : many (grade: String, learner: String, item: String, evidence: String, grader: String, criteria: Json, judgments: Json, feedback: String, status: String, version: Number, createdAt: Date, updatedAt: Date, releasedAt: Date, history: Json)`
+- `_getMark(mark: String) : optional (mark: String, learner: String, item: String, evidence: String, grader: String, score: Number, scored: Bool, outOf: Number, feedback: String, status: String, version: Number, createdAt: Date, updatedAt: Date, releasedAt: Date)`
+- `_getMarksForLearner(learner: String) : many (mark: String, learner: String, item: String, evidence: String, grader: String, score: Number, scored: Bool, outOf: Number, feedback: String, status: String, version: Number, createdAt: Date, updatedAt: Date, releasedAt: Date)`
+- `_getMarksForItem(item: String) : many (mark: String, learner: String, item: String, evidence: String, grader: String, score: Number, scored: Bool, outOf: Number, feedback: String, status: String, version: Number, createdAt: Date, updatedAt: Date, releasedAt: Date)`
 
 #### Instances
 
@@ -2086,22 +2114,78 @@ Authored path: `Forum.threads.intact`.
 ### (learner) may be assessed on (item) using (evidence)
 
 Authored path: `Course.grades.mayStartAssessment`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 79.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 94.
 
 ```view
 (learner) may be assessed on (item) using (evidence) — inputs (learner, item, evidence); outputs (); bindings ()
   where
     view "(user) is an active student" with (user: learner)
     Itemizing._getItem (item) has (status: "ACTIVE")
+    Grading._getConfiguration (item) has (method: "COMPETENCY")
     Assigning._getAssignments () has (acceptsSubmissions: true, assignment: item, status: "PUBLISHED")
     Assigning._isAssigned (assignee: learner, assignment: item) has (assigned: true)
     Submitting._getAttempts (assignment: item, submitter: learner) has (status: "SUBMITTED", submission: evidence)
   where
     view "(user) is an active student" with (user: learner)
     Itemizing._getItem (item) has (status: "ACTIVE")
+    Grading._getConfiguration (item) has (method: "COMPETENCY")
     Assigning._getAssignments () has (acceptsSubmissions: true, assignment: item, status: "PUBLISHED")
     Assigning._isAssigned (assignee: learner, assignment: item) has (assigned: true)
     evidence is among [""]
+```
+
+### (learner) may receive a point grade on (item) using (evidence)
+
+Authored path: `Course.marks.mayMarkWork`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 20.
+
+```view
+(learner) may receive a point grade on (item) using (evidence) — inputs (learner, item, evidence); outputs (); bindings ()
+  where
+    view "(user) is an active student" with (user: learner)
+    Itemizing._getItem (item) has (status: "ACTIVE")
+    Grading._getConfiguration (item) has (method: "POINTS")
+    Assigning._getAssignments () has (acceptsSubmissions: true, assignment: item, status: "PUBLISHED")
+    Assigning._isAssigned (assignee: learner, assignment: item) has (assigned: true)
+    Submitting._getAttempts (assignment: item, submitter: learner) has (status: "SUBMITTED", submission: evidence)
+```
+
+### (learner) may be excused from point grading on (item) using (evidence)
+
+Authored path: `Course.marks.mayExcuseWork`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 21.
+
+```view
+(learner) may be excused from point grading on (item) using (evidence) — inputs (learner, item, evidence); outputs (); bindings ()
+  where
+    view "(user) is an active student" with (user: learner)
+    Itemizing._getItem (item) has (status: "ACTIVE")
+    Grading._getConfiguration (item) has (method: "POINTS")
+    Assigning._getAssignments () has (acceptsSubmissions: true, assignment: item, status: "PUBLISHED")
+    Assigning._isAssigned (assignee: learner, assignment: item) has (assigned: true)
+    evidence is among [""]
+  where view "(learner) may receive a point grade on (item) using (evidence)" with (evidence, item, learner)
+```
+
+### (learner) may correct an existing point grade on (item) using unchanged (evidence)
+
+Authored path: `Course.marks.mayCorrectMark`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 22.
+
+```view
+(learner) may correct an existing point grade on (item) using unchanged (evidence) — inputs (learner, item, evidence); outputs (); bindings ()
+  where Grading._getMarksForLearner (learner) has (evidence, item) and not (evidence: "")
+```
+
+### (learner) may record a point grade on (item) using (evidence)
+
+Authored path: `Course.marks.mayRecordMark`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 24.
+
+```view
+(learner) may record a point grade on (item) using (evidence) — inputs (learner, item, evidence); outputs (); bindings ()
+  where view "(learner) may receive a point grade on (item) using (evidence)" with (evidence, item, learner)
+  where view "(learner) may correct an existing point grade on (item) using unchanged (evidence)" with (evidence, item, learner)
 ```
 
 ### the round of (leg) in (run)
@@ -2182,6 +2266,27 @@ the round of (leg) in (run) — inputs (run, leg); outputs (round, open); bindin
     standing is voteStanding (choices, kind)
     standing is among ["bare"]
     no view "(leg) takes its choices" with (leg)
+```
+
+### (mark) may be re-excused for (learner) on (item) using unchanged (evidence)
+
+Authored path: `Course.marks.mayCorrectExcusal`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 23.
+
+```view
+(mark) may be re-excused for (learner) on (item) using unchanged (evidence) — inputs (mark, learner, item, evidence); outputs (); bindings ()
+  where Grading._getMark (mark) has (evidence, item, learner)
+```
+
+### (mark) may be excused for (learner) on (item) using (evidence)
+
+Authored path: `Course.marks.mayExcuseMark`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 25.
+
+```view
+(mark) may be excused for (learner) on (item) using (evidence) — inputs (mark, learner, item, evidence); outputs (); bindings ()
+  where view "(learner) may be excused from point grading on (item) using (evidence)" with (evidence, item, learner)
+  where view "(mark) may be re-excused for (learner) on (item) using unchanged (evidence)" with (evidence, item, learner, mark)
 ```
 
 ### (member) removed somebody else from (list)
@@ -3024,7 +3129,7 @@ Authored path: `Course.submissions.mayReadSubmissionArtifact`.
 ### (user) may read assessment (grade)
 
 Authored path: `Course.grades.mayReadAssessment`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 29.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 36.
 
 ```view
 (user) may read assessment (grade) — inputs (user, grade); outputs (); bindings (status)
@@ -3038,7 +3143,7 @@ Authored path: `Course.grades.mayReadAssessment`.
 ### (user) may read assessment item (item)
 
 Authored path: `Course.grades.mayReadItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 27.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 34.
 
 ```view
 (user) may read assessment item (item) — inputs (user, item); outputs (); bindings ()
@@ -3064,6 +3169,11 @@ Authored path: `Course.assignments.mayReadLearnerAssignment`.
     view "(user) is an active student" with (user)
     Assigning._getAssignments () has (assignment, status: "ARCHIVED")
     Grading._getGradesForLearner (learner: user) has (item: assignment, status)
+    status is among ["RELEASED", "EXCUSED"]
+  where
+    view "(user) is an active student" with (user)
+    Assigning._getAssignments () has (assignment, status: "ARCHIVED")
+    Grading._getMarksForLearner (learner: user) has (item: assignment, status)
     status is among ["RELEASED", "EXCUSED"]
 ```
 
@@ -4122,7 +4232,7 @@ Former "the artifact (artifact) of (assignment) by (submitter) for (user)" — i
 ### the fixed criteria of assessment (grade)
 
 Authored path: `Course.grades.theAssessmentCriteria`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 33.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 40.
 
 ```former
 Former "the fixed criteria of assessment (grade)" — inputs (grade); bindings (criterion, basis, position, standard, number, name, description, deficient, emergent, competent, expert, referenceUrl); promises exactly one record — forms:
@@ -4147,7 +4257,7 @@ Former "the fixed criteria of assessment (grade)" — inputs (grade); bindings (
 ### the assessment (grade)
 
 Authored path: `Course.grades.theAssessment`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 43.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 50.
 
 ```former
 Former "the assessment (grade)" — inputs (grade); bindings (learner, item, evidence, grader, judgments, feedback, status, version, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
@@ -4177,7 +4287,7 @@ Former "the assessment (grade)" — inputs (grade); bindings (learner, item, evi
 ### the assessments of (learner)
 
 Authored path: `Course.grades.theGradesOf`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 39.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 46.
 
 ```former
 Former "the assessments of (learner)" — inputs (learner); bindings (grade, item, evidence, grader, judgments, feedback, status, version, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
@@ -4207,7 +4317,7 @@ Former "the assessments of (learner)" — inputs (learner); bindings (grade, ite
 ### the assessments on (item)
 
 Authored path: `Course.grades.theGradesOn`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 41.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 48.
 
 ```former
 Former "the assessments on (item)" — inputs (item); bindings (grade, learner, evidence, grader, judgments, feedback, status, version, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
@@ -4543,7 +4653,7 @@ Former "the creation-ordered feed index for (reader)" — inputs (reader); bindi
 ### the criteria of (item)
 
 Authored path: `Course.grades.theCriteriaOf`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 31.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 38.
 
 ```former
 Former "the criteria of (item)" — inputs (item); bindings (criterion, basis, position, standard, number, name, description, deficient, emergent, competent, expert, referenceUrl); promises exactly one record — forms:
@@ -4592,7 +4702,7 @@ Former "the current mail eligibility of (recipient) for (post) at (queued)" — 
 ### the current standards ()
 
 Authored path: `Course.grades.theStandards`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 49.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 62.
 
 ```former
 Former "the current standards ()" — inputs (); bindings (standard, edition, number, name, description, deficient, emergent, competent, expert, referenceUrl); promises exactly one record — forms:
@@ -4932,10 +5042,40 @@ Former "the forward links of (source) for (reader)" — inputs (source, reader);
       target
 ```
 
+### the point grades of (learner)
+
+Authored path: `Course.grades.theMarksOf`.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 54.
+
+```former
+Former "the point grades of (learner)" — inputs (learner); bindings (mark, item, evidence, grader, score, scored, outOf, feedback, status, version, createdAt, updatedAt, releasedAt, label, submittedAt, number); promises exactly one record — forms:
+  each Grading._getMarksForLearner (learner) has (createdAt, evidence, feedback, grader, item, learner, mark, outOf, releasedAt, score, scored, status, updatedAt, version)
+    where whether Itemizing._getItem (item) has (label)
+    where whether Submitting._getAttempts (assignment: item, submitter: learner) has (number, submission: evidence, submittedAt)
+    form a record of
+      attempt: number
+      createdAt
+      evidence
+      feedback
+      grader
+      item
+      label
+      learner
+      mark
+      outOf
+      releasedAt
+      score
+      scored
+      status
+      submittedAt
+      updatedAt
+      version
+```
+
 ### the gradebook learners ()
 
 Authored path: `Course.grades.theGradebookLearners`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 45.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 58.
 
 ```former
 Former "the gradebook learners ()" — inputs (); bindings (user, seat, section, email, displayName); promises exactly one record — forms:
@@ -4945,6 +5085,7 @@ Former "the gradebook learners ()" — inputs (); bindings (user, seat, section,
       displayName
       email
       grades: former "the assessments of (learner)" with (learner: user)
+      marks: former "the point grades of (learner)" with (learner: user)
       seat
       section
       user
@@ -4953,15 +5094,17 @@ Former "the gradebook learners ()" — inputs (); bindings (user, seat, section,
 ### the gradebook ()
 
 Authored path: `Course.grades.theGradebook`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 47.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 60.
 
 ```former
-Former "the gradebook ()" — inputs (); bindings (item, label); promises exactly one record — forms:
+Former "the gradebook ()" — inputs (); bindings (item, label, method); promises exactly one record — forms:
   a record of
     items: each Itemizing._getItems () has (item, label)
+      where Grading._getConfiguration (item) has (method)
       form a record of
         item
         label
+        method
     learners: former "the gradebook learners ()"
 ```
 
@@ -5465,6 +5608,36 @@ Former "the pins of (scope) for (reader)" — inputs (scope, reader); bindings (
       priority
 ```
 
+### the point grades on (item)
+
+Authored path: `Course.grades.theMarksOn`.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 56.
+
+```former
+Former "the point grades on (item)" — inputs (item); bindings (mark, learner, evidence, grader, score, scored, outOf, feedback, status, version, createdAt, updatedAt, releasedAt, displayName, submittedAt, number); promises exactly one record — forms:
+  each Grading._getMarksForItem (item) has (createdAt, evidence, feedback, grader, item, learner, mark, outOf, releasedAt, score, scored, status, updatedAt, version)
+    where whether Profiling._getProfileFields (user: learner) has (displayName)
+    where whether Submitting._getAttempts (assignment: item, submitter: learner) has (number, submission: evidence, submittedAt)
+    form a record of
+      attempt: number
+      createdAt
+      displayName
+      evidence
+      feedback
+      grader
+      item
+      learner
+      mark
+      outOf
+      releasedAt
+      score
+      scored
+      status
+      submittedAt
+      updatedAt
+      version
+```
+
 ### the post (post)
 
 Authored path: `Forum.posts.thePost`.
@@ -5759,7 +5932,7 @@ Former "the relays" — inputs (); bindings (relay, title, createdAt, leg, mater
 ### the released assessments of (learner)
 
 Authored path: `Course.grades.theReleasedGradesOf`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 37.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 44.
 
 ```former
 Former "the released assessments of (learner)" — inputs (learner); bindings (grade, item, evidence, grader, judgments, feedback, status, version, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
@@ -5781,6 +5954,37 @@ Former "the released assessments of (learner)" — inputs (learner); bindings (g
       label
       learner
       releasedAt
+      status
+      submittedAt
+      updatedAt
+      version
+```
+
+### the released point grades of (learner)
+
+Authored path: `Course.grades.theReleasedMarksOf`.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 52.
+
+```former
+Former "the released point grades of (learner)" — inputs (learner); bindings (mark, item, evidence, grader, score, scored, outOf, feedback, status, version, createdAt, updatedAt, releasedAt, label, submittedAt, number); promises exactly one record — forms:
+  each Grading._getMarksForLearner (learner) has (createdAt, evidence, feedback, grader, item, learner, mark, outOf, releasedAt, score, scored, status, updatedAt, version)
+    where status is among ["RELEASED", "EXCUSED"]
+    where whether Itemizing._getItem (item) has (label)
+    where whether Submitting._getAttempts (assignment: item, submitter: learner) has (number, submission: evidence, submittedAt)
+    form a record of
+      attempt: number
+      createdAt
+      evidence
+      feedback
+      grader
+      item
+      label
+      learner
+      mark
+      outOf
+      releasedAt
+      score
+      scored
       status
       submittedAt
       updatedAt
@@ -5972,7 +6176,7 @@ Former "the sections ()" — inputs (); bindings (section, name, location, meeti
 ### the selected criterion identities of (item)
 
 Authored path: `Course.grades.selectedCriteria`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 35.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 42.
 
 ```former
 Former "the selected criterion identities of (item)" — inputs (item); bindings (criterion); promises exactly one record — forms:
@@ -9176,8 +9380,8 @@ then
 ### Course.grades.GradesAddCriterion:forbidden
 
 Authored path: `Course.grades.GradesAddCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 73.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 107.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 88.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 123.
 
 ```reaction
 when RequestBoundary.request (basis, item, path: "/grades/add-criterion", position, requestId, session)
@@ -9191,8 +9395,8 @@ then
 ### Course.grades.GradesAddCriterion:missing
 
 Authored path: `Course.grades.GradesAddCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 73.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 107.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 88.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 123.
 
 ```reaction
 when RequestBoundary.request (basis, item, path: "/grades/add-criterion", position, requestId, session)
@@ -9207,8 +9411,8 @@ then
 ### Course.grades.GradesAddCriterion:success
 
 Authored path: `Course.grades.GradesAddCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 73.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 107.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 88.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 123.
 
 ```reaction
 when RequestBoundary.request (basis, item, path: "/grades/add-criterion", position, requestId, session)
@@ -9223,8 +9427,8 @@ then
 ### Course.grades.GradesAddCriterion:success#2
 
 Authored path: `Course.grades.GradesAddCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 73.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 107.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 88.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 123.
 
 ```reaction
 when Itemizing.addCriterion (basis, item, position, criterion), asked by Course.grades.GradesAddCriterion:success
@@ -9237,8 +9441,8 @@ then
 ### Course.grades.GradesConfigureItem:forbidden
 
 Authored path: `Course.grades.GradesConfigureItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 71.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 106.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 86.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 122.
 
 ```reaction
 when RequestBoundary.request (item, label, path: "/grades/configure-item", requestId, session)
@@ -9252,8 +9456,8 @@ then
 ### Course.grades.GradesConfigureItem:missing
 
 Authored path: `Course.grades.GradesConfigureItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 71.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 106.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 86.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 122.
 
 ```reaction
 when RequestBoundary.request (item, label, path: "/grades/configure-item", requestId, session)
@@ -9268,8 +9472,8 @@ then
 ### Course.grades.GradesConfigureItem:success
 
 Authored path: `Course.grades.GradesConfigureItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 71.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 106.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 86.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 122.
 
 ```reaction
 when RequestBoundary.request (item, label, path: "/grades/configure-item", requestId, session)
@@ -9284,8 +9488,8 @@ then
 ### Course.grades.GradesConfigureItem:success#2
 
 Authored path: `Course.grades.GradesConfigureItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 71.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 106.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 86.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 122.
 
 ```reaction
 when Itemizing.configureItem (item, label, gradeItem), asked by Course.grades.GradesConfigureItem:success
@@ -9295,11 +9499,72 @@ then
   RequestBoundary.respond (gradeItem, requestId)
 ```
 
+### Course.grades.GradesConfigureMethod:forbidden
+
+Authored path: `Course.grades.GradesConfigureMethod`.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 84.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 121.
+
+```reaction
+when RequestBoundary.request (discard, expectedCount, generation, item, maxPoints, method, path: "/grades/configure-method", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.grades.GradesConfigureMethod:missing
+
+Authored path: `Course.grades.GradesConfigureMethod`.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 84.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 121.
+
+```reaction
+when RequestBoundary.request (discard, expectedCount, generation, item, maxPoints, method, path: "/grades/configure-method", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  no Itemizing._getItem (item) has (status: "ACTIVE")
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.grades.GradesConfigureMethod:success
+
+Authored path: `Course.grades.GradesConfigureMethod`.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 84.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 121.
+
+```reaction
+when RequestBoundary.request (discard, expectedCount, generation, item, maxPoints, method, path: "/grades/configure-method", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  Itemizing._getItem (item) has (status: "ACTIVE")
+then
+  Grading.configure (discard, expectedCount, generation, item, maxPoints, method)
+```
+
+### Course.grades.GradesConfigureMethod:success#2
+
+Authored path: `Course.grades.GradesConfigureMethod`.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 84.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 121.
+
+```reaction
+when Grading.configure (discard, expectedCount, generation, item, maxPoints, method, discarded, result.generation: configuredGeneration, result.maxPoints: configuredMaximum, result.method: configuredMethod), asked by Course.grades.GradesConfigureMethod:success
+where
+  earlier, RequestBoundary.request (discard, expectedCount, generation, item, maxPoints, method, path: "/grades/configure-method", requestId, session)
+then
+  RequestBoundary.respond (discarded, generation: configuredGeneration, item, maxPoints: configuredMaximum, method: configuredMethod, requestId)
+```
+
 ### Course.grades.GradesDefineStandard:forbidden
 
 Authored path: `Course.grades.GradesDefineStandard`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 51.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 96.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 64.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 111.
 
 ```reaction
 when RequestBoundary.request (competent, deficient, description, emergent, expert, name, path: "/grades/define-standard", referenceUrl, requestId, session)
@@ -9313,8 +9578,8 @@ then
 ### Course.grades.GradesDefineStandard:success
 
 Authored path: `Course.grades.GradesDefineStandard`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 51.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 96.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 64.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 111.
 
 ```reaction
 when RequestBoundary.request (competent, deficient, description, emergent, expert, name, path: "/grades/define-standard", referenceUrl, requestId, session)
@@ -9329,8 +9594,8 @@ then
 ### Course.grades.GradesDefineStandard:success#2
 
 Authored path: `Course.grades.GradesDefineStandard`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 51.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 96.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 64.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 111.
 
 ```reaction
 when StandardSetting.define (competent, deficient, description, emergent, expert, name, referenceUrl, edition, standard), asked by Course.grades.GradesDefineStandard:success
@@ -9343,8 +9608,8 @@ then
 ### Course.grades.GradesDetail:hidden
 
 Authored path: `Course.grades.GradesDetail`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 77.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 109.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 92.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 125.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/detail", requestId, session)
@@ -9358,8 +9623,8 @@ then
 ### Course.grades.GradesDetail:missing
 
 Authored path: `Course.grades.GradesDetail`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 77.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 109.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 92.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 125.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/detail", requestId, session)
@@ -9374,8 +9639,8 @@ then
 ### Course.grades.GradesDetail:success
 
 Authored path: `Course.grades.GradesDetail`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 77.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 109.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 92.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 125.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/detail", requestId, session)
@@ -9390,8 +9655,8 @@ then
 ### Course.grades.GradesExcuse:forbidden
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 67.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 104.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 80.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 119.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, path: "/grades/excuse", requestId, session, version)
@@ -9405,8 +9670,8 @@ then
 ### Course.grades.GradesExcuse:success
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 67.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 104.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 80.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 119.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, path: "/grades/excuse", requestId, session, version)
@@ -9421,8 +9686,8 @@ then
 ### Course.grades.GradesExcuse:success#2
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 67.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 104.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 80.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 119.
 
 ```reaction
 when Grading.excuse (at, feedback, grade, grader: user, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesExcuse:success
@@ -9435,8 +9700,8 @@ then
 ### Course.grades.GradesExport:forbidden
 
 Authored path: `Course.grades.GradesExport`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 93.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 116.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 108.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 132.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -9450,8 +9715,8 @@ then
 ### Course.grades.GradesExport:success
 
 Authored path: `Course.grades.GradesExport`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 93.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 116.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 108.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 132.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -9465,8 +9730,8 @@ then
 ### Course.grades.GradesForItem:forbidden
 
 Authored path: `Course.grades.GradesForItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 89.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 104.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 130.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
@@ -9480,8 +9745,8 @@ then
 ### Course.grades.GradesForItem:success
 
 Authored path: `Course.grades.GradesForItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 89.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 104.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 130.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
@@ -9495,8 +9760,8 @@ then
 ### Course.grades.GradesForMe:not-student
 
 Authored path: `Course.grades.GradesForMe`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 83.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 111.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 98.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 127.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
@@ -9510,8 +9775,8 @@ then
 ### Course.grades.GradesForMe:success
 
 Authored path: `Course.grades.GradesForMe`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 83.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 111.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 98.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 127.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
@@ -9525,8 +9790,8 @@ then
 ### Course.grades.GradesForStudent:forbidden
 
 Authored path: `Course.grades.GradesForStudent`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 87.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 113.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 102.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 129.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
@@ -9540,8 +9805,8 @@ then
 ### Course.grades.GradesForStudent:success
 
 Authored path: `Course.grades.GradesForStudent`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 87.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 113.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 102.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 129.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
@@ -9555,8 +9820,8 @@ then
 ### Course.grades.GradesGradebook:forbidden
 
 Authored path: `Course.grades.GradesGradebook`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 91.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 115.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 106.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 131.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
@@ -9570,8 +9835,8 @@ then
 ### Course.grades.GradesGradebook:success
 
 Authored path: `Course.grades.GradesGradebook`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 91.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 115.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 106.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 131.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
@@ -9585,8 +9850,8 @@ then
 ### Course.grades.GradesItem:hidden
 
 Authored path: `Course.grades.GradesItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 75.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 108.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 90.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 124.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -9600,8 +9865,8 @@ then
 ### Course.grades.GradesItem:missing
 
 Authored path: `Course.grades.GradesItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 75.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 108.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 90.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 124.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -9616,8 +9881,8 @@ then
 ### Course.grades.GradesItem:success
 
 Authored path: `Course.grades.GradesItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 75.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 108.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 90.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 124.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -9625,18 +9890,19 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may read assessment item (item)" with (item, user)
   Itemizing._getItem (item) has (label, status)
+  Grading._getConfiguration (item) has (generation, maxPoints, method)
 then
-  RequestBoundary.respond (criteria: former "the criteria of (item)" with (item), item, label, requestId, status)
+  RequestBoundary.respond (criteria: former "the criteria of (item)" with (item), generation, item, label, maxPoints, method, requestId, status)
 ```
 
 ### Course.grades.GradesRecord:forbidden
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 81.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 110.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 96.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 126.
 
 ```reaction
-when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, session)
+when RequestBoundary.request (evidence, generation, item, learner, path: "/grades/record", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not grade" with (user)
@@ -9647,11 +9913,11 @@ then
 ### Course.grades.GradesRecord:invalid-evidence
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 81.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 110.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 96.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 126.
 
 ```reaction
-when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, session)
+when RequestBoundary.request (evidence, generation, item, learner, path: "/grades/record", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may grade" with (user)
@@ -9663,11 +9929,11 @@ then
 ### Course.grades.GradesRecord:success
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 81.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 110.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 96.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 126.
 
 ```reaction
-when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, session)
+when RequestBoundary.request (evidence, generation, item, learner, path: "/grades/record", requestId, session)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
@@ -9675,19 +9941,19 @@ where
   view "(learner) may be assessed on (item) using (evidence)" with (evidence, item, learner)
   Itemizing._getSelection (item) has (criteria)
 then
-  Grading.record (at, criteria, evidence, grader: user, item, learner)
+  Grading.record (at, criteria, evidence, generation, grader: user, item, learner)
 ```
 
 ### Course.grades.GradesRecord:success#2
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 81.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 110.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 96.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 126.
 
 ```reaction
-when Grading.record (at, criteria, evidence, grader: user, item, learner, grade, version), asked by Course.grades.GradesRecord:success
+when Grading.record (at, criteria, evidence, generation, grader: user, item, learner, grade, version), asked by Course.grades.GradesRecord:success
 where
-  earlier, RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, session)
+  earlier, RequestBoundary.request (evidence, generation, item, learner, path: "/grades/record", requestId, session)
 then
   RequestBoundary.respond (grade, requestId, version)
 ```
@@ -9695,8 +9961,8 @@ then
 ### Course.grades.GradesRelease:forbidden
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 61.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 101.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 74.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 116.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/release", requestId, session, version)
@@ -9710,8 +9976,8 @@ then
 ### Course.grades.GradesRelease:success
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 61.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 101.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 74.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 116.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/release", requestId, session, version)
@@ -9726,8 +9992,8 @@ then
 ### Course.grades.GradesRelease:success#2
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 61.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 101.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 74.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 116.
 
 ```reaction
 when Grading.release (at, grade, grader: user, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesRelease:success
@@ -9740,11 +10006,11 @@ then
 ### Course.grades.GradesReleaseItem:forbidden
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 69.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 105.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 82.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 120.
 
 ```reaction
-when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
+when RequestBoundary.request (generation, item, path: "/grades/release-item", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not grade" with (user)
@@ -9755,29 +10021,29 @@ then
 ### Course.grades.GradesReleaseItem:success
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 69.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 105.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 82.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 120.
 
 ```reaction
-when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
+when RequestBoundary.request (generation, item, path: "/grades/release-item", requestId, session)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may grade" with (user)
 then
-  Grading.releaseItem (at, grader: user, item)
+  Grading.releaseItem (at, generation, grader: user, item)
 ```
 
 ### Course.grades.GradesReleaseItem:success#2
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 69.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 105.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 82.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 120.
 
 ```reaction
-when Grading.releaseItem (at, grader: user, item, released, skipped, unconfirmed), asked by Course.grades.GradesReleaseItem:success
+when Grading.releaseItem (at, generation, grader: user, item, released, skipped, unconfirmed), asked by Course.grades.GradesReleaseItem:success
 where
-  earlier, RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
+  earlier, RequestBoundary.request (generation, item, path: "/grades/release-item", requestId, session)
 then
   RequestBoundary.respond (released, requestId, skipped, unconfirmed)
 ```
@@ -9785,8 +10051,8 @@ then
 ### Course.grades.GradesRemoveCriterion:forbidden
 
 Authored path: `Course.grades.GradesRemoveCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 57.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 99.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 70.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 114.
 
 ```reaction
 when RequestBoundary.request (criterion, path: "/grades/remove-criterion", requestId, session)
@@ -9800,8 +10066,8 @@ then
 ### Course.grades.GradesRemoveCriterion:success
 
 Authored path: `Course.grades.GradesRemoveCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 57.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 99.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 70.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 114.
 
 ```reaction
 when RequestBoundary.request (criterion, path: "/grades/remove-criterion", requestId, session)
@@ -9816,8 +10082,8 @@ then
 ### Course.grades.GradesRemoveCriterion:success#2
 
 Authored path: `Course.grades.GradesRemoveCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 57.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 99.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 70.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 114.
 
 ```reaction
 when Itemizing.removeCriterion (criterion), asked by Course.grades.GradesRemoveCriterion:success
@@ -9830,8 +10096,8 @@ then
 ### Course.grades.GradesRestoreExcused:forbidden
 
 Authored path: `Course.grades.GradesRestoreExcused`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 65.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 103.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 78.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 118.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/restore-excused", requestId, session, version)
@@ -9845,8 +10111,8 @@ then
 ### Course.grades.GradesRestoreExcused:success
 
 Authored path: `Course.grades.GradesRestoreExcused`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 65.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 103.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 78.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 118.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/restore-excused", requestId, session, version)
@@ -9861,8 +10127,8 @@ then
 ### Course.grades.GradesRestoreExcused:success#2
 
 Authored path: `Course.grades.GradesRestoreExcused`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 65.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 103.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 78.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 118.
 
 ```reaction
 when Grading.restoreExcused (at, grade, grader: user, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesRestoreExcused:success
@@ -9875,8 +10141,8 @@ then
 ### Course.grades.GradesRetract:forbidden
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 63.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 102.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 76.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 117.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/retract", requestId, session, version)
@@ -9890,8 +10156,8 @@ then
 ### Course.grades.GradesRetract:success
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 63.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 102.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 76.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 117.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/retract", requestId, session, version)
@@ -9906,8 +10172,8 @@ then
 ### Course.grades.GradesRetract:success#2
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 63.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 102.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 76.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 117.
 
 ```reaction
 when Grading.retract (at, grade, grader: user, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesRetract:success
@@ -9920,8 +10186,8 @@ then
 ### Course.grades.GradesReviseCriterion:forbidden
 
 Authored path: `Course.grades.GradesReviseCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 55.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 98.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 68.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 113.
 
 ```reaction
 when RequestBoundary.request (criterion, path: "/grades/revise-criterion", position, requestId, session)
@@ -9935,8 +10201,8 @@ then
 ### Course.grades.GradesReviseCriterion:success
 
 Authored path: `Course.grades.GradesReviseCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 55.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 98.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 68.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 113.
 
 ```reaction
 when RequestBoundary.request (criterion, path: "/grades/revise-criterion", position, requestId, session)
@@ -9951,8 +10217,8 @@ then
 ### Course.grades.GradesReviseCriterion:success#2
 
 Authored path: `Course.grades.GradesReviseCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 55.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 98.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 68.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 113.
 
 ```reaction
 when Itemizing.reviseCriterion (criterion, position), asked by Course.grades.GradesReviseCriterion:success
@@ -9965,8 +10231,8 @@ then
 ### Course.grades.GradesReviseStandard:forbidden
 
 Authored path: `Course.grades.GradesReviseStandard`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 53.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 97.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 66.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 112.
 
 ```reaction
 when RequestBoundary.request (competent, deficient, description, emergent, expectedEdition, expert, name, path: "/grades/revise-standard", referenceUrl, requestId, session, standard)
@@ -9980,8 +10246,8 @@ then
 ### Course.grades.GradesReviseStandard:success
 
 Authored path: `Course.grades.GradesReviseStandard`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 53.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 97.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 66.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 112.
 
 ```reaction
 when RequestBoundary.request (competent, deficient, description, emergent, expectedEdition, expert, name, path: "/grades/revise-standard", referenceUrl, requestId, session, standard)
@@ -9996,8 +10262,8 @@ then
 ### Course.grades.GradesReviseStandard:success#2
 
 Authored path: `Course.grades.GradesReviseStandard`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 53.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 97.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 66.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 112.
 
 ```reaction
 when StandardSetting.revise (competent, deficient, description, emergent, expectedEdition, expert, name, referenceUrl, standard, edition), asked by Course.grades.GradesReviseStandard:success
@@ -10010,8 +10276,8 @@ then
 ### Course.grades.GradesSave:forbidden
 
 Authored path: `Course.grades.GradesSave`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 59.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 100.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 72.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 115.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, judgments, path: "/grades/save", requestId, session, version)
@@ -10025,8 +10291,8 @@ then
 ### Course.grades.GradesSave:success
 
 Authored path: `Course.grades.GradesSave`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 59.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 100.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 72.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 115.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, judgments, path: "/grades/save", requestId, session, version)
@@ -10041,8 +10307,8 @@ then
 ### Course.grades.GradesSave:success#2
 
 Authored path: `Course.grades.GradesSave`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 59.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 100.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 72.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 115.
 
 ```reaction
 when Grading.save (at, feedback, grade, grader: user, judgments, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesSave:success
@@ -10055,8 +10321,8 @@ then
 ### Course.grades.GradesStandards:forbidden
 
 Authored path: `Course.grades.GradesStandards`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 85.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 112.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 100.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 128.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/standards", requestId, session)
@@ -10070,8 +10336,8 @@ then
 ### Course.grades.GradesStandards:success
 
 Authored path: `Course.grades.GradesStandards`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 85.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 112.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 100.
+- Covered by [Grading setup, assessments, and standards](../design/compositions/course/grades.md), line 128.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/standards", requestId, session)
@@ -10648,6 +10914,400 @@ where
   view "(user) is an active student" with (user: learner)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.marks.MarksExcuse:forbidden
+
+Authored path: `Course.marks.MarksExcuse`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 35.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 50.
+
+```reaction
+when RequestBoundary.request (evidence, feedback, generation, item, learner, mark, path: "/marks/excuse", requestId, session, version)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.marks.MarksExcuse:invalid-evidence
+
+Authored path: `Course.marks.MarksExcuse`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 35.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 50.
+
+```reaction
+when RequestBoundary.request (evidence, feedback, generation, item, learner, mark, path: "/marks/excuse", requestId, session, version)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  no view "(mark) may be excused for (learner) on (item) using (evidence)" with (evidence, item, learner, mark)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.marks.MarksExcuse:success
+
+Authored path: `Course.marks.MarksExcuse`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 35.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 50.
+
+```reaction
+when RequestBoundary.request (evidence, feedback, generation, item, learner, mark, path: "/marks/excuse", requestId, session, version)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  view "(mark) may be excused for (learner) on (item) using (evidence)" with (evidence, item, learner, mark)
+then
+  Grading.excuseMark (at, evidence, feedback, generation, grader: user, item, learner, mark, version)
+```
+
+### Course.marks.MarksExcuse:success#2
+
+Authored path: `Course.marks.MarksExcuse`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 35.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 50.
+
+```reaction
+when Grading.excuseMark (at, evidence, feedback, generation, grader: user, item, learner, mark, version, result.mark: saved, result.version: savedVersion), asked by Course.marks.MarksExcuse:success
+where
+  earlier, RequestBoundary.request (evidence, feedback, generation, item, learner, mark, path: "/marks/excuse", requestId, session, version)
+then
+  RequestBoundary.respond (mark: saved, requestId, version: savedVersion)
+```
+
+### Course.marks.MarksForItem:forbidden
+
+Authored path: `Course.marks.MarksForItem`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 39.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 52.
+
+```reaction
+when RequestBoundary.request (item, path: "/marks/for-item", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.marks.MarksForItem:success
+
+Authored path: `Course.marks.MarksForItem`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 39.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 52.
+
+```reaction
+when RequestBoundary.request (item, path: "/marks/for-item", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+then
+  RequestBoundary.respond (marks: former "the point grades on (item)" with (item), requestId)
+```
+
+### Course.marks.MarksForMe:not-student
+
+Authored path: `Course.marks.MarksForMe`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 43.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 54.
+
+```reaction
+when RequestBoundary.request (path: "/marks/for-me", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is not an active student" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.marks.MarksForMe:success
+
+Authored path: `Course.marks.MarksForMe`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 43.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 54.
+
+```reaction
+when RequestBoundary.request (path: "/marks/for-me", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
+then
+  RequestBoundary.respond (marks: former "the released point grades of (learner)" with (learner: user), requestId)
+```
+
+### Course.marks.MarksForStudent:forbidden
+
+Authored path: `Course.marks.MarksForStudent`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 41.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 53.
+
+```reaction
+when RequestBoundary.request (learner, path: "/marks/for-student", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.marks.MarksForStudent:success
+
+Authored path: `Course.marks.MarksForStudent`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 41.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 53.
+
+```reaction
+when RequestBoundary.request (learner, path: "/marks/for-student", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+then
+  RequestBoundary.respond (marks: former "the point grades of (learner)" with (learner), requestId)
+```
+
+### Course.marks.MarksRecord:forbidden
+
+Authored path: `Course.marks.MarksRecord`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 27.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 46.
+
+```reaction
+when RequestBoundary.request (evidence, feedback, generation, item, learner, path: "/marks/record", requestId, score, session, version)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.marks.MarksRecord:invalid-evidence
+
+Authored path: `Course.marks.MarksRecord`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 27.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 46.
+
+```reaction
+when RequestBoundary.request (evidence, feedback, generation, item, learner, path: "/marks/record", requestId, score, session, version)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  no view "(learner) may record a point grade on (item) using (evidence)" with (evidence, item, learner)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.marks.MarksRecord:success
+
+Authored path: `Course.marks.MarksRecord`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 27.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 46.
+
+```reaction
+when RequestBoundary.request (evidence, feedback, generation, item, learner, path: "/marks/record", requestId, score, session, version)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  view "(learner) may record a point grade on (item) using (evidence)" with (evidence, item, learner)
+then
+  Grading.recordMark (at, evidence, feedback, generation, grader: user, item, learner, score, version)
+```
+
+### Course.marks.MarksRecord:success#2
+
+Authored path: `Course.marks.MarksRecord`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 27.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 46.
+
+```reaction
+when Grading.recordMark (at, evidence, feedback, generation, grader: user, item, learner, score, version, mark, result.version: savedVersion), asked by Course.marks.MarksRecord:success
+where
+  earlier, RequestBoundary.request (evidence, feedback, generation, item, learner, path: "/marks/record", requestId, score, session, version)
+then
+  RequestBoundary.respond (mark, requestId, version: savedVersion)
+```
+
+### Course.marks.MarksRelease:forbidden
+
+Authored path: `Course.marks.MarksRelease`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 29.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 47.
+
+```reaction
+when RequestBoundary.request (mark, path: "/marks/release", requestId, session, version)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.marks.MarksRelease:success
+
+Authored path: `Course.marks.MarksRelease`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 29.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 47.
+
+```reaction
+when RequestBoundary.request (mark, path: "/marks/release", requestId, session, version)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+then
+  Grading.releaseMark (at, mark, version)
+```
+
+### Course.marks.MarksRelease:success#2
+
+Authored path: `Course.marks.MarksRelease`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 29.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 47.
+
+```reaction
+when Grading.releaseMark (at, mark, version, result.mark: saved, result.version: savedVersion), asked by Course.marks.MarksRelease:success
+where
+  earlier, RequestBoundary.request (mark, path: "/marks/release", requestId, session, version)
+then
+  RequestBoundary.respond (mark: saved, requestId, version: savedVersion)
+```
+
+### Course.marks.MarksReleaseItem:forbidden
+
+Authored path: `Course.marks.MarksReleaseItem`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 37.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 51.
+
+```reaction
+when RequestBoundary.request (generation, item, path: "/marks/release-item", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.marks.MarksReleaseItem:success
+
+Authored path: `Course.marks.MarksReleaseItem`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 37.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 51.
+
+```reaction
+when RequestBoundary.request (generation, item, path: "/marks/release-item", requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+then
+  Grading.releaseMarks (at, generation, item)
+```
+
+### Course.marks.MarksReleaseItem:success#2
+
+Authored path: `Course.marks.MarksReleaseItem`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 37.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 51.
+
+```reaction
+when Grading.releaseMarks (at, generation, item, released, skipped, unconfirmed), asked by Course.marks.MarksReleaseItem:success
+where
+  earlier, RequestBoundary.request (generation, item, path: "/marks/release-item", requestId, session)
+then
+  RequestBoundary.respond (released, requestId, skipped, unconfirmed)
+```
+
+### Course.marks.MarksRestoreExcused:forbidden
+
+Authored path: `Course.marks.MarksRestoreExcused`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 33.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 49.
+
+```reaction
+when RequestBoundary.request (mark, path: "/marks/restore-excused", requestId, session, version)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.marks.MarksRestoreExcused:success
+
+Authored path: `Course.marks.MarksRestoreExcused`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 33.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 49.
+
+```reaction
+when RequestBoundary.request (mark, path: "/marks/restore-excused", requestId, session, version)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+then
+  Grading.restoreExcusedMark (at, mark, version)
+```
+
+### Course.marks.MarksRestoreExcused:success#2
+
+Authored path: `Course.marks.MarksRestoreExcused`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 33.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 49.
+
+```reaction
+when Grading.restoreExcusedMark (at, mark, version, result.mark: saved, result.version: savedVersion), asked by Course.marks.MarksRestoreExcused:success
+where
+  earlier, RequestBoundary.request (mark, path: "/marks/restore-excused", requestId, session, version)
+then
+  RequestBoundary.respond (mark: saved, requestId, version: savedVersion)
+```
+
+### Course.marks.MarksRetract:forbidden
+
+Authored path: `Course.marks.MarksRetract`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 31.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 48.
+
+```reaction
+when RequestBoundary.request (mark, path: "/marks/retract", requestId, session, version)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.marks.MarksRetract:success
+
+Authored path: `Course.marks.MarksRetract`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 31.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 48.
+
+```reaction
+when RequestBoundary.request (mark, path: "/marks/retract", requestId, session, version)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+then
+  Grading.retractMark (at, mark, version)
+```
+
+### Course.marks.MarksRetract:success#2
+
+Authored path: `Course.marks.MarksRetract`.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 31.
+- Covered by [Point grades](../design/compositions/course/marks.md), line 48.
+
+```reaction
+when Grading.retractMark (at, mark, version, result.mark: saved, result.version: savedVersion), asked by Course.marks.MarksRetract:success
+where
+  earlier, RequestBoundary.request (mark, path: "/marks/retract", requestId, session, version)
+then
+  RequestBoundary.respond (mark: saved, requestId, version: savedVersion)
 ```
 
 ### Course.notes.Acknowledge:forbidden
@@ -29651,6 +30311,7 @@ not listed here have no explicit input contract.
 - `/flags/resolve` — requires `session`, `target`, `outcome`
 - `/grades/add-criterion` — requires `basis`, `item`, `position`, `session`
 - `/grades/configure-item` — requires `item`, `label`, `session`
+- `/grades/configure-method` — requires `session`, `item`, `method`, `maxPoints`, `generation`; fills `discard` with false when absent; fills `expectedCount` with 0 when absent
 - `/grades/define-standard` — requires `competent`, `deficient`, `description`, `emergent`, `expert`, `name`, `referenceUrl`, `session`
 - `/grades/detail` — requires `grade`, `session`
 - `/grades/excuse` — requires `feedback`, `grade`, `session`, `version`
@@ -29660,9 +30321,9 @@ not listed here have no explicit input contract.
 - `/grades/for-student` — requires `learner`, `session`
 - `/grades/gradebook` — requires `session`
 - `/grades/item` — requires `item`, `session`
-- `/grades/record` — requires `evidence`, `item`, `learner`, `session`
+- `/grades/record` — requires `evidence`, `generation`, `item`, `learner`, `session`
 - `/grades/release` — requires `grade`, `session`, `version`
-- `/grades/release-item` — requires `item`, `session`
+- `/grades/release-item` — requires `generation`, `item`, `session`
 - `/grades/remove-criterion` — requires `criterion`, `session`
 - `/grades/restore-excused` — requires `grade`, `session`, `version`
 - `/grades/retract` — requires `grade`, `session`, `version`
@@ -29795,6 +30456,15 @@ not listed here have no explicit input contract.
 - `/mail/reset-template` — requires `session`
 - `/mail/save-template` — requires `body`, `session`, `subject`
 - `/mail/template` — requires `session`
+- `/marks/excuse` — requires `evidence`, `feedback`, `generation`, `item`, `learner`, `mark`, `session`, `version`
+- `/marks/for-item` — requires `item`, `session`
+- `/marks/for-me` — requires `session`
+- `/marks/for-student` — requires `learner`, `session`
+- `/marks/record` — requires `evidence`, `feedback`, `generation`, `item`, `learner`, `score`, `session`, `version`
+- `/marks/release` — requires `mark`, `session`, `version`
+- `/marks/release-item` — requires `generation`, `item`, `session`
+- `/marks/restore-excused` — requires `mark`, `session`, `version`
+- `/marks/retract` — requires `mark`, `session`, `version`
 - `/moderation/posts/get` — requires `item`, `session`
 - `/moderation/revisions/get` — requires `item`, `number`, `session`
 - `/moderation/revisions/latest` — requires `item`, `session`

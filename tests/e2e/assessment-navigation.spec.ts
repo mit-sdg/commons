@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("attempt links reveal work, tabs retain edits, and label failures preserve assignment saves", async ({
   browser,
+  baseURL,
 }) => {
   test.setTimeout(120_000);
   const staff = await browser.newContext();
@@ -9,7 +10,7 @@ test("attempt links reveal work, tabs retain edits, and label failures preserve 
   try {
     const cookies = new Map<typeof staff, string>();
     const call = async (context: typeof staff, path: string, data = {}) => {
-      const response = await context.request.post(`http://127.0.0.1:3755/api${path}`, {
+      const response = await context.request.post(`${baseURL}/api${path}`, {
         headers: cookies.has(context) ? { Cookie: cookies.get(context)! } : {},
         data,
       });
@@ -51,7 +52,7 @@ test("attempt links reveal work, tabs retain edits, and label failures preserve 
       content: "Evidence to assess",
     });
     const page = await staff.newPage();
-    await page.goto(`http://127.0.0.1:3755/staff/assignments/${assignment}#attempt-${submission}`);
+    await page.goto(`${baseURL}/staff/assignments/${assignment}#attempt-${submission}`);
     await expect(page.getByRole("tab", { name: "Submissions", exact: true })).toHaveAttribute(
       "aria-selected",
       "true",
