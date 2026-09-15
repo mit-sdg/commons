@@ -38,9 +38,7 @@ async function setupAssignment(
       item: assignment,
       method,
       revision: setup.revision,
-      criteria: [
-        { kind: "POINTS", name: "Overall", maxPoints: 10, position: 0 },
-      ],
+      criteria: [{ kind: "POINTS", name: "Overall", maxPoints: 10, position: 0 }],
     });
   } else {
     const { edition } = await call("/grades/define-standard", {
@@ -98,11 +96,7 @@ test("atomic setup reconciles uncertain saves and retains a stale CAS draft", as
     viewport: { width: 1280, height: 900 },
   });
   try {
-    const { assignment, call } = await setupAssignment(
-      staff,
-      baseURL!,
-      "POINTS",
-    );
+    const { assignment, call } = await setupAssignment(staff, baseURL!, "POINTS");
     const page = await staff.newPage();
     await page.goto(`${baseURL}/staff/assignments/${assignment}`);
     const criterion = page.getByRole("textbox", {
@@ -116,9 +110,7 @@ test("atomic setup reconciles uncertain saves and retains a stale CAS draft", as
       expect(committed.ok()).toBe(true);
       await route.fulfill({ status: 200, json: { error: "NETWORK_ERROR" } });
     });
-    await page
-      .getByRole("button", { name: "Review and save", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Review and save", exact: true }).click();
     await page
       .getByRole("dialog")
       .getByRole("button", { name: "Save grading setup", exact: true })
@@ -145,9 +137,7 @@ test("atomic setup reconciles uncertain saves and retains a stale CAS draft", as
       ],
     });
     expect(concurrent.revision).toBeGreaterThan(confirmed.revision);
-    await page
-      .getByRole("button", { name: "Review and save", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Review and save", exact: true }).click();
     await page
       .getByRole("dialog")
       .getByRole("button", { name: "Save grading setup", exact: true })
@@ -156,9 +146,7 @@ test("atomic setup reconciles uncertain saves and retains a stale CAS draft", as
     await expect(
       page.getByText("The saved setup changed elsewhere", { exact: true }),
     ).toBeVisible();
-    await page
-      .getByRole("button", { name: "Review saved setup", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Review saved setup", exact: true }).click();
     await page
       .getByRole("dialog")
       .getByRole("button", { name: "Reload saved setup", exact: true })
@@ -264,11 +252,7 @@ test("competency grading retains unsaved judgments through uncertain actions and
   const staff = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const student = await browser.newContext();
   try {
-    const { assignment, call } = await setupAssignment(
-      staff,
-      baseURL!,
-      "COMPETENCY",
-    );
+    const { assignment, call } = await setupAssignment(staff, baseURL!, "COMPETENCY");
     const submission = await submitAsStudent(student, baseURL!, assignment);
 
     const page = await staff.newPage();
