@@ -1,8 +1,4 @@
 import { expect, type BrowserContext, test } from "@playwright/test";
-import { mkdir } from "node:fs/promises";
-import { resolve } from "node:path";
-
-const shots = resolve(import.meta.dirname, "../../test-results/grading-read-recovery");
 
 async function setupAssignment(
   context: BrowserContext,
@@ -36,13 +32,15 @@ async function setupAssignment(
     audience: "EVERYONE",
     targets: [],
   });
+  const setup = await call("/grades/item", { item: assignment });
   if (method === "POINTS") {
-    await call("/grades/configure-method", {
+    await call("/grades/configure-setup", {
       item: assignment,
       method,
-      maxPoints: 10,
-      generation: 0,
-      discard: false,
+      revision: setup.revision,
+      criteria: [
+        { kind: "POINTS", name: "Overall", maxPoints: 10, position: 0 },
+      ],
     });
   } else {
     const { edition } = await call("/grades/define-standard", {
@@ -54,10 +52,11 @@ async function setupAssignment(
       expert: "",
       referenceUrl: "",
     });
-    await call("/grades/add-criterion", {
+    await call("/grades/configure-setup", {
       item: assignment,
-      basis: edition,
-      position: 0,
+      method,
+      revision: setup.revision,
+      criteria: [{ kind: "COMPETENCY", basis: edition, position: 0 }],
     });
   }
   await call("/assignments/publish", { assignment });
@@ -90,12 +89,91 @@ async function recoverAllNotices(page: import("@playwright/test").Page) {
   await expect(notice).toHaveCount(0);
 }
 
+test("atomic setup reconciles uncertain saves and retains a stale CAS draft", async ({
+  browser,
+  baseURL,
+}) => {
+  test.setTimeout(180_000);
+  const staff = await browser.newContext({
+    viewport: { width: 1280, height: 900 },
+  });
+  try {
+    const { assignment, call } = await setupAssignment(
+      staff,
+      baseURL!,
+      "POINTS",
+    );
+    const page = await staff.newPage();
+    await page.goto(`${baseURL}/staff/assignments/${assignment}`);
+    const criterion = page.getByRole("textbox", {
+      name: "Criterion",
+      exact: true,
+    });
+    await criterion.fill("Response-lost criterion");
+
+    await page.route("**/api/grades/configure-setup", async (route) => {
+      const committed = await route.fetch();
+      expect(committed.ok()).toBe(true);
+      await route.fulfill({ status: 200, json: { error: "NETWORK_ERROR" } });
+    });
+    await page
+      .getByRole("button", { name: "Review and save", exact: true })
+      .click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Save grading setup", exact: true })
+      .click();
+    await expect(criterion).toHaveValue("Response-lost criterion");
+    await expect(page.getByText("Setup saved", { exact: true })).toBeVisible();
+    await page.unroute("**/api/grades/configure-setup");
+    const confirmed = await call("/grades/item", { item: assignment });
+    expect(confirmed.criteria[0].name).toBe("Response-lost criterion");
+
+    await criterion.fill("Local unsaved criterion");
+    const concurrent = await call("/grades/configure-setup", {
+      item: assignment,
+      method: "POINTS",
+      revision: confirmed.revision,
+      criteria: [
+        {
+          kind: "POINTS",
+          criterion: confirmed.criteria[0].criterion,
+          name: "Concurrent saved criterion",
+          maxPoints: 10,
+          position: 0,
+        },
+      ],
+    });
+    expect(concurrent.revision).toBeGreaterThan(confirmed.revision);
+    await page
+      .getByRole("button", { name: "Review and save", exact: true })
+      .click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Save grading setup", exact: true })
+      .click();
+    await expect(criterion).toHaveValue("Local unsaved criterion");
+    await expect(
+      page.getByText("The saved setup changed elsewhere", { exact: true }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Review saved setup", exact: true })
+      .click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Reload saved setup", exact: true })
+      .click();
+    await expect(criterion).toHaveValue("Concurrent saved criterion");
+  } finally {
+    await staff.close();
+  }
+});
+
 test("points grading retains its mode and unsaved editor through read failures", async ({
   browser,
   baseURL,
 }) => {
-  test.setTimeout(120_000);
-  await mkdir(shots, { recursive: true });
+  test.setTimeout(180_000);
   const staff = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const student = await browser.newContext();
   try {
@@ -105,8 +183,11 @@ test("points grading retains its mode and unsaved editor through read failures",
     const page = await staff.newPage();
     await page.goto(`${baseURL}/staff/assignments/${assignment}#attempt-${submission}`);
     await page.getByRole("button", { name: "Assess this attempt" }).click();
+    await page.getByRole("button", { name: "Start assessment" }).click();
     const score = page.getByRole("spinbutton", { name: "Score / 10" });
-    const feedback = page.getByRole("textbox", { name: "Feedback (optional)" });
+    const feedback = page.getByRole("textbox", {
+      name: "Overall feedback (optional)",
+    });
     await score.fill("7.75");
     await feedback.fill("Keep this unsaved points feedback");
 
@@ -128,11 +209,6 @@ test("points grading retains its mode and unsaved editor through read failures",
         .getByRole("tabpanel", { name: "Submissions" })
         .getByText("Grading data could not be refreshed"),
     ).toHaveCount(1);
-    await page.screenshot({
-      path: resolve(shots, "points-setup-unavailable-desktop.png"),
-      fullPage: true,
-      animations: "disabled",
-    });
     await page.unroute("**/api/grades/item");
     await recoverAllNotices(page);
     await expect(score).toBeEnabled();
@@ -141,12 +217,12 @@ test("points grading retains its mode and unsaved editor through read failures",
 
     await score.fill("9.25");
     await feedback.fill("Keep this newer unsaved points feedback");
-    await page.route("**/api/marks/for-item", (route) =>
+    await page.route("**/api/grades/for-item", (route) =>
       route.fulfill({ json: { error: "NETWORK_ERROR" } }),
     );
-    await page.route("**/api/marks/record", (route) => route.abort("failed"));
+    await page.route("**/api/grades/save", (route) => route.abort("failed"));
     await page.getByRole("button", { name: "Save draft" }).click();
-    await expect(page.getByText(/save outcome could not be confirmed/i)).toBeVisible();
+    await expect(page.getByText(/update outcome could not be confirmed/i)).toBeVisible();
     await expect(
       page
         .getByRole("tabpanel", { name: "Submissions" })
@@ -156,16 +232,9 @@ test("points grading retains its mode and unsaved editor through read failures",
     await expect(feedback).toHaveValue("Keep this newer unsaved points feedback");
     await expect(page.getByText("7.75 / 10", { exact: true })).toBeVisible();
     await expect(score).toBeDisabled();
-    await expect(page.getByText(/save outcome could not be confirmed/i)).toBeHidden();
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.evaluate("window.scrollTo(0, 0)");
-    await page.screenshot({
-      path: resolve(shots, "points-results-unavailable-mobile.png"),
-      fullPage: true,
-      animations: "disabled",
-    });
-    await page.unroute("**/api/marks/for-item");
-    await page.unroute("**/api/marks/record");
+    await expect(page.getByText(/update outcome could not be confirmed/i)).toBeHidden();
+    await page.unroute("**/api/grades/for-item");
+    await page.unroute("**/api/grades/save");
     await recoverAllNotices(page);
     await expect(score).toHaveValue("9.25");
     await expect(feedback).toHaveValue("Keep this newer unsaved points feedback");
@@ -191,23 +260,53 @@ test("competency grading retains unsaved judgments through uncertain actions and
   browser,
   baseURL,
 }) => {
-  test.setTimeout(120_000);
-  await mkdir(shots, { recursive: true });
+  test.setTimeout(180_000);
   const staff = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const student = await browser.newContext();
   try {
-    const { assignment } = await setupAssignment(staff, baseURL!, "COMPETENCY");
+    const { assignment, call } = await setupAssignment(
+      staff,
+      baseURL!,
+      "COMPETENCY",
+    );
     const submission = await submitAsStudent(student, baseURL!, assignment);
 
     const page = await staff.newPage();
     await page.goto(`${baseURL}/staff/assignments/${assignment}#attempt-${submission}`);
+    const staleSetup = await call("/grades/item", { item: assignment });
+    await page.route("**/api/grades/item", (route) =>
+      route.fulfill({ status: 200, json: staleSetup }),
+    );
     await page.getByRole("button", { name: "Assess this attempt" }).click();
-    await page.route("**/api/grades/record", (route) => route.abort("failed"));
+    await expect(page.getByRole("button", { name: "Start assessment" })).toBeEnabled();
+    const replacement = await call("/grades/define-standard", {
+      name: "Updated reasoning",
+      description: "",
+      deficient: "",
+      emergent: "",
+      competent: "",
+      expert: "",
+      referenceUrl: "",
+    });
+    const advancedSetup = await call("/grades/configure-setup", {
+      item: assignment,
+      method: staleSetup.method,
+      revision: staleSetup.revision,
+      criteria: [
+        {
+          kind: "COMPETENCY",
+          basis: replacement.edition,
+          position: 0,
+        },
+      ],
+    });
+    expect(advancedSetup.revision).toBeGreaterThan(staleSetup.revision);
+    await page.unroute("**/api/grades/item");
     await page.getByRole("button", { name: "Start assessment" }).click();
-    await expect(page.getByText(/assessment start could not be confirmed/i)).toBeVisible();
+    await expect(page.getByText(/grading setup changed before this assessment/i)).toBeVisible();
     await expect(page.getByRole("button", { name: "Start assessment" })).toBeVisible();
 
-    await page.unroute("**/api/grades/record");
+    await expect(page.getByRole("button", { name: "Start assessment" })).toBeEnabled();
     await page.getByRole("button", { name: "Start assessment" }).click();
     await expect(
       page.getByRole("button", { name: "Release drafts (1)", exact: true }),
@@ -236,13 +335,6 @@ test("competency grading retains unsaved judgments through uncertain actions and
     await expect(rating).toHaveText("Competent");
     await expect(feedback).toBeDisabled();
     await expect(page.getByText(/update outcome could not be confirmed/i)).toBeHidden();
-    await page.evaluate("window.scrollTo(0, 0)");
-    await page.screenshot({
-      path: resolve(shots, "competency-results-unavailable-desktop.png"),
-      fullPage: true,
-      animations: "disabled",
-    });
-
     await page.unroute("**/api/grades/for-item");
     await page.unroute("**/api/grades/save");
     await recoverAllNotices(page);

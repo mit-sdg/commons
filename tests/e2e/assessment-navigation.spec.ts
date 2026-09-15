@@ -45,7 +45,13 @@ test("attempt links reveal work, tabs retain edits, and label failures preserve 
       expert: "",
       referenceUrl: "",
     });
-    await call(staff, "/grades/add-criterion", { item: assignment, basis: edition, position: 0 });
+    const setup = await call(staff, "/grades/item", { item: assignment });
+    await call(staff, "/grades/configure-setup", {
+      item: assignment,
+      method: "COMPETENCY",
+      revision: setup.revision,
+      criteria: [{ kind: "COMPETENCY", basis: edition, position: 0 }],
+    });
     await call(staff, "/assignments/publish", { assignment });
     const { submission } = await call(student, "/assignments/submit", {
       assignment,
@@ -98,6 +104,16 @@ test("attempt links reveal work, tabs retain edits, and label failures preserve 
       route.fulfill({ json: { error: "FORBIDDEN" } }),
     );
     await page.getByRole("button", { name: "Edit", exact: true }).click();
+    await expect(
+      page.getByRole("dialog").getByText(/discards only unsaved setup or assessment input/i),
+    ).toBeVisible();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", {
+        name: "Discard draft and edit assignment",
+        exact: true,
+      })
+      .click();
     await page.getByRole("textbox", { name: "Title", exact: true }).fill("Renamed assignment");
     await page.getByRole("button", { name: "Save changes", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Renamed assignment" })).toBeVisible();
