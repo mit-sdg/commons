@@ -158,6 +158,73 @@ describe("submission export", () => {
     expect(csv).not.toContain("RELEASED");
   });
 
+  test("does not treat an older attempt excusal as an assignment excusal", () => {
+    const { csv } = submissionsCsv({
+      ...source,
+      assigned: source.assigned.slice(0, 1),
+      submissions: [
+        {
+          ...source.submissions[0],
+          submission: "excused-attempt",
+          number: 1,
+          status: "SUBMITTED",
+        },
+        {
+          ...source.submissions[0],
+          submission: "later-attempt",
+          number: 2,
+          status: "SUBMITTED",
+          submittedAt: "2026-09-12T13:00:00Z",
+        },
+      ],
+      grades: [
+        {
+          grade: "attempt-excusal",
+          learner: "learner-1",
+          evidence: "excused-attempt",
+          status: "EXCUSED",
+          createdAt: "2026-09-11T00:00:00Z",
+          updatedAt: "2026-09-11T01:00:00Z",
+        },
+      ] as unknown as SubmissionsExportSource["grades"],
+    });
+    expect(csv).toContain("Submitted,later-attempt,2");
+    expect(csv).not.toContain("attempt-excusal");
+    expect(csv).not.toContain("Assignment excusal");
+    expect(csv).not.toContain("EXCUSED");
+  });
+
+  test("keeps an assessed point denominator after the current setup changes", () => {
+    const { csv } = submissionsCsv({
+      ...source,
+      assigned: source.assigned.slice(0, 1),
+      submissions: [
+        {
+          ...source.submissions[1],
+          submitter: "learner-1",
+          submission: "ten-point-attempt",
+        },
+      ],
+      grading: { method: "POINTS", generation: 4, maxPoints: 20 },
+      marks: [
+        {
+          mark: "ten-point-mark",
+          learner: "learner-1",
+          evidence: "ten-point-attempt",
+          score: 8,
+          scored: true,
+          outOf: 10,
+          status: "RELEASED",
+          createdAt: "2026-09-11T00:00:00Z",
+          updatedAt: "2026-09-11T01:00:00Z",
+        },
+      ] as unknown as SubmissionsExportSource["marks"],
+    });
+    expect(csv).toContain("Attempt 1,RELEASED,ten-point-mark");
+    expect(csv).toContain(",8,10,https://commons.example/");
+    expect(csv).not.toContain(",8,20,https://commons.example/");
+  });
+
   test("labels assignment-level excusals separately from attempt assessments", () => {
     const { csv } = submissionsCsv({
       ...source,
