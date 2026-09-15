@@ -150,7 +150,6 @@ describe("application-owned design integration", () => {
       "Itemizing.Basis is StandardSetting.Edition",
       "Itemizing.Item is Assigning.Assignment",
       "Submitting.Assignment is Assigning.Assignment",
-      "Grading.Criterion is Itemizing.Criterion",
       "Grading.Evidence is Submitting.Submission",
       "Mailing.Key is MailKey",
       "Wording.Place is MailPlace",
