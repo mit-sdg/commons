@@ -1,5 +1,6 @@
 import { threadTrash } from "./20260914T000100-thread-trash.ts";
 import { gradingModes } from "./20260915T000100-grading-modes.ts";
+import { sharedGradingLifecycle } from "./20260915T000200-shared-grading-lifecycle.ts";
 import { runSnapshotStore } from "./20260913T000100-run-snapshot-store.ts";
 import { competencyAssessments } from "./20260909T000100-competency-assessments.ts";
 import { responseIdentity } from "./20260906T000200-response-identity.ts";
@@ -31,4 +32,5 @@ export const commonsMigrations: readonly Migration[] = [
   runSnapshotStore,
   threadTrash,
   gradingModes,
+  sharedGradingLifecycle,
 ];
