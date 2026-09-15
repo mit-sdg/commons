@@ -233,20 +233,20 @@ function SpreadGradersDialog({
             disabled || graders.length === 0 || allLearners.length === 0
           }
         >
-          <UsersRound className="size-4" /> Assign in bulk…
+          <UsersRound className="size-4" /> Assign graders…
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Assign graders in bulk</DialogTitle>
+          <DialogTitle>Assign graders</DialogTitle>
           <DialogDescription>
-            Commons balances this assignment against each selected grader’s
-            current workload.
+            Balance learners across the selected graders and their current
+            assignment load.
           </DialogDescription>
         </DialogHeader>
 
         <fieldset className="space-y-2">
-          <legend className="text-sm font-medium">Graders taking part</legend>
+          <legend className="text-sm font-medium">Choose graders</legend>
           <div className="max-h-48 divide-y divide-border overflow-y-auto rounded-md border border-border">
             {graders.map((grader) => {
               const id = String(grader.grader);
@@ -273,9 +273,9 @@ function SpreadGradersDialog({
                   <span className="min-w-0 flex-1 truncate">
                     {graderLabel(grader)} (@{grader.username})
                   </span>
-                  <span className="tabular-nums text-xs text-muted-foreground">
-                    {load} current
-                  </span>
+                  <Facts as="span" className="text-xs text-muted-foreground">
+                    <Fact.Count n={load} noun="assigned" plural="assigned" />
+                  </Facts>
                 </label>
               );
             })}
@@ -283,7 +283,7 @@ function SpreadGradersDialog({
         </fieldset>
 
         <fieldset className="space-y-2">
-          <legend className="text-sm font-medium">Learners in scope</legend>
+          <legend className="text-sm font-medium">Choose learners</legend>
           <label className="flex cursor-pointer items-start gap-3 text-sm">
             <input
               className="mt-0.5"
@@ -294,9 +294,9 @@ function SpreadGradersDialog({
               onChange={() => setScope("visible")}
             />
             <span>
-              Current view ({visibleLearners.length})
+              Learners shown ({visibleLearners.length})
               <span className="block text-xs text-muted-foreground">
-                Includes visible learners with missing work.
+                Includes missing work.
               </span>
             </span>
           </label>
@@ -322,10 +322,10 @@ function SpreadGradersDialog({
             onChange={(event) => setReplace(event.target.checked)}
           />
           <span>
-            Redistribute learners who already have a grader
+            Reassign learners who already have a grader
             <span className="block text-xs text-muted-foreground">
-              Off by default. When off, assignments made since this dialog
-              opened are preserved too.
+              Leave off to keep existing assignments, including concurrent
+              changes.
             </span>
           </span>
         </label>
@@ -336,8 +336,8 @@ function SpreadGradersDialog({
             : targets.length === 0
               ? "No learners are in this scope."
               : replace
-                ? `${targets.length} current assignments will be balanced again.`
-                : `${currentlyUnassigned} currently unassigned; existing ownership will be preserved.`}
+                ? `${targets.length} ${targets.length === 1 ? "learner" : "learners"} will be reassigned.`
+                : `${currentlyUnassigned} unassigned ${currentlyUnassigned === 1 ? "learner" : "learners"} will be assigned. Existing assignments stay unchanged.`}
         </p>
 
         <DialogFooter>
@@ -355,7 +355,7 @@ function SpreadGradersDialog({
             {busy
               ? "Assigning…"
               : replace
-                ? "Redistribute"
+                ? "Reassign learners"
                 : "Assign unassigned"}
           </Button>
         </DialogFooter>
@@ -430,14 +430,14 @@ export function GradingDelegationToolbar({
   ).length;
 
   return (
-    <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-3">
-      <div className="flex flex-wrap items-end gap-2">
-        <div className="min-w-52 space-y-1">
+    <div className="space-y-4 rounded-lg border border-border bg-muted/20 p-4">
+      <div className="grid gap-3 lg:grid-cols-[minmax(13rem,20rem)_1fr] lg:items-end">
+        <div className="space-y-1">
           <Label
             htmlFor="grader-filter"
             className="text-xs text-muted-foreground"
           >
-            Grader scope
+            Show learners
           </Label>
           <Select
             value={filter}
@@ -470,7 +470,7 @@ export function GradingDelegationToolbar({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
           <SpreadGradersDialog
             item={item}
             graders={graders}
@@ -521,7 +521,7 @@ export function GradingDelegationToolbar({
       ) : (
         <Facts className="text-sm text-muted-foreground">
           <Fact.Count>
-            Showing {visibleLearners.length} of {allLearners.length} learners
+            {visibleLearners.length} of {allLearners.length} learners shown
           </Fact.Count>
           <Fact.Count
             n={visibleSubmitted}
@@ -537,9 +537,8 @@ export function GradingDelegationToolbar({
         </Facts>
       )}
       <p className="text-xs text-muted-foreground">
-        CSV uses a fresh copy of this scope and one row per learner, choosing
-        the latest submitted attempt; withdrawn-only and missing work remain
-        listed.
+        CSV includes each learner shown and their latest submitted attempt.
+        Missing and withdrawn-only work stays listed.
       </p>
     </div>
   );

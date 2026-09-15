@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Eye, Send } from "lucide-react";
+import { AlertTriangle, Archive, Eye, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -191,12 +191,14 @@ function StaffAssignmentDetailPageContent({
     data: asgnData,
     loading,
     error,
+    refused,
     refetch,
   } = useQuery(
     session
       ? () => api.assignments["staff-summary"]({ assignment }).then(unwrap)
       : null,
     [session, assignment],
+    { retainOnTransportError: true },
   );
 
   const {
@@ -388,6 +390,7 @@ function StaffAssignmentDetailPageContent({
   const delegationLoading = delegationQuery.loading || gradersQuery.loading;
   const delegationError = delegationQuery.error ?? gradersQuery.error;
   const refreshing =
+    loading ||
     submissionsLoading ||
     gradingSetup.loading ||
     gradesQuery.loading ||
@@ -395,6 +398,7 @@ function StaffAssignmentDetailPageContent({
     delegationLoading;
 
   function refreshSubmissionWorkspace() {
+    refetch();
     refetchSubmissions();
     refetchGradingData();
     refetchLateDays();
@@ -549,16 +553,16 @@ function StaffAssignmentDetailPageContent({
     }
   }
 
-  if (loading)
+  if (loading && !detail)
     return (
       <PageContainer>
         <LoadingState label="Loading assignment…" />
       </PageContainer>
     );
-  if (error)
+  if (error && !detail)
     return (
       <PageContainer>
-        <ErrorState message={error} onRetry={refetch} />
+        <ErrorState message={error} refused={refused} onRetry={refetch} />
       </PageContainer>
     );
   if (!detail)
@@ -675,6 +679,21 @@ function StaffAssignmentDetailPageContent({
           </div>
         )}
       </div>
+
+      {error ? (
+        <div
+          role="status"
+          className="mb-6 flex flex-wrap items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+        >
+          <AlertTriangle className="size-4 shrink-0" />
+          <span className="min-w-0 flex-1">
+            {error} Assignment details may be out of date.
+          </span>
+          <Button size="sm" variant="outline" onClick={refetch}>
+            Retry details
+          </Button>
+        </div>
+      ) : null}
 
       <Tabs
         value={tab}

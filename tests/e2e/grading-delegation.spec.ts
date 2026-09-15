@@ -1,6 +1,10 @@
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { type BrowserContext, expect, test } from "@playwright/test";
 import { invitationCredential } from "../../src/concepts/inviting/credential.ts";
+
+const shots =
+  process.env.DELEGATION_SCREENSHOT_DIR ?? resolve(import.meta.dirname, "../../test-results");
 
 function csvRow(csv: string, email: string): Record<string, string> {
   const [header = "", ...lines] = csv.trimEnd().split("\r\n");
@@ -14,6 +18,7 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
   browser,
 }, testInfo) => {
   test.setTimeout(180_000);
+  await mkdir(shots, { recursive: true });
   const origin = String(testInfo.project.use.baseURL);
   const staff = await browser.newContext();
   const noah = await browser.newContext();
@@ -203,7 +208,7 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
     });
     await page.goto(`${origin}/staff/assignments/${created.assignment}`);
     await page.getByRole("tab", { name: "Submissions", exact: true }).click();
-    await expect(page.getByText("Showing 3 of 3 learners", { exact: true })).toBeVisible();
+    await expect(page.getByText("3 of 3 learners shown", { exact: true })).toBeVisible();
 
     const priyaGrader = page.getByRole("combobox", {
       name: "Grader for Priya Sharma",
@@ -213,26 +218,27 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
     const manualFeedback = page.getByText("Priya Sharma assigned to Mara Chen");
     await expect(manualFeedback).toBeVisible();
 
-    const filter = page.getByRole("combobox", { name: "Grader scope" });
+    const filter = page.getByRole("combobox", { name: "Show learners" });
     await filter.click();
     await page.getByRole("option", { name: "Unassigned", exact: true }).click();
-    await expect(page.getByText("Showing 1 of 3 learners", { exact: true })).toBeVisible();
+    await expect(page.getByText("1 of 3 learners shown", { exact: true })).toBeVisible();
     await expect(page.getByText("Assigned to", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Noah Patel", { exact: true })).toBeVisible();
     await expect(page.getByText("Priya Sharma", { exact: true })).toHaveCount(0);
     await expect(manualFeedback).toBeHidden({ timeout: 10_000 });
 
-    await page.getByRole("button", { name: "Assign in bulk…" }).click();
-    const dialog = page.getByRole("dialog", { name: "Assign graders in bulk" });
+    await page.getByRole("button", { name: "Assign graders…" }).click();
+    const dialog = page.getByRole("dialog", { name: "Assign graders" });
     await dialog.getByText("All learners (3)", { exact: true }).click();
     await expect(
-      dialog.getByText("existing ownership will be preserved", {
+      dialog.getByText("Existing assignments stay unchanged", {
         exact: false,
       }),
     ).toBeVisible();
     await page.screenshot({
-      path: "test-results/grading-delegation-bulk-dialog-desktop.png",
+      path: resolve(shots, "grading-delegation-bulk-dialog-desktop.png"),
       fullPage: false,
+      animations: "disabled",
     });
     await dialog.getByRole("button", { name: "Assign unassigned" }).click();
     const bulkFeedback = page.getByText("1 learner assigned; 2 kept their current grader");
@@ -262,7 +268,7 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
 
     await filter.click();
     await page.getByRole("option", { name: "All learners", exact: true }).click();
-    await expect(page.getByText("Showing 3 of 3 learners", { exact: true })).toBeVisible();
+    await expect(page.getByText("3 of 3 learners shown", { exact: true })).toBeVisible();
     const initialDownloadEvent = page.waitForEvent("download");
     await page.getByRole("button", { name: "Export current view" }).click();
     const initialDownload = await initialDownloadEvent;
@@ -300,7 +306,7 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
 
     await filter.click();
     await page.getByRole("option", { name: "Assigned to me", exact: true }).click();
-    await expect(page.getByText("Showing 2 of 3 learners", { exact: true })).toBeVisible();
+    await expect(page.getByText("2 of 3 learners shown", { exact: true })).toBeVisible();
     await expect(page.getByText("Assigned to you", { exact: true })).toBeVisible();
     await expect(page.getByText("Priya Sharma", { exact: true })).toBeVisible();
     await expect(page.getByText("Amina Okafor", { exact: true })).toBeVisible();
@@ -325,26 +331,69 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
     ).toBeVisible();
     await releaseDialog.getByRole("button", { name: "Cancel" }).click();
 
+    await filter.click();
+    await page.getByRole("option", { name: "All learners", exact: true }).click();
+    const priyaRow = page
+      .getByText("Priya Sharma", { exact: true })
+      .locator(
+        "xpath=ancestor::div[contains(concat(' ', normalize-space(@class), ' '), ' rounded-lg ')][1]",
+      );
+    await priyaRow.getByRole("button", { name: "Review grades" }).click();
+    const dirtyScore = priyaRow.getByRole("spinbutton", { name: "Score / 10" });
+    await dirtyScore.fill("9.25");
+
     const second = await call<{ submission: string }>(noah, noahCookie, "/assignments/submit", {
       assignment: created.assignment,
       content: "Noah's fresh resubmission",
     });
     const revisedDue = new Date(now + 3 * 86_400_000).toISOString();
+    const revisedTitle = "Problem Set 1: Concept Design — revised";
     await call(staff, staffCookie, "/assignments/revise", {
       assignment: created.assignment,
       ...assignmentInput,
-      title: "Problem Set 1: Concept Design — revised",
+      title: revisedTitle,
       dueAt: revisedDue,
     });
+    await page.route(
+      "**/api/assignments/staff-summary",
+      (route) => route.abort("connectionfailed"),
+      { times: 1 },
+    );
     await page.getByRole("button", { name: "Refresh", exact: true }).click();
+    const staleDetails = page.getByText("Assignment details may be out of date.", {
+      exact: false,
+    });
+    await expect(staleDetails).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: assignmentInput.title }),
+    ).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: revisedTitle })).toHaveCount(0);
+    await expect(dirtyScore).toHaveValue("9.25");
+    await page.getByRole("button", { name: "Retry details" }).click();
+    const revisedHeading = page.getByRole("heading", { level: 1, name: revisedTitle });
+    await expect(revisedHeading).toBeVisible();
+    await expect(
+      revisedHeading.locator("xpath=../..").locator(`time[datetime="${revisedDue}"]`),
+    ).toBeVisible();
+    await expect(staleDetails).toHaveCount(0);
+    await expect(dirtyScore).toHaveValue("9.25");
     await expect(page.getByText("2 attempts", { exact: true })).toBeVisible();
     await expect(page.getByText("1 late day", { exact: true })).toBeVisible();
     await expect(bulkFeedback).toBeHidden({ timeout: 10_000 });
 
+    await page.reload();
+    await page.getByRole("tab", { name: "Submissions", exact: true }).click();
+    await expect(page.getByRole("heading", { level: 1, name: revisedTitle })).toBeVisible();
+    await expect(page.getByText("3 of 3 learners shown", { exact: true })).toBeVisible();
     await page.screenshot({
-      path: "test-results/grading-delegation-desktop.png",
+      path: resolve(shots, "grading-delegation-desktop.png"),
       fullPage: true,
+      animations: "disabled",
     });
+
+    await filter.click();
+    await page.getByRole("option", { name: "Taylor Grader (@taylor_grader)" }).click();
+    await expect(page.getByText("1 of 3 learners shown", { exact: true })).toBeVisible();
     const downloadEvent = page.waitForEvent("download");
     await page.getByRole("button", { name: "Export current view" }).click();
     const download = await downloadEvent;
@@ -377,8 +426,9 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({
-      path: "test-results/grading-delegation-mobile.png",
+      path: resolve(shots, "grading-delegation-mobile.png"),
       fullPage: true,
+      animations: "disabled",
     });
     await expect(page.getByRole("button", { name: "Export current view" })).toBeVisible();
   } finally {
