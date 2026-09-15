@@ -81,18 +81,13 @@ test("skills refresh without clearing a draft, and graders can open unassessed a
       data: { username: "noah", password: "password123" },
     });
     expect(graderLogin.ok()).toBe(true);
-    const warmAssignment = await grader.request.get(
-      `${baseURL}/staff/assignments/${assignment}`,
-    );
+    const warmAssignment = await grader.request.get(`${baseURL}/staff/assignments/${assignment}`);
     expect(warmAssignment.ok()).toBe(true);
     const review = await grader.newPage();
     await review.goto(`${baseURL}/staff/gradebook`);
     await review.getByText("Grade an assignment", { exact: true }).click();
     const assignmentLink = review.getByRole("link", { name: /^Unassessed work/ });
-    await expect(assignmentLink).toHaveAttribute(
-      "href",
-      `/staff/assignments/${assignment}`,
-    );
+    await expect(assignmentLink).toHaveAttribute("href", `/staff/assignments/${assignment}`);
     await assignmentLink.click({ noWaitAfter: true });
     await expect(
       review.getByRole("heading", { name: "Unassessed work", exact: true }),
