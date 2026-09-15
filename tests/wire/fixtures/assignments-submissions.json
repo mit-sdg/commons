@@ -1031,6 +1031,9 @@
           {
             "assignee": "uuid#11",
             "displayName": "Alice",
+            "username": "as_alice",
+            "email": "alice@example.com",
+            "section": "uuid#5",
             "release": "uuid#19",
             "dueOverride": null,
             "status": "ASSIGNED"
@@ -1038,6 +1041,9 @@
           {
             "assignee": "uuid#13",
             "displayName": "Bob",
+            "username": "as_bob",
+            "email": "bob@example.com",
+            "section": "uuid#6",
             "release": "uuid#21",
             "dueOverride": null,
             "status": "ASSIGNED"
@@ -1045,6 +1051,9 @@
           {
             "assignee": "uuid#15",
             "displayName": "Eve",
+            "username": "as_eve",
+            "email": "eve@example.com",
+            "section": "uuid#5",
             "release": "uuid#25",
             "dueOverride": null,
             "status": "ASSIGNED"
