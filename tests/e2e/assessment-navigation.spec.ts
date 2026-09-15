@@ -52,11 +52,32 @@ test("attempt links reveal work, tabs retain edits, and label failures preserve 
       content: "Evidence to assess",
     });
     const page = await staff.newPage();
+    let releaseGradingReads!: () => void;
+    const gradingReadsHeld = new Promise<void>((resolve) => {
+      releaseGradingReads = resolve;
+    });
+    const gradingRead = /\/api\/grades\/(?:item|for-item)$/;
+    await page.route(gradingRead, async (route) => {
+      const response = await route.fetch();
+      await gradingReadsHeld;
+      await route.fulfill({ response });
+    });
+    await page.setViewportSize({ width: 900, height: 500 });
     await page.goto(`${baseURL}/staff/assignments/${assignment}#attempt-${submission}`);
+    try {
+      await expect(page.getByRole("tab", { name: "Overview", exact: true })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+    } finally {
+      releaseGradingReads();
+    }
     await expect(page.getByRole("tab", { name: "Submissions", exact: true })).toHaveAttribute(
       "aria-selected",
       "true",
     );
+    await expect(page.locator(`[id="attempt-${submission}"]`)).toBeInViewport();
+    await page.unroute(gradingRead);
     await expect(page.getByText("Evidence to assess", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Assess this attempt" }).click();
     await page.getByRole("button", { name: "Start assessment", exact: true }).click();

@@ -149,6 +149,9 @@ function StaffAssignmentDetailPageContent({
   const [gradingUser, setGradingUser] = useState<string | null>(null);
   const [gradingEvidence, setGradingEvidence] = useState<string | null>(null);
   const [tab, setTab] = useState("overview");
+  const [pendingAttemptHash, setPendingAttemptHash] = useState<string | null>(
+    null,
+  );
 
   const {
     data: asgnData,
@@ -274,25 +277,38 @@ function StaffAssignmentDetailPageContent({
   }
 
   useEffect(() => {
-    let frame = 0;
-    function followAttempt() {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        if (!canGrade || !window.location.hash.startsWith("#attempt-")) return;
-        const target = document.getElementById(window.location.hash.slice(1));
-        if (!(target instanceof HTMLDetailsElement)) return;
-        setTab("submissions");
-        target.open = true;
-        frame = requestAnimationFrame(() => target.scrollIntoView());
-      });
+    function queueAttempt() {
+      setPendingAttemptHash(
+        canGrade && window.location.hash.startsWith("#attempt-")
+          ? window.location.hash.slice(1)
+          : null,
+      );
     }
-    followAttempt();
-    window.addEventListener("hashchange", followAttempt);
+    queueAttempt();
+    window.addEventListener("hashchange", queueAttempt);
     return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("hashchange", followAttempt);
+      window.removeEventListener("hashchange", queueAttempt);
     };
-  }, [canGrade, loading, subsData]);
+  }, [canGrade]);
+
+  useEffect(() => {
+    if (!canGrade || !pendingAttemptHash) return;
+    let scrollFrame = 0;
+    const revealFrame = requestAnimationFrame(() => {
+      const target = document.getElementById(pendingAttemptHash);
+      if (!(target instanceof HTMLDetailsElement)) return;
+      setTab("submissions");
+      target.open = true;
+      scrollFrame = requestAnimationFrame(() => {
+        target.scrollIntoView();
+        setPendingAttemptHash(null);
+      });
+    });
+    return () => {
+      cancelAnimationFrame(revealFrame);
+      cancelAnimationFrame(scrollFrame);
+    };
+  }, [canGrade, pendingAttemptHash, loading, subsData, gradingDataReady]);
 
   const submittedIds = new Set(submissions.map((s) => s.submitter));
 
@@ -475,6 +491,7 @@ function StaffAssignmentDetailPageContent({
         value={tab}
         className="gap-6"
         onValueChange={(value) => {
+          setPendingAttemptHash(null);
           setTab(value);
           if (value === "preview") gradingSetup.refetch();
         }}
