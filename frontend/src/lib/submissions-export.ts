@@ -93,6 +93,39 @@ function latestGradeRecord<T extends { createdAt: string; updatedAt: string }>(
     .at(-1);
 }
 
+export function selectExportAssessment<
+  T extends {
+    evidence: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+  },
+>(
+  records: readonly T[],
+  attempt: Pick<LearnerAttempt, "submission" | "number"> | undefined,
+) {
+  const attemptRecord = attempt
+    ? latestGradeRecord(
+        records.filter(
+          (record) => String(record.evidence) === String(attempt.submission),
+        ),
+      )
+    : undefined;
+  const assignmentExcusal = latestGradeRecord(
+    records.filter(
+      (record) => record.status === "EXCUSED" && record.evidence === "",
+    ),
+  );
+  return {
+    record: attemptRecord ?? assignmentExcusal,
+    scope: attemptRecord
+      ? `Attempt ${attempt?.number}`
+      : assignmentExcusal
+        ? "Assignment excusal"
+        : "",
+  };
+}
+
 function exportedGrade<
   T extends { evidence: string; status: string } & {
     createdAt: string;
@@ -102,26 +135,7 @@ function exportedGrade<
   records: readonly T[],
   attempt: LearnerAttempt | undefined,
 ) {
-  const assignmentExcusal = latestGradeRecord(
-    records.filter(
-      (record) => record.status === "EXCUSED" && record.evidence === "",
-    ),
-  );
-  const attemptRecord = attempt
-    ? latestGradeRecord(
-        records.filter(
-          (record) => String(record.evidence) === String(attempt.submission),
-        ),
-      )
-    : undefined;
-  return {
-    record: attemptRecord ?? assignmentExcusal,
-    scope: attemptRecord
-      ? `Attempt ${attempt?.number}`
-      : assignmentExcusal
-        ? "Assignment excusal"
-        : "",
-  };
+  return selectExportAssessment(records, attempt);
 }
 
 function effectiveDue(

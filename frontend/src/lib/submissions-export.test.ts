@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { SubmissionsExportSource } from "./submissions-export.ts";
 import {
   SUBMISSIONS_CSV_COLUMNS,
+  selectExportAssessment,
   submissionsCsv,
 } from "./submissions-export.ts";
 
@@ -89,6 +90,100 @@ const source = {
 } as unknown as SubmissionsExportSource;
 
 describe("submission export", () => {
+  test("selects a unified assessment by evidence before interpreting its saved method", () => {
+    const assessments = [
+      {
+        grade: "point-assessment",
+        evidence: "attempt-1",
+        method: "POINTS",
+        setupRevision: 1,
+        criteria: [
+          {
+            criterion: "overall-10",
+            name: "Overall",
+            maxPoints: 10,
+            position: 0,
+          },
+        ],
+        score: 8,
+        outOf: 10,
+        scored: true,
+        status: "RELEASED",
+        createdAt: "2026-09-11T00:00:00Z",
+        updatedAt: "2026-09-11T01:00:00Z",
+      },
+      {
+        grade: "competency-assessment",
+        evidence: "attempt-2",
+        method: "COMPETENCY",
+        setupRevision: 2,
+        criteria: [
+          {
+            criterion: "reasoning-edition",
+            basis: "reasoning-edition",
+            name: "Reasoning",
+            position: 0,
+          },
+        ],
+        score: 0,
+        outOf: 0,
+        scored: false,
+        status: "DRAFT",
+        createdAt: "2026-09-12T00:00:00Z",
+        updatedAt: "2026-09-12T01:00:00Z",
+      },
+      {
+        grade: "assignment-excusal",
+        evidence: "",
+        method: "POINTS",
+        setupRevision: 3,
+        criteria: [],
+        score: 0,
+        outOf: 0,
+        scored: false,
+        status: "EXCUSED",
+        createdAt: "2026-09-13T00:00:00Z",
+        updatedAt: "2026-09-13T01:00:00Z",
+      },
+    ];
+
+    expect(
+      selectExportAssessment(assessments, {
+        submission: "attempt-1",
+        number: 1,
+      }),
+    ).toMatchObject({
+      scope: "Attempt 1",
+      record: {
+        grade: "point-assessment",
+        method: "POINTS",
+        score: 8,
+        outOf: 10,
+      },
+    });
+    expect(
+      selectExportAssessment(assessments, {
+        submission: "attempt-2",
+        number: 2,
+      }),
+    ).toMatchObject({
+      scope: "Attempt 2",
+      record: {
+        grade: "competency-assessment",
+        method: "COMPETENCY",
+      },
+    });
+    expect(
+      selectExportAssessment(assessments, {
+        submission: "attempt-3",
+        number: 3,
+      }),
+    ).toMatchObject({
+      scope: "Assignment excusal",
+      record: { grade: "assignment-excusal", status: "EXCUSED" },
+    });
+  });
+
   test("keeps one row per learner with submitted, withdrawn, and missing states", () => {
     const { filename, csv } = submissionsCsv(source);
     expect(filename).toBe("lab-one-submissions.csv");
