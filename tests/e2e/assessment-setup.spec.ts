@@ -7,15 +7,17 @@ test("skills refresh without clearing a draft, and graders can open unassessed a
   test.setTimeout(120_000);
   const staff = await browser.newContext();
   const grader = await browser.newContext();
+  let staffCookie = "";
+  let reviewerAssigned = false;
   try {
     const login = await staff.request.post(`${baseURL}/api/auth/login`, {
       data: { username: "mara", password: "password123" },
     });
     expect(login.ok()).toBe(true);
-    const cookie = login.headers()["set-cookie"]!.split(";")[0]!;
+    staffCookie = login.headers()["set-cookie"]!.split(";")[0]!;
     const call = async (path: string, data: unknown) => {
       const response = await staff.request.post(`${baseURL}/api${path}`, {
-        headers: { Cookie: cookie },
+        headers: { Cookie: staffCookie },
         data,
       });
       const result = await response.json();
@@ -74,24 +76,42 @@ test("skills refresh without clearing a draft, and graders can open unassessed a
       capabilities: ["grade"],
     });
     await call("/roles/assign", { user: "noah@example.edu", context: "commons", role });
+    reviewerAssigned = true;
     const graderLogin = await grader.request.post(`${baseURL}/api/auth/login`, {
       data: { username: "noah", password: "password123" },
     });
     expect(graderLogin.ok()).toBe(true);
+    const warmAssignment = await grader.request.get(
+      `${baseURL}/staff/assignments/${assignment}`,
+    );
+    expect(warmAssignment.ok()).toBe(true);
     const review = await grader.newPage();
     await review.goto(`${baseURL}/staff/gradebook`);
     await review.getByText("Grade an assignment", { exact: true }).click();
-    await review.getByRole("link", { name: "Unassessed work", exact: true }).click();
+    const assignmentLink = review.getByRole("link", { name: /^Unassessed work/ });
+    await expect(assignmentLink).toHaveAttribute(
+      "href",
+      `/staff/assignments/${assignment}`,
+    );
+    await assignmentLink.click({ noWaitAfter: true });
     await expect(
       review.getByRole("heading", { name: "Unassessed work", exact: true }),
     ).toBeVisible();
     await expect(review.getByRole("tab", { name: "Submissions", exact: true })).toBeVisible();
     await expect(review.getByRole("button", { name: "Edit", exact: true })).toHaveCount(0);
-    // The grader is an account other specs read as a student: this spec leaves
-    // the room as it found it, so a whole-suite run stays order-independent.
-    await call("/roles/revoke", { user: "noah@example.edu", context: "commons" });
   } finally {
-    await staff.close();
-    await grader.close();
+    try {
+      // The grader is an account other specs read as a student: always leave
+      // the room as it was found, including after an assertion failure.
+      if (reviewerAssigned) {
+        const revoke = await staff.request.post(`${baseURL}/api/roles/revoke`, {
+          headers: { Cookie: staffCookie },
+          data: { user: "noah@example.edu", context: "commons" },
+        });
+        expect(revoke.ok()).toBe(true);
+      }
+    } finally {
+      await Promise.all([staff.close(), grader.close()]);
+    }
   }
 });

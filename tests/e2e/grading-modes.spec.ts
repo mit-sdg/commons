@@ -56,6 +56,10 @@ test("points grading is private until release and mode changes delete only after
       content: "My first solution",
     });
 
+    // Warm both independently compiled Next routes before opening an editor. In dev,
+    // compiling a route for the first time can refresh another open page.
+    const studentPage = await student.newPage();
+    await studentPage.goto(`${baseURL}/grades`);
     const staffPage = await staff.newPage();
     await staffPage.goto(`${baseURL}/staff/assignments/${assignment}#attempt-${submission}`);
     await staffPage.getByRole("button", { name: "Assess this attempt" }).click();
@@ -77,16 +81,14 @@ test("points grading is private until release and mode changes delete only after
     await staffPage.getByRole("button", { name: "Save draft" }).click();
     await expect(staffPage.getByText("draft", { exact: true })).toBeVisible();
 
-    const studentPage = await student.newPage();
-    await studentPage.goto(`${baseURL}/grades`);
-    await expect(studentPage.getByText("8.5", { exact: true })).toHaveCount(0);
+    await studentPage.reload();
+    await expect(studentPage.getByText("8.5 / 10", { exact: true })).toHaveCount(0);
 
     await staffPage.getByRole("button", { name: "Release", exact: true }).click();
     await staffPage.getByRole("button", { name: "Release grade", exact: true }).click();
-    await expect(staffPage.getByText("released", { exact: true })).toBeVisible();
+    await expect(staffPage.getByText("released", { exact: true }).first()).toBeVisible();
     await studentPage.reload();
-    await expect(studentPage.getByText("8.5", { exact: true })).toBeVisible();
-    await expect(studentPage.getByText("/ 10", { exact: true })).toBeVisible();
+    await expect(studentPage.getByText("8.5 / 10", { exact: true })).toBeVisible();
     await expect(studentPage.getByText("Clear method; revisit the final step.")).toBeVisible();
     await studentPage.screenshot({
       path: resolve(shots, "problem-set-1-released-learner-desktop.png"),
@@ -105,6 +107,7 @@ test("points grading is private until release and mode changes delete only after
     await staffPage.screenshot({
       path: resolve(shots, "problem-set-1-mode-change-confirmation-desktop.png"),
       fullPage: false,
+      animations: "disabled",
     });
     await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
     await expect(staffPage.getByRole("button", { name: "Points", exact: true })).toHaveAttribute(
@@ -112,7 +115,7 @@ test("points grading is private until release and mode changes delete only after
       "true",
     );
     await studentPage.reload();
-    await expect(studentPage.getByText("8.5", { exact: true })).toBeVisible();
+    await expect(studentPage.getByText("8.5 / 10", { exact: true })).toBeVisible();
 
     await staffPage.getByRole("button", { name: "Competency", exact: true }).click();
     await staffPage
@@ -123,7 +126,7 @@ test("points grading is private until release and mode changes delete only after
       staffPage.getByRole("button", { name: "Competency", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
     await studentPage.reload();
-    await expect(studentPage.getByText("8.5", { exact: true })).toHaveCount(0);
+    await expect(studentPage.getByText("8.5 / 10", { exact: true })).toHaveCount(0);
   } finally {
     await staff.close();
     await student.close();
