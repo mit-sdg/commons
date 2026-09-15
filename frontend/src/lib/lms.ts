@@ -81,6 +81,18 @@ export async function loadSubmissionsForStudent(
   return unwrap(await api.submissions["for-student"]({ submitter }));
 }
 
+export async function loadDelegationGraders(): Promise<
+  Output<"/delegation/graders">
+> {
+  return unwrap(await api.delegation.graders({}));
+}
+
+export async function loadDelegationForItem(
+  item: string,
+): Promise<Output<"/delegation/for-item">> {
+  return unwrap(await api.delegation["for-item"]({ item }));
+}
+
 export async function loadGradesForMe(): Promise<Output<"/grades/for-me">> {
   return unwrap(await api.grades["for-me"]({}));
 }

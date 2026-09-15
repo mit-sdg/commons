@@ -1,4 +1,4 @@
-import { expect, type BrowserContext, test } from "@playwright/test";
+import { expect, type BrowserContext, type Page, test } from "@playwright/test";
 
 async function setupAssignment(
   context: BrowserContext,
@@ -77,12 +77,33 @@ async function submitAsStudent(context: BrowserContext, baseURL: string, assignm
   return result.submission as string;
 }
 
-async function recoverAllNotices(page: import("@playwright/test").Page) {
+async function recoverAllNotices(page: Page, readPath: string) {
   const panel = page.getByRole("tabpanel", { name: "Submissions" });
   const notice = panel.getByText("Grading data could not be refreshed");
-  for (let attempt = 0; attempt < 3 && (await notice.first().isVisible()); attempt += 1) {
-    await panel.getByRole("button", { name: "Retry grading data", exact: true }).first().click();
-    await expect(panel.getByRole("button", { name: "Retrying…" })).toHaveCount(0);
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const alert = panel
+      .getByRole("alert")
+      .filter({ hasText: "Grading data could not be refreshed" })
+      .first();
+    if ((await alert.count()) === 0) break;
+
+    // A parent read notice can be replaced by an editor read notice. Keep the
+    // clicked DOM node so the locator cannot silently retarget the next notice.
+    const alertElement = await alert.elementHandle();
+    const readResponse = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === readPath && response.request().method() === "POST",
+    );
+    await alert.getByRole("button", { name: "Retry grading data", exact: true }).click();
+    expect((await readResponse).ok()).toBe(true);
+    await expect
+      .poll(async () =>
+        alertElement
+          ? alertElement.evaluate((element) => element.isConnected).catch(() => false)
+          : false,
+      )
+      .toBe(false);
+    await alertElement?.dispose();
   }
   await expect(notice).toHaveCount(0);
 }
@@ -198,7 +219,7 @@ test("points grading retains its mode and unsaved editor through read failures",
         .getByText("Grading data could not be refreshed"),
     ).toHaveCount(1);
     await page.unroute("**/api/grades/item");
-    await recoverAllNotices(page);
+    await recoverAllNotices(page, "/api/grades/item");
     await expect(score).toBeEnabled();
     await page.getByRole("button", { name: "Save draft" }).click();
     await expect(page.getByText("7.75 / 10", { exact: true })).toBeVisible();
@@ -223,16 +244,16 @@ test("points grading retains its mode and unsaved editor through read failures",
     await expect(page.getByText(/update outcome could not be confirmed/i)).toBeHidden();
     await page.unroute("**/api/grades/for-item");
     await page.unroute("**/api/grades/save");
-    await recoverAllNotices(page);
+    await recoverAllNotices(page, "/api/grades/for-item");
     await expect(score).toHaveValue("9.25");
     await expect(feedback).toHaveValue("Keep this newer unsaved points feedback");
     await expect(score).toBeEnabled();
     await page.getByRole("button", { name: "Save draft" }).click();
     await expect(page.getByText("9.25 / 10", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Release drafts (1)", exact: true }).click();
+    await page.getByRole("button", { name: "Release all drafts (1)", exact: true }).click();
     await page
       .getByRole("dialog")
-      .getByRole("button", { name: "Release grades", exact: true })
+      .getByRole("button", { name: "Release all assignment drafts", exact: true })
       .click();
     await expect(page.getByText("released", { exact: true }).first()).toBeVisible();
     await expect(
@@ -293,7 +314,7 @@ test("competency grading retains unsaved judgments through uncertain actions and
     await expect(page.getByRole("button", { name: "Start assessment" })).toBeEnabled();
     await page.getByRole("button", { name: "Start assessment" }).click();
     await expect(
-      page.getByRole("button", { name: "Release drafts (1)", exact: true }),
+      page.getByRole("button", { name: "Release all drafts (1)", exact: true }),
     ).toBeEnabled();
     await expect(page.getByText("1 assessment", { exact: true })).toBeVisible();
     const rating = page.getByRole("combobox", { name: "Assessment" });
@@ -321,16 +342,16 @@ test("competency grading retains unsaved judgments through uncertain actions and
     await expect(page.getByText(/update outcome could not be confirmed/i)).toBeHidden();
     await page.unroute("**/api/grades/for-item");
     await page.unroute("**/api/grades/save");
-    await recoverAllNotices(page);
+    await recoverAllNotices(page, "/api/grades/for-item");
     await expect(feedback).toHaveValue("Keep this unsaved competency feedback");
     await expect(rating).toHaveText("Competent");
     await expect(feedback).toBeEnabled();
     await page.getByRole("button", { name: "Save draft" }).click();
     await expect(page.getByText("Draft saved", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Release drafts (1)", exact: true }).click();
+    await page.getByRole("button", { name: "Release all drafts (1)", exact: true }).click();
     await page
       .getByRole("dialog")
-      .getByRole("button", { name: "Release grades", exact: true })
+      .getByRole("button", { name: "Release all assignment drafts", exact: true })
       .click();
     await expect(page.getByText("released", { exact: true }).first()).toBeVisible();
     await expect(

@@ -14,7 +14,7 @@ The [submissionHasArtifact view](view:Course.submissions.submissionHasArtifact) 
 [Course.submissions.ForStudent](reaction:Course.submissions.ForStudent) forms
 [attempts across assignments](former:Course.submissions.theSubmissionsBy) for that student or a caller holding `grade`.
 [Course.submissions.ForAssignment](reaction:Course.submissions.ForAssignment) requires `grade` and places two current lists side by side:
-[everyone holding an assignment release](former:Course.submissions.theAssignedPopulationForAssignment), including due overrides,
+[everyone holding an assignment release](former:Course.submissions.theAssignedPopulationForAssignment), including due overrides and the learner's profile name, username, roster email, and section for staff exports,
 and [every recorded attempt beside its submitter's profile display name](former:Course.submissions.theSubmissionsForAssignment), including the artifact identities needed to open its evidence. The profile is where a submitter's name comes from now that a seat records none. It does not collapse attempts or infer that each submitter was assigned.
 
 Attempt creation belongs to assignment behavior. Submitting treats assignment

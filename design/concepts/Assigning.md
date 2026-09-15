@@ -189,6 +189,9 @@ _getAssignees (assignment: String) : many (assignee: String)
 _isAssigned (assignment: String, assignee: String) : one (assigned: Boolean)
   answers whether the Assignee holds a release of the Assignment
 
+_assignedAmong (assignment: String, assignees: Seq) : one (assigned: Seq)
+  answers the supplied assignees that hold a release of the Assignment, in release order
+
 _getPublishedForAudience (audience: String|Null) : many (assignment: String)
   answers published assignments addressed to everyone or to the named section, in creation order
   answers no rows when none match

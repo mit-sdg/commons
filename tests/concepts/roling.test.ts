@@ -140,6 +140,30 @@ for (const [floor, make] of floors) {
       expect(await roling._getRole({ user: "maya", context: "course-2" })).toEqual([{ role }]);
     });
 
+    test("capability holders include the administer wildcard in assignment order", async () => {
+      const roling = await make();
+      const { role: grader } = await roling.defineRole({
+        name: "grader",
+        capabilities: ["grade"],
+      });
+      const { role: administrator } = await roling.defineRole({
+        name: "administrator",
+        capabilities: ["administer"],
+      });
+      const { role: student } = await roling.defineRole({
+        name: "student",
+        capabilities: [],
+      });
+      await roling.assign({ user: "mara", context: "commons", role: administrator });
+      await roling.assign({ user: "priya", context: "commons", role: student });
+      await roling.assign({ user: "noah", context: "commons", role: grader });
+      await roling.assign({ user: "other", context: "other", role: grader });
+
+      expect(
+        await roling._getCapabilityHolders({ context: "commons", capability: "grade" }),
+      ).toEqual([{ user: "mara" }, { user: "noah" }]);
+    });
+
     test("revoke removes the holding; revoking an absent assignment is refused", async () => {
       const roling = await make();
       const { role } = await roling.defineRole({ name: "instructor", capabilities: ["grade"] });
