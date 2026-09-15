@@ -13,11 +13,11 @@ import { useQuery } from "@/hooks/use-query";
 import { api } from "@/lib/api";
 import { assignmentTypeLabel } from "@/lib/assignment-types";
 import { useAuth } from "@/lib/auth";
+import { type Assessment, assessmentForEvidence } from "@/lib/grading";
 
 import {
   loadAssignments,
   loadGradesForMe,
-  loadMarksForMe,
   loadRosterMe,
   loadSubmissionLatest,
 } from "@/lib/lms";
@@ -50,11 +50,6 @@ export default function AssignmentsPage() {
     session && rosterData?.seat ? () => loadGradesForMe() : null,
     [session, rosterData],
   );
-  const { data: marksData } = useQuery(
-    session && rosterData?.seat ? () => loadMarksForMe() : null,
-    [session, rosterData],
-  );
-
   const { data: submissionsData } = useQuery<{
     submissions: {
       assignment: string;
@@ -128,11 +123,7 @@ export default function AssignmentsPage() {
     }
   >;
   const submissions = submissionsData?.submissions ?? [];
-  const grades = gradesData?.grades ?? [];
-  const gradeMap = new Map(grades.map((g) => [g.item, g]));
-  const markMap = new Map(
-    (marksData?.marks ?? []).map((mark) => [mark.item, mark]),
-  );
+  const grades = (gradesData?.grades ?? []) as Assessment[];
   const subMap = new Map(submissions.map((s) => [s.assignment, s]));
 
   const now = new Date();
@@ -140,8 +131,14 @@ export default function AssignmentsPage() {
   const filtered = assignments.filter((a) => {
     const detail = details[a.assignment];
     const sub = subMap.get(a.assignment);
-    const grade = gradeMap.get(a.assignment);
-    const mark = markMap.get(a.assignment);
+    const grade = me
+      ? assessmentForEvidence(
+          grades,
+          String(me.user),
+          a.assignment,
+          sub?.submission ?? "",
+        )
+      : undefined;
     const dueAt = a.dueOverride ?? detail?.dueAt;
 
     if (search && detail) {
@@ -157,16 +154,9 @@ export default function AssignmentsPage() {
 
     if (filter === "all") return true;
     if (filter === "submitted") return !!sub;
-    if (filter === "graded")
-      return grade?.status === "RELEASED" || mark?.status === "RELEASED";
+    if (filter === "graded") return grade?.status === "RELEASED";
     if (filter === "upcoming") {
-      if (
-        sub ||
-        grade?.status === "RELEASED" ||
-        grade?.status === "EXCUSED" ||
-        mark?.status === "RELEASED" ||
-        mark?.status === "EXCUSED"
-      )
+      if (sub || grade?.status === "RELEASED" || grade?.status === "EXCUSED")
         return false;
       if (dueAt) return new Date(dueAt) > now;
       return true;
@@ -248,8 +238,14 @@ export default function AssignmentsPage() {
           {filtered.map((a) => {
             const detail = details[a.assignment];
             const sub = subMap.get(a.assignment);
-            const grade = gradeMap.get(a.assignment);
-            const mark = markMap.get(a.assignment);
+            const grade = me
+              ? assessmentForEvidence(
+                  grades,
+                  String(me.user),
+                  a.assignment,
+                  sub?.submission ?? "",
+                )
+              : undefined;
             const due = a.dueOverride ?? detail?.dueAt;
             const isOverdue = due && new Date(due) < now && !sub;
             const title = detail?.title ?? a.assignment.slice(0, 8);
@@ -281,32 +277,22 @@ export default function AssignmentsPage() {
                       <span>
                         <span className="text-muted-foreground">Grade</span>{" "}
                         <span className="font-medium text-foreground tabular-nums">
-                          Assessment available
+                          {grade.method === "POINTS" && grade.scored
+                            ? `${grade.score} / ${grade.outOf}`
+                            : "Assessment available"}
                         </span>
                       </span>
                     )}
-                    {mark && mark.status === "RELEASED" && (
-                      <span>
-                        <span className="text-muted-foreground">Grade</span>{" "}
-                        <span className="font-medium text-foreground tabular-nums">
-                          {mark.score} / {mark.outOf}
-                        </span>
-                      </span>
-                    )}
-                    {mark?.status === "EXCUSED" && <span>Excused</span>}
+                    {grade?.status === "EXCUSED" && <span>Excused</span>}
                   </Facts>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  {mark ? (
-                    <StatusBadge status={mark.status} />
-                  ) : grade ? (
-                    <StatusBadge status={grade.status} />
-                  ) : null}
-                  {!mark && !grade && sub && <StatusBadge status="SUBMITTED" />}
-                  {!mark && !grade && !sub && isOverdue && (
+                  {grade ? <StatusBadge status={grade.status} /> : null}
+                  {!grade && sub && <StatusBadge status="SUBMITTED" />}
+                  {!grade && !sub && isOverdue && (
                     <Fact.Status status="OVERDUE" />
                   )}
-                  {!mark && !grade && !sub && !isOverdue && (
+                  {!grade && !sub && !isOverdue && (
                     <Fact.Status status="PENDING" />
                   )}
                   <ChevronRight className="size-4 text-muted-foreground" />

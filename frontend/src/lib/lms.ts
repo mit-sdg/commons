@@ -101,22 +101,6 @@ export async function loadGradebook(): Promise<Output<"/grades/gradebook">> {
   return unwrap(await api.grades.gradebook({}));
 }
 
-export async function loadMarksForMe(): Promise<Output<"/marks/for-me">> {
-  return unwrap(await api.marks["for-me"]({}));
-}
-
-export async function loadMarksForStudent(
-  learner: string,
-): Promise<Output<"/marks/for-student">> {
-  return unwrap(await api.marks["for-student"]({ learner }));
-}
-
-export async function loadMarksForItem(
-  item: string,
-): Promise<Output<"/marks/for-item">> {
-  return unwrap(await api.marks["for-item"]({ item }));
-}
-
 export async function loadLateDayBalance(
   learner: string,
 ): Promise<Output<"/late-days/balance">> {

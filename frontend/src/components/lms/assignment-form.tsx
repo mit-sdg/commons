@@ -20,6 +20,7 @@ import { ASSIGNMENT_TYPES } from "@/lib/assignment-types";
 import { useAuth } from "@/lib/auth";
 import { useCourse } from "@/lib/course";
 import { fromZonedInput, toZonedInput } from "@/lib/format";
+import type { SetupCriterionInput } from "@/lib/grading";
 import { loadSections } from "@/lib/lms";
 import { CreationSkills } from "./grade-setup";
 
@@ -180,37 +181,34 @@ export function AssignmentForm({
         const savedAssignment =
           existing?.assignment ??
           ("assignment" in result ? result.assignment : "");
-        if (!existing && acceptsSubmissions && gradingMethod === "POINTS") {
+        if (!existing && acceptsSubmissions) {
           try {
-            const configured = await api.grades["configure-method"]({
+            const criteria: SetupCriterionInput[] =
+              gradingMethod === "POINTS"
+                ? [
+                    {
+                      kind: "POINTS",
+                      name: "Overall",
+                      maxPoints: numericMaximum,
+                      position: 0,
+                    },
+                  ]
+                : selectedSkills.map((basis, position) => ({
+                    kind: "COMPETENCY",
+                    basis,
+                    position,
+                  }));
+            const configured = await api.grades["configure-setup"]({
               item: savedAssignment,
-              method: "POINTS",
-              maxPoints: numericMaximum,
-              generation: 0,
+              method: gradingMethod,
+              revision: 0,
+              criteria,
             });
             if ("error" in configured) throw new Error(configured.error);
           } catch {
             toast.error(
-              "Draft saved, but points grading could not be configured. Review its grading setup before publishing.",
+              "Draft saved, but its grading setup could not be configured. Review the setup before publishing.",
             );
-          }
-        }
-        if (!existing && acceptsSubmissions && gradingMethod === "COMPETENCY") {
-          for (const [position, basis] of selectedSkills.entries()) {
-            try {
-              const added = await api.grades["add-criterion"]({
-                item: savedAssignment,
-                basis,
-                position,
-              });
-              if ("error" in added)
-                throw new Error(publicErrorMessage(added.error));
-            } catch {
-              toast.error(
-                "Draft saved, but some skills could not be added. Review its skills before publishing.",
-              );
-              break;
-            }
           }
         }
         onSaved(savedAssignment);
@@ -365,7 +363,7 @@ export function AssignmentForm({
           </div>
           <p className="text-sm text-muted-foreground">
             {gradingMethod === "POINTS"
-              ? "Enter one assignment-level score for each learner."
+              ? "Start with one Overall criterion. You can add named subsections in the assignment setup."
               : "Assess the selected skills against their rubrics."}
           </p>
           {gradingMethod === "POINTS" && (

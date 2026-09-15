@@ -1,4 +1,6 @@
 "use client";
+
+import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -17,16 +19,31 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useQuery } from "@/hooks/use-query";
-import { api, type Output, publicErrorMessage, unwrap } from "@/lib/api";
+import { type QueryState, useQuery } from "@/hooks/use-query";
+import {
+  api,
+  isClientErrorCode,
+  type Output,
+  publicErrorMessage,
+  unwrap,
+} from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import {
+  competencyCriteria,
+  type GradingMethod,
+  type GradingSetup,
+  pointCriteria,
+  type SetupCriterionInput,
+} from "@/lib/grading";
 import { RubricDescription } from "./assessment-history";
+import { GradingDataNotice } from "./grading-data-notice";
 
 type Standard = Extract<
   Output<"/grades/standards">,
   { standards: unknown }
 >["standards"][number];
-const empty = {
+
+const emptyStandard = {
   name: "",
   description: "",
   deficient: "",
@@ -35,7 +52,8 @@ const empty = {
   expert: "",
   referenceUrl: "",
 };
-const fields = [
+
+const standardFields = [
   ["name", "Skill name"],
   ["description", "What this skill concerns"],
   ["deficient", "Deficient"],
@@ -44,23 +62,20 @@ const fields = [
   ["expert", "Expert"],
   ["referenceUrl", "Reference link (optional)"],
 ] as const;
+
 export function StandardManager({ onChanged }: { onChanged?: () => void }) {
   const { session } = useAuth();
   const query = useQuery(
     session ? async () => unwrap(await api.grades.standards({})) : null,
     [session],
   );
-  const [editing, setEditing] = useState<Standard | null | undefined>(
-    undefined,
-  );
+  const [editing, setEditing] = useState<Standard | null | undefined>();
   if (query.error)
     return <ErrorState message={query.error} onRetry={query.refetch} />;
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">Course skills</h2>
-        </div>
+        <h2 className="text-lg font-semibold">Course skills</h2>
         <Button variant="outline" onClick={() => setEditing(null)}>
           New skill
         </Button>
@@ -85,16 +100,20 @@ export function StandardManager({ onChanged }: { onChanged?: () => void }) {
           assignment.
         </p>
       ) : (
-        query.data?.standards.map((r) => (
+        query.data?.standards.map((rubric) => (
           <div
-            key={r.standard}
+            key={rubric.standard}
             className="space-y-2 rounded-lg border border-border p-4"
           >
             <RubricDescription
-              rubric={r}
-              title={r.name}
+              rubric={rubric}
+              title={rubric.name}
               action={
-                <Button size="sm" variant="ghost" onClick={() => setEditing(r)}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setEditing(rubric)}
+                >
                   Revise rubric
                 </Button>
               }
@@ -105,6 +124,7 @@ export function StandardManager({ onChanged }: { onChanged?: () => void }) {
     </section>
   );
 }
+
 function StandardForm({
   existing,
   onSaved,
@@ -117,9 +137,9 @@ function StandardForm({
   const [values, setValues] = useState(
     existing
       ? (Object.fromEntries(
-          fields.map(([k]) => [k, existing[k]]),
-        ) as typeof empty)
-      : empty,
+          standardFields.map(([key]) => [key, existing[key]]),
+        ) as typeof emptyStandard)
+      : emptyStandard,
   );
   const [busy, setBusy] = useState(false);
   async function save() {
@@ -153,8 +173,8 @@ function StandardForm({
   return (
     <form
       className="space-y-4 rounded-lg border border-border bg-muted/20 p-4"
-      onSubmit={(e) => {
-        e.preventDefault();
+      onSubmit={(event) => {
+        event.preventDefault();
         void save();
       }}
     >
@@ -167,7 +187,7 @@ function StandardForm({
           : "Link to your full rubric. Descriptions in Commons are optional."}
       </p>
       {([true, false] as const).map((basic) => {
-        const inputs = fields
+        const inputs = standardFields
           .filter(
             ([key]) => basic === (key === "name" || key === "referenceUrl"),
           )
@@ -182,8 +202,11 @@ function StandardForm({
                   maxLength={key === "referenceUrl" ? 2048 : 10000}
                   value={values[key]}
                   disabled={busy}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, [key]: e.target.value }))
+                  onChange={(event) =>
+                    setValues((current) => ({
+                      ...current,
+                      [key]: event.target.value,
+                    }))
                   }
                 />
               ) : (
@@ -192,8 +215,11 @@ function StandardForm({
                   maxLength={10000}
                   value={values[key]}
                   disabled={busy}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, [key]: e.target.value }))
+                  onChange={(event) =>
+                    setValues((current) => ({
+                      ...current,
+                      [key]: event.target.value,
+                    }))
                   }
                 />
               )}
@@ -228,6 +254,7 @@ function StandardForm({
     </form>
   );
 }
+
 export function CreationSkills({
   selected,
   onChange,
@@ -243,14 +270,17 @@ export function CreationSkills({
     session
       ? async () => {
           const result = unwrap(await api.grades.standards({}));
-          // A refresh must not silently replace a selected rubric edition.
-          const pinned = known.current.filter((r) =>
-            selected.includes(r.edition),
+          const pinned = known.current.filter((rubric) =>
+            selected.includes(rubric.edition),
           );
           known.current = [
             ...pinned,
             ...result.standards.filter(
-              (r) => !pinned.some((p) => p.standard === r.standard),
+              (rubric) =>
+                !pinned.some(
+                  (selectedRubric) =>
+                    selectedRubric.standard === rubric.standard,
+                ),
             ),
           ];
           return { ...result, standards: known.current };
@@ -261,7 +291,6 @@ export function CreationSkills({
   const [search, setSearch] = useState("");
   const { refetch } = query;
   useEffect(() => {
-    // The rubric manager opens in another tab; keep this draft's choices intact.
     function refresh() {
       if (document.visibilityState === "visible") refetch();
     }
@@ -294,31 +323,33 @@ export function CreationSkills({
             aria-label="Search skills"
             placeholder="Find a skill…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
           />
-          <div className="max-h-64 overflow-y-auto divide-y rounded-lg border">
+          <div className="max-h-64 divide-y overflow-y-auto rounded-lg border">
             {query.data?.standards
-              .filter((r) =>
-                r.name.toLowerCase().includes(search.toLowerCase()),
+              .filter((rubric) =>
+                rubric.name.toLowerCase().includes(search.toLowerCase()),
               )
-              .map((r) => (
+              .map((rubric) => (
                 <label
-                  key={r.edition}
+                  key={rubric.edition}
                   className="flex cursor-pointer items-center gap-3 p-3 text-sm hover:bg-muted/40"
                 >
                   <input
                     type="checkbox"
                     disabled={disabled}
-                    checked={selected.includes(r.edition)}
-                    onChange={(e) =>
+                    checked={selected.includes(rubric.edition)}
+                    onChange={(event) =>
                       onChange(
-                        e.target.checked
-                          ? [...selected, r.edition]
-                          : selected.filter((v) => v !== r.edition),
+                        event.target.checked
+                          ? [...selected, rubric.edition]
+                          : selected.filter(
+                              (value) => value !== rubric.edition,
+                            ),
                       )
                     }
                   />
-                  <span>{r.name}</span>
+                  <span>{rubric.name}</span>
                 </label>
               ))}
             {query.data?.standards.length === 0 && (
@@ -327,8 +358,8 @@ export function CreationSkills({
               </p>
             )}
             {Boolean(query.data?.standards.length) &&
-              !query.data?.standards.some((r) =>
-                r.name.toLowerCase().includes(search.toLowerCase()),
+              !query.data?.standards.some((rubric) =>
+                rubric.name.toLowerCase().includes(search.toLowerCase()),
               ) && (
                 <p className="p-3 text-sm text-muted-foreground">
                   No matching skills.
@@ -341,441 +372,704 @@ export function CreationSkills({
   );
 }
 
-export function GradeSetup({
-  item,
-  title,
-  published = false,
-  readOnly = false,
-  onMethodChange,
+interface PointDraft {
+  key: string;
+  criterion?: string;
+  name: string;
+  maxPoints: string;
+}
+interface CompetencyDraft {
+  key: string;
+  criterion?: string;
+  basis: string;
+  name: string;
+}
+interface SetupDraft {
+  method: GradingMethod;
+  points: PointDraft[];
+  competencies: CompetencyDraft[];
+}
+function setupDraft(setup: GradingSetup): SetupDraft {
+  const points = pointCriteria(setup.criteria).map((criterion) => ({
+    key: criterion.criterion,
+    criterion: criterion.criterion,
+    name: criterion.name,
+    maxPoints: String(criterion.maxPoints),
+  }));
+  return {
+    method: setup.method,
+    points:
+      points.length || setup.method === "POINTS"
+        ? points
+        : [{ key: "default-overall", name: "Overall", maxPoints: "100" }],
+    competencies: competencyCriteria(setup.criteria).map((criterion) => ({
+      key: criterion.criterion,
+      criterion: criterion.criterion,
+      basis: criterion.basis,
+      name: criterion.name,
+    })),
+  };
+}
+
+function setupPayload(draft: SetupDraft): SetupCriterionInput[] {
+  return draft.method === "POINTS"
+    ? draft.points.map((criterion, position) => ({
+        kind: "POINTS",
+        ...(criterion.criterion ? { criterion: criterion.criterion } : {}),
+        name: criterion.name.trim(),
+        maxPoints: Number(criterion.maxPoints),
+        position,
+      }))
+    : draft.competencies.map((criterion, position) => ({
+        kind: "COMPETENCY",
+        ...(criterion.criterion ? { criterion: criterion.criterion } : {}),
+        basis: criterion.basis,
+        position,
+      }));
+}
+
+function setupSignature(setup: GradingSetup) {
+  return JSON.stringify(setupPayload(setupDraft(setup)));
+}
+
+function setupMatches(
+  setup: GradingSetup,
+  method: GradingMethod,
+  intended: SetupCriterionInput[],
+) {
+  if (setup.method !== method) return false;
+  const saved = setupPayload(setupDraft(setup));
+  return (
+    saved.length === intended.length &&
+    saved.every((criterion, index) => {
+      const expected = intended[index];
+      if (!expected || criterion.kind !== expected.kind) return false;
+      if (expected.criterion && criterion.criterion !== expected.criterion)
+        return false;
+      return criterion.kind === "POINTS" && expected.kind === "POINTS"
+        ? criterion.position === expected.position &&
+            criterion.name === expected.name &&
+            criterion.maxPoints === expected.maxPoints
+        : criterion.kind === "COMPETENCY" && expected.kind === "COMPETENCY"
+          ? criterion.position === expected.position &&
+            criterion.basis === expected.basis
+          : false;
+    })
+  );
+}
+
+function move<T>(items: T[], index: number, direction: -1 | 1): T[] {
+  const destination = index + direction;
+  if (destination < 0 || destination >= items.length) return items;
+  const next = [...items];
+  [next[index], next[destination]] = [next[destination]!, next[index]!];
+  return next;
+}
+
+function OrderActions({
+  label,
+  index,
+  count,
+  disabled,
+  onMove,
+  onRemove,
 }: {
+  label: string;
+  index: number;
+  count: number;
+  disabled: boolean;
+  onMove: (direction: -1 | 1) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      <Button
+        type="button"
+        size="icon-sm"
+        variant="ghost"
+        aria-label={`Move ${label} up`}
+        disabled={disabled || index === 0}
+        onClick={() => onMove(-1)}
+      >
+        <ArrowUp className="size-4" />
+      </Button>
+      <Button
+        type="button"
+        size="icon-sm"
+        variant="ghost"
+        aria-label={`Move ${label} down`}
+        disabled={disabled || index === count - 1}
+        onClick={() => onMove(1)}
+      >
+        <ArrowDown className="size-4" />
+      </Button>
+      <Button
+        type="button"
+        size="icon-sm"
+        variant="ghost"
+        aria-label={`Remove ${label}`}
+        disabled={disabled}
+        onClick={onRemove}
+      >
+        <Trash2 className="size-4" />
+      </Button>
+    </div>
+  );
+}
+
+interface GradeSetupProps {
   item: string;
   title: string;
   published?: boolean;
   readOnly?: boolean;
   onMethodChange?: () => void;
-}) {
+  onDirtyChange?: (dirty: boolean) => void;
+}
+
+export function GradeSetup(props: GradeSetupProps) {
   const { session } = useAuth();
   const query = useQuery(
-    session ? async () => unwrap(await api.grades.item({ item })) : null,
-    [session, item],
+    session
+      ? async () =>
+          unwrap(await api.grades.item({ item: props.item })) as GradingSetup
+      : null,
+    [session, props.item],
+    { retainOnTransportError: true },
   );
+  if (query.loading && !query.data)
+    return <LoadingState label="Loading grading setup…" />;
+  if (!query.data)
+    return (
+      <ErrorState
+        message={query.error ?? "Could not load grading setup."}
+        refused={query.refused}
+        onRetry={query.refetch}
+      />
+    );
+  return (
+    <GradeSetupEditor
+      key={props.item}
+      {...props}
+      initialSetup={query.data}
+      query={query}
+    />
+  );
+}
+
+function GradeSetupEditor({
+  item,
+  readOnly = false,
+  onMethodChange,
+  onDirtyChange,
+  initialSetup,
+  query,
+}: GradeSetupProps & {
+  initialSetup: GradingSetup;
+  query: QueryState<GradingSetup>;
+}) {
+  const { session } = useAuth();
   const standards = useQuery(
     session ? async () => unwrap(await api.grades.standards({})) : null,
     [session, item],
   );
-  const [editing, setEditing] = useState(false);
+  const [baseline, setBaseline] = useState(initialSetup);
+  const [draft, setDraft] = useState(() => setupDraft(initialSetup));
   const [basis, setBasis] = useState("");
   const [busy, setBusy] = useState(false);
-  const [pending, setPending] = useState<{
-    type: "add" | "remove";
-    value: string;
+  const [reviewing, setReviewing] = useState(false);
+  const [reloadReviewing, setReloadReviewing] = useState(false);
+  const [uncertainIntent, setUncertainIntent] = useState<{
+    method: GradingMethod;
+    criteria: SetupCriterionInput[];
   } | null>(null);
-  const [maximum, setMaximum] = useState<string | null>(null);
-  const [switching, setSwitching] = useState<{
-    method: "COMPETENCY" | "POINTS";
-    generation: number;
-    total: number;
-    released: number;
-    drafts: number;
-    excused: number;
-  } | null>(null);
-  const method = query.data?.method ?? "COMPETENCY";
-  const maximumValue = maximum ?? String(query.data?.maxPoints ?? 100);
-  const numericMaximum = Number(maximumValue);
-  const maximumValid =
-    maximumValue.trim() !== "" &&
-    Number.isFinite(numericMaximum) &&
-    numericMaximum > 0;
+  const nextKey = useRef(0);
+  const payload = setupPayload(draft);
+  const dirty =
+    draft.method !== baseline.method ||
+    JSON.stringify(payload) !== setupSignature(baseline);
+  const pointTotal = draft.points.reduce(
+    (total, criterion) => total + Number(criterion.maxPoints),
+    0,
+  );
+  const pointValid = Boolean(
+    draft.points.length > 0 &&
+      draft.points.every(
+        (criterion) =>
+          criterion.name.trim() &&
+          criterion.maxPoints.trim() &&
+          Number.isFinite(Number(criterion.maxPoints)) &&
+          Number(criterion.maxPoints) > 0,
+      ) &&
+      Number.isFinite(pointTotal) &&
+      (pointTotal ?? 0) > 0,
+  );
+  const valid =
+    draft.method === "POINTS"
+      ? pointValid
+      : new Set(draft.competencies.map((criterion) => criterion.basis)).size ===
+        draft.competencies.length;
+  const unavailable = readOnly || busy || query.loading || Boolean(query.error);
+  const savedSetupChanged = Boolean(
+    query.data && query.data.revision !== baseline.revision,
+  );
 
-  async function requestConfiguration(next: "COMPETENCY" | "POINTS") {
-    if (!query.data || busy) return;
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+    return () => onDirtyChange?.(false);
+  }, [dirty, onDirtyChange]);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+  useEffect(() => {
     if (
-      next === method &&
-      (next !== "POINTS" || numericMaximum === query.data.maxPoints)
+      !uncertainIntent ||
+      !query.data ||
+      !setupMatches(
+        query.data,
+        uncertainIntent.method,
+        uncertainIntent.criteria,
+      )
     )
       return;
+    // This retry read is an external acknowledgement of the uncertain write.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setBaseline(query.data);
+    setDraft(setupDraft(query.data));
+    setUncertainIntent(null);
+    toast.success("Grading setup save confirmed");
+  }, [query.data, uncertainIntent]);
+
+  async function save() {
+    if (!valid) return;
     setBusy(true);
+    const reconcileUncertainSave = () => {
+      setUncertainIntent({ method: draft.method, criteria: payload });
+      toast.error(
+        "The setup save could not be confirmed. Your draft remains here and saved assessments are unchanged; grading data is being refreshed before retrying.",
+      );
+      query.refetch();
+      onMethodChange?.();
+    };
     try {
-      const result =
-        method === "POINTS"
-          ? await api.marks["for-item"]({ item })
-          : await api.grades["for-item"]({ item });
+      const result = await api.grades["configure-setup"]({
+        item,
+        method: draft.method,
+        revision: baseline.revision,
+        criteria: payload,
+      });
       if ("error" in result) {
-        toast.error(publicErrorMessage(result.error));
+        if (isClientErrorCode(result.error)) {
+          reconcileUncertainSave();
+          return;
+        }
+        toast.error(
+          result.error === "CONFLICT"
+            ? "This grading setup changed. Your draft is still here; reload the saved setup before trying again."
+            : result.error === "INVALID_REQUEST"
+              ? "Check every criterion name, maximum, rubric, and position."
+              : publicErrorMessage(result.error),
+        );
+        if (result.error === "CONFLICT") query.refetch();
         return;
       }
-      const rows = "marks" in result ? result.marks : result.grades;
-      setSwitching({
-        method: next,
-        generation: query.data.generation,
-        total: rows.length,
-        released: rows.filter((row) => row.status === "RELEASED").length,
-        drafts: rows.filter((row) => row.status === "DRAFT").length,
-        excused: rows.filter((row) => row.status === "EXCUSED").length,
-      });
+      setBaseline(result);
+      setDraft(setupDraft(result));
+      setBasis("");
+      setUncertainIntent(null);
+      toast.success("Grading setup saved");
+      query.refetch();
+      onMethodChange?.();
     } catch {
-      toast.error("Could not check existing grades. Try again.");
+      reconcileUncertainSave();
     } finally {
       setBusy(false);
     }
   }
 
-  async function applyConfiguration() {
-    if (!switching || (switching.method === "POINTS" && !maximumValid)) return;
-    setBusy(true);
-    try {
-      const result = await api.grades["configure-method"]({
-        item,
-        method: switching.method,
-        maxPoints: numericMaximum,
-        generation: switching.generation,
-        discard: switching.total > 0,
-        expectedCount: switching.total,
-      });
-      if ("error" in result) {
-        toast.error(
-          result.error === "CONFLICT"
-            ? "The grading setup or its grades changed. Reload and review before trying again."
-            : publicErrorMessage(result.error),
-        );
-        await query.refetch();
-        setMaximum(null);
-        onMethodChange?.();
-        return;
-      }
-      toast.success(
-        result.method === "POINTS"
-          ? `This assignment is graded out of ${result.maxPoints} points`
-          : "This assignment is graded by competency",
-      );
-      setSwitching(null);
-      setMaximum(null);
-      await query.refetch();
-      onMethodChange?.();
-    } catch {
-      toast.error("Could not change the grading setup. Try again.");
-      await query.refetch();
-      setMaximum(null);
-      onMethodChange?.();
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function change(action: { type: "add" | "remove"; value: string }) {
-    setBusy(true);
-    try {
-      const r =
-        action.type === "add"
-          ? await api.grades["add-criterion"]({
-              item,
-              basis: action.value,
-              position:
-                Math.max(
-                  -1,
-                  ...(query.data?.criteria ?? []).map((c) => c.position),
-                ) + 1,
-            })
-          : await api.grades["remove-criterion"]({ criterion: action.value });
-      if ("error" in r) {
-        toast.error(publicErrorMessage(r.error));
-        return;
-      }
-      await query.refetch();
-      setBasis("");
-    } catch {
-      toast.error("Could not update skills. Try again.");
-    } finally {
-      setBusy(false);
-    }
-  }
-  function request(action: { type: "add" | "remove"; value: string }) {
-    if (published) setPending(action);
-    else void change(action);
-  }
-  async function prepare() {
-    setBusy(true);
-    try {
-      const r = await api.grades["configure-item"]({ item, label: title });
-      if ("error" in r) toast.error(publicErrorMessage(r.error));
-      else {
-        await query.refetch();
-        setEditing(true);
-      }
-    } catch {
-      toast.error("Could not prepare assessment setup.");
-    } finally {
-      setBusy(false);
-    }
-  }
-  if (query.loading && !query.data)
-    return <LoadingState label="Loading grading setup…" />;
   return (
-    <section className="space-y-3">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="font-medium">Grading</h2>
-        {!readOnly && method === "COMPETENCY" && (
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={busy || standards.loading}
-            onClick={() => setEditing(!editing)}
-          >
-            {editing ? "Done" : "Edit skills"}
-          </Button>
-        )}
+    <section className="space-y-4">
+      <div>
+        <h2 className="font-medium">Grading setup</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Changes apply only to assessments started after you save. Existing
+          grades and correction history keep their original criteria and scores.
+        </p>
       </div>
-      {query.error ? (
-        <div className="space-y-2">
-          <ErrorState message={query.error} onRetry={query.refetch} />
-          {!readOnly && !published && (
-            <Button variant="outline" disabled={busy} onClick={prepare}>
-              Set up grading
+      <GradingDataNotice
+        loading={query.loading}
+        error={query.error}
+        onRetry={query.refetch}
+      />
+      {(savedSetupChanged || uncertainIntent) &&
+        !query.loading &&
+        !query.error && (
+          <div
+            role="alert"
+            className="space-y-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm"
+          >
+            <div>
+              <p className="font-medium">
+                {savedSetupChanged
+                  ? "The saved setup changed elsewhere"
+                  : "The setup save is not yet confirmed"}
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                Your draft still uses setup revision {baseline.revision}. Review
+                the current saved setup before replacing your draft or retrying.
+                Saved assessments are unchanged.
+              </p>
+            </div>
+            <ConfirmAction
+              open={reloadReviewing}
+              onOpenChange={setReloadReviewing}
+              title="Reload the saved grading setup?"
+              description="This discards only your unsaved setup draft. Existing assessments, released grades, and correction history are unchanged."
+              confirmLabel="Reload saved setup"
+              onConfirm={() => {
+                if (!query.data) return;
+                setBaseline(query.data);
+                setDraft(setupDraft(query.data));
+                setBasis("");
+                setUncertainIntent(null);
+              }}
+              trigger={
+                <Button type="button" size="sm" variant="outline">
+                  Review saved setup
+                </Button>
+              }
+            />
+          </div>
+        )}
+      <div className="flex flex-wrap gap-2" aria-label="Grading method">
+        {(
+          [
+            ["COMPETENCY", "Competency"],
+            ["POINTS", "Points"],
+          ] as const
+        ).map(([method, label]) => (
+          <Button
+            key={method}
+            type="button"
+            size="sm"
+            variant={draft.method === method ? "default" : "outline"}
+            aria-pressed={draft.method === method}
+            disabled={unavailable}
+            onClick={() =>
+              setDraft((current) =>
+                current ? { ...current, method } : current,
+              )
+            }
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
+
+      {draft.method === "POINTS" ? (
+        <div className="space-y-3">
+          <div className="divide-y rounded-lg border border-border">
+            {draft.points.map((criterion, index) => {
+              const maximum = Number(criterion.maxPoints);
+              const maximumValid =
+                criterion.maxPoints.trim() !== "" &&
+                Number.isFinite(maximum) &&
+                maximum > 0;
+              return (
+                <div
+                  key={criterion.key}
+                  className="grid gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_9rem_auto] sm:items-end"
+                >
+                  <div className="space-y-1">
+                    <Label htmlFor={`${criterion.key}-name`}>Criterion</Label>
+                    <Input
+                      id={`${criterion.key}-name`}
+                      value={criterion.name}
+                      maxLength={200}
+                      disabled={unavailable}
+                      aria-invalid={!criterion.name.trim()}
+                      onChange={(event) =>
+                        setDraft((current) =>
+                          current
+                            ? {
+                                ...current,
+                                points: current.points.map((entry) =>
+                                  entry.key === criterion.key
+                                    ? { ...entry, name: event.target.value }
+                                    : entry,
+                                ),
+                              }
+                            : current,
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor={`${criterion.key}-maximum`}>
+                      Maximum points
+                    </Label>
+                    <Input
+                      id={`${criterion.key}-maximum`}
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step="any"
+                      value={criterion.maxPoints}
+                      disabled={unavailable}
+                      aria-invalid={!maximumValid}
+                      onChange={(event) =>
+                        setDraft((current) =>
+                          current
+                            ? {
+                                ...current,
+                                points: current.points.map((entry) =>
+                                  entry.key === criterion.key
+                                    ? {
+                                        ...entry,
+                                        maxPoints: event.target.value,
+                                      }
+                                    : entry,
+                                ),
+                              }
+                            : current,
+                        )
+                      }
+                    />
+                  </div>
+                  <OrderActions
+                    label={criterion.name || `criterion ${index + 1}`}
+                    index={index}
+                    count={draft.points.length}
+                    disabled={unavailable}
+                    onMove={(direction) =>
+                      setDraft((current) =>
+                        current
+                          ? {
+                              ...current,
+                              points: move(current.points, index, direction),
+                            }
+                          : current,
+                      )
+                    }
+                    onRemove={() =>
+                      setDraft((current) =>
+                        current
+                          ? {
+                              ...current,
+                              points: current.points.filter(
+                                (entry) => entry.key !== criterion.key,
+                              ),
+                            }
+                          : current,
+                      )
+                    }
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={unavailable}
+              onClick={() => {
+                const key = `new-point-${nextKey.current++}`;
+                setDraft((current) =>
+                  current
+                    ? {
+                        ...current,
+                        points: [
+                          ...current.points,
+                          { key, name: "", maxPoints: "" },
+                        ],
+                      }
+                    : current,
+                );
+              }}
+            >
+              <Plus className="size-4" /> Add criterion
             </Button>
+            <p className="font-medium tabular-nums">
+              Total: {pointValid ? pointTotal : "—"} points
+            </p>
+          </div>
+          {!pointValid && (
+            <p className="text-sm text-destructive">
+              Add at least one named criterion with a maximum greater than zero.
+            </p>
           )}
         </div>
       ) : (
-        <>
-          <div className="flex flex-wrap gap-2" aria-label="Grading method">
-            {(
-              [
-                ["COMPETENCY", "Competency"],
-                ["POINTS", "Points"],
-              ] as const
-            ).map(([value, label]) => (
-              <Button
-                key={value}
-                size="sm"
-                variant={method === value ? "default" : "outline"}
-                aria-pressed={method === value}
-                disabled={busy || readOnly}
-                onClick={() => void requestConfiguration(value)}
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
-          {method === "POINTS" ? (
-            <div className="space-y-3 rounded-lg border p-4">
-              <div className="space-y-2">
-                <Label htmlFor={`maximum-${item}`}>Maximum points</Label>
-                <Input
-                  id={`maximum-${item}`}
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  step="any"
-                  className="w-32"
-                  value={maximumValue}
-                  disabled={busy || readOnly}
-                  aria-invalid={!maximumValid}
-                  onChange={(event) => setMaximum(event.target.value)}
-                />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Staff enter one assignment-level score per learner.
-              </p>
-              {!readOnly && numericMaximum !== query.data?.maxPoints && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={busy || !maximumValid}
-                  onClick={() => void requestConfiguration("POINTS")}
-                >
-                  Change maximum
-                </Button>
-              )}
-            </div>
-          ) : (
-            <>
-              <div className="divide-y rounded-lg border">
-                {(query.data?.criteria ?? []).map((c) => (
-                  <div key={c.criterion} className="space-y-2 p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-medium">{c.name}</span>
-                      {editing && !readOnly && (
-                        <Button
-                          aria-label={`Remove ${c.name}`}
-                          size="sm"
-                          variant="ghost"
-                          disabled={busy}
-                          onClick={() =>
-                            request({ type: "remove", value: c.criterion })
-                          }
-                        >
-                          Remove
-                        </Button>
+        <div className="space-y-3">
+          <div className="divide-y rounded-lg border border-border">
+            {draft.competencies.map((criterion, index) => {
+              const rubric = standards.data?.standards.find(
+                (entry) => entry.edition === criterion.basis,
+              );
+              return (
+                <div key={criterion.key} className="space-y-2 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">
+                        {rubric?.name ?? criterion.name}
+                      </p>
+                      {rubric ? (
+                        <RubricDescription rubric={rubric} showEdition />
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          The selected rubric edition remains fixed for this
+                          setup.
+                        </p>
                       )}
                     </div>
-                    <RubricDescription rubric={c} showEdition={false} />
-                    {standards.data?.standards.some(
-                      (r) => r.standard === c.standard && r.edition !== c.basis,
-                    ) && (
-                      <p className="text-xs text-muted-foreground">
-                        A newer rubric is available in{" "}
-                        <Link className="underline" href="/staff/skills">
-                          Skills and rubrics
-                        </Link>
-                        .
-                        {editing
-                          ? " Remove this selection and add the skill again to adopt it for future assessments."
-                          : ""}
-                      </p>
-                    )}
-                  </div>
-                ))}
-                {query.data?.criteria.length === 0 && (
-                  <p className="p-3 text-sm text-muted-foreground">
-                    No skills selected.
-                  </p>
-                )}
-              </div>
-              {editing && !readOnly && (
-                <div className="space-y-3">
-                  {standards.error ? (
-                    <ErrorState
-                      message={standards.error}
-                      onRetry={standards.refetch}
-                    />
-                  ) : (
-                    <div className="flex gap-2">
-                      <Select
-                        value={basis}
-                        disabled={busy || standards.loading}
-                        onValueChange={setBasis}
-                      >
-                        <SelectTrigger
-                          aria-label="Add a skill"
-                          className="min-w-0 flex-1"
-                        >
-                          <SelectValue placeholder="Select a skill…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(() => {
-                            const available = (
-                              standards.data?.standards ?? []
-                            ).filter(
-                              (r) =>
-                                !query.data?.criteria.some(
-                                  (c) => c.standard === r.standard,
+                    <OrderActions
+                      label={rubric?.name ?? criterion.name}
+                      index={index}
+                      count={draft.competencies.length}
+                      disabled={unavailable}
+                      onMove={(direction) =>
+                        setDraft((current) =>
+                          current
+                            ? {
+                                ...current,
+                                competencies: move(
+                                  current.competencies,
+                                  index,
+                                  direction,
                                 ),
-                            );
-                            return available.length === 0 ? (
-                              <SelectGroup>
-                                <SelectLabel>
-                                  Every course skill is selected
-                                </SelectLabel>
-                              </SelectGroup>
-                            ) : (
-                              available.map((r) => (
-                                <SelectItem key={r.edition} value={r.edition}>
-                                  {r.name}
-                                </SelectItem>
-                              ))
-                            );
-                          })()}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        size="sm"
-                        disabled={!basis || busy}
-                        onClick={() => request({ type: "add", value: basis })}
-                      >
-                        Add skill
-                      </Button>
-                    </div>
-                  )}
-                  <Link
-                    className="text-xs text-muted-foreground underline"
-                    href="/staff/skills"
-                  >
-                    Manage skills and rubrics
-                  </Link>
+                              }
+                            : current,
+                        )
+                      }
+                      onRemove={() =>
+                        setDraft((current) =>
+                          current
+                            ? {
+                                ...current,
+                                competencies: current.competencies.filter(
+                                  (entry) => entry.key !== criterion.key,
+                                ),
+                              }
+                            : current,
+                        )
+                      }
+                    />
+                  </div>
                 </div>
-              )}
-            </>
-          )}
-        </>
-      )}
-      <ConfirmAction
-        open={pending !== null}
-        onOpenChange={(open) => {
-          if (!open) setPending(null);
-        }}
-        title="Change skills on a published assignment?"
-        description="Students may already be working toward these expectations. Existing assessments keep their original skills and rubric editions. Assessments started after this change use the updated selection, including for work already submitted."
-        confirmLabel="Change skills"
-        onConfirm={async () => {
-          if (pending) await change(pending);
-        }}
-      />
-      <ConfirmAction
-        open={switching !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setSwitching(null);
-            setMaximum(null);
-          }
-        }}
-        destructive={(switching?.total ?? 0) > 0}
-        confirmDisabled={switching?.method === "POINTS" && !maximumValid}
-        title={
-          switching?.method === "POINTS"
-            ? method === "POINTS"
-              ? "Change the maximum points?"
-              : "Grade this assignment by points?"
-            : "Grade this assignment by competency?"
-        }
-        description={
-          switching === null ? null : (
-            <div className="space-y-2">
-              {switching.total > 0 ? (
-                <p>
-                  This will permanently delete {switching.total} existing
-                  {switching.total === 1 ? " grade" : " grades"} (
-                  {switching.released} released, {switching.drafts} draft,{" "}
-                  {switching.excused} excused). Released results will disappear
-                  from students immediately.
-                </p>
-              ) : (
-                <p>
-                  No grades have been entered, so no results will be deleted.
-                </p>
-              )}
-              <p>
-                Changing grading also clears unsaved scores, judgments, and
-                feedback in open grading forms.
+              );
+            })}
+            {draft.competencies.length === 0 && (
+              <p className="p-3 text-sm text-muted-foreground">
+                No skills selected. Add one before assessing submitted work.
               </p>
-              {switching.method === "POINTS" && (
-                <div className="space-y-1">
-                  <Label htmlFor="switch-maximum">Maximum points</Label>
-                  <Input
-                    id="switch-maximum"
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    step="any"
-                    className="w-32"
-                    value={maximumValue}
-                    aria-invalid={!maximumValid}
-                    onChange={(event) => setMaximum(event.target.value)}
-                  />
-                  {!maximumValid && (
-                    <p className="text-xs text-destructive">
-                      Enter a maximum greater than zero.
-                    </p>
-                  )}
-                </div>
-              )}
+            )}
+          </div>
+          {standards.error ? (
+            <ErrorState message={standards.error} onRetry={standards.refetch} />
+          ) : (
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Select
+                value={basis}
+                disabled={unavailable || standards.loading}
+                onValueChange={setBasis}
+              >
+                <SelectTrigger
+                  aria-label="Add a skill"
+                  className="min-w-0 flex-1"
+                >
+                  <SelectValue placeholder="Select a skill…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(() => {
+                    const selectedStandards = new Set(
+                      draft.competencies.map(
+                        (criterion) =>
+                          standards.data?.standards.find(
+                            (rubric) => rubric.edition === criterion.basis,
+                          )?.standard,
+                      ),
+                    );
+                    const available = (standards.data?.standards ?? []).filter(
+                      (rubric) => !selectedStandards.has(rubric.standard),
+                    );
+                    return available.length ? (
+                      available.map((rubric) => (
+                        <SelectItem key={rubric.edition} value={rubric.edition}>
+                          {rubric.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectGroup>
+                        <SelectLabel>
+                          Every course skill is selected
+                        </SelectLabel>
+                      </SelectGroup>
+                    );
+                  })()}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                size="sm"
+                disabled={!basis || unavailable}
+                onClick={() => {
+                  const rubric = standards.data?.standards.find(
+                    (entry) => entry.edition === basis,
+                  );
+                  if (!rubric) return;
+                  const key = `new-competency-${nextKey.current++}`;
+                  setDraft((current) =>
+                    current
+                      ? {
+                          ...current,
+                          competencies: [
+                            ...current.competencies,
+                            { key, basis, name: rubric.name },
+                          ],
+                        }
+                      : current,
+                  );
+                  setBasis("");
+                }}
+              >
+                Add skill
+              </Button>
             </div>
-          )
-        }
-        confirmLabel={
-          switching && switching.total > 0
-            ? `Delete ${switching.total} and change grading`
-            : "Change grading"
-        }
-        onConfirm={applyConfiguration}
-      />
+          )}
+          <Link
+            className="text-xs text-muted-foreground underline"
+            href="/staff/skills"
+          >
+            Manage skills and rubrics
+          </Link>
+        </div>
+      )}
+
+      {!readOnly && (
+        <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
+          <ConfirmAction
+            open={reviewing}
+            onOpenChange={setReviewing}
+            title="Apply this setup to future assessments?"
+            description="New assessments will use this method and ordered criteria. Existing drafts, released grades, excusals, and correction history keep their saved setup and are not deleted or changed."
+            confirmLabel="Save grading setup"
+            confirmDisabled={unavailable || !valid || !dirty}
+            onConfirm={save}
+            trigger={
+              <Button disabled={unavailable || !valid || !dirty}>
+                Review and save
+              </Button>
+            }
+          />
+          <span className="text-xs text-muted-foreground">
+            {dirty ? "Unsaved setup changes" : "Setup saved"}
+          </span>
+        </div>
+      )}
     </section>
   );
 }

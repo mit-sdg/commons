@@ -13,7 +13,6 @@ import {
   AssignmentSkills,
 } from "@/components/lms/assignment-reading";
 import { LateDayControls } from "@/components/lms/late-day-controls";
-import { MarkHistory } from "@/components/lms/mark-history";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { PageContainer } from "@/components/page";
 import { ErrorState, LoadingState } from "@/components/states";
@@ -25,12 +24,16 @@ import { api, publicErrorMessage } from "@/lib/api";
 import { assignmentTypeLabel } from "@/lib/assignment-types";
 import { useAuth } from "@/lib/auth";
 import {
+  type Assessment,
+  assessmentForEvidence,
+  type GradingSetup,
+} from "@/lib/grading";
+import {
   loadAssignmentDetail,
   loadAssignments,
   loadGradesForMe,
   loadLateDayBalance,
   loadLateDaysList,
-  loadMarksForMe,
   loadSubmissionAttempts,
   loadSubmissionLatest,
 } from "@/lib/lms";
@@ -129,10 +132,6 @@ export default function AssignmentDetailPage({
     me && session ? () => loadGradesForMe() : null,
     [me, session],
   );
-  const { data: marksData, refetch: refetchMarks } = useQuery(
-    me && session ? () => loadMarksForMe() : null,
-    [me, session],
-  );
 
   const { data: gradeItemData } = useQuery(
     me && session ? () => api.grades.item({ item: assignment }) : null,
@@ -173,7 +172,6 @@ export default function AssignmentDetailPage({
     refetchLate();
     refetchLateUse();
     refetchGrades();
-    refetchMarks();
   };
 
   if (loading)
@@ -210,14 +208,29 @@ export default function AssignmentDetailPage({
     Boolean(asgnData && "canSubmit" in asgnData && asgnData.canSubmit) &&
     !isPastClose &&
     new Date(detail.availableAt) <= now;
-  const assignmentMarks = (marksData?.marks ?? []).filter(
-    (mark) => mark.item === assignment,
+  const assessments = (gradesData?.grades ?? []) as Assessment[];
+  const latestEvidence = [...attempts]
+    .filter((attempt) => attempt.status === "SUBMITTED")
+    .sort((left, right) => left.number - right.number)
+    .at(-1)?.submission;
+  const selectedAssessment = me
+    ? assessmentForEvidence(
+        assessments,
+        String(me.user),
+        assignment,
+        latestEvidence ?? "",
+      )
+    : undefined;
+  const previousAssessments = assessments.filter(
+    (assessment) =>
+      assessment.item === assignment &&
+      assessment.learner === String(me?.user ?? "") &&
+      assessment.grade !== selectedAssessment?.grade,
   );
-  const usesPoints =
-    (gradeItemData &&
-      !("error" in gradeItemData) &&
-      gradeItemData.method === "POINTS") ||
-    assignmentMarks.length > 0;
+  const currentSetup =
+    gradeItemData && !("error" in gradeItemData)
+      ? (gradeItemData as GradingSetup)
+      : null;
 
   return (
     <PageContainer>
@@ -253,11 +266,9 @@ export default function AssignmentDetailPage({
             <AssignmentInstructions instructions={detail.instructions} />
           )}
 
-          {gradeItemData &&
-            !("error" in gradeItemData) &&
-            gradeItemData.method === "COMPETENCY" && (
-              <AssignmentSkills criteria={gradeItemData.criteria} />
-            )}
+          {currentSetup && (
+            <AssignmentSkills criteria={currentSetup.criteria} />
+          )}
 
           {canSubmit && (
             <Card density="compact">
@@ -351,18 +362,36 @@ export default function AssignmentDetailPage({
           )}
 
           <section className="space-y-4">
-            <h2 className="text-lg font-semibold">Grade</h2>
-            {usesPoints ? (
-              <MarkHistory marks={assignmentMarks} />
-            ) : (
+            <h2 className="text-lg font-semibold">Current result</h2>
+            {selectedAssessment ? (
               <AssessmentHistory
-                assessments={(gradesData?.grades ?? []).filter(
-                  (grade) => grade.item === assignment,
-                )}
+                assessments={[selectedAssessment]}
                 toggle={false}
               />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {latestEvidence
+                  ? "The latest submitted attempt has not been assessed yet."
+                  : "No released assessment yet."}
+              </p>
             )}
           </section>
+
+          {previousAssessments.length > 0 && (
+            <section className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold">Previous assessments</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Results for earlier attempts remain available with the grading
+                  criteria used at the time.
+                </p>
+              </div>
+              <AssessmentHistory
+                assessments={previousAssessments}
+                toggle={false}
+              />
+            </section>
+          )}
         </div>
 
         <aside className="space-y-5">

@@ -1,6 +1,7 @@
 "use client";
 
 import { Archive, Eye, Send } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
@@ -12,10 +13,9 @@ import {
   AssignmentInstructions,
   AssignmentSkills,
 } from "@/components/lms/assignment-reading";
-import { GradeInput } from "@/components/lms/grade-input";
+import { AssessmentInput } from "@/components/lms/grade-input";
 import { GradeSetup } from "@/components/lms/grade-setup";
 import { GradingDataNotice } from "@/components/lms/grading-data-notice";
-import { MarkInput } from "@/components/lms/mark-input";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { BackLink, PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
@@ -41,9 +41,13 @@ import { useAuth } from "@/lib/auth";
 import { useCourse } from "@/lib/course";
 import { dueTime, fromZonedInput, toZonedInput } from "@/lib/format";
 import {
+  type Assessment,
+  assessmentForEvidence,
+  type GradingSetup,
+} from "@/lib/grading";
+import {
   loadGradesForItem,
   loadLateDaysForAssignment,
-  loadMarksForItem,
   loadSubmissionsForAssignment,
 } from "@/lib/lms";
 
@@ -142,12 +146,21 @@ function StaffAssignmentDetailPageContent({
   params: Promise<{ assignment: string }>;
 }) {
   const { assignment } = use(params);
+  const router = useRouter();
   const { session, permissions } = useAuth();
   const canManage = permissions.can("course:manage");
   const canGrade = permissions.can("grade");
   const [editing, setEditing] = useState(false);
   const [gradingUser, setGradingUser] = useState<string | null>(null);
   const [gradingEvidence, setGradingEvidence] = useState<string | null>(null);
+  const [gradingDirty, setGradingDirty] = useState(false);
+  const [setupDirty, setSetupDirty] = useState(false);
+  const [pendingGradingTarget, setPendingGradingTarget] = useState<{
+    learner: string;
+    evidence: string | null;
+  } | null>(null);
+  const [pendingEdit, setPendingEdit] = useState(false);
+  const [pendingLeave, setPendingLeave] = useState<string | null>(null);
   const [tab, setTab] = useState("overview");
   const [pendingAttemptHash, setPendingAttemptHash] = useState<string | null>(
     null,
@@ -221,13 +234,7 @@ function StaffAssignmentDetailPageContent({
     [session, assignment],
     { retainOnTransportError: true },
   );
-  const marksQuery = useQuery(
-    session && canGrade ? () => loadMarksForItem(assignment) : null,
-    [session, assignment],
-    { retainOnTransportError: true },
-  );
   const { refetch: refetchGrades } = gradesQuery;
-  const { refetch: refetchMarks } = marksQuery;
 
   const { data: lateData } = useQuery<{
     users: { learner: string; days: number }[];
@@ -245,35 +252,36 @@ function StaffAssignmentDetailPageContent({
   );
   const detail = asgnData?.summary;
   const assigned = subsData?.assigned ?? [];
-  const grades = gradesQuery.data?.grades ?? [];
-  const marks = marksQuery.data?.marks ?? [];
-  const gradingMethod = gradingSetup.data?.method;
-  const resultsQuery =
-    gradingMethod === "POINTS"
-      ? marksQuery
-      : gradingMethod === "COMPETENCY"
-        ? gradesQuery
-        : null;
-  const gradingDataReady = Boolean(gradingSetup.data && resultsQuery?.data);
-  const gradingDataLoading =
-    gradingSetup.loading || Boolean(resultsQuery?.loading);
-  const gradingDataError = gradingSetup.error ?? resultsQuery?.error ?? null;
+  const grades = (gradesQuery.data?.grades ?? []) as Assessment[];
+  const currentSetup = gradingSetup.data as GradingSetup | null;
+  const gradingDataReady = Boolean(currentSetup && gradesQuery.data);
+  const gradingDataLoading = gradingSetup.loading || gradesQuery.loading;
+  const gradingDataError = gradingSetup.error ?? gradesQuery.error ?? null;
   const gradingDataRefused = !gradingSetup.data
     ? gradingSetup.refused
-    : resultsQuery?.refused;
+    : gradesQuery.refused;
   const gradingDataUnavailable =
     !gradingDataReady || gradingDataLoading || Boolean(gradingDataError);
   const lateUsers = lateData?.users ?? [];
   const draftCount = gradingDataReady
-    ? (gradingMethod === "POINTS" ? marks : grades).filter(
-        (record) => record.status === "DRAFT",
-      ).length
+    ? grades.filter((record) => record.status === "DRAFT").length
     : 0;
 
   function refetchGradingData() {
     gradingSetup.refetch();
     refetchGrades();
-    refetchMarks();
+  }
+
+  function openAssessment(learner: string, evidence: string | null) {
+    if (
+      gradingDirty &&
+      (gradingUser !== learner || gradingEvidence !== evidence)
+    ) {
+      setPendingGradingTarget({ learner, evidence });
+      return;
+    }
+    setGradingUser(learner);
+    setGradingEvidence(evidence);
   }
 
   useEffect(() => {
@@ -319,12 +327,7 @@ function StaffAssignmentDetailPageContent({
     const result = await api.assignments.publish({ assignment });
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
-      await Promise.all([
-        refetch(),
-        refetchSubmissions(),
-        refetchGrades(),
-        refetchMarks(),
-      ]);
+      await Promise.all([refetch(), refetchSubmissions(), refetchGrades()]);
       toast.success("Assignment published");
     }
   }
@@ -341,22 +344,12 @@ function StaffAssignmentDetailPageContent({
 
   async function releaseAll() {
     if (!session) return;
-    if (!gradingSetup.data || gradingDataUnavailable) return;
+    if (!currentSetup || gradingDataUnavailable) return;
     try {
-      const result =
-        gradingMethod === "POINTS"
-          ? await api.marks["release-item"]({
-              item: assignment,
-              generation: gradingSetup.data.generation,
-            })
-          : await api.grades["release-item"]({
-              item: assignment,
-              generation: gradingSetup.data.generation,
-            });
+      const result = await api.grades["release-item"]({ item: assignment });
       if ("error" in result) toast.error(publicErrorMessage(result.error));
       else {
-        const noun = gradingMethod === "POINTS" ? "grades" : "assessments";
-        const summary = `${result.released.length} ${noun} released; ${result.skipped.length} skipped (incomplete or changed).`;
+        const summary = `${result.released.length} assessments released; ${result.skipped.length} skipped (incomplete or changed).`;
         if (result.unconfirmed.length)
           toast.error(
             `${summary} ${result.unconfirmed.length} outcomes could not be confirmed. Review the refreshed grades before retrying.`,
@@ -368,7 +361,7 @@ function StaffAssignmentDetailPageContent({
         "Release outcomes could not be confirmed. Grades were refreshed before retrying.",
       );
     } finally {
-      void Promise.all([refetchGrades(), refetchMarks()]);
+      refetchGrades();
     }
   }
 
@@ -416,7 +409,16 @@ function StaffAssignmentDetailPageContent({
 
   return (
     <PageContainer>
-      <BackLink href={canManage ? "/staff/assignments" : "/staff/gradebook"}>
+      <BackLink
+        href={canManage ? "/staff/assignments" : "/staff/gradebook"}
+        onClick={(event) => {
+          if (!setupDirty && !gradingDirty) return;
+          event.preventDefault();
+          setPendingLeave(
+            canManage ? "/staff/assignments" : "/staff/gradebook",
+          );
+        }}
+      >
         {canManage ? "Back to assignments" : "Back to assessment book"}
       </BackLink>
 
@@ -439,7 +441,10 @@ function StaffAssignmentDetailPageContent({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => setEditing(true)}
+                onClick={() => {
+                  if (setupDirty || gradingDirty) setPendingEdit(true);
+                  else setEditing(true);
+                }}
               >
                 Edit
               </Button>
@@ -503,7 +508,12 @@ function StaffAssignmentDetailPageContent({
           )}
           <TabsTrigger value="preview">Student preview</TabsTrigger>
         </TabsList>
-        <TabsContent value="overview" className="space-y-8">
+        <TabsContent
+          value="overview"
+          forceMount
+          hidden={tab !== "overview"}
+          className="space-y-8"
+        >
           <section className="space-y-3">
             <h2 className="font-medium">Instructions</h2>
             {detail.instructions ? (
@@ -550,10 +560,16 @@ function StaffAssignmentDetailPageContent({
               onMethodChange={() => {
                 refetchGradingData();
               }}
+              onDirtyChange={setSetupDirty}
             />
           )}
         </TabsContent>
-        <TabsContent value="preview" className="space-y-4">
+        <TabsContent
+          value="preview"
+          forceMount
+          hidden={tab !== "preview"}
+          className="space-y-4"
+        >
           <p className="text-sm text-muted-foreground">
             Assignment content as shown to students. Personal history, late
             days, and deadline overrides are omitted; submission controls are
@@ -581,8 +597,8 @@ function StaffAssignmentDetailPageContent({
                       onRetry={gradingSetup.refetch}
                     />
                   ) : null}
-                  {gradingSetup.data?.method === "COMPETENCY" ? (
-                    <AssignmentSkills criteria={gradingSetup.data.criteria} />
+                  {currentSetup ? (
+                    <AssignmentSkills criteria={currentSetup.criteria} />
                   ) : null}
                 </>
               )}
@@ -692,23 +708,24 @@ function StaffAssignmentDetailPageContent({
                           .filter((a) => a.status === "SUBMITTED")
                           .at(-1);
                         const learnerGrades = grades.filter(
-                          (g) => g.learner === learnerId,
+                          (grade) =>
+                            grade.learner === learnerId &&
+                            grade.item === assignment,
                         );
-                        const learnerMarks = marks.filter(
-                          (mark) => mark.learner === learnerId,
+                        const visibleAssessment = assessmentForEvidence(
+                          grades,
+                          learnerId,
+                          assignment,
+                          latest?.submission ?? "",
                         );
-                        const pointMark = learnerMarks[0];
                         const newAttemptNeedsReview = Boolean(
-                          latest &&
-                            pointMark &&
-                            latest.submission !== pointMark.evidence,
+                          latest && !visibleAssessment,
                         );
-                        const learnerRecords =
-                          gradingMethod === "POINTS"
-                            ? learnerMarks
-                            : learnerGrades;
                         const lateDays = lateMap.get(learnerId) ?? 0;
                         const isGrading = gradingUser === learnerId;
+                        const selectedAssessment = learnerGrades.find(
+                          (grade) => grade.evidence === (gradingEvidence ?? ""),
+                        );
 
                         return (
                           <div
@@ -791,19 +808,14 @@ function StaffAssignmentDetailPageContent({
                                                   (g) =>
                                                     g.evidence ===
                                                     attempt.submission,
-                                                ) &&
-                                                !learnerMarks.some(
-                                                  (mark) =>
-                                                    mark.evidence ===
-                                                    attempt.submission,
                                                 ))
                                             }
-                                            onClick={() => {
-                                              setGradingEvidence(
+                                            onClick={() =>
+                                              openAssessment(
+                                                learnerId,
                                                 attempt.submission,
-                                              );
-                                              setGradingUser(learnerId);
-                                            }}
+                                              )
+                                            }
                                           >
                                             Assess this attempt
                                           </Button>
@@ -813,38 +825,39 @@ function StaffAssignmentDetailPageContent({
                                   </div>
                                 ) : null}
                               </div>
-                              {gradingMethod === "POINTS" ? (
-                                <div className="space-y-1 text-right text-sm">
-                                  <div className="flex items-center justify-end gap-2">
-                                    {pointMark ? (
-                                      <StatusBadge status={pointMark.status} />
-                                    ) : null}
-                                    <span className="text-muted-foreground tabular-nums">
-                                      {!pointMark || !pointMark.scored
-                                        ? pointMark?.status === "EXCUSED"
-                                          ? "Excused"
-                                          : "Not graded"
-                                        : `${pointMark.score} / ${pointMark.outOf}`}
-                                    </span>
-                                  </div>
-                                  {pointMark?.attempt ? (
-                                    <p className="text-xs text-muted-foreground">
-                                      Graded attempt #{pointMark.attempt}
-                                    </p>
+                              <div className="space-y-1 text-right text-sm">
+                                <div className="flex items-center justify-end gap-2">
+                                  {visibleAssessment ? (
+                                    <StatusBadge
+                                      status={visibleAssessment.status}
+                                    />
                                   ) : null}
-                                  {newAttemptNeedsReview ? (
-                                    <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                                      New attempt needs review
-                                    </p>
-                                  ) : null}
+                                  <span className="text-muted-foreground tabular-nums">
+                                    {!visibleAssessment
+                                      ? "Not assessed"
+                                      : visibleAssessment.status === "EXCUSED"
+                                        ? visibleAssessment.evidence
+                                          ? "Attempt excused"
+                                          : "Assignment excused"
+                                        : visibleAssessment.method ===
+                                              "POINTS" &&
+                                            visibleAssessment.scored
+                                          ? `${visibleAssessment.score} / ${visibleAssessment.outOf}`
+                                          : `${learnerGrades.length} assessment${learnerGrades.length === 1 ? "" : "s"}`}
+                                  </span>
                                 </div>
-                              ) : (
-                                <span className="text-sm text-muted-foreground">
-                                  {learnerRecords.length
-                                    ? `${learnerGrades.length} assessment${learnerGrades.length === 1 ? "" : "s"}`
-                                    : "Not graded"}
-                                </span>
-                              )}
+                                {visibleAssessment?.attempt ? (
+                                  <p className="text-xs text-muted-foreground">
+                                    Assessed attempt #
+                                    {visibleAssessment.attempt}
+                                  </p>
+                                ) : null}
+                                {newAttemptNeedsReview ? (
+                                  <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                                    New attempt needs review
+                                  </p>
+                                ) : null}
+                              </div>
                             </div>
 
                             {canManage && (
@@ -876,7 +889,8 @@ function StaffAssignmentDetailPageContent({
                                   value={gradingEvidence ?? EXCUSAL}
                                   disabled={gradingDataUnavailable}
                                   onValueChange={(value) =>
-                                    setGradingEvidence(
+                                    openAssessment(
+                                      learnerId,
                                       value === EXCUSAL ? null : value,
                                     )
                                   }
@@ -897,10 +911,6 @@ function StaffAssignmentDetailPageContent({
                                           a.status === "SUBMITTED" ||
                                           learnerGrades.some(
                                             (g) => g.evidence === a.submission,
-                                          ) ||
-                                          learnerMarks.some(
-                                            (mark) =>
-                                              mark.evidence === a.submission,
                                           ),
                                       )
                                       .map((a) => (
@@ -916,63 +926,34 @@ function StaffAssignmentDetailPageContent({
                                 </Select>
                               </div>
                             )}
-                            {isGrading ? (
-                              gradingMethod === "POINTS" &&
-                              gradingSetup.data ? (
-                                <MarkInput
-                                  key={`points-${gradingSetup.data.generation}-${learnerId}-${gradingEvidence ?? "excusal"}`}
-                                  learner={learnerId}
-                                  learnerLabel={
-                                    learner.displayName ?? learner.assignee
-                                  }
-                                  item={assignment}
-                                  itemLabel={detail.title}
-                                  evidence={gradingEvidence ?? ""}
-                                  generation={gradingSetup.data.generation}
-                                  maxPoints={gradingSetup.data.maxPoints}
-                                  recordVersion={pointMark?.version}
-                                  disabled={gradingDataUnavailable}
-                                  onSaved={() => {
-                                    refetchMarks();
-                                  }}
-                                />
-                              ) : gradingMethod === "COMPETENCY" &&
-                                gradingSetup.data ? (
-                                <GradeInput
-                                  key={`competency-${gradingSetup.data.generation}-${learnerId}-${gradingEvidence ?? "excusal"}`}
-                                  learner={learnerId}
-                                  learnerLabel={
-                                    learner.displayName ?? learner.assignee
-                                  }
-                                  item={assignment}
-                                  itemLabel={detail.title}
-                                  evidence={gradingEvidence ?? ""}
-                                  recordVersion={
-                                    learnerGrades.find(
-                                      (grade) =>
-                                        grade.evidence ===
-                                        (gradingEvidence ?? ""),
-                                    )?.version
-                                  }
-                                  disabled={gradingDataUnavailable}
-                                  onSaved={() => {
-                                    refetchGrades();
-                                  }}
-                                />
-                              ) : null
+                            {isGrading && currentSetup ? (
+                              <AssessmentInput
+                                key={`${learnerId}-${gradingEvidence ?? "assignment"}`}
+                                learner={learnerId}
+                                learnerLabel={
+                                  learner.displayName ?? learner.assignee
+                                }
+                                item={assignment}
+                                itemLabel={detail.title}
+                                evidence={gradingEvidence ?? ""}
+                                recordVersion={selectedAssessment?.version}
+                                disabled={gradingDataUnavailable}
+                                onDirtyChange={setGradingDirty}
+                                onSaved={refetchGrades}
+                              />
                             ) : (
                               <Button
                                 size="sm"
                                 variant="outline"
                                 disabled={gradingDataUnavailable}
-                                onClick={() => {
-                                  setGradingEvidence(
+                                onClick={() =>
+                                  openAssessment(
+                                    learnerId,
                                     latest?.submission ?? null,
-                                  );
-                                  setGradingUser(learnerId);
-                                }}
+                                  )
+                                }
                               >
-                                Review grades
+                                Review assessments
                               </Button>
                             )}
                           </div>
@@ -986,6 +967,52 @@ function StaffAssignmentDetailPageContent({
           </TabsContent>
         )}
       </Tabs>
+      <ConfirmAction
+        open={pendingGradingTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingGradingTarget(null);
+        }}
+        title="Switch assessments?"
+        description="This discards only the unsaved scores or feedback in the open editor. Saved assessments and correction history are unchanged."
+        confirmLabel="Discard draft and switch"
+        onConfirm={() => {
+          if (!pendingGradingTarget) return;
+          setGradingDirty(false);
+          setGradingUser(pendingGradingTarget.learner);
+          setGradingEvidence(pendingGradingTarget.evidence);
+          setPendingGradingTarget(null);
+        }}
+      />
+      <ConfirmAction
+        open={pendingEdit}
+        onOpenChange={setPendingEdit}
+        title="Leave the grading setup?"
+        description="This discards only unsaved setup or assessment input on this page. Existing assessments, released grades, and correction history are unchanged."
+        confirmLabel="Discard draft and edit assignment"
+        onConfirm={() => {
+          setSetupDirty(false);
+          setGradingDirty(false);
+          setPendingEdit(false);
+          setEditing(true);
+        }}
+      />
+      <ConfirmAction
+        open={pendingLeave !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingLeave(null);
+        }}
+        title="Leave this assignment?"
+        description="This discards only unsaved setup or assessment input on this page. Existing assessments, released grades, and correction history are unchanged."
+        confirmLabel="Discard draft and leave"
+        onConfirm={() => {
+          if (!pendingLeave) return;
+          const destination = pendingLeave;
+          setSetupDirty(false);
+          setGradingDirty(false);
+          setPendingLeave(null);
+          router.push(destination);
+        }}
+      />
     </PageContainer>
   );
 }

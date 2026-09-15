@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Fact, Facts } from "@/components/facts";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -18,6 +19,15 @@ import { api, isClientErrorCode, publicErrorMessage, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import {
   type Assessment,
+  type CompetencyJudgment,
+  competencyCriteria,
+  competencyJudgments,
+  type GradingSetup,
+  pointCriteria,
+  pointJudgments,
+  type Rating,
+} from "@/lib/grading";
+import {
   AssessmentCard,
   LEVELS,
   levelDescription,
@@ -36,8 +46,9 @@ interface Props {
   onSaved: () => void;
   className?: string;
   disabled?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
 }
-export function GradeInput({
+export function AssessmentInput({
   learner,
   item,
   evidence = "",
@@ -47,6 +58,7 @@ export function GradeInput({
   onSaved,
   className,
   disabled = false,
+  onDirtyChange,
 }: Props) {
   const { session } = useAuth();
   const query = useQuery(
@@ -62,7 +74,8 @@ export function GradeInput({
   const [busy, setBusy] = useState(false);
   const assessment = query.data?.grades.find(
     (a) => a.learner === learner && a.evidence === evidence,
-  );
+  ) as Assessment | undefined;
+  const currentSetup = setup.data as GradingSetup | null;
   const loaded = Boolean(query.data);
   const refetchRecord = query.refetch;
   useEffect(() => {
@@ -74,14 +87,14 @@ export function GradeInput({
       refetchRecord();
   }, [loaded, refetchRecord, recordVersion, assessment?.version]);
   async function start() {
-    if (!setup.data) return;
+    if (!currentSetup) return;
     setBusy(true);
     try {
       const result = await api.grades.record({
         learner,
         item,
         evidence,
-        generation: setup.data.generation,
+        revision: currentSetup.revision,
       });
       if ("error" in result) {
         if (isClientErrorCode(result.error)) {
@@ -91,10 +104,17 @@ export function GradeInput({
           query.refetch();
           setup.refetch();
           onSaved();
+        } else if (result.error === "CONFLICT") {
+          toast.error(
+            "The grading setup changed before this assessment started. The latest setup is loading; review it and retry.",
+          );
+          query.refetch();
+          setup.refetch();
+          onSaved();
         } else
           toast.error(
             result.error === "INVALID_REQUEST"
-              ? "Select rubrics first and use a valid level or Not assessed for each skill."
+              ? "Save at least one valid grading criterion before starting this assessment."
               : publicErrorMessage(result.error),
           );
       } else {
@@ -152,6 +172,7 @@ export function GradeInput({
           key={`${assessment.grade}-${assessment.version}`}
           assessment={assessment}
           disabled={unavailable}
+          onDirtyChange={onDirtyChange}
           onSaved={() => {
             query.refetch();
             onSaved();
@@ -161,7 +182,7 @@ export function GradeInput({
         <div className="space-y-3 rounded-md border border-border p-4">
           <p className="text-sm text-muted-foreground">
             {evidence
-              ? "Start an assessment of the selected attempt. Its rubric editions are fixed when you start."
+              ? "Start an assessment of the selected attempt. Its grading criteria are fixed when you start."
               : "No attempt selected. You can record an assignment excusal; assessing work requires selecting a submitted attempt."}
           </p>
           <Button disabled={busy || unavailable} onClick={start}>
@@ -172,26 +193,82 @@ export function GradeInput({
     </div>
   );
 }
+export const GradeInput = AssessmentInput;
+
 function AssessmentEditor({
   assessment: a,
   onSaved,
   disabled,
+  onDirtyChange,
 }: {
   assessment: Assessment;
   onSaved: () => void;
   disabled: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const [feedback, setFeedback] = useState(a.feedback);
-  const [judgments, setJudgments] = useState(a.judgments);
+  const [judgments, setJudgments] = useState<CompetencyJudgment[]>(() =>
+    competencyJudgments(a.judgments),
+  );
+  const [pointValues, setPointValues] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      pointJudgments(a.judgments).map((judgment) => [
+        judgment.criterion,
+        String(judgment.score),
+      ]),
+    ),
+  );
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<"release" | "excuse" | null>(null);
+  const points = pointCriteria(a.criteria);
+  const rubrics = competencyCriteria(a.criteria);
+  const pointValuesValid = points.every((criterion) => {
+    const value = pointValues[criterion.criterion] ?? "";
+    if (!value.trim()) return true;
+    const score = Number(value);
+    return Number.isFinite(score) && score >= 0 && score <= criterion.maxPoints;
+  });
+  const currentJudgments =
+    a.method === "POINTS"
+      ? points.flatMap((criterion) => {
+          const value = pointValues[criterion.criterion] ?? "";
+          return value.trim()
+            ? [
+                {
+                  kind: "POINTS" as const,
+                  criterion: criterion.criterion,
+                  score: Number(value),
+                },
+              ]
+            : [];
+        })
+      : judgments;
   const dirty =
     feedback !== a.feedback ||
-    JSON.stringify(judgments) !== JSON.stringify(a.judgments);
+    JSON.stringify(currentJudgments) !== JSON.stringify(a.judgments);
   const complete =
     Boolean(a.evidence) &&
     a.criteria.length > 0 &&
-    a.criteria.every((c) => judgments.some((j) => j.criterion === c.criterion));
+    pointValuesValid &&
+    (a.method === "POINTS"
+      ? points.every(
+          (criterion) => (pointValues[criterion.criterion] ?? "").trim() !== "",
+        )
+      : rubrics.every((criterion) =>
+          judgments.some(
+            (judgment) => judgment.criterion === criterion.criterion,
+          ),
+        ));
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+    return () => onDirtyChange?.(false);
+  }, [dirty, onDirtyChange]);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
   function update(
     criterion: string,
     field: "rating" | "feedback",
@@ -199,14 +276,16 @@ function AssessmentEditor({
   ) {
     setJudgments((old) => {
       const entry = old.find((j) => j.criterion === criterion) ?? {
+        kind: "COMPETENCY" as const,
         criterion,
-        rating: "",
+        rating: "NOT_ASSESSED" as const,
         feedback: "",
       };
-      return [
-        ...old.filter((j) => j.criterion !== criterion),
-        { ...entry, [field]: value },
-      ];
+      const updated: CompetencyJudgment =
+        field === "rating"
+          ? { ...entry, rating: value as Rating }
+          : { ...entry, feedback: value };
+      return [...old.filter((j) => j.criterion !== criterion), updated];
     });
   }
   async function action(
@@ -220,7 +299,7 @@ function AssessmentEditor({
               grade: a.grade,
               version: a.version,
               feedback,
-              judgments: judgments.filter((j) => j.rating !== ""),
+              judgments: currentJudgments,
             })
           : kind === "excuse"
             ? await api.grades.excuse({
@@ -238,9 +317,9 @@ function AssessmentEditor({
         } else
           toast.error(
             result.error === "CONFLICT"
-              ? "This assessment changed, is locked, or is incomplete. Reload and check every skill before releasing."
+              ? "This assessment changed, is locked, or is incomplete. Reload and check every criterion before releasing."
               : result.error === "INVALID_REQUEST"
-                ? "Select rubrics first and use a valid level or Not assessed for each skill."
+                ? "Complete each criterion with a valid score or competency level."
                 : publicErrorMessage(result.error),
           );
       } else {
@@ -290,12 +369,80 @@ function AssessmentEditor({
       </Facts>
       {a.evidence && a.criteria.length === 0 && (
         <p role="alert" className="text-sm">
-          No criteria were selected when this assessment started. Configure
-          rubrics before starting an assessment of another attempt.
+          No criteria were saved when this assessment started. Update the
+          assignment setup before starting another assessment.
         </p>
       )}
+      {a.evidence && a.method === "POINTS" && (
+        <div className="space-y-3">
+          {points.map((criterion) => {
+            const value = pointValues[criterion.criterion] ?? "";
+            const numeric = Number(value);
+            const valid =
+              !value.trim() ||
+              (Number.isFinite(numeric) &&
+                numeric >= 0 &&
+                numeric <= criterion.maxPoints);
+            return (
+              <div
+                key={criterion.criterion}
+                className="grid gap-2 border-t border-border pt-3 sm:grid-cols-[minmax(0,1fr)_9rem] sm:items-end"
+              >
+                <div>
+                  <p className="font-medium">{criterion.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Up to {criterion.maxPoints} points
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor={`${a.grade}-${criterion.criterion}-score`}>
+                    Score / {criterion.maxPoints}
+                  </Label>
+                  <Input
+                    id={`${a.grade}-${criterion.criterion}-score`}
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    max={criterion.maxPoints}
+                    step="any"
+                    value={value}
+                    disabled={busy || disabled}
+                    aria-invalid={!valid}
+                    onChange={(event) =>
+                      setPointValues((current) => ({
+                        ...current,
+                        [criterion.criterion]: event.target.value,
+                      }))
+                    }
+                    placeholder="Not scored"
+                  />
+                  {!valid && (
+                    <p className="text-xs text-destructive">
+                      Enter 0 through {criterion.maxPoints}.
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          <div className="flex items-baseline justify-between gap-3 rounded-md bg-muted/40 px-3 py-2">
+            <span className="font-medium">Total</span>
+            <span className="font-semibold tabular-nums">
+              {pointValuesValid
+                ? currentJudgments.reduce(
+                    (sum, judgment) =>
+                      sum + (judgment.kind === "POINTS" ? judgment.score : 0),
+                    0,
+                  )
+                : "—"}{" "}
+              / {a.outOf}
+            </span>
+          </div>
+        </div>
+      )}
       {a.evidence &&
-        a.criteria.map((c) => {
+        a.method === "COMPETENCY" &&
+        rubrics.map((c) => {
           const j = judgments.find((j) => j.criterion === c.criterion);
           return (
             <fieldset
@@ -367,7 +514,12 @@ function AssessmentEditor({
         {a.evidence && (
           <>
             <Button
-              disabled={busy || disabled || !dirty}
+              disabled={
+                busy ||
+                disabled ||
+                !dirty ||
+                (a.method === "POINTS" && !pointValuesValid)
+              }
               onClick={() => action("save")}
             >
               Save draft
@@ -408,6 +560,16 @@ function AssessmentEditor({
               ...a,
               status: preview === "excuse" ? "EXCUSED" : "RELEASED",
               feedback: preview === "excuse" ? feedback : a.feedback,
+              judgments: preview === "excuse" ? [] : currentJudgments,
+              score:
+                a.method === "POINTS" && preview !== "excuse"
+                  ? currentJudgments.reduce(
+                      (sum, judgment) =>
+                        sum + (judgment.kind === "POINTS" ? judgment.score : 0),
+                      0,
+                    )
+                  : 0,
+              scored: preview !== "excuse" && complete,
             }}
             staff
             preview

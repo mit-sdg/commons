@@ -23,7 +23,6 @@ import {
   loadAssignments,
   loadGradesForMe,
   loadLateDayBalance,
-  loadMarksForMe,
   loadRosterMe,
   loadVisibleNotes,
 } from "@/lib/lms";
@@ -85,11 +84,6 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
     learnerReady && session ? () => loadGradesForMe() : null,
     [learnerReady, session],
   );
-  const { data: marksData } = useQuery(
-    learnerReady && session ? () => loadMarksForMe() : null,
-    [learnerReady, session],
-  );
-
   const { data: notesData } = useQuery(
     learnerReady && session ? () => loadVisibleNotes() : null,
     [learnerReady, session],
@@ -169,10 +163,8 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
   const assigned =
     assignmentsData?.assignments?.filter((a) => a.status === "ASSIGNED") ?? [];
   const released =
-    (gradesData?.grades?.filter((grade) => grade.status === "RELEASED")
-      .length ?? 0) +
-    (marksData?.marks?.filter((mark) => mark.status === "RELEASED").length ??
-      0);
+    gradesData?.grades?.filter((grade) => grade.status === "RELEASED").length ??
+    0;
   const unacknowledged =
     notesData?.notes?.filter((n) => !n.acknowledgedAt).length ?? 0;
 

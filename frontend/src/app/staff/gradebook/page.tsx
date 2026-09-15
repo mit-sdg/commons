@@ -5,12 +5,12 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Fact, Facts } from "@/components/facts";
 import { AssessmentHistory } from "@/components/lms/assessment-history";
-import { MarkHistory } from "@/components/lms/mark-history";
 import { BackLink, PageContainer, PageHeader } from "@/components/page";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@/hooks/use-query";
 import { useAuth } from "@/lib/auth";
+import type { Assessment } from "@/lib/grading";
 import { loadGradebook } from "@/lib/lms";
 
 export default function GradebookPage() {
@@ -57,7 +57,7 @@ function GradebookContent() {
         description={
           learner
             ? undefined
-            : "Point grades and competency assessments for every learner."
+            : "Point and competency assessments for every learner."
         }
       />
       {permissions.can("grade") && query.data && !query.error && (
@@ -104,10 +104,9 @@ function GradebookContent() {
             )}
             <AssessmentHistory
               key={learner.user}
-              assessments={learner.grades}
+              assessments={learner.grades as Assessment[]}
               staff
             />
-            <MarkHistory marks={learner.marks} staff />
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
@@ -145,10 +144,7 @@ function GradebookContent() {
                   )}
                 </div>
                 <Facts as="div" className="text-xs text-muted-foreground">
-                  <Fact.Count
-                    n={l.grades.length + l.marks.length}
-                    noun="grade"
-                  />
+                  <Fact.Count n={l.grades.length} noun="assessment" />
                   <ChevronRight className="size-4" />
                 </Facts>
               </Link>

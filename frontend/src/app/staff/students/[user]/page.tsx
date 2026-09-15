@@ -5,7 +5,6 @@ import { use } from "react";
 import { Fact, Facts } from "@/components/facts";
 import { Link } from "@/components/link";
 import { AssessmentHistory } from "@/components/lms/assessment-history";
-import { MarkHistory } from "@/components/lms/mark-history";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { StudentNotes } from "@/components/lms/student-notes";
 import { BackLink, PageContainer } from "@/components/page";
@@ -19,7 +18,6 @@ import { useAuth } from "@/lib/auth";
 import {
   loadGradesForStudent,
   loadLateDayBalance,
-  loadMarksForStudent,
   loadStaffNotes,
   loadStudentDetail,
   loadSubmissionsForStudent,
@@ -83,11 +81,6 @@ function StudentDetailPageContent({
     session ? () => loadGradesForStudent(user) : null,
     [session, user],
   );
-  const { data: marksData } = useQuery(
-    session ? () => loadMarksForStudent(user) : null,
-    [session, user],
-  );
-
   const { data: lateBalance } = useQuery<{
     balance: { granted: number; used: number; remaining: number };
   }>(() => loadLateDayBalance(user), [user]);
@@ -117,7 +110,6 @@ function StudentDetailPageContent({
   const seat = detailData?.detail ?? undefined;
   const submissions = submissionsData?.submissions ?? [];
   const grades = gradesData?.grades ?? [];
-  const marks = marksData?.marks ?? [];
   const notes = (notesData?.notes ?? []).map((n) => ({ ...n, learner: user }));
   const balance = lateBalance?.balance;
 
@@ -211,20 +203,14 @@ function StudentDetailPageContent({
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <GraduationCap className="size-4" /> Grades (
-                {grades.length + marks.length})
+                <GraduationCap className="size-4" /> Grades ({grades.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {grades.length === 0 && marks.length === 0 ? (
+              {grades.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No grades yet.</p>
               ) : (
-                <div className="space-y-4">
-                  {marks.length > 0 && <MarkHistory marks={marks} staff />}
-                  {grades.length > 0 && (
-                    <AssessmentHistory assessments={grades} staff />
-                  )}
-                </div>
+                <AssessmentHistory assessments={grades} staff />
               )}
             </CardContent>
           </Card>
