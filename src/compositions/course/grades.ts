@@ -75,19 +75,7 @@ export const mayStartAssessment = view(
 
 export const theSetupOf = former(
   "the resolved grading setup of (item)",
-  (
-    { item },
-    {
-      label,
-      status,
-      method,
-      revision,
-      storedCriteria,
-      maxPoints,
-      editions,
-      criteria,
-    },
-  ) =>
+  ({ item }, { label, status, method, revision, storedCriteria, maxPoints, editions, criteria }) =>
     each(
       Itemizing._getSetup({ item }).is({
         item,
@@ -474,9 +462,13 @@ export const theGradebook = former(
   "the gradebook ()",
   (_inputs, { item, label, method, revision, maxPoints }) =>
     form({
-      items: each(
-        Itemizing._getItems({}).is({ item, label, method, revision, maxPoints }),
-      ).form({ item, label, method, revision, maxPoints }),
+      items: each(Itemizing._getItems({}).is({ item, label, method, revision, maxPoints })).form({
+        item,
+        label,
+        method,
+        revision,
+        maxPoints,
+      }),
       learners: theGradebookLearners({}),
     }),
 );
@@ -527,10 +519,42 @@ export const theStandards = former(
 
 export const GradesDefineStandard = endpoint(
   "/grades/define-standard",
-  ({ session, name, description, deficient, emergent, competent, expert, referenceUrl, user, at, standard, edition }) =>
-    receive({ session, name, description, deficient, emergent, competent, expert, referenceUrl }).then(
+  ({
+    session,
+    name,
+    description,
+    deficient,
+    emergent,
+    competent,
+    expert,
+    referenceUrl,
+    user,
+    at,
+    standard,
+    edition,
+  }) =>
+    receive({
+      session,
+      name,
+      description,
+      deficient,
+      emergent,
+      competent,
+      expert,
+      referenceUrl,
+    }).then(
       where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
-        .then(StandardSetting.define({ name, description, deficient, emergent, competent, expert, referenceUrl }).responds({ standard, edition }))
+        .then(
+          StandardSetting.define({
+            name,
+            description,
+            deficient,
+            emergent,
+            competent,
+            expert,
+            referenceUrl,
+          }).responds({ standard, edition }),
+        )
         .then(respond({ standard, edition }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
@@ -541,10 +565,47 @@ export const GradesDefineStandard = endpoint(
 
 export const GradesReviseStandard = endpoint(
   "/grades/revise-standard",
-  ({ session, standard, expectedEdition, name, description, deficient, emergent, competent, expert, referenceUrl, user, at, edition }) =>
-    receive({ session, standard, expectedEdition, name, description, deficient, emergent, competent, expert, referenceUrl }).then(
+  ({
+    session,
+    standard,
+    expectedEdition,
+    name,
+    description,
+    deficient,
+    emergent,
+    competent,
+    expert,
+    referenceUrl,
+    user,
+    at,
+    edition,
+  }) =>
+    receive({
+      session,
+      standard,
+      expectedEdition,
+      name,
+      description,
+      deficient,
+      emergent,
+      competent,
+      expert,
+      referenceUrl,
+    }).then(
       where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
-        .then(StandardSetting.revise({ standard, expectedEdition, name, description, deficient, emergent, competent, expert, referenceUrl }).responds({ standard, edition }))
+        .then(
+          StandardSetting.revise({
+            standard,
+            expectedEdition,
+            name,
+            description,
+            deficient,
+            emergent,
+            competent,
+            expert,
+            referenceUrl,
+          }).responds({ standard, edition }),
+        )
         .then(respond({ standard, edition }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
@@ -664,7 +725,12 @@ export const GradesSave = endpoint(
   ({ session, grade, version, judgments, feedback, user, at, saved, savedVersion }) =>
     receive({ session, grade, version, judgments, feedback }).then(
       where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
-        .then(Grading.save({ grade, version, judgments, feedback, grader: user, at }).responds({ grade: saved, version: savedVersion }))
+        .then(
+          Grading.save({ grade, version, judgments, feedback, grader: user, at }).responds({
+            grade: saved,
+            version: savedVersion,
+          }),
+        )
         .then(respond({ grade: saved, version: savedVersion }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
@@ -678,7 +744,12 @@ export const GradesRelease = endpoint(
   ({ session, grade, version, user, at, saved, savedVersion }) =>
     receive({ session, grade, version }).then(
       where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
-        .then(Grading.release({ grade, version, grader: user, at }).responds({ grade: saved, version: savedVersion }))
+        .then(
+          Grading.release({ grade, version, grader: user, at }).responds({
+            grade: saved,
+            version: savedVersion,
+          }),
+        )
         .then(respond({ grade: saved, version: savedVersion }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
@@ -692,7 +763,12 @@ export const GradesRetract = endpoint(
   ({ session, grade, version, user, at, saved, savedVersion }) =>
     receive({ session, grade, version }).then(
       where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
-        .then(Grading.retract({ grade, version, grader: user, at }).responds({ grade: saved, version: savedVersion }))
+        .then(
+          Grading.retract({ grade, version, grader: user, at }).responds({
+            grade: saved,
+            version: savedVersion,
+          }),
+        )
         .then(respond({ grade: saved, version: savedVersion }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
@@ -706,7 +782,12 @@ export const GradesRestoreExcused = endpoint(
   ({ session, grade, version, user, at, saved, savedVersion }) =>
     receive({ session, grade, version }).then(
       where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
-        .then(Grading.restoreExcused({ grade, version, grader: user, at }).responds({ grade: saved, version: savedVersion }))
+        .then(
+          Grading.restoreExcused({ grade, version, grader: user, at }).responds({
+            grade: saved,
+            version: savedVersion,
+          }),
+        )
         .then(respond({ grade: saved, version: savedVersion }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
@@ -720,7 +801,12 @@ export const GradesExcuse = endpoint(
   ({ session, grade, version, feedback, user, at, saved, savedVersion }) =>
     receive({ session, grade, version, feedback }).then(
       where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
-        .then(Grading.excuse({ grade, version, grader: user, feedback, at }).responds({ grade: saved, version: savedVersion }))
+        .then(
+          Grading.excuse({ grade, version, grader: user, feedback, at }).responds({
+            grade: saved,
+            version: savedVersion,
+          }),
+        )
         .then(respond({ grade: saved, version: savedVersion }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
@@ -734,7 +820,13 @@ export const GradesReleaseItem = endpoint(
   ({ session, item, user, at, released, skipped, unconfirmed }) =>
     receive({ session, item }).then(
       where(now(at), activeUser({ session }).is({ user }), mayGrade({ user }))
-        .then(Grading.releaseItem({ item, grader: user, at }).responds({ released, skipped, unconfirmed }))
+        .then(
+          Grading.releaseItem({ item, grader: user, at }).responds({
+            released,
+            skipped,
+            unconfirmed,
+          }),
+        )
         .then(respond({ released, skipped, unconfirmed }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
@@ -790,13 +882,21 @@ export const GradesItem = endpoint(
 
 export const GradesDetail = endpoint("/grades/detail", ({ session, grade, user }) =>
   receive({ session, grade }).then(
-    where(activeUser({ session }).is({ user }), mayReadAssessment({ user, grade }), Grading._getGrade({ grade }))
+    where(
+      activeUser({ session }).is({ user }),
+      mayReadAssessment({ user, grade }),
+      Grading._getGrade({ grade }),
+    )
       .then(respond({ assessments: theAssessment({ grade }) }))
       .named("success"),
     where(activeUser({ session }).is({ user }), no(mayReadAssessment({ user, grade })))
       .then(respond({ error: "NOT_FOUND" }))
       .named("hidden"),
-    where(activeUser({ session }).is({ user }), mayReadAssessment({ user, grade }), no(Grading._getGrade({ grade })))
+    where(
+      activeUser({ session }).is({ user }),
+      mayReadAssessment({ user, grade }),
+      no(Grading._getGrade({ grade })),
+    )
       .then(respond({ error: "NOT_FOUND" }))
       .named("missing"),
   ),
@@ -843,7 +943,11 @@ export const GradesRecord = endpoint(
         }),
         StandardSetting._getEditionCatalog({}).is({ editions }),
         compute(c.resolveGradingCriteria, { criteria: storedCriteria, editions }, criteria),
-        compute(c.gradingRevisionMatches, { left: currentRevision, right: revision }, revisionMatches),
+        compute(
+          c.gradingRevisionMatches,
+          { left: currentRevision, right: revision },
+          revisionMatches,
+        ),
         is.among(revisionMatches, [true]),
       )
         .then(
@@ -866,7 +970,11 @@ export const GradesRecord = endpoint(
         no(Grading._getAssessment({ learner, item, evidence })),
         mayStartAssessment({ learner, item, evidence }),
         Itemizing._getSetup({ item }).is({ revision: currentRevision }),
-        compute(c.gradingRevisionMatches, { left: currentRevision, right: revision }, revisionMatches),
+        compute(
+          c.gradingRevisionMatches,
+          { left: currentRevision, right: revision },
+          revisionMatches,
+        ),
         is.among(revisionMatches, [false]),
       )
         .then(respond({ error: "CONFLICT" }))

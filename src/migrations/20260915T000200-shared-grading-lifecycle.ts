@@ -776,9 +776,7 @@ export const sharedGradingLifecycle: Migration = {
     await dropIfPresent(database, "grading.configurations");
 
     if (
-      await database
-        .listCollections({ name: "grading.assessments" }, { nameOnly: true })
-        .hasNext()
+      await database.listCollections({ name: "grading.assessments" }, { nameOnly: true }).hasNext()
     ) {
       for (const index of await assessmentCollection.listIndexes().toArray()) {
         if (
