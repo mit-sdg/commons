@@ -10,6 +10,7 @@ export type LearnerAttempt = Row<
   Output<"/submissions/for-assignment">["submissions"]
 >;
 export type ItemAssessment = Row<Output<"/grades/for-item">["grades"]>;
+export type ItemGrading = Output<"/grades/item">;
 export type DelegationRow = Row<Output<"/delegation/for-item">["delegations"]>;
 export type AvailableGrader = Row<Output<"/delegation/graders">["graders"]>;
 
@@ -21,6 +22,7 @@ export interface SubmissionsExportSource {
   assigned: readonly AssignedLearner[];
   submissions: readonly LearnerAttempt[];
   grades: readonly ItemAssessment[];
+  grading: Pick<ItemGrading, "method" | "revision" | "maxPoints">;
   delegations: readonly DelegationRow[];
   graders: readonly AvailableGrader[];
   sectionNames: ReadonlyMap<string, string>;
@@ -35,7 +37,8 @@ export const SUBMISSIONS_CSV_COLUMNS = [
   "Username",
   "Email",
   "Student ID",
-  "Section",
+  "Section ID",
+  "Section name",
   "Assignment title",
   "Assignment ID",
   "Course due at",
@@ -51,10 +54,13 @@ export const SUBMISSIONS_CSV_COLUMNS = [
   "Grader username",
   "Grader ID",
   "Grader availability",
-  "Assessment scope",
-  "Assessment status",
-  "Assessment ID",
-  "Assessment updated at",
+  "Grading method",
+  "Grade scope",
+  "Grade status",
+  "Grade ID",
+  "Grade updated at",
+  "Score",
+  "Maximum points",
   "Attempt link",
 ] as const;
 
@@ -75,14 +81,47 @@ function latestByNumber(attempts: readonly LearnerAttempt[]) {
     .at(-1);
 }
 
-function latestAssessment(assessments: readonly ItemAssessment[]) {
-  return [...assessments]
+function latestGradeRecord<T extends { createdAt: string; updatedAt: string }>(
+  records: readonly T[],
+) {
+  return [...records]
     .sort(
       (left, right) =>
         new Date(left.updatedAt ?? left.createdAt).getTime() -
         new Date(right.updatedAt ?? right.createdAt).getTime(),
     )
     .at(-1);
+}
+
+function exportedGrade<
+  T extends { evidence: string; status: string } & {
+    createdAt: string;
+    updatedAt: string;
+  },
+>(
+  records: readonly T[],
+  attempt: LearnerAttempt | undefined,
+) {
+  const assignmentExcusal = latestGradeRecord(
+    records.filter(
+      (record) => record.status === "EXCUSED" && record.evidence === "",
+    ),
+  );
+  const attemptRecord = attempt
+    ? latestGradeRecord(
+        records.filter(
+          (record) => String(record.evidence) === String(attempt.submission),
+        ),
+      )
+    : undefined;
+  return {
+    record: attemptRecord ?? assignmentExcusal,
+    scope: attemptRecord
+      ? `Attempt ${attempt?.number}`
+      : assignmentExcusal
+        ? "Assignment excusal"
+        : "",
+  };
 }
 
 function effectiveDue(
@@ -130,29 +169,19 @@ export function submissionsCsv(source: SubmissionsExportSource): {
       : recorded
         ? "Withdrawn"
         : "Missing";
-    const learnerAssessments = source.grades.filter(
-      (grade) => String(grade.learner) === learnerId,
+    const selected = exportedGrade(
+      source.grades.filter((grade) => String(grade.learner) === learnerId),
+      attempt,
     );
-    const attemptAssessment = attempt
-      ? latestAssessment(
-          learnerAssessments.filter(
-            (grade) => String(grade.evidence) === String(attempt.submission),
-          ),
-        )
-      : undefined;
-    // An excusal has no attempt evidence. Keep it visible, but never imply it
-    // is an assessment of a newer attempt.
-    const assignmentExcusal = latestAssessment(
-      learnerAssessments.filter(
-        (grade) => grade.evidence === "" && grade.status === "EXCUSED",
-      ),
-    );
-    const assessment = attemptAssessment ?? assignmentExcusal;
-    const assessmentScope = attemptAssessment
-      ? `Attempt ${attempt?.number}`
-      : assignmentExcusal
-        ? "Assignment excusal"
+    const grade = selected.record;
+    const isPoints = (grade?.method ?? source.grading.method) === "POINTS";
+    const score =
+      grade?.method === "POINTS" && grade.scored && grade.status !== "EXCUSED"
+        ? grade.score
         : "";
+    const maximum = isPoints
+      ? (grade?.outOf ?? source.grading.maxPoints)
+      : "";
     const delegation = delegationByLearner.get(learnerId);
     const grader = delegation
       ? availableById.get(String(delegation.grader))
@@ -187,10 +216,10 @@ export function submissionsCsv(source: SubmissionsExportSource): {
       learner.username ?? "",
       learner.email ?? "",
       learnerId,
+      learner.section ?? "",
       learner.section === null
         ? ""
-        : (source.sectionNames.get(String(learner.section)) ??
-          String(learner.section)),
+        : (source.sectionNames.get(String(learner.section)) ?? ""),
       source.title,
       source.assignment,
       iso(source.dueAt),
@@ -206,10 +235,13 @@ export function submissionsCsv(source: SubmissionsExportSource): {
       delegation ? (grader?.username ?? delegation.graderUsername ?? "") : "",
       delegation ? String(delegation.grader) : "",
       delegation ? (grader ? "Available" : "Unavailable") : "",
-      assessmentScope,
-      assessment?.status ?? "",
-      assessment ? String(assessment.grade) : "",
-      iso(assessment?.updatedAt),
+      isPoints ? "Points" : "Competency",
+      selected.scope,
+      grade?.status ?? "",
+      grade ? String(grade.grade) : "",
+      iso(grade?.updatedAt),
+      score,
+      maximum,
       attemptLink,
     ];
   });

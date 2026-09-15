@@ -411,13 +411,13 @@ function StaffAssignmentDetailPageContent({
         freshSubmissions,
         freshDelegations,
         freshGraders,
-        freshGrades,
+        observedGrading,
       ] = await Promise.all([
         api.assignments["staff-summary"]({ assignment }).then(unwrap),
         loadSubmissionsForAssignment(assignment),
         loadDelegationForItem(assignment),
         loadDelegationGraders(),
-        loadGradesForItem(assignment),
+        api.grades.item({ item: assignment }).then(unwrap),
       ]);
       if (!freshAssignment.summary) {
         toast.error(
@@ -445,7 +445,8 @@ function StaffAssignmentDetailPageContent({
         return;
       }
 
-      const [freshSections, freshLateDays, latePolicy] = await Promise.all([
+      const [freshSections, freshLateDays, latePolicy, freshGrades] =
+        await Promise.all([
         canManage ? loadSections() : Promise.resolve(null),
         canReadStudentRecords
           ? loadLateDaysForAssignment(assignment)
@@ -453,7 +454,19 @@ function StaffAssignmentDetailPageContent({
         canReadStudentRecords
           ? api["late-days"].policy({}).then(unwrap)
           : Promise.resolve(null),
+        loadGradesForItem(assignment),
       ]);
+      const confirmedGrading = await api.grades
+        .item({ item: assignment })
+        .then(unwrap);
+      if (
+        confirmedGrading.revision !== observedGrading.revision
+      ) {
+        toast.info(
+          "CSV was not downloaded because the grading setup changed. Try again.",
+        );
+        return;
+      }
       downloadSubmissionsCsv({
         assignment,
         title: freshAssignment.summary.title,
@@ -461,6 +474,11 @@ function StaffAssignmentDetailPageContent({
         assigned: scopedLearners,
         submissions: freshSubmissions.submissions,
         grades: freshGrades.grades,
+        grading: {
+          method: confirmedGrading.method,
+          revision: confirmedGrading.revision,
+          maxPoints: confirmedGrading.maxPoints,
+        },
         delegations: freshDelegations.delegations,
         graders: freshGraders.graders,
         sectionNames: new Map(
@@ -843,8 +861,8 @@ function StaffAssignmentDetailPageContent({
                     </CardTitle>
                   </div>
                   <ConfirmAction
-                    title="Release all complete drafts for this assignment?"
-                    description={`This applies across the full assignment, not only the current grader scope.${hiddenDraftCount > 0 ? ` ${hiddenDraftCount} draft${hiddenDraftCount === 1 ? " is" : "s are"} outside the current scope.` : ""} Complete drafts become visible to learners; incomplete or concurrently changed assessments are skipped and reported.`}
+                    title="Release all complete assessment drafts for this assignment?"
+                    description={`This applies across the full assignment, not only the current grader scope.${hiddenDraftCount > 0 ? ` ${hiddenDraftCount} draft${hiddenDraftCount === 1 ? " is" : "s are"} outside the current scope.` : ""} Complete assessment drafts become visible to learners; incomplete or concurrently changed drafts are skipped and reported.`}
                     confirmLabel="Release all assignment drafts"
                     confirmDisabled={gradingDataUnavailable || draftCount === 0}
                     onConfirm={releaseAll}

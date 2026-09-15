@@ -71,6 +71,8 @@ const source = {
     },
   ],
   grades: [],
+  marks: [],
+  grading: { method: "COMPETENCY", generation: 0, maxPoints: 100 },
   delegations: [
     {
       learner: "learner-1",
@@ -102,7 +104,7 @@ describe("submission export", () => {
     const { csv } = submissionsCsv(source);
     expect(csv).toStartWith(`${SUBMISSIONS_CSV_COLUMNS.join(",")}\r\n`);
     expect(csv).toContain("'=IMPORTXML");
-    expect(csv).toContain('"Studio, A"');
+    expect(csv).toContain('learner-1,section-1,"Studio, A"');
     expect(csv).toContain("2026-09-11T12:00:00.000Z");
     expect(csv).toContain("Late,Former TA,former,grader-old,Unavailable");
     expect(csv).toContain(
@@ -172,5 +174,175 @@ describe("submission export", () => {
       ] as unknown as SubmissionsExportSource["grades"],
     });
     expect(csv).toContain("Assignment excusal,EXCUSED,excusal-grade");
+  });
+
+  test("exports zero, resubmission, and retained-evidence point-grade states", () => {
+    const numericSource = {
+      ...source,
+      title: "Numeric lab",
+      grading: { method: "POINTS", generation: 3, maxPoints: 10 },
+      sectionNames: new Map(),
+      assigned: [
+        {
+          ...source.assigned[0],
+          displayName: "Priya Sharma",
+        },
+        ...source.assigned.slice(1),
+        {
+          assignee: "learner-4",
+          displayName: "Iris Kim",
+          username: "iris",
+          email: "iris@example.edu",
+          section: "section-unreadable",
+          release: "release-4",
+          dueOverride: null,
+          status: "ASSIGNED",
+        },
+      ],
+      submissions: [
+        {
+          ...source.submissions[1],
+          submitter: "learner-1",
+          submission: "released-attempt",
+          number: 1,
+        },
+        {
+          ...source.submissions[1],
+          submitter: "learner-2",
+          submission: "zero-attempt",
+          number: 1,
+        },
+        {
+          ...source.submissions[1],
+          submitter: "learner-3",
+          submission: "old-scored-attempt",
+          number: 1,
+        },
+        {
+          ...source.submissions[1],
+          submitter: "learner-3",
+          submission: "fresh-ungraded-attempt",
+          number: 2,
+          submittedAt: "2026-09-12T14:00:00Z",
+        },
+        {
+          ...source.submissions[1],
+          submitter: "learner-4",
+          submission: "excusal-evidence-attempt",
+          number: 1,
+        },
+        {
+          ...source.submissions[1],
+          submitter: "learner-4",
+          submission: "after-excusal-attempt",
+          number: 2,
+          submittedAt: "2026-09-12T15:00:00Z",
+        },
+      ],
+      grades: [
+        {
+          grade: "ignored-competency-grade",
+          learner: "learner-1",
+          evidence: "released-attempt",
+          status: "RELEASED",
+          createdAt: "2026-09-11T00:00:00Z",
+          updatedAt: "2026-09-11T01:00:00Z",
+        },
+      ],
+      marks: [
+        {
+          mark: "released-mark",
+          learner: "learner-1",
+          evidence: "released-attempt",
+          score: 8.5,
+          scored: true,
+          outOf: 10,
+          status: "RELEASED",
+          createdAt: "2026-09-11T00:00:00Z",
+          updatedAt: "2026-09-11T01:00:00Z",
+        },
+        {
+          mark: "zero-draft-mark",
+          learner: "learner-2",
+          evidence: "zero-attempt",
+          score: 0,
+          scored: true,
+          outOf: 10,
+          status: "DRAFT",
+          createdAt: "2026-09-11T00:00:00Z",
+          updatedAt: "2026-09-11T01:00:00Z",
+        },
+        {
+          mark: "old-released-mark",
+          learner: "learner-3",
+          evidence: "old-scored-attempt",
+          score: 7,
+          scored: true,
+          outOf: 10,
+          status: "RELEASED",
+          createdAt: "2026-09-11T00:00:00Z",
+          updatedAt: "2026-09-11T01:00:00Z",
+        },
+        {
+          mark: "assignment-excusal-mark",
+          learner: "learner-4",
+          evidence: "excusal-evidence-attempt",
+          score: 0,
+          scored: false,
+          outOf: 10,
+          status: "EXCUSED",
+          createdAt: "2026-09-11T00:00:00Z",
+          updatedAt: "2026-09-11T01:00:00Z",
+        },
+      ],
+    } as unknown as SubmissionsExportSource;
+
+    const { csv } = submissionsCsv(numericSource);
+    const [header, ...lines] = csv.trimEnd().split("\r\n");
+    const columns = header?.split(",") ?? [];
+    const row = (username: string) => {
+      const values = lines
+        .find((line) => line.split(",")[1] === username)
+        ?.split(",");
+      expect(values).toBeDefined();
+      return Object.fromEntries(
+        columns.map((column, index) => [column, values?.[index] ?? ""]),
+      );
+    };
+
+    expect(row("priya")).toMatchObject({
+      "Grading method": "Points",
+      "Grade scope": "Attempt 1",
+      "Grade status": "RELEASED",
+      "Grade ID": "released-mark",
+      Score: "8.5",
+      "Maximum points": "10",
+    });
+    expect(row("noah")).toMatchObject({
+      "Grade status": "DRAFT",
+      "Grade ID": "zero-draft-mark",
+      Score: "0",
+      "Maximum points": "10",
+    });
+    expect(row("amina")).toMatchObject({
+      "Submission ID": "fresh-ungraded-attempt",
+      "Grade scope": "",
+      "Grade status": "",
+      "Grade ID": "",
+      Score: "",
+      "Maximum points": "10",
+    });
+    expect(row("iris")).toMatchObject({
+      "Section ID": "section-unreadable",
+      "Section name": "",
+      "Submission ID": "after-excusal-attempt",
+      "Grade scope": "Assignment excusal",
+      "Grade status": "EXCUSED",
+      "Grade ID": "assignment-excusal-mark",
+      Score: "",
+      "Maximum points": "10",
+    });
+    expect(csv).not.toContain("ignored-competency-grade");
+    expect(csv).not.toContain("old-released-mark");
   });
 });
