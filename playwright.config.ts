@@ -6,6 +6,9 @@ import { defineConfig, devices } from "@playwright/test";
  */
 const EDGE_PORT = 4755;
 const WEB_PORT = 3755;
+// Keep local iteration fast, but exercise the deployed frontend in CI. Next's
+// on-demand dev route discovery can return spurious 404s in a long browser run.
+const standalone = Boolean(process.env.CI) || process.env.COMMONS_E2E_STANDALONE === "1";
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -27,11 +30,16 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "bun scripts/stack-mongo.ts",
+    command: standalone
+      ? "bun run --cwd frontend build && bun scripts/prepare-platform.ts && bun scripts/stack-mongo.ts"
+      : "bun scripts/stack-mongo.ts",
     url: `http://127.0.0.1:${WEB_PORT}`,
     reuseExistingServer: false,
-    timeout: 180_000,
+    timeout: standalone ? 300_000 : 180_000,
     env: {
+      COMMONS_E2E_STANDALONE: standalone ? "1" : "0",
+      BACKEND_ORIGIN: `http://127.0.0.1:${EDGE_PORT}`,
+      NEXT_TELEMETRY_DISABLED: "1",
       PORT: String(EDGE_PORT),
       WEB_PORT: String(WEB_PORT),
       REASONER: "scripted",
