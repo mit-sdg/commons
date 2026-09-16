@@ -217,6 +217,14 @@ function normalizeCriterion(value: unknown, item: string, errors: string[]): Ite
   return null;
 }
 
+/** Preserve an already ordered legacy list while giving tied positions distinct ranks. */
+function normalizeTiedPositions(criteria: { position: number }[]): void {
+  if (new Set(criteria.map(({ position }) => position)).size === criteria.length) return;
+  criteria.forEach((criterion, position) => {
+    criterion.position = position;
+  });
+}
+
 function normalizeItem(
   row: StoredDocument,
   configuration: StoredDocument | undefined,
@@ -302,6 +310,11 @@ function normalizeItem(
       return null;
     }
   }
+  // Legacy selection used a stable position sort: ties followed stored array order.
+  // Retired criteria do not participate in the current setup's ordering.
+  normalizeTiedPositions(
+    criteria.filter(({ active }) => active).sort((left, right) => left.position - right.position),
+  );
   return { _id: row._id, label: row.label, status: row.status, method, revision, criteria };
 }
 
@@ -441,6 +454,9 @@ function convertCompetencyAssessment(
     errors.push(`assessment ${row._id} repeats a criterion`);
     return null;
   }
+  // The assessment's reference array, not today's setup, retains its selected order.
+  // This also handles ties involving criteria that have since been retired.
+  normalizeTiedPositions(frozen);
   const judgments = competencyJudgments(row.judgments, row._id, ids, errors);
   if (judgments === null) return null;
   if (!Array.isArray(row.history)) {

@@ -1,5 +1,9 @@
 import type { Collection, Db, Document } from "mongodb";
 import { afterAll, expect, test } from "vite-plus/test";
+import { resolveGradingCriteria } from "../../src/computations/grading.ts";
+import { MongoGradingConcept } from "../../src/concepts/grading/grading.mongo.ts";
+import { MongoItemizingConcept } from "../../src/concepts/itemizing/itemizing.mongo.ts";
+import { MongoStandardSettingConcept } from "../../src/concepts/standardSetting/standardSetting.mongo.ts";
 import { stopTestDb, testDb as rawTestDb } from "../../src/concepts/testing.ts";
 import { sharedGradingLifecycle as migrationUnderTest } from "../../src/migrations/20260915T000200-shared-grading-lifecycle.ts";
 
@@ -274,6 +278,127 @@ test("freezes legacy competency snapshots and full history without losing inacti
       scored: false,
     },
   ]);
+});
+
+test("legacy tied positions retain their order and allow new assessments and historical corrections", async () => {
+  const database = await testDb();
+  await database.collection("standardSetting.standards").insertOne({
+    ...rubric,
+    editions: [
+      ...rubric.editions,
+      { ...rubric.editions[0], edition: "edition-3", number: 3, name: "Third edition" },
+    ],
+  });
+  await database.collection("itemizing.assessmentItems").insertOne({
+    _id: "paper",
+    label: "Paper",
+    status: "ACTIVE",
+    criteria: [
+      { criterion: "z-first-tie", basis: "edition-1", position: 4, active: true },
+      { criterion: "retired", basis: "edition-2", position: 1, active: false },
+      { criterion: "a-second-tie", basis: "edition-2", position: 4, active: true },
+      { criterion: "earliest", basis: "edition-3", position: 1, active: true },
+    ],
+  });
+  const oldCriteria = ["z-first-tie", "retired", "a-second-tie"];
+  const oldJudgments = oldCriteria.map((criterion) => ({
+    criterion,
+    rating: "COMPETENT",
+    feedback: `Feedback for ${criterion}`,
+  }));
+  await database.collection("grading.assessments").insertOne({
+    _id: "historical",
+    learner: "learner",
+    item: "paper",
+    evidence: "first-attempt",
+    grader: "grader",
+    criteria: oldCriteria.map((criterion) => ({ criterion })),
+    judgments: oldJudgments,
+    feedback: "Original feedback",
+    status: "RELEASED",
+    version: 3,
+    createdAt,
+    updatedAt,
+    releasedAt,
+    history: [
+      {
+        revision: 1,
+        grader: "grader",
+        status: "RELEASED",
+        judgments: oldJudgments,
+        feedback: "Original feedback",
+        releasedAt,
+      },
+    ],
+  });
+
+  expect(await sharedGradingLifecycle.up(database)).not.toHaveProperty("blocked");
+  const itemizing = new MongoItemizingConcept(database as Db);
+  const standards = new MongoStandardSettingConcept(database as Db);
+  const grading = new MongoGradingConcept(database as Db);
+  const [setup] = await itemizing._getSetup({ item: "paper" });
+  expect(setup!.criteria.map(({ criterion, position }) => ({ criterion, position }))).toEqual([
+    { criterion: "earliest", position: 0 },
+    { criterion: "z-first-tie", position: 1 },
+    { criterion: "a-second-tie", position: 2 },
+  ]);
+  const criteria = resolveGradingCriteria({
+    criteria: setup!.criteria,
+    editions: await standards._getEditions(),
+  })
+    .filter((criterion) => criterion.kind === "COMPETENCY")
+    .map((criterion) => ({ ...criterion, criterion: criterion.criterion! }));
+  const actor = { grader: "grader", at: new Date("2026-09-04T12:00:00.000Z") };
+  const fresh = await grading.record({
+    learner: "learner",
+    item: "paper",
+    evidence: "second-attempt",
+    method: setup!.method,
+    setupRevision: setup!.revision,
+    criteria,
+    ...actor,
+  });
+  const saved = await grading.save({
+    ...fresh,
+    ...actor,
+    judgments: criteria.map(({ criterion }) => ({
+      kind: "COMPETENCY",
+      criterion,
+      rating: "EXPERT",
+      feedback: "",
+    })),
+    feedback: "New assessment",
+  });
+  await grading.release({ ...saved, ...actor });
+
+  const [historical] = await grading._getGrade({ grade: "historical" });
+  expect(historical!.criteria.map(({ criterion, position }) => ({ criterion, position }))).toEqual(
+    oldCriteria.map((criterion, position) => ({ criterion, position })),
+  );
+  expect(
+    historical!.criteria.map((criterion) => criterion.kind === "COMPETENCY" && criterion.basis),
+  ).toEqual(["edition-1", "edition-2", "edition-2"]);
+  expect(historical).toMatchObject({ version: 3, createdAt, updatedAt, releasedAt });
+  const originalRelease = historical!.history[0];
+  let corrected = await grading.retract({ grade: "historical", version: 3, ...actor });
+  corrected = await grading.save({
+    ...corrected,
+    ...actor,
+    judgments: historical!.judgments,
+    feedback: "Corrected",
+  });
+  await grading.release({ ...corrected, ...actor });
+  const [afterCorrection] = await grading._getGrade({ grade: "historical" });
+  expect(afterCorrection!.history).toHaveLength(2);
+  expect(afterCorrection!.history[0]).toEqual(originalRelease);
+
+  const itemBeforeRetry = await database.collection("itemizing.assessmentItems").findOne();
+  const gradesBeforeRetry = await database.collection("grading.assessments").find({}).toArray();
+  expect(await sharedGradingLifecycle.up(database)).not.toHaveProperty("blocked");
+  expect(await database.collection("itemizing.assessmentItems").findOne()).toEqual(itemBeforeRetry);
+  expect(await database.collection("grading.assessments").find({}).toArray()).toEqual(
+    gradesBeforeRetry,
+  );
 });
 
 test("imports released, draft, and excused marks with zero, blank, and restorable private state", async () => {
