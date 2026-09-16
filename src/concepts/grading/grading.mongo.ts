@@ -1,3 +1,4 @@
+import { sumDecimals } from "../../computations/decimal-sum.ts";
 import type { Collection, Db } from "mongodb";
 import { GradeConflict, GradeIncomplete, GradeNotFound, InvalidJudgments } from "./errors.ts";
 
@@ -141,10 +142,7 @@ export class MongoGradingConcept {
         )
       )
         throw new InvalidJudgments("Point criteria need a name and a positive finite maximum.");
-      const outOf = parsed.reduce(
-        (total, criterion) => total + (criterion as PointCriterion).maxPoints,
-        0,
-      );
+      const outOf = sumDecimals(parsed.map((criterion) => (criterion as PointCriterion).maxPoints));
       if (!Number.isFinite(outOf) || outOf <= 0)
         throw new InvalidJudgments("The total point maximum must be positive and finite.");
     } else {
@@ -193,8 +191,8 @@ export class MongoGradingConcept {
     if (doc.method !== "POINTS") return { score: 0, outOf: 0, scored: false };
     const criteria = doc.criteria as PointCriterion[];
     const judgments = doc.judgments as PointJudgment[];
-    const score = judgments.reduce((total, judgment) => total + judgment.score, 0);
-    const outOf = criteria.reduce((total, criterion) => total + criterion.maxPoints, 0);
+    const score = sumDecimals(judgments.map((judgment) => judgment.score));
+    const outOf = sumDecimals(criteria.map((criterion) => criterion.maxPoints));
     if (!Number.isFinite(score) || !Number.isFinite(outOf))
       throw new InvalidJudgments("The point total must be finite.");
     return {

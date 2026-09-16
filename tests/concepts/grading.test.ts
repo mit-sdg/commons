@@ -277,3 +277,42 @@ test("bulk release returns confirmed, skipped, and uncertain outcomes", async ()
   expect(result.skipped).toEqual([{ grade: expect.any(String), reason: "INCOMPLETE" }]);
   expect(result.unconfirmed).toEqual([{ grade: uncertain.grade, reason: "OUTCOME_UNKNOWN" }]);
 });
+
+test("fractional criteria have decimal totals in drafts and retained releases", async () => {
+  const grading = new MongoGradingConcept(await testDb());
+  let grade = await start(grading, {
+    method: "POINTS",
+    criteria: pointCriteria.map((criterion, index) => ({
+      ...criterion,
+      maxPoints: index === 0 ? 0.1 : 0.2,
+    })),
+  });
+  grade = await grading.save({
+    ...grade,
+    ...actor,
+    judgments: [
+      { kind: "POINTS", criterion: "analysis", score: 0.1 },
+      { kind: "POINTS", criterion: "style", score: 0.2 },
+    ],
+    feedback: "Full credit",
+  });
+  expect((await grading._getGrade(grade))[0]).toMatchObject({ score: 0.3, outOf: 0.3 });
+  grade = await grading.release({ ...grade, ...actor });
+  grade = await grading.retract({ ...grade, ...actor });
+  grade = await grading.save({
+    ...grade,
+    ...actor,
+    judgments: [
+      { kind: "POINTS", criterion: "analysis", score: 0.1 },
+      { kind: "POINTS", criterion: "style", score: 0.1 },
+    ],
+    feedback: "Corrected",
+  });
+  await grading.release({ ...grade, ...actor });
+  const row = (await grading._getGrade(grade))[0]!;
+  expect(row).toMatchObject({ score: 0.2, outOf: 0.3 });
+  expect(row.history.map(({ score, outOf }) => ({ score, outOf }))).toEqual([
+    { score: 0.3, outOf: 0.3 },
+    { score: 0.2, outOf: 0.3 },
+  ]);
+});

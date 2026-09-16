@@ -27,6 +27,7 @@ import {
   pointJudgments,
   type Rating,
 } from "@/lib/grading";
+import { sumDecimals } from "../../../../src/computations/decimal-sum.ts";
 import {
   AssessmentCard,
   LEVELS,
@@ -429,10 +430,10 @@ function AssessmentEditor({
             <span className="font-medium">Total</span>
             <span className="font-semibold tabular-nums">
               {pointValuesValid
-                ? currentJudgments.reduce(
-                    (sum, judgment) =>
-                      sum + (judgment.kind === "POINTS" ? judgment.score : 0),
-                    0,
+                ? sumDecimals(
+                    currentJudgments.map((judgment) =>
+                      judgment.kind === "POINTS" ? judgment.score : 0,
+                    ),
                   )
                 : "—"}{" "}
               / {a.outOf}
@@ -563,10 +564,10 @@ function AssessmentEditor({
               judgments: preview === "excuse" ? [] : currentJudgments,
               score:
                 a.method === "POINTS" && preview !== "excuse"
-                  ? currentJudgments.reduce(
-                      (sum, judgment) =>
-                        sum + (judgment.kind === "POINTS" ? judgment.score : 0),
-                      0,
+                  ? sumDecimals(
+                      currentJudgments.map((judgment) =>
+                        judgment.kind === "POINTS" ? judgment.score : 0,
+                      ),
                     )
                   : 0,
               scored: preview !== "excuse" && complete,

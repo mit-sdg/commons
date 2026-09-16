@@ -402,6 +402,7 @@ for (const form of ["quiz", "survey", "relay"] as const) {
     await toggle.check();
     // Cancel creates no run, and each new launch starts with the default choice.
     await dialog.getByRole("button", { name: "Cancel" }).click();
+    await expect(dialog).toBeHidden();
     await page.getByRole("button", { name: "Launch", exact: true }).click();
     await expect(toggle).not.toBeChecked();
     await toggle.check();

@@ -35,6 +35,7 @@ import {
   pointCriteria,
   type SetupCriterionInput,
 } from "@/lib/grading";
+import { sumDecimals } from "../../../../src/computations/decimal-sum.ts";
 import { RubricDescription } from "./assessment-history";
 import { GradingDataNotice } from "./grading-data-notice";
 
@@ -587,9 +588,8 @@ function GradeSetupEditor({
   const dirty =
     draft.method !== baseline.method ||
     JSON.stringify(payload) !== setupSignature(baseline);
-  const pointTotal = draft.points.reduce(
-    (total, criterion) => total + Number(criterion.maxPoints),
-    0,
+  const pointTotal = sumDecimals(
+    draft.points.map((criterion) => Number(criterion.maxPoints)),
   );
   const pointValid = Boolean(
     draft.points.length > 0 &&

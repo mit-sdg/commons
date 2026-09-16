@@ -233,3 +233,19 @@ test("ensure preserves archival and legacy documents use competency revision zer
     }),
   ).rejects.toBeInstanceOf(GradeItemNotFound);
 });
+
+test("fractional maxima agree in setup saves and all setup reads", async () => {
+  const itemizing = new MongoItemizingConcept(await testDb());
+  await itemizing.configureItem({ item: "paper", label: "Paper" });
+  const setup = await itemizing.configureSetup({
+    item: "paper",
+    method: "POINTS",
+    revision: 0,
+    criteria: [point("Analysis", 0.1, 0), point("Style", 0.2, 1)],
+    resolvedCriteria: [],
+  });
+  expect(setup.maxPoints).toBe(0.3);
+  expect((await itemizing._getSetup({ item: "paper" }))[0]?.maxPoints).toBe(0.3);
+  expect((await itemizing._getItem({ item: "paper" }))[0]?.maxPoints).toBe(0.3);
+  expect((await itemizing._getItems())[0]?.maxPoints).toBe(0.3);
+});
