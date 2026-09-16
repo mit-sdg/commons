@@ -126,6 +126,10 @@ _hasCapability (user: String, context: String, capability: String) : one (allowe
 _hasCapabilityHolder (context: String, capability: String) : one (present: Boolean)
   answers whether any User in the Context holds a Role containing the capability
 
+_getCapabilityHolders (context: String, capability: String) : many (user: String)
+  answers every User whose Role in the Context carries the capability or the administer wildcard, in assignment order
+  answers no rows when none match
+
 _isSoleCapabilityHolder (user: String, context: String, capability: String) : one (sole: Boolean)
   answers whether the User is the only holder of the capability in the Context
   answers false when the User does not hold it at all

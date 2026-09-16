@@ -484,6 +484,80 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_NOT_CATEGORIZED" | "NOT_FOUND" };
   };
+  "/delegation/clear": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationIdentityInput"]["fn"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["withdraw"]>[0], ["item"]>]>>;
+      "learner": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationIdentityInput"]["fn"]>[0], ["learner"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["withdraw"]>[0], ["subject"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "delegation": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Delegating"]["withdraw"]>>, ["delegation"]>>;
+    };
+    error: { error: AppWideError | "DELEGATION_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/delegation/clear-item": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationIdentityInput"]["fn"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["clearItem"]>[0], ["item"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "cleared": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Delegating"]["clearItem"]>>, ["cleared"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/delegation/for-item": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationIdentityInput"]["fn"]>[0], ["item"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "delegations": ({
+        "grader": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Delegating"]["_getDelegations"]>>>, ["delegate"]>]>>;
+        "graderName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
+        "graderUsername": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>> | null;
+        "learner": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Delegating"]["_getDelegations"]>>>, ["subject"]>>;
+      })[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/delegation/graders": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "graders": ({
+        "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
+        "grader": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Archiving"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["_getCapabilityHolders"]>>>, ["user"]>]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>>;
+      })[];
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
+  };
+  "/delegation/set": {
+    input: {
+      "grader": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationIdentityInput"]["fn"]>[0], ["grader"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["delegate"]>[0], ["delegate"]>]>>;
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationIdentityInput"]["fn"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["delegate"]>[0], ["item"]>]>>;
+      "learner": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationIdentityInput"]["fn"]>[0], ["learner"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["delegate"]>[0], ["subject"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "delegation": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Delegating"]["delegate"]>>, ["delegation"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/delegation/spread": {
+    input: {
+      "graders": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationSpreadInput"]["fn"]>[0], ["graders"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["spread"]>[0], ["delegates"]>]>>;
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationSpreadInput"]["fn"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["spread"]>[0], ["item"]>]>>;
+      "learners": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationSpreadInput"]["fn"]>[0], ["learners"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["spread"]>[0], ["subjects"]>]>>;
+      "replace": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationSpreadInput"]["fn"]>[0], ["replace"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["spread"]>[0], ["replace"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "assigned": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Delegating"]["spread"]>>, ["assigned"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_REQUEST" | "INVALID_SPREAD" | "NOT_FOUND" };
+  };
   "/flags/forTarget": {
     input: {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
@@ -3924,11 +3998,14 @@ export type CommonsWire = {
     };
     output: {
       "assigned": ({
-        "assignee": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssigned"]>[0], ["assignee"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignees"]>>>, ["assignee"]>]>>;
+        "assignee": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssigned"]>[0], ["assignee"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignees"]>>>, ["assignee"]>]>>;
         "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
         "dueOverride": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssigned"]>>>, ["dueOverride"]>>;
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatByUser"]>>>, ["email"]>> | null;
         "release": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssigned"]>>>, ["release"]>>;
+        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatByUser"]>>>, ["section"]>> | null;
         "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssigned"]>>>, ["status"]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>> | null;
       })[];
       "submissions": ({
         "artifacts": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["artifacts"]>>;
@@ -5288,6 +5365,73 @@ export type CommonsWireHttp = {
       "item": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["unassign"]>>, ["item"]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/delegation/clear": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationIdentityInput"]["fn"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["withdraw"]>[0], ["item"]>]>>;
+      "learner": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationIdentityInput"]["fn"]>[0], ["learner"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["withdraw"]>[0], ["subject"]>]>>;
+    };
+    output: {
+      "delegation": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Delegating"]["withdraw"]>>, ["delegation"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/delegation/clear-item": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationIdentityInput"]["fn"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["clearItem"]>[0], ["item"]>]>>;
+    };
+    output: {
+      "cleared": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Delegating"]["clearItem"]>>, ["cleared"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/delegation/for-item": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationIdentityInput"]["fn"]>[0], ["item"]>>;
+    };
+    output: {
+      "delegations": ({
+        "grader": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Delegating"]["_getDelegations"]>>>, ["delegate"]>]>>;
+        "graderName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
+        "graderUsername": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>> | null;
+        "learner": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Delegating"]["_getDelegations"]>>>, ["subject"]>>;
+      })[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/delegation/graders": {
+    input: Record<string, never>;
+    output: {
+      "graders": ({
+        "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
+        "grader": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Archiving"]["_isTrashed"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Roling"]["_getCapabilityHolders"]>>>, ["user"]>]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>>;
+      })[];
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
+  };
+  "/delegation/set": {
+    input: {
+      "grader": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationIdentityInput"]["fn"]>[0], ["grader"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["delegate"]>[0], ["delegate"]>]>>;
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationIdentityInput"]["fn"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["delegate"]>[0], ["item"]>]>>;
+      "learner": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationIdentityInput"]["fn"]>[0], ["learner"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["delegate"]>[0], ["subject"]>]>>;
+    };
+    output: {
+      "delegation": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Delegating"]["delegate"]>>, ["delegation"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/delegation/spread": {
+    input: {
+      "graders": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationSpreadInput"]["fn"]>[0], ["graders"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["spread"]>[0], ["delegates"]>]>>;
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationSpreadInput"]["fn"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["spread"]>[0], ["item"]>]>>;
+      "learners": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationSpreadInput"]["fn"]>[0], ["learners"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["spread"]>[0], ["subjects"]>]>>;
+      "replace": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validDelegationSpreadInput"]["fn"]>[0], ["replace"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["spread"]>[0], ["replace"]>]>>;
+    };
+    output: {
+      "assigned": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Delegating"]["spread"]>>, ["assigned"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/flags/forTarget": {
     input: {
@@ -8488,11 +8632,14 @@ export type CommonsWireHttp = {
     };
     output: {
       "assigned": ({
-        "assignee": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssigned"]>[0], ["assignee"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignees"]>>>, ["assignee"]>]>>;
+        "assignee": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssigned"]>[0], ["assignee"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignees"]>>>, ["assignee"]>]>>;
         "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
         "dueOverride": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssigned"]>>>, ["dueOverride"]>>;
+        "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatByUser"]>>>, ["email"]>> | null;
         "release": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssigned"]>>>, ["release"]>>;
+        "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatByUser"]>>>, ["section"]>> | null;
         "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssigned"]>>>, ["status"]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>> | null;
       })[];
       "submissions": ({
         "artifacts": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["artifacts"]>>;

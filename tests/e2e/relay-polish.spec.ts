@@ -264,6 +264,8 @@ test("bounded preview picks, carry rendering, guides, and viewport reachability"
   await page.getByRole("textbox", { name: "Round 2 title", exact: true }).click();
   const preview = page.locator('[data-preview="column"]');
   await expect(preview.getByText("Round 2", { exact: true }).first()).toBeVisible();
+  // Let the scroll into the round settle before moving focus to its sliding preview.
+  await settledPage(page);
   await preview.getByRole("button", { name: "Generate preview", exact: true }).click();
   await expect(preview.getByRole("button", { name: "Refresh preview", exact: true })).toBeEnabled({
     timeout: 90_000,

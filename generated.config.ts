@@ -31,6 +31,7 @@ export default {
       new URL("./design/compositions/access/session.md", import.meta.url),
       new URL("./design/compositions/course/assignments.md", import.meta.url),
       new URL("./design/compositions/course/calendar.md", import.meta.url),
+      new URL("./design/compositions/course/delegation.md", import.meta.url),
       new URL("./design/compositions/course/grade-items.md", import.meta.url),
       new URL("./design/compositions/course/grades.md", import.meta.url),
       new URL("./design/compositions/course/late-days.md", import.meta.url),
