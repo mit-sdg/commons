@@ -1,3 +1,4 @@
+import { sumDecimals } from "../../computations/decimal-sum.ts";
 import type { Collection, Db, Filter } from "mongodb";
 import {
   CriterionNotFound,
@@ -106,7 +107,7 @@ function revisionFilter(revision: number): Filter<ItemDoc> {
 
 function setupMaximum(criteria: Criterion[]) {
   if (!criteria.length || criteria[0]?.kind !== "POINTS") return 0;
-  return criteria.reduce((total, criterion) => total + (criterion as PointCriterion).maxPoints, 0);
+  return sumDecimals(criteria.map((criterion) => (criterion as PointCriterion).maxPoints));
 }
 
 export class MongoItemizingConcept {
@@ -199,9 +200,8 @@ export class MongoItemizingConcept {
         )
       )
         throw new InvalidCriterion("Point criteria need a name and positive finite maximum.");
-      const total = parsed.reduce(
-        (sum, criterion) => sum + (criterion as PointCriterionInput).maxPoints,
-        0,
+      const total = sumDecimals(
+        parsed.map((criterion) => (criterion as PointCriterionInput).maxPoints),
       );
       if (!Number.isFinite(total) || total <= 0)
         throw new InvalidCriterion("The total point maximum must be positive and finite.");
