@@ -8,7 +8,10 @@ have distinct responsibilities:
 - `concept-floor.ts` constructs the registered MongoDB implementation set and
   owns the MongoDB client lifecycle;
 - `http-policy.ts` defines the `/api` base path, public error categories, and
-  session-cookie binding; and
+  session-cookie binding;
+- `slow-requests.ts` reports every request the gateway held past two seconds
+  as one log line naming the route, its duration, how it ended, and its
+  correlation id, so a slow endpoint is named before anything is changed; and
 - `process.ts` starts the edge listener and closes its selected resources.
 
 ## Concept state
@@ -49,7 +52,11 @@ sync-engine HTTP package documents cookie, origin, and handler guarantees; the
 host remains responsible for the listener, proxy, TLS, and shutdown.
 
 After successful protected HTTP requests, the edge refreshes the session's
-72-hour idle deadline without rewriting its fixed-cap cookie. Cookie-clearing
+72-hour idle deadline without rewriting its fixed-cap cookie, at most once per
+twelve hours for each session: the edge remembers when it last refreshed a
+session, dropping entries past that quantum as it refreshes, and skips the
+write while the entry is young, so a polling screen costs one write per
+quantum and the effective idle window is 60 to 72 hours. Cookie-clearing
 routes do not refresh. A renewal database fault is logged without replacing the
 completed operation's response. Direct invocations do not renew sessions.
 Renewal uses the supplied Sessioning implementation's atomic update outside the

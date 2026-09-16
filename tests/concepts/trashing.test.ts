@@ -49,6 +49,17 @@ for (const [floor, make] of floors) {
       expect(await trashing._trashedItems({})).toEqual({ items: ["draft"] });
     });
 
+    test("the trashed among a set are answered in the order given", async () => {
+      const trashing = new MongoTrashingConcept(await testDb());
+      await trashing.trash({ item: "b", by: "maya", at });
+      await trashing.trash({ item: "d", by: "maya", at });
+      expect(await trashing._trashedAmong({ items: ["a", "b", "c", "d", "b"] })).toEqual({
+        trashed: ["b", "d"],
+      });
+      expect(await trashing._trashedAmong({ items: ["a", "c"] })).toEqual({ trashed: [] });
+      expect(await trashing._trashedAmong({ items: [] })).toEqual({ trashed: [] });
+    });
+
     test("trash refuses an item already in the trash", async () => {
       const trashing = await make();
       await trashing.trash({ item: "draft", by: "maya", at });

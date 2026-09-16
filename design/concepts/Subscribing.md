@@ -70,6 +70,11 @@ _getSubscribers (target: String) : many (user: String)
   answers its subscribers in subscription order
   answers no rows when none match
 
+_subscribersOf (target: String) : one (users: Seq)
+  answers the same subscribers as one value: an ordered sequence of user
+  identities in subscription order
+  answers an empty sequence when none match
+
 _getSubscriptions (user: String) : many (target: String, subscribedAt: Date)
   answers the person's targets newest first
   answers no rows when none match

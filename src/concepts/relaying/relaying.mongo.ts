@@ -54,12 +54,20 @@ export class MongoRelayingConcept {
   private readonly legs: Collection<LegDoc>;
   private readonly draws: Collection<DrawDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
+  private indexes: Promise<unknown> | undefined;
 
   constructor(db: Db) {
     this.relays = db.collection<RelayDoc>("relaying.relays");
     this.legs = db.collection<LegDoc>("relaying.legs");
     this.draws = db.collection<DrawDoc>("relaying.draws");
     this.counters = db.collection("relaying.counters");
+  }
+
+  async #ready() {
+    await (this.indexes ??= this.legs.createIndexes([
+      { key: { material: 1 } },
+      { key: { relay: 1, position: 1 } },
+    ]));
   }
 
   async #nextSeq(name: string): Promise<number> {
@@ -219,6 +227,7 @@ export class MongoRelayingConcept {
   }
 
   async _legs({ relay }: { relay: string }) {
+    await this.#ready();
     const docs = await this.legs.find({ relay }).sort({ position: 1 }).toArray();
     return docs.map((doc) => ({
       leg: doc._id,
@@ -243,6 +252,7 @@ export class MongoRelayingConcept {
   }
 
   async _legFor({ material }: { material: string }) {
+    await this.#ready();
     const doc = await this.legs.findOne({ material });
     return doc === null ? [] : [{ leg: doc._id, relay: doc.relay, position: doc.position }];
   }
@@ -258,6 +268,7 @@ export class MongoRelayingConcept {
   }
 
   async _plan({ relay }: { relay: string }) {
+    await this.#ready();
     const doc = await this.relays.findOne({ _id: relay });
     if (doc === null) return [];
     const legs = await this.legs.find({ relay }).sort({ position: 1 }).toArray();

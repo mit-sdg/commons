@@ -124,6 +124,11 @@ _responsesFor (subject: String) : many (response: String, participant: String, s
   answers the subject's responses, earliest begun first
   answers no rows when none match
 
+_responsesOf (subject: String) : one (responses: Seq)
+  answers the same responses as one value: an ordered sequence of
+  `{ response, participant, submitted }` entries, earliest begun first
+  answers an empty sequence when none match
+
 _answers (response: String) : many (item: String, value: String)
   answers the response's answers in first-answer order
   answers no rows when none match

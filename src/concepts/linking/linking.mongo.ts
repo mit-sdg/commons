@@ -9,11 +9,16 @@ interface LinkDoc {
 export class MongoLinkingConcept {
   private readonly links: Collection<LinkDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
+  private indexes: Promise<unknown> | undefined;
 
   constructor(db: Db, instance = "Linking") {
     const prefix = `${instance[0]?.toLowerCase() ?? ""}${instance.slice(1)}`;
     this.links = db.collection<LinkDoc>(`${prefix}.links`);
     this.counters = db.collection(`${prefix}.counters`);
+  }
+
+  async #ready() {
+    await (this.indexes ??= this.links.createIndex({ targets: 1 }));
   }
 
   async #nextSeq(): Promise<number> {
@@ -26,6 +31,7 @@ export class MongoLinkingConcept {
   }
 
   async setLinks({ source, targets }: { source: string; targets: string[] }) {
+    await this.#ready();
     const existing = await this.links.findOne({ _id: source });
     if (existing === null) {
       await this.links.insertOne({
@@ -50,6 +56,7 @@ export class MongoLinkingConcept {
   }
 
   async clearBacklinks({ target }: { target: string }) {
+    await this.#ready();
     await this.links.updateMany({ targets: target }, { $pull: { targets: target } });
     return { target };
   }
@@ -60,6 +67,7 @@ export class MongoLinkingConcept {
   }
 
   async _getBacklinks({ target }: { target: string }) {
+    await this.#ready();
     const docs = await this.links.find({ targets: target }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => ({ source: doc._id }));
   }

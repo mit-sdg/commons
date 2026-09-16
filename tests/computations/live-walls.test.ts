@@ -14,6 +14,13 @@ import {
   placingReason,
   placingRepairPassage,
   sorterNotes,
+  modelBegun,
+  modelHandedIn,
+  roomBegun,
+  roomHandedIn,
+  wallCardIds,
+  wallCards,
+  wallPiles,
 } from "../../src/computations/live-walls.ts";
 import { scriptedWallReply } from "../../src/reasoning/scripted-walls.ts";
 
@@ -468,4 +475,119 @@ test("sorting uses explicit definitions without recycling summaries or legacy te
     { ...categories[1], description: "" },
   ]);
   expect(categories[0].description).toBe("Old ambiguous text");
+});
+
+describe("the wall formed from its sets", () => {
+  const room = [
+    { response: "r1", participant: "p1", item: "q1#1", value: "more worked examples" },
+    { response: "r1", participant: "p1", item: "q1#2", value: "slower on proofs" },
+    { response: "r2", participant: "seat-1", item: "q1#1", value: "a seat's idea" },
+    { response: "r3", participant: "p3", item: "q1#1", value: "something removed" },
+  ];
+  const cards = room.map(({ response, item }) => cardId({ response, item }));
+  const piles = [
+    { category: "c1", name: "examples", description: "old text", items: [cards[0]!, cards[3]!] },
+    { category: "c2", name: "pace", description: "", items: [cards[1]!, "stray"] },
+    { category: "c3", name: "empty", description: "", items: [] },
+  ];
+
+  test("card ids cover the room's answers and whatever the piles hold, once each", () => {
+    expect(wallCardIds({ values: room, categories: piles })).toEqual([...cards, "stray"]);
+  });
+
+  test("cards keep hand-in order, drop the removed, and carry pile, part, model and mine", () => {
+    expect(
+      wallCards({
+        values: room,
+        categories: piles,
+        trashed: [cards[3]!],
+        subscribers: ["seat-1"],
+        presentation,
+        viewer: "r2",
+      }),
+    ).toEqual([
+      {
+        card: cards[0],
+        value: "more worked examples",
+        part: "First",
+        pile: "c1",
+        model: false,
+        mine: false,
+      },
+      {
+        card: cards[1],
+        value: "slower on proofs",
+        part: "Second",
+        pile: "c2",
+        model: false,
+        mine: false,
+      },
+      {
+        card: cards[2],
+        value: "a seat's idea",
+        part: "First",
+        pile: null,
+        model: true,
+        mine: true,
+      },
+    ]);
+  });
+
+  test("piles keep opening order with summaries, definitions, standing counts, and picks", () => {
+    expect(
+      wallPiles({
+        categories: piles,
+        trashed: [cards[3]!],
+        definitions: [{ subject: "c1", text: "Cards asking for examples." }],
+        summaries: [
+          { subject: "c1", text: "The room wants examples." },
+          { subject: "c3", text: "" },
+        ],
+        picked: ["c2", "c9"],
+      }),
+    ).toEqual([
+      {
+        pile: "c1",
+        name: "examples",
+        description: "The room wants examples.",
+        definition: "Cards asking for examples.",
+        legacyText: "old text",
+        count: 1,
+        picked: null,
+      },
+      {
+        pile: "c2",
+        name: "pace",
+        description: "",
+        definition: "",
+        legacyText: "",
+        count: 2,
+        picked: "c2",
+      },
+      {
+        pile: "c3",
+        name: "empty",
+        description: "",
+        definition: "",
+        legacyText: "",
+        count: 0,
+        picked: null,
+      },
+    ]);
+  });
+
+  test("the figures count responses, hand-ins, and the seated participants' share of each", () => {
+    const responses = [
+      { response: "r1", participant: "p1", submitted: true },
+      { response: "r2", participant: "seat-1", submitted: true },
+      { response: "r3", participant: "p3", submitted: false },
+      { response: "r4", participant: "seat-2", submitted: false },
+    ];
+    const subscribers = ["seat-1", "seat-2"];
+    expect(roomBegun({ responses })).toBe(4);
+    expect(roomHandedIn({ responses })).toBe(2);
+    expect(modelBegun({ responses, subscribers })).toBe(2);
+    expect(modelHandedIn({ responses, subscribers })).toBe(1);
+    expect(modelBegun({ responses: [], subscribers })).toBe(0);
+  });
 });

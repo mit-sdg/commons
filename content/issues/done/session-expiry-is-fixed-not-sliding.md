@@ -9,7 +9,9 @@ concepts:
 ## Resolution at completion
 
 New sessions have a 72-hour idle deadline and a four-calendar-month absolute cap.
-Successful protected HTTP requests refresh the idle deadline, including polling.
+Successful protected HTTP requests refresh the idle deadline at most once per
+twelve hours for a session, so polling costs one write per quantum and the
+effective idle window is 60 to 72 hours.
 The login cookie expires at the fixed cap and is not rewritten during renewal.
 Shared access checks reject archived accounts even if session deletion failed.
 

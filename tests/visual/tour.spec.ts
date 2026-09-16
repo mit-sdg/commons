@@ -201,8 +201,9 @@ for (const theme of THEMES) {
     await expect(page.getByText("Three verbs a bookmark needs.").first()).toBeVisible();
     await snap(page, "RelayEditor", STAFF);
     await desk(page);
-    await expect(page.getByRole("heading", { name: /^Reference documents/ })).toBeVisible();
-    await page.getByRole("button", { name: "Add reference" }).click();
+    await page.getByRole("button", { name: "References: Documents used for AI edits" }).click();
+    await expect(page.getByRole("heading", { name: /^Documents/ })).toBeVisible();
+    await page.getByRole("button", { name: "Add document" }).click();
     await page.getByRole("checkbox", { name: `Verbs handout (${theme})`, exact: true }).check();
     await expect(
       page.getByRole("button", { name: `Remove reference Verbs handout (${theme})` }),
@@ -239,6 +240,7 @@ for (const theme of THEMES) {
     await snap(page, "RelayOverview", STAFF);
     await desk(page);
     await page.getByRole("button", { name: "Launch" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Launch", exact: true }).click();
     await page.waitForURL(/\/staff\/live\/run\/[0-9a-f-]{36}$/, { timeout: 20_000 });
     const run = page.url().split("/").pop() as string;
     const standing = await call<{ run: { token: string; code: string } }>(
@@ -332,6 +334,7 @@ for (const theme of THEMES) {
 
     // One model participant takes a seat, then the model sorts the wall.
     await desk(page);
+    await page.locator("summary", { hasText: "AI participants" }).click();
     await page.getByRole("textbox", { name: "Seats" }).fill("1");
     await page.getByRole("button", { name: "Invite" }).click();
     await until(
@@ -458,7 +461,7 @@ for (const theme of THEMES) {
       await call(page, "/live/p/submit", { response: begun.response });
     }
     await phone.waitForTimeout(4000);
-    await phone.getByRole("button", { name: choices[0] as string }).click();
+    await phone.getByRole("button", { name: choices[0] as string, exact: true }).click();
     await phone.getByRole("button", { name: "Hand in" }).click();
     await phone.waitForTimeout(4000);
     await snap(phone, "PhoneVoted", PHONE);

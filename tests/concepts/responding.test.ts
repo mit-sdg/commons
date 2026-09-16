@@ -130,6 +130,22 @@ for (const [floor, make] of floors) {
       expect(after[0].value).toBe("$revised");
     });
 
+    test("a subject's responses are answered as one value, earliest begun first", async () => {
+      const responding = await make();
+      const first = await responding.begin({ participant: "leon", subject: "round", at });
+      const second = await responding.begin({ participant: "mira", subject: "round", at: later });
+      await responding.begin({ participant: "leon", subject: "other", at });
+      await responding.answer({ response: second.response, item: "q1", value: "an answer" });
+      await responding.submit({ response: second.response, at: later });
+      expect(await responding._responsesOf({ subject: "round" })).toEqual({
+        responses: [
+          { response: first.response, participant: "leon", submitted: false },
+          { response: second.response, participant: "mira", submitted: true },
+        ],
+      });
+      expect(await responding._responsesOf({ subject: "none" })).toEqual({ responses: [] });
+    });
+
     test("begin records the subject, participant, and start, unsubmitted", async () => {
       const responding = await make();
       const { response } = await responding.begin({

@@ -10,9 +10,7 @@ import {
   type RelayRunRound,
   type Wall as WallShape,
 } from "@/components/live/rounds";
-import { modelSilent } from "@/components/live/run-relay-board";
 import { Wall } from "@/components/live/wall";
-import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,12 +21,10 @@ import {
 import { useQuery } from "@/hooks/use-query";
 import { api, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { POLL_DEADLINE_MS } from "@/lib/poll";
 
 /** The wall keeps pace with the room the same way the dashboard does. */
 const POLL_MS = 3_000;
-
-/** How many polls in a row have to go unanswered before the room is told. */
-const MISSES = 2;
 
 /**
  * The relay run on the projector: the wall of the open round, full screen,
@@ -37,27 +33,24 @@ const MISSES = 2;
  * and the word for where the room is takes the join block's place. The shelf
  * of unsorted cards stands in the bottom row beside the code, so the piles
  * take the middle of the screen whole.
+ *
+ * The room can act on nothing, so the projector carries no word for the
+ * connection or the model: its wall stands as it last read, and the
+ * dashboard says what is wrong. A wall it has not read yet, on a first load
+ * or a reload during class, leaves the title and the join code standing
+ * while it keeps reading.
  */
 export function RelayProjector({
   run,
   refetch,
-  ended = false,
-  error = null,
 }: {
   run: RelayRun;
   refetch: () => void;
-  /** The page's sign-in ended: it says so once; the wall says nothing else. */
-  ended?: boolean;
-  error?: string | null;
 }) {
   const { session } = useAuth();
   const [joinExpanded, setJoinExpanded] = useState(false);
 
-  const {
-    data: relayData,
-    error: relayError,
-    refetch: refetchRelay,
-  } = useQuery(
+  const { data: relayData, refetch: refetchRelay } = useQuery(
     session
       ? () => api["/live/relays/get"]({ relay: run.relay }).then(unwrap)
       : null,
@@ -90,32 +83,24 @@ export function RelayProjector({
       : (run.rounds.find((round) => round.leg === carrier.leg)?.number ??
         undefined);
 
-  // When the wall was last answered, which only an answer moves.
-  const [answeredAt, setAnsweredAt] = useState(() => Date.now());
-  const {
-    data: wallData,
-    error: wallError,
-    refetch: refetchWall,
-  } = useQuery(
+  const { data: wallData, refetch: refetchWall } = useQuery(
     session && shownRound !== null
       ? () =>
-          api["/live/walls/read"]({ round: shownRound })
-            .then(unwrap)
-            .then((read) => {
-              setAnsweredAt(Date.now());
-              return read;
-            })
+          api["/live/walls/read"](
+            { round: shownRound },
+            { timeoutMs: POLL_DEADLINE_MS },
+          ).then(unwrap)
       : null,
-    [session, shownRound, run.openRound],
-    { retainOnTransportError: true },
+    [session, shownRound],
+    { retainOnTransportError: true, refreshOn: [run.openRound] },
   );
-  const {
-    data: sourceData,
-    error: sourceError,
-    refetch: refetchSource,
-  } = useQuery(
+  const { data: sourceData, refetch: refetchSource } = useQuery(
     session && sourceRound !== null
-      ? () => api["/live/walls/read"]({ round: sourceRound }).then(unwrap)
+      ? () =>
+          api["/live/walls/read"](
+            { round: sourceRound },
+            { timeoutMs: POLL_DEADLINE_MS },
+          ).then(unwrap)
       : null,
     [session, sourceRound],
     { retainOnTransportError: true },
@@ -150,27 +135,12 @@ export function RelayProjector({
     return () => clearInterval(timer);
   }, [run.open, settling, refetchWall]);
 
-  // A failure is only worth saying while the room would still be waiting on
-  // it, so the clock it is read against moves with the poll.
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!run.open && !settling) return;
-    const timer = setInterval(() => setNow(Date.now()), POLL_MS);
-    return () => clearInterval(timer);
-  }, [run.open, settling]);
-
-  // One poll that does not come back is a hiccup; two in a row is the room
-  // being shown a wall that has stopped moving. The clock above is what
-  // notices, so the answer that comes back clears it on its own.
-  const gone = run.open && now - answeredAt >= MISSES * POLL_MS;
-
   const url = run.token === null ? null : joinUrl(run.token);
   const code = run.code;
-  const readError = error ?? relayError ?? wallError ?? sourceError;
 
-  if (shownRound === null) {
+  if (shownRound === null || wall === null) {
     return (
-      <div className="flex h-dvh flex-col items-center justify-center gap-[clamp(0.75rem,3dvh,2.5rem)] overflow-hidden px-12 py-12 text-center">
+      <div className="relative flex h-dvh flex-col items-center justify-center gap-[clamp(0.75rem,3dvh,2.5rem)] overflow-hidden px-12 py-12 text-center">
         <h1
           dir="auto"
           className="text-balance font-display font-semibold text-5xl tracking-tight lg:text-7xl"
@@ -181,23 +151,6 @@ export function RelayProjector({
           <Standing>{refusalSentence("CLOSED")}</Standing>
         ) : url === null || code === null ? null : (
           <JoinCode audience="room" url={url} code={code} wall />
-        )}
-        {readError === null ? null : (
-          <p role="status" className="text-muted-foreground">
-            {readError} This view is stale.
-          </p>
-        )}
-      </div>
-    );
-  }
-
-  if (wall === null) {
-    return (
-      <div className="flex h-dvh items-center justify-center">
-        {wallError === null ? (
-          <LoadingState label="Loading the wall…" />
-        ) : (
-          <ErrorState message={wallError} onRetry={refetchWall} />
         )}
       </div>
     );
@@ -224,22 +177,10 @@ export function RelayProjector({
   ) : (
     <Standing>{refusalSentence("CLOSED")}</Standing>
   );
-  // Why the wall is not moving, in the words the dashboard uses. A wall that
-  // is not reaching the server at all is said before anything read off it.
-  const word = ended
-    ? null
-    : readError
-      ? `${readError} This wall is stale.`
-      : gone
-        ? "No connection. This wall is stale."
-        : modelSilent(wall, now)
-          ? "The model is not answering."
-          : null;
-
   return (
     <Dialog open={joinExpanded && joining} onOpenChange={setJoinExpanded}>
       <div
-        className={`${PROJECTOR} flex h-dvh flex-col gap-[clamp(0.75rem,2.5dvh,32px)] overflow-hidden px-[clamp(1.5rem,4.5vw,88px)] pt-[clamp(1rem,4.5dvh,60px)] pb-[clamp(0.75rem,3.5dvh,48px)]`}
+        className={`${PROJECTOR} relative flex h-dvh flex-col gap-[clamp(0.75rem,2.5dvh,32px)] overflow-hidden px-[clamp(1.5rem,4.5vw,88px)] pt-[clamp(1rem,4.5dvh,60px)] pb-[clamp(0.75rem,3.5dvh,48px)]`}
       >
         <ProjectorFit />
         {/* The wall names itself the way the dashboard and the phone do; on the
@@ -267,14 +208,6 @@ export function RelayProjector({
           }
           className="min-h-0 flex-1 overflow-hidden"
         />
-        {word === null ? null : (
-          <span
-            role="status"
-            className="flex-none text-muted-foreground text-xl leading-none"
-          >
-            {word}
-          </span>
-        )}
       </div>
       <DialogContent
         showCloseButton={false}

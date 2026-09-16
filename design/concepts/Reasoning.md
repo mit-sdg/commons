@@ -115,6 +115,10 @@ _followups (previous: String) : many (asking: String)
 _pending () : many (asking: String, reasoner: String, about: String, passage: String, askedAt: Date)
   answers every pending asking, oldest first
 
+_pendingAbout (about: String) : many (asking: String, reasoner: String, passage: String, askedAt: Date)
+  answers the pending askings about one subject, oldest first
+  answers no rows when none is pending about it
+
 _asking (asking: String) : optional (reasoner: String, about: String, passage: String, askedAt: Date, pending: Boolean)
   answers the complete Asking
   answers no row when the Asking does not exist

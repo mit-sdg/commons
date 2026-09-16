@@ -13,6 +13,7 @@ interface PinDoc {
 export class MongoPinningConcept {
   private readonly pins: Collection<PinDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
+  private indexes: Promise<string[]> | undefined;
 
   // One Pinning instance serves the supported single-process Mongo floor.
   // Keep the membership check and insertion together with unpin and clear.
@@ -30,6 +31,13 @@ export class MongoPinningConcept {
   constructor(db: Db) {
     this.pins = db.collection<PinDoc>("pinning.pins");
     this.counters = db.collection("pinning.counters");
+  }
+
+  async #ready() {
+    await (this.indexes ??= this.pins.createIndexes([
+      { key: { item: 1, scope: 1 } },
+      { key: { scope: 1, priority: -1, seq: -1 } },
+    ]));
   }
 
   async #nextSeq(): Promise<number> {
@@ -53,6 +61,7 @@ export class MongoPinningConcept {
     at: Date;
   }) {
     return this.#write(async () => {
+      await this.#ready();
       const existing = await this.pins.findOne({ item, scope });
       if (existing !== null) {
         throw new ItemAlreadyPinned(`${item} ${scope}`);
@@ -66,6 +75,7 @@ export class MongoPinningConcept {
 
   async unpin({ item, scope }: { item: string; scope: string }) {
     return this.#write(async () => {
+      await this.#ready();
       // Older racing pin calls could store duplicates. Unpin removes the
       // membership completely, even when it was represented more than once.
       await this.pins.deleteMany({ item, scope });
@@ -75,6 +85,7 @@ export class MongoPinningConcept {
 
   async setPriority({ item, scope, priority }: { item: string; scope: string; priority: number }) {
     return this.#write(async () => {
+      await this.#ready();
       const doc = await this.pins.findOne({ item, scope });
       if (doc === null) {
         throw new ItemNotPinned(`${item} ${scope}`);
@@ -86,12 +97,14 @@ export class MongoPinningConcept {
 
   async clearItem({ item }: { item: string }) {
     return this.#write(async () => {
+      await this.#ready();
       await this.pins.deleteMany({ item });
       return { item };
     });
   }
 
   async _getPinned({ scope }: { scope: string }) {
+    await this.#ready();
     const docs = await this.pins.find({ scope }).sort({ priority: -1, seq: -1 }).toArray();
     return docs.map((doc) => ({ item: doc.item, priority: doc.priority }));
   }
@@ -101,6 +114,7 @@ export class MongoPinningConcept {
   }
 
   async _isPinned({ item, scope }: { item: string; scope: string }) {
+    await this.#ready();
     const doc = await this.pins.findOne({ item, scope });
     return { pinned: doc !== null };
   }

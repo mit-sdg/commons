@@ -448,3 +448,49 @@ test("batch deletion rechecks occupied piles and tolerates missing or repeated c
   expect(await c.deleteEmptyCategories({ categories: [] })).toEqual({ deleted: false });
   expect(await c._getItems({ category: occupied.category })).toEqual([{ item: "kept" }]);
 });
+
+test("a scope's categories with their items read against their indexes once per instance and change no result", async () => {
+  const database = await testDb();
+  const c = new MongoCategorizingConcept(database);
+  const first = await c.file({ scope: "wall", name: "First", item: "one" });
+  await c.file({ scope: "wall", name: "First", item: "two" });
+  const second = await c.file({ scope: "wall", name: "Second", item: "three" });
+
+  const keysOf = async (collection: string) =>
+    (await database.collection(collection).indexes()).map(({ key }) => key);
+  const piles = await c._categoriesWithItems({ scope: "wall" });
+  expect(await keysOf("categorizing.categories")).toEqual(
+    expect.arrayContaining([
+      { scope: 1, seq: 1 },
+      { scope: 1, name: 1 },
+    ]),
+  );
+  expect(await keysOf("categorizing.memberships")).toEqual(
+    expect.arrayContaining([{ category: 1, seq: 1 }]),
+  );
+
+  expect(piles).toEqual({
+    categories: [
+      { category: first.category, name: "First", description: "", items: ["one", "two"] },
+      { category: second.category, name: "Second", description: "", items: ["three"] },
+    ],
+  });
+  expect(await c._categoriesWithItems({ scope: "wall" })).toEqual(piles);
+  expect(await c._getItems({ category: first.category })).toEqual([
+    { item: "one" },
+    { item: "two" },
+  ]);
+
+  const lists = new MongoCategorizingConcept(database, "TaskLists");
+  const own = await lists.file({ scope: "wall", name: "First", item: "one" });
+  expect(await lists._getItems({ category: own.category })).toEqual([{ item: "one" }]);
+  expect(await keysOf("taskLists.categories")).toEqual(
+    expect.arrayContaining([
+      { scope: 1, seq: 1 },
+      { scope: 1, name: 1 },
+    ]),
+  );
+  expect(await keysOf("taskLists.memberships")).toEqual(
+    expect.arrayContaining([{ category: 1, seq: 1 }]),
+  );
+});

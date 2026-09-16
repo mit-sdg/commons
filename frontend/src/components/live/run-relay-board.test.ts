@@ -84,6 +84,18 @@ describe("what the model is doing about the shown round", () => {
     );
   });
 
+  test("says nothing about the model once the host sorts by hand", () => {
+    // The switch off means the host has taken the wall, and the word would
+    // only say what they already know.
+    expect(say({ silent: true, modelSorts: false })).toBeNull();
+    expect(say({ silent: true, modelSorts: false, open: false })).toBe(
+      "Settled",
+    );
+    expect(say({ silent: true, modelSorts: false, notAsked: true })).toBe(
+      "Nothing to sort.",
+    );
+  });
+
   test("says nothing on an open round with nothing out", () => {
     expect(say()).toBeNull();
     expect(say({ notAsked: true })).toBe("Nothing to sort.");

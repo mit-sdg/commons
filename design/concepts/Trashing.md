@@ -67,6 +67,11 @@ purge(item: Item) : return (item: Item)
 _anyTrashed (items: Seq) : one (trashed: Boolean)
   answers whether any supplied item is currently trashed
 
+_trashedAmong (items: Seq) : one (trashed: Seq)
+  answers which of the supplied items are currently trashed, as one value: the
+  trashed ones in the order supplied, each once
+  answers an empty sequence when none of them is
+
 _isTrashed (item: String) : one (trashed: Boolean)
   answers whether the Item is in trash
 

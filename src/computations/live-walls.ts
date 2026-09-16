@@ -216,6 +216,19 @@ function trayOf(categories: PileWithItems[], values: RunValue[], removed: string
   return cardsOf(values, removed).filter((card) => !home.has(card.card));
 }
 
+/** Whether any card standing on the wall is in no pile: the tray the tick asks about. */
+export function trayHoldsACard({
+  values,
+  categories,
+  removed,
+}: {
+  values: RunValue[];
+  categories: PileWithItems[];
+  removed: string[];
+}): boolean {
+  return trayOf(categories, values, removed).length > 0;
+}
+
 /**
  * The notes whoever sorts a round reads, as one text: the relay's note first
  * and the run's after it, a blank line between, so the contract's rule that
@@ -688,6 +701,151 @@ export function cleanupBrief({
 
 export function cleanupCategories({ brief }: { brief: string }): string[] {
   return JSON.parse(brief) as string[];
+}
+
+/** The pile holding the card, read off the wall's piles with their items. */
+function pileOf(card: string, categories: PileWithItems[]): string | null {
+  return categories.find((pile) => pile.items.includes(card))?.category ?? null;
+}
+
+interface WallResponse {
+  response: string;
+  participant: string;
+  submitted: boolean;
+}
+
+/** Every identity the wall's trashed check must cover: its cards and whatever its piles hold. */
+export function wallCardIds({
+  values,
+  categories,
+}: {
+  values: RunValue[];
+  categories: PileWithItems[];
+}): string[] {
+  return [
+    ...new Set([
+      ...values.map(({ response, item }) => cardId({ response, item })),
+      ...categories.flatMap((pile) => pile.items),
+    ]),
+  ];
+}
+
+/**
+ * The wall's cards in hand-in order, less the removed ones: each with its
+ * value, its part's label, its pile, whether a seated participant wrote it,
+ * and whether it is the viewer's own.
+ */
+export function wallCards({
+  values,
+  categories,
+  trashed,
+  subscribers,
+  presentation,
+  viewer,
+}: {
+  values: RunValue[];
+  categories: PileWithItems[];
+  trashed: string[];
+  subscribers: string[];
+  presentation: unknown;
+  viewer: string;
+}): {
+  card: string;
+  value: string;
+  part: string;
+  pile: string | null;
+  model: boolean;
+  mine: boolean;
+}[] {
+  const removed = new Set(trashed);
+  const seated = new Set(subscribers);
+  return values.flatMap(({ response, participant, item, value }) => {
+    const card = cardId({ response, item });
+    if (removed.has(card)) return [];
+    return [
+      {
+        card,
+        value,
+        part: partLabel({ value: presentation, item }),
+        pile: pileOf(card, categories),
+        model: seated.has(participant),
+        mine: response === viewer,
+      },
+    ];
+  });
+}
+
+/**
+ * The wall's piles in the order they were opened: each with its name, its
+ * summary as its description, its authored definition, the legacy text once
+ * stored on the category, how many standing cards it holds, and whether it
+ * was picked to carry forward.
+ */
+export function wallPiles({
+  categories,
+  trashed,
+  definitions,
+  summaries,
+  picked,
+}: {
+  categories: PileWithItems[];
+  trashed: string[];
+  definitions: { subject: string; text: string }[];
+  summaries: { subject: string; text: string }[];
+  picked: string[];
+}): {
+  pile: string;
+  name: string;
+  description: string;
+  definition: string;
+  legacyText: string;
+  count: number;
+  picked: string | null;
+}[] {
+  const removed = new Set(trashed);
+  const chosen = new Set(picked);
+  const defined = new Map(definitions.map(({ subject, text }) => [subject, text]));
+  const summarized = new Map(summaries.map(({ subject, text }) => [subject, text]));
+  return categories.map((pile) => ({
+    pile: pile.category,
+    name: pile.name,
+    description: summarized.get(pile.category) ?? "",
+    definition: defined.get(pile.category) ?? "",
+    legacyText: pile.description,
+    count: pile.items.filter((item) => !removed.has(item)).length,
+    picked: chosen.has(pile.category) ? pile.category : null,
+  }));
+}
+
+export function roomBegun({ responses }: { responses: WallResponse[] }): number {
+  return responses.length;
+}
+
+export function roomHandedIn({ responses }: { responses: WallResponse[] }): number {
+  return responses.filter((response) => response.submitted).length;
+}
+
+export function modelBegun({
+  responses,
+  subscribers,
+}: {
+  responses: WallResponse[];
+  subscribers: string[];
+}): number {
+  const seated = new Set(subscribers);
+  return responses.filter((response) => seated.has(response.participant)).length;
+}
+
+export function modelHandedIn({
+  responses,
+  subscribers,
+}: {
+  responses: WallResponse[];
+  subscribers: string[];
+}): number {
+  const seated = new Set(subscribers);
+  return responses.filter((response) => response.submitted && seated.has(response.participant))
+    .length;
 }
 
 /** Keep grouping meaning separate from summaries and unclassified legacy text. */

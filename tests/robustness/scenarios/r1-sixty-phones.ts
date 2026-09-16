@@ -329,8 +329,19 @@ try {
   // The Open button counts the set the page believes it sent, which stands on
   // the screen until the wall it wrote comes back. The wall is what the next
   // round takes, so the two are read against each other here rather than
-  // twenty seconds later at the close.
-  const picked = await until(pickedNow, (names) => names.length === TOP, 12);
+  // twenty seconds later at the close. The set is written one pile per
+  // request, so the wall is read until two reads a second apart agree.
+  let earlier: string[] = [];
+  const picked = await until(
+    async () => {
+      const now = await pickedNow();
+      const landed = now.length === TOP && now.join("|") === earlier.join("|");
+      earlier = now;
+      return landed ? now : [];
+    },
+    (names) => names.length === TOP,
+    12,
+  );
   const said = await dashboard
     .getByRole("button", { name: /^Open.*The stranger/ })
     .first()

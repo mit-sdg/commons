@@ -107,3 +107,19 @@ for (const [floor, make] of floors) {
     });
   });
 }
+
+test("a scope's pinned items leave the indexes their lookups and their sort need", async () => {
+  const db = await testDb();
+  const pinning = new MongoPinningConcept(db);
+  await pinning.pin({ item: "p1", scope: "c1", priority: 3, at: at1 });
+  await pinning.pin({ item: "r1", scope: "c1", priority: 3, at: at2 });
+  expect(await pinning._pinnedItems({ scope: "c1" })).toEqual({ items: ["r1", "p1"] });
+  expect(await pinning._isPinned({ item: "p1", scope: "c1" })).toEqual({ pinned: true });
+  const keys = (await db.collection("pinning.pins").indexes()).map((index) => index.key);
+  expect(keys).toContainEqual({ item: 1, scope: 1 });
+  expect(keys).toContainEqual({ scope: 1, priority: -1, seq: -1 });
+  expect(await pinning._getPinned({ scope: "c1" })).toEqual([
+    { item: "r1", priority: 3 },
+    { item: "p1", priority: 3 },
+  ]);
+});

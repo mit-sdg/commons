@@ -26,6 +26,7 @@ function query<T>(
     loading: false,
     error: null,
     refused: null,
+    answeredAt: null,
     refetch: () => {},
     ...over,
   };

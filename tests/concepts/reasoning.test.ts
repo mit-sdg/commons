@@ -64,6 +64,21 @@ for (const [floor, make] of floors) {
       expect(await reasoning._lastFailureAbout({ about: "brief-none" })).toEqual([]);
     });
 
+    test("the pending askings about one subject answer oldest first, settled ones left out", async () => {
+      const reasoning = await make();
+      const first = await reasoning.ask({ reasoner: "r", about: "round-1", passage: "one", at });
+      await reasoning.ask({ reasoner: "r", about: "round-2", passage: "other", at });
+      const second = await reasoning.ask({ reasoner: "r", about: "round-1", passage: "two", at });
+      expect(
+        (await reasoning._pendingAbout({ about: "round-1" })).map((row) => row.asking),
+      ).toEqual([first.asking, second.asking]);
+      await reasoning.answer({ asking: first.asking, reply: "done", at });
+      expect(await reasoning._pendingAbout({ about: "round-1" })).toEqual([
+        { asking: second.asking, reasoner: "r", passage: "two", askedAt: at },
+      ]);
+      expect(await reasoning._pendingAbout({ about: "round-none" })).toEqual([]);
+    });
+
     test("an asking settles exactly once", async () => {
       const reasoning = await make();
       const { asking } = await reasoning.ask({
@@ -205,4 +220,39 @@ test("a bounded subject read returns one newest reply per requested subject", as
     { about: "batch-a", asking: second.asking, passage: "new", reply: "new reply" },
   ]);
   expect(await c._lastRepliesAbout({ subjects: [] })).toEqual({ replies: [] });
+});
+
+test("the pending and failed askings read against indexes without changing what they return", async () => {
+  const db = await testDb();
+  const c = new MongoReasoningConcept(db);
+  const at = new Date("2026-03-01T09:00:00Z");
+  const later = new Date("2026-03-01T09:00:04Z");
+  const first = await c.ask({ reasoner: "flash", about: "wall", passage: "one", at });
+  const second = await c.ask({ reasoner: "flash", about: "wall", passage: "two", at });
+  const third = await c.ask({ reasoner: "flash", about: "wall", passage: "three", at });
+  await c.fail({ asking: third.asking, account: "The reasoner could not be reached.", at: later });
+
+  const pending = await c._pendingAbout({ about: "wall" });
+  expect(pending.map((row) => row.asking)).toEqual([first.asking, second.asking]);
+  expect(await c._lastFailureAbout({ about: "wall" })).toEqual([
+    { asking: third.asking, account: "The reasoner could not be reached.", failedAt: later },
+  ]);
+  expect((await c._pendingAbout({ about: "wall" })).map((row) => row.asking)).toEqual([
+    first.asking,
+    second.asking,
+  ]);
+
+  const keys = async (collection: string) =>
+    (await db.collection(collection).indexes()).map((index) => index.key);
+  expect(await keys("reasoning.askings")).toEqual(
+    expect.arrayContaining([
+      { pending: 1, seq: 1 },
+      { about: 1, pending: 1, seq: 1 },
+      { previous: 1, seq: 1 },
+    ]),
+  );
+  expect(await keys("reasoning.replies")).toEqual(expect.arrayContaining([{ asking: 1, seq: -1 }]));
+  expect(await keys("reasoning.failures")).toEqual(
+    expect.arrayContaining([{ asking: 1, failedAt: -1 }]),
+  );
 });

@@ -26,12 +26,17 @@ export class MongoRolingConcept {
   private readonly roles: Collection<RoleDoc>;
   private readonly assignments: Collection<AssignmentDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
+  private indexes: Promise<unknown> | undefined;
 
   constructor(db: Db, instance = "Roling") {
     const prefix = `${instance[0]?.toLowerCase() ?? ""}${instance.slice(1)}`;
     this.roles = db.collection<RoleDoc>(`${prefix}.roles`);
     this.assignments = db.collection<AssignmentDoc>(`${prefix}.assignments`);
     this.counters = db.collection(`${prefix}.counters`);
+  }
+
+  async #ready() {
+    await (this.indexes ??= this.assignments.createIndex({ user: 1, context: 1 }));
   }
 
   async #nextSeq(name: string): Promise<number> {
@@ -45,6 +50,7 @@ export class MongoRolingConcept {
 
   /** Which capabilities does this user reach in this context? */
   async #capabilitiesOf(user: string, context: string): Promise<string[]> {
+    await this.#ready();
     const assignment = await this.assignments.findOne({ user, context });
     if (assignment === null) return [];
     const role = await this.roles.findOne({ _id: assignment.role });

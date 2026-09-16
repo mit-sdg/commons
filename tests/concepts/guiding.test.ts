@@ -278,3 +278,23 @@ for (const [floor, make] of floors) {
     });
   });
 }
+
+test("guidance texts for many subjects stand their index up, and read the same either side of it", async () => {
+  const db = await testDb();
+  const guiding = new MongoGuidingConcept(db);
+  await guiding.give({ subject: "round-1", use: "sorting", title: "", body: "Sort." });
+  await guiding.give({ subject: "round-1", use: "sorting", title: "", body: "Again." });
+  await guiding.give({ subject: "round-2", use: "sorting", title: "", body: "Other." });
+  const read = { subjects: ["round-2", "round-1", "round-9"], use: "sorting" };
+  const first = await guiding._guidanceTexts(read);
+  const indexes = await db.collection("guiding.guidance").indexes();
+  expect(indexes.map((index) => index.key)).toContainEqual({ subject: 1, use: 1, seq: 1 });
+  expect(first).toEqual({
+    texts: [
+      { subject: "round-2", text: "Other." },
+      { subject: "round-1", text: "Sort.\n\nAgain." },
+      { subject: "round-9", text: "" },
+    ],
+  });
+  expect(await guiding._guidanceTexts(read)).toEqual(first);
+});
