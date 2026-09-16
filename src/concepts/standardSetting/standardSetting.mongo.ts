@@ -108,4 +108,31 @@ export class MongoStandardSettingConcept {
     if (!doc) return [];
     return [{ standard: doc._id, ...doc.editions.find((e) => e.edition === edition)! }];
   }
+
+  async _getEditions() {
+    const docs = await this.standards.find().toArray();
+    return docs.flatMap((doc) =>
+      doc.editions.map((edition) => ({ standard: doc._id, ...edition })),
+    );
+  }
+
+  async _getEditionCatalog() {
+    return [{ editions: await this._getEditions() }];
+  }
+
+  async _hasEditions({ editions }: { editions: unknown }) {
+    if (
+      !Array.isArray(editions) ||
+      editions.some((edition) => typeof edition !== "string" || !edition) ||
+      new Set(editions).size !== editions.length
+    )
+      return [{ valid: false }];
+    if (editions.length === 0) return [{ valid: true }];
+    const docs = await this.standards
+      .find({ "editions.edition": { $in: editions } })
+      .project<{ editions: { edition: string }[] }>({ editions: 1 })
+      .toArray();
+    const present = new Set(docs.flatMap((doc) => doc.editions.map(({ edition }) => edition)));
+    return [{ valid: editions.every((edition) => present.has(edition)) }];
+  }
 }

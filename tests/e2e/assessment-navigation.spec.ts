@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("attempt links reveal work, tabs retain edits, and label failures preserve assignment saves", async ({
   browser,
+  baseURL,
 }) => {
   test.setTimeout(120_000);
   const staff = await browser.newContext();
@@ -9,7 +10,7 @@ test("attempt links reveal work, tabs retain edits, and label failures preserve 
   try {
     const cookies = new Map<typeof staff, string>();
     const call = async (context: typeof staff, path: string, data = {}) => {
-      const response = await context.request.post(`http://127.0.0.1:3755/api${path}`, {
+      const response = await context.request.post(`${baseURL}/api${path}`, {
         headers: cookies.has(context) ? { Cookie: cookies.get(context)! } : {},
         data,
       });
@@ -44,18 +45,45 @@ test("attempt links reveal work, tabs retain edits, and label failures preserve 
       expert: "",
       referenceUrl: "",
     });
-    await call(staff, "/grades/add-criterion", { item: assignment, basis: edition, position: 0 });
+    const setup = await call(staff, "/grades/item", { item: assignment });
+    await call(staff, "/grades/configure-setup", {
+      item: assignment,
+      method: "COMPETENCY",
+      revision: setup.revision,
+      criteria: [{ kind: "COMPETENCY", basis: edition, position: 0 }],
+    });
     await call(staff, "/assignments/publish", { assignment });
     const { submission } = await call(student, "/assignments/submit", {
       assignment,
       content: "Evidence to assess",
     });
     const page = await staff.newPage();
-    await page.goto(`http://127.0.0.1:3755/staff/assignments/${assignment}#attempt-${submission}`);
+    let releaseGradingReads!: () => void;
+    const gradingReadsHeld = new Promise<void>((resolve) => {
+      releaseGradingReads = resolve;
+    });
+    const gradingRead = /\/api\/grades\/(?:item|for-item)$/;
+    await page.route(gradingRead, async (route) => {
+      const response = await route.fetch();
+      await gradingReadsHeld;
+      await route.fulfill({ response });
+    });
+    await page.setViewportSize({ width: 900, height: 500 });
+    await page.goto(`${baseURL}/staff/assignments/${assignment}#attempt-${submission}`);
+    try {
+      await expect(page.getByRole("tab", { name: "Overview", exact: true })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+    } finally {
+      releaseGradingReads();
+    }
     await expect(page.getByRole("tab", { name: "Submissions", exact: true })).toHaveAttribute(
       "aria-selected",
       "true",
     );
+    await expect(page.locator(`[id="attempt-${submission}"]`)).toBeInViewport();
+    await page.unroute(gradingRead);
     await expect(page.getByText("Evidence to assess", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Assess this attempt" }).click();
     await page.getByRole("button", { name: "Start assessment", exact: true }).click();
@@ -76,6 +104,16 @@ test("attempt links reveal work, tabs retain edits, and label failures preserve 
       route.fulfill({ json: { error: "FORBIDDEN" } }),
     );
     await page.getByRole("button", { name: "Edit", exact: true }).click();
+    await expect(
+      page.getByRole("dialog").getByText(/discards only unsaved setup or assessment input/i),
+    ).toBeVisible();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", {
+        name: "Discard draft and edit assignment",
+        exact: true,
+      })
+      .click();
     await page.getByRole("textbox", { name: "Title", exact: true }).fill("Renamed assignment");
     await page.getByRole("button", { name: "Save changes", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Renamed assignment" })).toBeVisible();

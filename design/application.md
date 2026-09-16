@@ -7,6 +7,12 @@ an account created by Authenticating. These bindings enumerate relationships
 between concept types, not every literal value an application may reserve in an
 opaque role.
 
+Grading setup composition uses
+[competencyEditionIds](computation:competencyEditionIds),
+[resolveGradingCriteria](computation:resolveGradingCriteria), and
+[gradingRevisionMatches](computation:gradingRevisionMatches) to validate and
+freeze one coherent current setup at the application boundary.
+
 ## Types
 
 This list is exhaustive for external roles used by Commons concepts.
@@ -174,7 +180,6 @@ instantiate Grading with
   Grader is Authenticating.User
   Learner is Authenticating.User
   Item is Assigning.Assignment
-  Criterion is Itemizing.Criterion
   Evidence is Submitting.Submission
 
 instantiate Grouping with

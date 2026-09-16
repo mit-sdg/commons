@@ -84,4 +84,10 @@ _getStandards () : many (standard: String, edition: String, number: Number, name
 
 _getEdition (edition: String) : optional (standard: String, edition: String, number: Number, name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String)
   answers the specified edition even after it is no longer current
+_getEditions () : many (standard: String, edition: String, number: Number, name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String)
+  answers every immutable edition for complete assessment snapshots
+_getEditionCatalog () : optional (editions: Json)
+  answers every immutable edition together as one snapshot-expansion catalog
+_hasEditions (editions: Json) : optional (valid: Bool)
+  answers whether the supplied distinct nonblank identifiers all name immutable editions
 ```

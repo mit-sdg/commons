@@ -13,6 +13,7 @@ import { useQuery } from "@/hooks/use-query";
 import { api } from "@/lib/api";
 import { assignmentTypeLabel } from "@/lib/assignment-types";
 import { useAuth } from "@/lib/auth";
+import { type Assessment, assessmentForEvidence } from "@/lib/grading";
 
 import {
   loadAssignments,
@@ -49,7 +50,6 @@ export default function AssignmentsPage() {
     session && rosterData?.seat ? () => loadGradesForMe() : null,
     [session, rosterData],
   );
-
   const { data: submissionsData } = useQuery<{
     submissions: {
       assignment: string;
@@ -123,8 +123,7 @@ export default function AssignmentsPage() {
     }
   >;
   const submissions = submissionsData?.submissions ?? [];
-  const grades = gradesData?.grades ?? [];
-  const gradeMap = new Map(grades.map((g) => [g.item, g]));
+  const grades = (gradesData?.grades ?? []) as Assessment[];
   const subMap = new Map(submissions.map((s) => [s.assignment, s]));
 
   const now = new Date();
@@ -132,7 +131,14 @@ export default function AssignmentsPage() {
   const filtered = assignments.filter((a) => {
     const detail = details[a.assignment];
     const sub = subMap.get(a.assignment);
-    const grade = gradeMap.get(a.assignment);
+    const grade = me
+      ? assessmentForEvidence(
+          grades,
+          String(me.user),
+          a.assignment,
+          sub?.submission ?? "",
+        )
+      : undefined;
     const dueAt = a.dueOverride ?? detail?.dueAt;
 
     if (search && detail) {
@@ -148,7 +154,7 @@ export default function AssignmentsPage() {
 
     if (filter === "all") return true;
     if (filter === "submitted") return !!sub;
-    if (filter === "graded") return !!grade && grade.status === "RELEASED";
+    if (filter === "graded") return grade?.status === "RELEASED";
     if (filter === "upcoming") {
       if (sub || grade?.status === "RELEASED" || grade?.status === "EXCUSED")
         return false;
@@ -232,7 +238,14 @@ export default function AssignmentsPage() {
           {filtered.map((a) => {
             const detail = details[a.assignment];
             const sub = subMap.get(a.assignment);
-            const grade = gradeMap.get(a.assignment);
+            const grade = me
+              ? assessmentForEvidence(
+                  grades,
+                  String(me.user),
+                  a.assignment,
+                  sub?.submission ?? "",
+                )
+              : undefined;
             const due = a.dueOverride ?? detail?.dueAt;
             const isOverdue = due && new Date(due) < now && !sub;
             const title = detail?.title ?? a.assignment.slice(0, 8);
@@ -264,14 +277,17 @@ export default function AssignmentsPage() {
                       <span>
                         <span className="text-muted-foreground">Grade</span>{" "}
                         <span className="font-medium text-foreground tabular-nums">
-                          Assessment available
+                          {grade.method === "POINTS" && grade.scored
+                            ? `${grade.score} / ${grade.outOf}`
+                            : "Assessment available"}
                         </span>
                       </span>
                     )}
+                    {grade?.status === "EXCUSED" && <span>Excused</span>}
                   </Facts>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  {grade && <StatusBadge status={grade.status} />}
+                  {grade ? <StatusBadge status={grade.status} /> : null}
                   {!grade && sub && <StatusBadge status="SUBMITTED" />}
                   {!grade && !sub && isOverdue && (
                     <Fact.Status status="OVERDUE" />

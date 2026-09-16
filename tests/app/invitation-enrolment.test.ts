@@ -443,16 +443,31 @@ for (const [floor, makeFloor] of floorCases) {
         },
         admin.cookie,
       );
-      const criterion = await post(
+      const setup = await post(
         edge,
-        "/grades/add-criterion",
-        { item: assignment, basis: standard.body.edition, position: 0 },
+        "/grades/configure-setup",
+        {
+          item: assignment,
+          method: "COMPETENCY",
+          revision: 0,
+          criteria: [{ kind: "COMPETENCY", basis: standard.body.edition, position: 0 }],
+        },
         admin.cookie,
       );
+      expect(setup.status).toBe(200);
+      const setupBody = setup.body as {
+        revision: number;
+        criteria: { criterion: string }[];
+      };
       const recorded = await post(
         edge,
         "/grades/record",
-        { item: assignment, learner: tara.user, evidence: submitted.body.submission },
+        {
+          item: assignment,
+          learner: tara.user,
+          evidence: submitted.body.submission,
+          revision: setupBody.revision,
+        },
         admin.cookie,
       );
       expect(recorded.status).toBe(200);
@@ -464,7 +479,8 @@ for (const [floor, makeFloor] of floorCases) {
           feedback: "Good",
           judgments: [
             {
-              criterion: criterion.body.criterion,
+              kind: "COMPETENCY",
+              criterion: setupBody.criteria[0]!.criterion,
               rating: "COMPETENT",
               feedback: "Good reasoning",
             },
