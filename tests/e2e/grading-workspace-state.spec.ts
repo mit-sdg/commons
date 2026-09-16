@@ -140,7 +140,8 @@ for (const method of ["POINTS", "COMPETENCY"] as const) {
     await f.filterBy("Unassigned");
     await page.getByRole("combobox", { name: "Grader for Noah Patel" }).click();
     await page.getByRole("option", { name: "Mara Chen (@mara)", exact: true }).click();
-    await expect(page.getByText("No learners match this grader scope.")).toBeVisible();
+    // Other tests may have enrolled more learners; only this learner leaves the scope.
+    await expect(page.getByRole("combobox", { name: "Grader for Noah Patel" })).toHaveCount(0);
     await expect(f.feedback).toBeHidden();
     await f.filterBy("Assigned to me");
     await f.expectDraft();
