@@ -30,6 +30,15 @@ for (const [floor, make] of floors) {
       ]);
     });
 
+    test("a target's subscribers are answered as one value in subscription order", async () => {
+      const subscribing = await make();
+      await subscribing.subscribe({ user: "u2", target: "t9", at: at("2026-01-01T00:00:00Z") });
+      await subscribing.subscribe({ user: "u1", target: "t9", at: at("2026-01-01T00:00:01Z") });
+      await subscribing.subscribe({ user: "u3", target: "other", at: at("2026-01-01T00:00:02Z") });
+      expect(await subscribing._subscribersOf({ target: "t9" })).toEqual({ users: ["u2", "u1"] });
+      expect(await subscribing._subscribersOf({ target: "none" })).toEqual({ users: [] });
+    });
+
     test("one subscription per (user, target) — the duplicate refuses", async () => {
       const subscribing = await make();
       await subscribing.subscribe({ user: "mara", target: "t1", at: at("2026-07-13T00:00:00Z") });
@@ -87,3 +96,21 @@ for (const [floor, make] of floors) {
     });
   });
 }
+
+test("a target's subscribers leave the indexes their lookups and their sort need", async () => {
+  const db = await testDb();
+  const subscribing = new MongoSubscribingConcept(db);
+  await subscribing.subscribe({ user: "u2", target: "t1", at: at("2026-07-13T00:00:00Z") });
+  await subscribing.subscribe({ user: "u1", target: "t1", at: at("2026-07-13T00:01:00Z") });
+  await subscribing.subscribe({ user: "u3", target: "t2", at: at("2026-07-13T00:02:00Z") });
+  expect(await subscribing._subscribersOf({ target: "t1" })).toEqual({ users: ["u2", "u1"] });
+  const keys = (await db.collection("subscribing.subscriptions").indexes()).map(
+    (index) => index.key,
+  );
+  expect(keys).toContainEqual({ user: 1, target: 1 });
+  expect(keys).toContainEqual({ target: 1, seq: 1 });
+  expect(await subscribing._getSubscribers({ target: "t1" })).toEqual([
+    { user: "u2" },
+    { user: "u1" },
+  ]);
+});

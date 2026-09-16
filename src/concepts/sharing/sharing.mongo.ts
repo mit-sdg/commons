@@ -11,10 +11,15 @@ interface ShareDoc {
 export class MongoSharingConcept {
   private readonly shares: Collection<ShareDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
+  private indexes: Promise<unknown> | undefined;
 
   constructor(db: Db) {
     this.shares = db.collection<ShareDoc>("sharing.shares");
     this.counters = db.collection("sharing.counters");
+  }
+
+  async #ready() {
+    await (this.indexes ??= this.shares.createIndex({ token: 1 }, { unique: true }));
   }
 
   async #nextSeq(): Promise<number> {
@@ -27,6 +32,7 @@ export class MongoSharingConcept {
   }
 
   async issue({ subject }: { subject: string }) {
+    await this.#ready();
     const share = crypto.randomUUID();
     const token = crypto.randomUUID();
     const seq = await this.#nextSeq();
@@ -35,6 +41,7 @@ export class MongoSharingConcept {
   }
 
   async open({ token }: { token: string }) {
+    await this.#ready();
     const doc = await this.shares.findOne({ token });
     if (doc === null) {
       throw new NothingShared("Nothing is shared here.");
@@ -43,6 +50,7 @@ export class MongoSharingConcept {
   }
 
   async _share({ token }: { token: string }) {
+    await this.#ready();
     const doc = await this.shares.findOne({ token });
     return doc === null ? [] : [{ share: doc._id, subject: doc.subject }];
   }

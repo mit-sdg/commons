@@ -3,6 +3,7 @@ import { createHttpHandler } from "@mit-sdg/sync-engine-http/handler";
 import type { CommonsImplementations } from "./assembly/application.ts";
 import { assembleCommons } from "./assembly/application.ts";
 import { commonsHttpPolicy } from "./assembly/http-policy.ts";
+import { slowRequestObserver } from "./assembly/slow-requests.ts";
 import { hasSafeKeys, hasTextWriteInputs } from "./assembly/security.ts";
 import { configuredPublicOrigin } from "./deployment.ts";
 
@@ -41,6 +42,34 @@ const MAX_BODY_CHARS = 1_000_000;
 
 type InputVerdict = "ok" | "too-large" | "unsafe";
 
+/** How often one session's idle deadline is pushed out. */
+export const REFRESH_QUANTUM_MS = 12 * 60 * 60 * 1_000;
+
+/** When each session was last refreshed, kept only for sessions active within one quantum. */
+class RefreshLedger {
+  private readonly refreshedAt = new Map<string, number>();
+
+  constructor(private readonly quantumMs: number) {}
+
+  claim(session: string, at: number): boolean {
+    const last = this.refreshedAt.get(session);
+    if (last !== undefined && at - last < this.quantumMs) return false;
+    this.evict(at);
+    this.refreshedAt.set(session, at);
+    return true;
+  }
+
+  forget(session: string): void {
+    this.refreshedAt.delete(session);
+  }
+
+  private evict(at: number): void {
+    for (const [session, last] of this.refreshedAt) {
+      if (at - last >= this.quantumMs) this.refreshedAt.delete(session);
+    }
+  }
+}
+
 async function inspectRequestInput(request: Request, path: string): Promise<InputVerdict> {
   const declared = Number(request.headers.get("content-length"));
   if (Number.isFinite(declared) && declared > MAX_BODY_CHARS) return "too-large";
@@ -60,11 +89,12 @@ export function createEdge(
   clock?: () => Date,
 ) {
   const application = assembleCommons(instances, clock);
-  const gateway = createGateway({ application });
+  const gateway = createGateway({ application, observers: [slowRequestObserver()] });
   const policy = commonsHttpPolicy(origin);
   const handler = createHttpHandler({ application, gateway, policy });
   const clearingPaths = new Set(policy.cookies?.session?.clear ?? []);
   const servedPaths = new Set(Object.keys(application.publicInterface.routes));
+  const refreshes = new RefreshLedger(REFRESH_QUANTUM_MS);
   const sessionPaths = new Set(
     Object.entries(application.publicInterface.routes)
       .filter(([, contract]) => contract.required?.includes("session"))
@@ -134,7 +164,8 @@ export function createEdge(
       response.ok &&
       authorizedSession !== undefined &&
       logicalPath !== undefined &&
-      !clearingPaths.has(logicalPath)
+      !clearingPaths.has(logicalPath) &&
+      refreshes.claim(authorizedSession, (clock ?? (() => new Date()))().getTime())
     ) {
       try {
         // HTTP maintenance uses the implementation's atomic update directly:
@@ -144,6 +175,7 @@ export function createEdge(
         await instances.Sessioning.refresh({ session: authorizedSession });
       } catch {
         // The operation has completed; renewal failure must not invite a duplicate mutation.
+        refreshes.forget(authorizedSession);
         console.error("session: could not refresh after successful use.");
       }
     }

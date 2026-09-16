@@ -14,8 +14,8 @@ class PausedCategorizing extends MongoCategorizingConcept {
   armed = false;
   readonly entered = Promise.withResolvers<void>();
   readonly release = Promise.withResolvers<void>();
-  async _getCategory(input: { item: string }) {
-    const result = await super._getCategory(input);
+  async _categoriesWithItems(input: { scope: string }) {
+    const result = await super._categoriesWithItems(input);
     if (this.armed) {
       this.armed = false;
       this.entered.resolve();

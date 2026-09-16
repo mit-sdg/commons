@@ -28,6 +28,12 @@ export async function testDb(): Promise<Db> {
   return client.db(`test-${databases}`);
 }
 
+/** The shared server's address, for a test that needs a client of its own. */
+export async function testDbUri(): Promise<string> {
+  shared ??= boot();
+  return (await shared).server.getUri();
+}
+
 export async function stopTestDb(): Promise<void> {
   if (shared === undefined) return;
   const { client, server } = await shared;

@@ -32,6 +32,7 @@ import {
   seatIsNotDismissed,
   theOpenRoundOf,
   theRoundOfLegInRun,
+  theRoundOfMaterialInRun,
   theRunOf,
   theParticipationAccess,
   theTakeOf,
@@ -157,7 +158,7 @@ export const theRelays = former(
         rounds: each(Relaying._legs({ relay }).is({ leg, material, position }))
           .where(
             Questioning._getQuestionnaire({ questionnaire: material }).is({ title: roundTitle }),
-            whether(theRoundOfLegInRun({ run, leg }).is({ round, open })),
+            whether(theRoundOfMaterialInRun({ run, material }).is({ round, open })),
           )
           .form({ leg, number: position, title: roundTitle, round, open }),
         run,
@@ -360,7 +361,7 @@ export const theRelayRun = former(
             text: storedSelection,
           }),
           Questioning._getQuestionnaire({ questionnaire: material }).is({ title: roundTitle }),
-          whether(theRoundOfLegInRun({ run, leg }).is({ round })),
+          whether(theRoundOfMaterialInRun({ run, material }).is({ round })),
         )
         .form({
           leg,
@@ -415,7 +416,7 @@ export const theRelayFace = former(
       rounds: each(Relaying._legs({ relay }).is({ leg, material, position }))
         .where(
           Questioning._getQuestionnaire({ questionnaire: material }).is({ title: roundTitle }),
-          whether(theRoundOfLegInRun({ run, leg }).is({ round, open: roundOpen })),
+          whether(theRoundOfMaterialInRun({ run, material }).is({ round, open: roundOpen })),
         )
         .form({ leg, number: position, title: roundTitle, round, open: roundOpen }),
     }),

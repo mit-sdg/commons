@@ -10,6 +10,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { type Browser, type BrowserContext, chromium, type Page } from "playwright";
+import { invitationCredential } from "../../src/concepts/inviting/credential.ts";
 
 export const EDGE = process.env.EDGE ?? "http://127.0.0.1:4000";
 export const WEB = process.env.WEB ?? "http://127.0.0.1:3000";
@@ -416,14 +417,52 @@ export async function openFace(client: Client, token: string, notRound?: string 
 // Scripted phones over the participant endpoints. No session; a device name.
 // ---------------------------------------------------------------------------
 
-export class Phone {
-  readonly client = new Client();
+/** One phone's hand-in, whichever endpoints carry it. */
+export abstract class Handset {
+  readonly client: Client;
   response = "";
 
+  constructor(client: Client = new Client()) {
+    this.client = client;
+  }
+
+  abstract begin(): Promise<Reply<{ response: string }>>;
+  abstract answer(question: string, part: number | null, value: string): Promise<Reply>;
+  abstract submit(): Promise<Reply>;
+  abstract wall(): Promise<Reply<{ wall: Wall | null }>>;
+
+  /** Begin, answer every part (or the one box), hand in; answers every reply. */
+  async handIn(
+    question: { question: string; parts: string[]; cap: number },
+    valueFor: (part: number) => string,
+  ) {
+    const begun = await this.begin();
+    if (begun.error) return { begun, answers: [] as Reply[], submitted: begun as Reply };
+    const boxes =
+      question.parts.length > 1 || question.cap > 1
+        ? question.cap > 1
+          ? question.cap
+          : question.parts.length
+        : question.parts.length === 1
+          ? 1
+          : 0;
+    const answers: Reply[] = [];
+    if (boxes === 0) answers.push(await this.answer(question.question, null, valueFor(1)));
+    for (let part = 1; part <= boxes; part += 1) {
+      answers.push(await this.answer(question.question, part, valueFor(part)));
+    }
+    const submitted = await this.submit();
+    return { begun, answers, submitted };
+  }
+}
+
+export class Phone extends Handset {
   constructor(
     readonly token: string,
     readonly device: string,
-  ) {}
+  ) {
+    super();
+  }
 
   async begin() {
     const begun = await this.client.call<{ response: string }>("/live/p/begin", {
@@ -449,29 +488,48 @@ export class Phone {
   wall() {
     return this.client.call<{ wall: Wall | null }>("/live/p/wall", { response: this.response });
   }
+}
 
-  /** Begin, answer every part (or the one box), hand in; answers every reply. */
-  async handIn(
-    question: { question: string; parts: string[]; cap: number },
-    valueFor: (part: number) => string,
+/** A phone with a session on it: the signed endpoints, its own cookie. */
+export class SignedPhone extends Handset {
+  constructor(
+    readonly token: string,
+    readonly account: { username: string; password: string },
+    client?: Client,
   ) {
-    const begun = await this.begin();
-    if (begun.error) return { begun, answers: [], submitted: begun };
-    const boxes =
-      question.parts.length > 1 || question.cap > 1
-        ? question.cap > 1
-          ? question.cap
-          : question.parts.length
-        : question.parts.length === 1
-          ? 1
-          : 0;
-    const answers = [];
-    if (boxes === 0) answers.push(await this.answer(question.question, null, valueFor(1)));
-    for (let part = 1; part <= boxes; part += 1) {
-      answers.push(await this.answer(question.question, part, valueFor(part)));
-    }
-    const submitted = await this.submit();
-    return { begun, answers, submitted };
+    super(client);
+  }
+
+  /** Signs this phone in on its own cookie, or throws with the refusal. */
+  async signIn(): Promise<void> {
+    const reply = await this.client.call("/auth/login", this.account);
+    if (reply.error) throw new Error(`sign in as ${this.account.username}: ${reply.error}`);
+  }
+
+  async begin() {
+    const begun = await this.client.call<{ response: string }>("/live/p/begin-signed", {
+      token: this.token,
+    });
+    if (!begun.error) this.response = begun.response;
+    return begun;
+  }
+
+  answer(question: string, part: number | null, value: string) {
+    return this.client.call("/live/p/answer-signed", {
+      response: this.response,
+      question: part === null ? question : `${question}#${part}`,
+      value,
+    });
+  }
+
+  submit() {
+    return this.client.call("/live/p/submit-signed", { response: this.response });
+  }
+
+  wall() {
+    return this.client.call<{ wall: Wall | null }>("/live/p/wall-signed", {
+      response: this.response,
+    });
   }
 }
 
@@ -490,6 +548,48 @@ export async function phones(
     seats.push(phone);
   }
   return seats;
+}
+
+export interface Student {
+  username: string;
+  password: string;
+  user: string;
+}
+
+/**
+ * Student accounts through the invitation flow the seed script uses, which
+ * needs `INVITATION_SECRET` in the environment to match the running edge. A
+ * username the edge already knows is reused, so a rerun costs nothing.
+ */
+export async function inviteStudents(
+  host: Client,
+  count: number,
+  prefix = "load",
+): Promise<Student[]> {
+  const password = "password123";
+  const students: Student[] = [];
+  for (let seat = 0; seat < count; seat += 1) {
+    const username = `${prefix}-${seat}`;
+    const known = await host.call<{ user: string | null }>("/auth/resolve", { username });
+    if (!known.error && known.user != null) {
+      students.push({ username, password, user: known.user });
+      continue;
+    }
+    const invited = await host.call<{ invitation: string }>("/invitations/invite", {
+      email: `${username}@example.edu`,
+    });
+    if (invited.error) throw new Error(`invite ${username}: ${invited.error}`);
+    const accepted = await new Client(host.base).call<{ user: string }>("/auth/accept-invitation", {
+      invitation: invited.invitation,
+      temporaryPassword: invitationCredential(invited.invitation),
+      username,
+      password,
+      displayName: `Student ${seat + 1}`,
+    });
+    if (accepted.error) throw new Error(`accept ${username}: ${accepted.error}`);
+    students.push({ username, password, user: accepted.user });
+  }
+  return students;
 }
 
 // ---------------------------------------------------------------------------

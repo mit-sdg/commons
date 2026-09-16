@@ -1,0 +1,149 @@
+# open, staff
+round 1 "What would help": open, opened, not closed, 1 ask out, sort pending
+question 1 "What would help?": parts none; choices none; cap 0; context 0 as context
+notes "Group by the kind of help asked for."
+failure none
+figures 12 begun, 12 handed in, 2 begun by model, 2 handed in by model
+card 1 "answer 0" in "more help"
+card 2 "answer 1" in "more time"
+card 3 "answer 2" in "better tools"
+card 4 "answer 3" in "more help"
+card 5 "answer 4" in "more time"
+card 6 "answer 5" in "better tools"
+card 7 "answer 7" in "more time"
+card 8 "answer 8" in "better tools"
+card 9 "answer 9" in the tray
+card 10 "a seat's answer from seat-1" in the tray model
+card 11 "a seat's answer from seat-2" in the tray model
+pile 1 "more help": 2 cards; definition "Cards asking for help."; not picked
+pile 2 "more time": 3 cards; description "The room wants more of this."; definition "Cards asking for time."; not picked
+pile 3 "better tools": 3 cards; no text; not picked
+
+# open, phone
+round 1 "What would help": open, opened, not closed, 1 ask out, sort pending
+question 1 "What would help?": parts none; choices none; cap 0; context 0 as context
+notes "Group by the kind of help asked for."
+failure none
+figures 12 begun, 12 handed in, 2 begun by model, 2 handed in by model
+card 1 "answer 0" in "more help"
+card 2 "answer 1" in "more time"
+card 3 "answer 2" in "better tools"
+card 4 "answer 3" in "more help"
+card 5 "answer 4" in "more time" mine
+card 6 "answer 5" in "better tools"
+card 7 "answer 7" in "more time"
+card 8 "answer 8" in "better tools"
+card 9 "answer 9" in the tray
+card 10 "a seat's answer from seat-1" in the tray model
+card 11 "a seat's answer from seat-2" in the tray model
+pile 1 "more help": 2 cards; definition "Cards asking for help."; not picked
+pile 2 "more time": 3 cards; description "The room wants more of this."; definition "Cards asking for time."; not picked
+pile 3 "better tools": 3 cards; no text; not picked
+
+# open, model seat
+round 1 "What would help": open, opened, not closed, 1 ask out, sort pending
+question 1 "What would help?": parts none; choices none; cap 0; context 0 as context
+notes "Group by the kind of help asked for."
+failure none
+figures 12 begun, 12 handed in, 2 begun by model, 2 handed in by model
+card 1 "answer 0" in "more help"
+card 2 "answer 1" in "more time"
+card 3 "answer 2" in "better tools"
+card 4 "answer 3" in "more help"
+card 5 "answer 4" in "more time"
+card 6 "answer 5" in "better tools"
+card 7 "answer 7" in "more time"
+card 8 "answer 8" in "better tools"
+card 9 "answer 9" in the tray
+card 10 "a seat's answer from seat-1" in the tray model
+card 11 "a seat's answer from seat-2" in the tray model mine
+pile 1 "more help": 2 cards; definition "Cards asking for help."; not picked
+pile 2 "more time": 3 cards; description "The room wants more of this."; definition "Cards asking for time."; not picked
+pile 3 "better tools": 3 cards; no text; not picked
+
+# failed, staff
+round 1 "What would help": open, opened, not closed, 0 asks out, sort settled
+question 1 "What would help?": parts none; choices none; cap 0; context 0 as context
+notes "Group by the kind of help asked for."
+failure "no reasoner" at a time
+figures 12 begun, 12 handed in, 2 begun by model, 2 handed in by model
+card 1 "answer 0" in "more help"
+card 2 "answer 1" in "more time"
+card 3 "answer 2" in "better tools"
+card 4 "answer 3" in "more help"
+card 5 "answer 4" in "more time"
+card 6 "answer 5" in "better tools"
+card 7 "answer 7" in "more time"
+card 8 "answer 8" in "better tools"
+card 9 "answer 9" in the tray
+card 10 "a seat's answer from seat-1" in the tray model
+card 11 "a seat's answer from seat-2" in the tray model
+pile 1 "more help": 2 cards; definition "Cards asking for help."; not picked
+pile 2 "more time": 3 cards; description "The room wants more of this."; definition "Cards asking for time."; not picked
+pile 3 "better tools": 3 cards; no text; not picked
+
+# closed, staff
+round 1 "What would help": closed, opened, closed at a time, 0 asks out, sort settled
+question 1 "What would help?": parts none; choices none; cap 0; context 0 as context
+notes "Group by the kind of help asked for."
+failure "no reasoner" at a time
+figures 12 begun, 12 handed in, 2 begun by model, 2 handed in by model
+card 1 "answer 0" in "more help"
+card 2 "answer 1" in "more time"
+card 3 "answer 2" in "better tools"
+card 4 "answer 3" in "more help"
+card 5 "answer 4" in "more time"
+card 6 "answer 5" in "better tools"
+card 7 "answer 7" in "more time"
+card 8 "answer 8" in "better tools"
+card 9 "answer 9" in the tray
+card 10 "a seat's answer from seat-1" in the tray model
+card 11 "a seat's answer from seat-2" in the tray model
+pile 1 "more help": 2 cards; definition "Cards asking for help."; picked
+pile 2 "more time": 3 cards; description "The room wants more of this."; definition "Cards asking for time."; not picked
+pile 3 "better tools": 3 cards; no text; picked
+
+# closed, phone
+round 1 "What would help": closed, opened, closed at a time, 0 asks out, sort settled
+question 1 "What would help?": parts none; choices none; cap 0; context 0 as context
+notes "Group by the kind of help asked for."
+failure "no reasoner" at a time
+figures 12 begun, 12 handed in, 2 begun by model, 2 handed in by model
+card 1 "answer 0" in "more help"
+card 2 "answer 1" in "more time"
+card 3 "answer 2" in "better tools"
+card 4 "answer 3" in "more help"
+card 5 "answer 4" in "more time" mine
+card 6 "answer 5" in "better tools"
+card 7 "answer 7" in "more time"
+card 8 "answer 8" in "better tools"
+card 9 "answer 9" in the tray
+card 10 "a seat's answer from seat-1" in the tray model
+card 11 "a seat's answer from seat-2" in the tray model
+pile 1 "more help": 2 cards; definition "Cards asking for help."; picked
+pile 2 "more time": 3 cards; description "The room wants more of this."; definition "Cards asking for time."; not picked
+pile 3 "better tools": 3 cards; no text; picked
+
+# signed, staff
+round 1 "Idea and why": open, opened, not closed, 0 asks out, sort settled
+question 1 "Idea and why?": parts Idea, Why; choices none; cap 0; context 0 as context
+notes none
+failure none
+figures 2 begun, 2 handed in, 0 begun by model, 0 handed in by model
+card 1 "idea 0" part "Idea" in "ideas"
+card 2 "because 0" part "Why" in the tray
+card 3 "idea 1" part "Idea" in the tray
+card 4 "because 1" part "Why" in the tray
+pile 1 "ideas": 1 card; no text; not picked
+
+# signed, phone
+round 1 "Idea and why": open, opened, not closed, 0 asks out, sort settled
+question 1 "Idea and why?": parts Idea, Why; choices none; cap 0; context 0 as context
+notes none
+failure none
+figures 2 begun, 2 handed in, 0 begun by model, 0 handed in by model
+card 1 "idea 0" part "Idea" in "ideas"
+card 2 "because 0" part "Why" in the tray
+card 3 "idea 1" part "Idea" in the tray mine
+card 4 "because 1" part "Why" in the tray mine
+pile 1 "ideas": 1 card; no text; not picked

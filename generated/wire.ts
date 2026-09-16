@@ -1501,7 +1501,7 @@ export type CommonsWire = {
         "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
         "requireSignIn": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["liveRequiresSignIn"]["fn"]>>, []>>;
         "rounds": ({
-          "leg": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>]>>;
+          "leg": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>>;
           "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["position"]>>;
           "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>> | null;
           "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
@@ -1654,37 +1654,22 @@ export type CommonsWire = {
     };
     output: {
       "wall": {
-        "asksOut": number;
-        "begun": number;
-        "begunByModel": number;
-        "cards": ({
-          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
-          "mine": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["isSame"]["fn"]>>, []>>;
-          "model": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
-          "part": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["partLabel"]["fn"]>>, []>>;
-          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>>>, ["category"]>> | null;
-          "value": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_submittedAnswers"]>>>, ["value"]>>;
-        })[];
+        "asksOut": Jsonify<number>;
+        "begun": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["roomBegun"]["fn"]>>, []>>;
+        "begunByModel": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["modelBegun"]["fn"]>>, []>>;
+        "cards": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["wallCards"]["fn"]>>, []>>;
         "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>>;
         "failedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["failedAt"]>> | null;
         "failure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["account"]>> | null;
-        "handedIn": number;
-        "handedInByModel": number;
+        "handedIn": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["roomHandedIn"]["fn"]>>, []>>;
+        "handedInByModel": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["modelHandedIn"]["fn"]>>, []>>;
         "notes": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
         "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>>>, ["position"]>> | null;
         "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
         "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>>;
-        "piles": ({
-          "count": number;
-          "definition": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
-          "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
-          "legacyText": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["description"]>>;
-          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["name"]>>;
-          "picked": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getItems"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>> | null;
-          "pile": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>>;
-        })[];
+        "piles": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["wallPiles"]["fn"]>>, []>>;
         "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
-        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>>>, ["subject"]>]>>;
+        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesWithItems"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_pinnedItems"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_pendingAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_responsesOf"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_valuesForSubject"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>>>, ["subject"]>]>>;
         "sortPending": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
       } | null;
@@ -1698,37 +1683,22 @@ export type CommonsWire = {
     };
     output: {
       "wall": {
-        "asksOut": number;
-        "begun": number;
-        "begunByModel": number;
-        "cards": ({
-          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
-          "mine": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["isSame"]["fn"]>>, []>>;
-          "model": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
-          "part": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["partLabel"]["fn"]>>, []>>;
-          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>>>, ["category"]>> | null;
-          "value": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_submittedAnswers"]>>>, ["value"]>>;
-        })[];
+        "asksOut": Jsonify<number>;
+        "begun": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["roomBegun"]["fn"]>>, []>>;
+        "begunByModel": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["modelBegun"]["fn"]>>, []>>;
+        "cards": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["wallCards"]["fn"]>>, []>>;
         "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>>;
         "failedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["failedAt"]>> | null;
         "failure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["account"]>> | null;
-        "handedIn": number;
-        "handedInByModel": number;
+        "handedIn": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["roomHandedIn"]["fn"]>>, []>>;
+        "handedInByModel": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["modelHandedIn"]["fn"]>>, []>>;
         "notes": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
         "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>>>, ["position"]>> | null;
         "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
         "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>>;
-        "piles": ({
-          "count": number;
-          "definition": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
-          "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
-          "legacyText": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["description"]>>;
-          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["name"]>>;
-          "picked": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getItems"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>> | null;
-          "pile": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>>;
-        })[];
+        "piles": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["wallPiles"]["fn"]>>, []>>;
         "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
-        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>>>, ["subject"]>]>>;
+        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesWithItems"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_pinnedItems"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_pendingAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_responsesOf"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_valuesForSubject"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>>>, ["subject"]>]>>;
         "sortPending": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
       } | null;
@@ -2072,7 +2042,7 @@ export type CommonsWire = {
         "relay": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relays"]>>>, ["relay"]>]>>;
         "retired": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>>>, ["trashed"]>>;
         "rounds": ({
-          "leg": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>]>>;
+          "leg": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>>;
           "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["position"]>>;
           "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>> | null;
           "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
@@ -2199,7 +2169,7 @@ export type CommonsWire = {
             "purpose": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
             "selection": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>> | null;
           };
-          "leg": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>]>>;
+          "leg": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>]>>;
           "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["position"]>>;
           "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
           "storedSelection": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
@@ -2676,42 +2646,27 @@ export type CommonsWire = {
   };
   "/live/walls/read": {
     input: {
-      "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_responsesFor"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_submittedAnswers"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_pending"]>>>, ["about"]>]>>;
+      "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesWithItems"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_pinnedItems"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_pendingAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_responsesOf"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_valuesForSubject"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "wall": {
-        "asksOut": number;
-        "begun": number;
-        "begunByModel": number;
-        "cards": ({
-          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
-          "mine": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["isSame"]["fn"]>>, []>>;
-          "model": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
-          "part": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["partLabel"]["fn"]>>, []>>;
-          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>>>, ["category"]>> | null;
-          "value": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_submittedAnswers"]>>>, ["value"]>>;
-        })[];
+        "asksOut": Jsonify<number>;
+        "begun": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["roomBegun"]["fn"]>>, []>>;
+        "begunByModel": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["modelBegun"]["fn"]>>, []>>;
+        "cards": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["wallCards"]["fn"]>>, []>>;
         "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>>;
         "failedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["failedAt"]>> | null;
         "failure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["account"]>> | null;
-        "handedIn": number;
-        "handedInByModel": number;
+        "handedIn": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["roomHandedIn"]["fn"]>>, []>>;
+        "handedInByModel": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["modelHandedIn"]["fn"]>>, []>>;
         "notes": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
         "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>>>, ["position"]>> | null;
         "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
         "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>>;
-        "piles": ({
-          "count": number;
-          "definition": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
-          "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
-          "legacyText": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["description"]>>;
-          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["name"]>>;
-          "picked": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getItems"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>> | null;
-          "pile": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>>;
-        })[];
+        "piles": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["wallPiles"]["fn"]>>, []>>;
         "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
-        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>>;
+        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesWithItems"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_pinnedItems"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_pendingAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_responsesOf"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_valuesForSubject"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>>;
         "sortPending": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
       } | null;
@@ -6310,7 +6265,7 @@ export type CommonsWireHttp = {
         "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
         "requireSignIn": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["liveRequiresSignIn"]["fn"]>>, []>>;
         "rounds": ({
-          "leg": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>]>>;
+          "leg": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>>;
           "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["position"]>>;
           "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>> | null;
           "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
@@ -6460,37 +6415,22 @@ export type CommonsWireHttp = {
     };
     output: {
       "wall": {
-        "asksOut": number;
-        "begun": number;
-        "begunByModel": number;
-        "cards": ({
-          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
-          "mine": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["isSame"]["fn"]>>, []>>;
-          "model": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
-          "part": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["partLabel"]["fn"]>>, []>>;
-          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>>>, ["category"]>> | null;
-          "value": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_submittedAnswers"]>>>, ["value"]>>;
-        })[];
+        "asksOut": Jsonify<number>;
+        "begun": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["roomBegun"]["fn"]>>, []>>;
+        "begunByModel": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["modelBegun"]["fn"]>>, []>>;
+        "cards": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["wallCards"]["fn"]>>, []>>;
         "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>>;
         "failedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["failedAt"]>> | null;
         "failure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["account"]>> | null;
-        "handedIn": number;
-        "handedInByModel": number;
+        "handedIn": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["roomHandedIn"]["fn"]>>, []>>;
+        "handedInByModel": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["modelHandedIn"]["fn"]>>, []>>;
         "notes": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
         "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>>>, ["position"]>> | null;
         "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
         "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>>;
-        "piles": ({
-          "count": number;
-          "definition": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
-          "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
-          "legacyText": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["description"]>>;
-          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["name"]>>;
-          "picked": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getItems"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>> | null;
-          "pile": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>>;
-        })[];
+        "piles": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["wallPiles"]["fn"]>>, []>>;
         "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
-        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>>>, ["subject"]>]>>;
+        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesWithItems"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_pinnedItems"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_pendingAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_responsesOf"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_valuesForSubject"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>>>, ["subject"]>]>>;
         "sortPending": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
       } | null;
@@ -6503,37 +6443,22 @@ export type CommonsWireHttp = {
     };
     output: {
       "wall": {
-        "asksOut": number;
-        "begun": number;
-        "begunByModel": number;
-        "cards": ({
-          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
-          "mine": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["isSame"]["fn"]>>, []>>;
-          "model": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
-          "part": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["partLabel"]["fn"]>>, []>>;
-          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>>>, ["category"]>> | null;
-          "value": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_submittedAnswers"]>>>, ["value"]>>;
-        })[];
+        "asksOut": Jsonify<number>;
+        "begun": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["roomBegun"]["fn"]>>, []>>;
+        "begunByModel": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["modelBegun"]["fn"]>>, []>>;
+        "cards": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["wallCards"]["fn"]>>, []>>;
         "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>>;
         "failedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["failedAt"]>> | null;
         "failure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["account"]>> | null;
-        "handedIn": number;
-        "handedInByModel": number;
+        "handedIn": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["roomHandedIn"]["fn"]>>, []>>;
+        "handedInByModel": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["modelHandedIn"]["fn"]>>, []>>;
         "notes": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
         "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>>>, ["position"]>> | null;
         "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
         "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>>;
-        "piles": ({
-          "count": number;
-          "definition": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
-          "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
-          "legacyText": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["description"]>>;
-          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["name"]>>;
-          "picked": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getItems"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>> | null;
-          "pile": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>>;
-        })[];
+        "piles": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["wallPiles"]["fn"]>>, []>>;
         "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
-        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>>>, ["subject"]>]>>;
+        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesWithItems"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_pinnedItems"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_pendingAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_responsesOf"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_valuesForSubject"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_response"]>>>, ["subject"]>]>>;
         "sortPending": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
       } | null;
@@ -6855,7 +6780,7 @@ export type CommonsWireHttp = {
         "relay": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_relays"]>>>, ["relay"]>]>>;
         "retired": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>>>, ["trashed"]>>;
         "rounds": ({
-          "leg": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>]>>;
+          "leg": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>>;
           "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["position"]>>;
           "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>> | null;
           "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
@@ -6974,7 +6899,7 @@ export type CommonsWireHttp = {
             "purpose": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
             "selection": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>> | null;
           };
-          "leg": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Relaying"]["_leg"]>[0], ["leg"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>]>>;
+          "leg": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["leg"]>]>>;
           "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legs"]>>>, ["position"]>>;
           "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Linking"]["_getBacklinks"]>>>, ["source"]>]>> | null;
           "storedSelection": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
@@ -7418,41 +7343,26 @@ export type CommonsWireHttp = {
   };
   "/live/walls/read": {
     input: {
-      "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_responsesFor"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_submittedAnswers"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_pending"]>>>, ["about"]>]>>;
+      "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesWithItems"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_pinnedItems"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_pendingAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_responsesOf"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_valuesForSubject"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>>;
     };
     output: {
       "wall": {
-        "asksOut": number;
-        "begun": number;
-        "begunByModel": number;
-        "cards": ({
-          "card": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["cardId"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>]>>;
-          "mine": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["isSame"]["fn"]>>, []>>;
-          "model": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Subscribing"]["_isSubscribed"]>>>, ["subscribed"]>>;
-          "part": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["partLabel"]["fn"]>>, []>>;
-          "pile": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getCategory"]>>>, ["category"]>> | null;
-          "value": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Responding"]["_submittedAnswers"]>>>, ["value"]>>;
-        })[];
+        "asksOut": Jsonify<number>;
+        "begun": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["roomBegun"]["fn"]>>, []>>;
+        "begunByModel": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["modelBegun"]["fn"]>>, []>>;
+        "cards": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["wallCards"]["fn"]>>, []>>;
         "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["closedAt"]>>;
         "failedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["failedAt"]>> | null;
         "failure": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>>>, ["account"]>> | null;
-        "handedIn": number;
-        "handedInByModel": number;
+        "handedIn": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["roomHandedIn"]["fn"]>>, []>>;
+        "handedInByModel": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["modelHandedIn"]["fn"]>>, []>>;
         "notes": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
         "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Relaying"]["_legFor"]>>>, ["position"]>> | null;
         "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["open"]>>;
         "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>>>, ["openedAt"]>>;
-        "piles": ({
-          "count": number;
-          "definition": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
-          "description": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>>>, ["text"]>>;
-          "legacyText": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["description"]>>;
-          "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["name"]>>;
-          "picked": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_getItems"]>[0], ["category"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>> | null;
-          "pile": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesIn"]>>>, ["category"]>]>>;
-        })[];
+        "piles": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["wallPiles"]["fn"]>>, []>>;
         "questions": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["participantQuestions"]["fn"]>>, []>>;
-        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>>;
+        "round": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Categorizing"]["_categoriesWithItems"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Guiding"]["_guidanceText"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Linking"]["_getLinks"]>[0], ["source"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>[0], ["target"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_pinnedItems"]>[0], ["scope"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_lastFailureAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reasoning"]["_pendingAbout"]>[0], ["about"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_responsesOf"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Responding"]["_valuesForSubject"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["RunSnapshotting"]["_snapshot"]>[0], ["subject"]>]>>;
         "sortPending": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Locking"]["_isLocked"]>>>, ["locked"]>>;
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaire"]>>>, ["title"]>>;
       } | null;

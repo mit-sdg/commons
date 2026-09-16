@@ -58,4 +58,15 @@ export class MongoTrashingConcept {
   async _anyTrashed({ items }: { items: string[] }) {
     return { trashed: (await this.trashed.findOne({ _id: { $in: items } })) !== null };
   }
+
+  /** The trashed ones among the items given, in the order given. */
+  async _trashedAmong({ items }: { items: string[] }) {
+    const wanted = [...new Set(items)];
+    if (wanted.length === 0) return { trashed: [] };
+    const docs = await this.trashed
+      .find({ _id: { $in: wanted } }, { projection: { _id: 1 } })
+      .toArray();
+    const found = new Set(docs.map((doc) => doc._id));
+    return { trashed: wanted.filter((item) => found.has(item)) };
+  }
 }

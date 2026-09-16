@@ -194,14 +194,23 @@ export const legIsNotOfRun = view(
     ),
 ).holds();
 
+/** The edition a leg's material got when it opened in this run, if it did. */
+export const theRoundOfMaterialInRun = view(
+  "the round of (material) in (run)",
+  ({ run, material }, { round, open }, _bindings) =>
+    where(
+      Linking._getBacklinks({ target: run }).is({ source: round }),
+      Publishing._edition({ edition: round }).is({ material, open }),
+    ),
+).optional();
+
 /** The edition a round got when it opened in this run, if it did. */
 export const theRoundOfLegInRun = view(
   "the round of (leg) in (run)",
   ({ run, leg }, { round, open }, { material }) =>
     where(
       Relaying._leg({ leg }).is({ material }),
-      Linking._getBacklinks({ target: run }).is({ source: round }),
-      Publishing._edition({ edition: round }).is({ material, open }),
+      theRoundOfMaterialInRun({ run, material }).is({ round, open }),
     ),
 ).optional();
 

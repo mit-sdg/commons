@@ -30,6 +30,7 @@ function checked({ title, body }: { title: string; body: string }): Text {
 export class MongoGuidingConcept {
   private readonly guidance: Collection<GuidanceDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
+  private indexes: Promise<string> | undefined;
 
   // The Mongo floor has one Guiding instance per database. Mutations share
   // this queue because set replaces several rows, and selections must not
@@ -57,6 +58,10 @@ export class MongoGuidingConcept {
     this.selections = db.collection("guiding.selections");
     this.guidance = db.collection<GuidanceDoc>("guiding.guidance");
     this.counters = db.collection("guiding.counters");
+  }
+
+  async #ready(): Promise<void> {
+    await (this.indexes ??= this.guidance.createIndex({ subject: 1, use: 1, seq: 1 }));
   }
 
   async #nextSeq(): Promise<number> {
@@ -105,6 +110,7 @@ export class MongoGuidingConcept {
       const named = use.trim();
       if (named === "") throw new InvalidUse("guidance needs a use");
       const text = checked({ title, body });
+      await this.#ready();
       const standing = await this.guidance.find({ subject, use: named }).sort({ seq: 1 }).toArray();
       let kept = standing[0];
       if (kept === undefined) {
@@ -150,6 +156,7 @@ export class MongoGuidingConcept {
     return this.#write(async () => {
       const named = use.trim();
       if (named === "") throw new InvalidUse("guidance needs a use");
+      await this.#ready();
       const docs = await this.guidance.find({ subject, use: named }).toArray();
       const guidances = docs.map((doc) => doc._id);
       if (guidances.length === 0) return { cleared: false };
@@ -204,6 +211,7 @@ export class MongoGuidingConcept {
   }
 
   async _guidanceFor({ subject, use }: { subject: string; use: string }) {
+    await this.#ready();
     const docs = await this.guidance.find({ subject, use }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => ({ guidance: doc._id, title: doc.title, body: doc.body }));
   }
@@ -216,11 +224,13 @@ export class MongoGuidingConcept {
   }
 
   async _guidanceText({ subject, use }: { subject: string; use: string }) {
+    await this.#ready();
     const docs = await this.guidance.find({ subject, use }).sort({ seq: 1 }).toArray();
     return { text: docs.map((doc) => doc.body).join("\n\n") };
   }
 
   async _documents({ subject, use }: { subject: string; use: string }) {
+    await this.#ready();
     const docs = await this.guidance.find({ subject, use }).sort({ seq: 1 }).toArray();
     return {
       documents: docs.map((doc) => ({ guidance: doc._id, title: doc.title, body: doc.body })),
@@ -228,6 +238,7 @@ export class MongoGuidingConcept {
   }
 
   async _guidanceTexts({ subjects, use }: { subjects: string[]; use: string }) {
+    await this.#ready();
     const docs = await this.guidance
       .find({ subject: { $in: subjects }, use })
       .sort({ seq: 1 })

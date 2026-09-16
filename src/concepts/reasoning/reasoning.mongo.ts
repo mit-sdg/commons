@@ -32,6 +32,7 @@ export class MongoReasoningConcept {
   private readonly replies: Collection<ReplyDoc>;
   private readonly failures: Collection<FailureDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
+  private indexes: Promise<unknown> | undefined;
 
   constructor(db: Db) {
     this.askings = db.collection<AskingDoc>("reasoning.askings");
@@ -49,6 +50,18 @@ export class MongoReasoningConcept {
     return counter?.value ?? 0;
   }
 
+  async #ready() {
+    await (this.indexes ??= Promise.all([
+      this.askings.createIndexes([
+        { key: { pending: 1, seq: 1 } },
+        { key: { about: 1, pending: 1, seq: 1 } },
+        { key: { previous: 1, seq: 1 } },
+      ]),
+      this.replies.createIndex({ asking: 1, seq: -1 }),
+      this.failures.createIndex({ asking: 1, failedAt: -1 }),
+    ]));
+  }
+
   async #settle(asking: string): Promise<AskingDoc> {
     const doc = await this.askings.findOne({ _id: asking });
     if (doc === null) {
@@ -61,6 +74,7 @@ export class MongoReasoningConcept {
   }
 
   async #ask(reasoner: string, about: string, passage: string, at: Date, previous?: string) {
+    await this.#ready();
     const asking = crypto.randomUUID();
     const seq = await this.#nextSeq("askings");
     await this.askings.insertOne({
@@ -98,11 +112,13 @@ export class MongoReasoningConcept {
   }
 
   async _followups({ previous }: { previous: string }) {
+    await this.#ready();
     const docs = await this.askings.find({ previous }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => ({ asking: doc._id }));
   }
 
   async answer({ asking, reply, at }: { asking: string; reply: string; at: Date }) {
+    await this.#ready();
     await this.#settle(asking);
     const seq = await this.#nextSeq("replies");
     await this.askings.updateOne({ _id: asking }, { $set: { pending: false } });
@@ -117,6 +133,7 @@ export class MongoReasoningConcept {
   }
 
   async fail({ asking, account, at }: { asking: string; account: string; at: Date }) {
+    await this.#ready();
     await this.#settle(asking);
     await this.askings.updateOne({ _id: asking }, { $set: { pending: false } });
     await this.failures.insertOne({
@@ -129,11 +146,23 @@ export class MongoReasoningConcept {
   }
 
   async _pending() {
+    await this.#ready();
     const docs = await this.askings.find({ pending: true }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => ({
       asking: doc._id,
       reasoner: doc.reasoner,
       about: doc.about,
+      passage: doc.passage,
+      askedAt: doc.askedAt,
+    }));
+  }
+
+  async _pendingAbout({ about }: { about: string }) {
+    await this.#ready();
+    const docs = await this.askings.find({ about, pending: true }).sort({ seq: 1 }).toArray();
+    return docs.map((doc) => ({
+      asking: doc._id,
+      reasoner: doc.reasoner,
       passage: doc.passage,
       askedAt: doc.askedAt,
     }));
@@ -155,16 +184,19 @@ export class MongoReasoningConcept {
   }
 
   async _replyOf({ asking }: { asking: string }) {
+    await this.#ready();
     const doc = await this.replies.findOne({ asking });
     return doc === null ? [] : [{ reply: doc.reply, answeredAt: doc.answeredAt }];
   }
 
   async _failureOf({ asking }: { asking: string }) {
+    await this.#ready();
     const doc = await this.failures.findOne({ asking });
     return doc === null ? [] : [{ account: doc.account, failedAt: doc.failedAt }];
   }
 
   async _lastReplyAbout({ about }: { about: string }) {
+    await this.#ready();
     const askings = await this.askings.find({ about }).toArray();
     if (askings.length === 0) return [];
     const byId = new Map(askings.map((doc) => [doc._id, doc]));
@@ -186,6 +218,7 @@ export class MongoReasoningConcept {
   }
 
   async _lastFailureAbout({ about }: { about: string }) {
+    await this.#ready();
     const askings = await this.askings.find({ about }, { projection: { _id: 1 } }).toArray();
     if (askings.length === 0) return [];
     const doc = await this.failures.findOne(
@@ -198,6 +231,7 @@ export class MongoReasoningConcept {
   }
 
   async _lastRepliesAbout({ subjects }: { subjects: string[] }) {
+    await this.#ready();
     const wanted = [...new Set(subjects)];
     const askings = await this.askings.find({ about: { $in: wanted } }).toArray();
     const byId = new Map(askings.map((asking) => [asking._id, asking]));
@@ -237,6 +271,7 @@ export class MongoReasoningConcept {
   }
 
   async _repliesAbout({ about }: { about: string }) {
+    await this.#ready();
     const askings = await this.askings.find({ about }).toArray();
     const byId = new Map(askings.map((doc) => [doc._id, doc]));
     const replies = await this.replies

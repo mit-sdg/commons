@@ -26,12 +26,19 @@ import { RequireCapability } from "@/components/require-capability";
 import { SignInEnded } from "@/components/sign-in-ended";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
+import { useAdrift } from "@/hooks/use-adrift";
 import { useQuery } from "@/hooks/use-query";
 import { api, isApiError, publicErrorMessage, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { NO_CONNECTION, POLL_DEADLINE_MS } from "@/lib/poll";
+import { cn } from "@/lib/utils";
 
 /** Fast enough that the room sees itself answer, slow enough to be polite. */
 const POLL_MS = 3_000;
+
+/** Where the status line stands: out of the flow, above the figures, so nothing moves when it appears or clears. */
+const STATUS_LINE =
+  "absolute inset-x-0 bottom-full block h-5 text-muted-foreground text-sm";
 
 /**
  * One address serves both kinds of run. A run whose material is a relay
@@ -42,8 +49,14 @@ function RunDashboardContent() {
   const { run } = useParams<{ run: string }>();
   const { session } = useAuth();
 
-  const { data, loading, error, refused, refetch } = useQuery(
-    session ? () => api["/live/relays/run"]({ run }).then(unwrap) : null,
+  const { data, loading, error, refused, answeredAt, refetch } = useQuery(
+    session
+      ? () =>
+          api["/live/relays/run"](
+            { run },
+            { timeoutMs: POLL_DEADLINE_MS },
+          ).then(unwrap)
+      : null,
     [session, run],
     { retainOnTransportError: true },
   );
@@ -77,7 +90,7 @@ function RunDashboardContent() {
         ) : null}
         <RelayRunBoard
           run={relayRun}
-          error={ended ? null : error}
+          answeredAt={answeredAt}
           refetch={refetch}
           ended={ended}
         />
@@ -90,8 +103,14 @@ function QuizRunDashboard() {
   const { run } = useParams<{ run: string }>();
   const { session } = useAuth();
 
-  const { data, loading, error, refused, refetch } = useQuery(
-    session ? () => api["/live/runs/results"]({ run }).then(unwrap) : null,
+  const { data, loading, error, refused, answeredAt, refetch } = useQuery(
+    session
+      ? () =>
+          api["/live/runs/results"](
+            { run },
+            { timeoutMs: POLL_DEADLINE_MS },
+          ).then(unwrap)
+      : null,
     [session, run],
     { retainOnTransportError: true },
   );
@@ -108,6 +127,9 @@ function QuizRunDashboard() {
     const timer = setInterval(refetch, POLL_MS);
     return () => clearInterval(timer);
   }, [open, refetch]);
+  // A frozen figure reads like a quiet room, so the board says when its last
+  // answer is ten seconds old.
+  const { adrift } = useAdrift([{ answeredAt, polling: open }], POLL_MS);
 
   async function close() {
     const result = await api["/live/runs/close"]({ run });
@@ -245,17 +267,15 @@ function QuizRunDashboard() {
         </div>
       </header>
 
-      {error !== null ? (
-        <p className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2 text-destructive text-sm">
-          {error} This board is stale.
-        </p>
-      ) : null}
-
       <div
-        className={
-          open ? "grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]" : "grid gap-8"
-        }
+        className={cn(
+          "relative grid gap-8",
+          open && "lg:grid-cols-[minmax(0,1fr)_22rem]",
+        )}
       >
+        <p role="status" className={STATUS_LINE}>
+          {!ended && adrift ? NO_CONNECTION : null}
+        </p>
         <div className="order-2 space-y-6 lg:order-1">
           <div className="grid grid-cols-2 gap-4 sm:max-w-md">
             <RunCount

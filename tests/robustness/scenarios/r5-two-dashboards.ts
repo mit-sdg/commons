@@ -408,7 +408,11 @@ try {
   await snap(laptopA, log, "DashboardAReloaded", STAFF);
 
   // Between the rounds: forty seats invited from A, which is forty requests.
+  // The model row sits under the dashboard's "AI participants" fold.
   await laptopA.setViewportSize({ width: 1440, height: 900 });
+  for (const laptop of [laptopA, laptopB]) {
+    await laptop.locator("summary", { hasText: "AI participants" }).click();
+  }
   await laptopA.getByRole("textbox", { name: "Seats" }).fill(String(SEATS));
   const took = await log.timed(
     `${SEATS} seats invited from laptop A`,

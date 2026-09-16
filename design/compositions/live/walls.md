@@ -14,7 +14,7 @@ A room of strangers will, once, hand in something the room should not read. [Liv
 
 The model sorts on a cadence, not per card. While the run's switch says the model sorts (a fact of the run the relays page holds, the same on every dashboard), each open dashboard asks [Live.walls.Sort](reaction:Live.walls.Sort) once every three seconds, matching its poll. The endpoint asks Reasoning only while the round and its run are open, some card is in the tray, no ask about this round is still pending, no placing offering about it still has lines to take, and the last ask about it did not fail in the past thirty seconds — [failureStanding](computation:failureStanding); the same endpoint answers that nothing was asked when the recorded proposal declines work. The proposal captures the passage before attempting the round's own Locking lock: the lock is the tick's ask, held where one holder is the rule, so of the dashboards ticking together one asks, a tick that finds the lock held is answered that nothing was asked, and a tick that reaches the lock in the same instant stops at the refused lock, which the wire answers as a conflict and the dashboard's tick reads as no ask of its own. [Live.walls.AnsweredAskUnlocksRound](reaction:Live.walls.AnsweredAskUnlocksRound) and [Live.walls.FailedAskUnlocksRound](reaction:Live.walls.FailedAskUnlocksRound) give the lock back at the reply or failure flow's settlement frontier, after ordinary placement consequences finish and no reply is applying or offering line remains untaken. [Live.walls.AnsweringHoldsRound](reaction:Live.walls.AnsweringHoldsRound) holds each arriving reply under its asking identity and holds the round before the answer is recorded; [Live.walls.AppliedReplyReleasesHold](reaction:Live.walls.AppliedReplyReleasesHold) releases that reply at its settlement frontier. Overlapping replies therefore keep the round held until all their consequences finish. A repair ask waiting on a provider takes no new lock, preserving the next tick after a lost repair reply. This lock describes sorting work and does not block manual wall controls. An insistence standing with no ask in flight does not hold the tick, so a reply lost on its way costs one cadence, not the round. The wall carries the newest failure about the round, so the dashboard can say the model is not answering. The passage — [placingPassage](computation:placingPassage) — carries the round's captured question, the author's notes to the sorter when any stand, the standing pile names, descriptions, and counts, and only the unsorted card texts, each under a short label, and asks the model to place each card in a pile on the list or to open a new pile for it. The notes are two: the relay's, Guiding guidance on the round's leg under `sorting`, which the editor writes and the rounds page owns; and the run's, guidance on the round's own edition under the same use, which the dashboard's Sorting panel writes through [Live.walls.SetNotes](reaction:Live.walls.SetNotes) — one entry, set whole each time, so two dashboards writing at once leave one — and [Live.walls.ClearNotes](reaction:Live.walls.ClearNotes) removes, answering whether one stood; both are refused `CLOSED` once the run has closed. Every ask reads both from where they stand rather than frozen with the question, the relay's first and the run's after it, joined as one text by [sorterNotes](computation:sorterNotes), and the contract says the later note wins, so a run's note adds to or overrides the relay's for this run alone: nothing is copied to the leg, so the next run of the relay starts with the relay's note and nothing after it, and a note revised on either side between asks reaches the next one. The wall's read carries the run's note, so the panel shows it beside the relay's. Labels stay put as answers stream in because the piles are never re-derived.
 
-The tick asks about an open round only; the close settles the wall. [Live.walls.ClosedRoundSettlesWall](reaction:Live.walls.ClosedRoundSettlesWall) makes one last ask when a round closes with the run's switch on and a card still in the tray — the tick's path and the tick's passage, under the tick's guards, so an ask already out at the close is the settling ask and nothing asks twice — and after it the model never touches the round unless a hand presses Resort. With the switch off the close asks nothing, and the wall stands as the hand left it. The wall's read carries `asksOut`, how many asks about the round are pending, and `sortPending`, the round's sort lock held through placement consequences. The panel keeps polling through both and says Settled only when neither remains. Turning automatic sorting off stops new automatic asks; a current sort may finish, and the panel says so explicitly. Closing preserves this intentional final sort. Requests admitted before closure may finish afterward; neither closure nor EmptyPiles cancels them. Submitted human answers and already-captured later-round snapshots remain unchanged.
+The tick asks about an open round only; the close settles the wall. [Live.walls.ClosedRoundSettlesWall](reaction:Live.walls.ClosedRoundSettlesWall) makes one last ask when a round closes with the run's switch on and a card still in the tray — the tick's path and the tick's passage, under the tick's guards, so an ask already out at the close is the settling ask and nothing asks twice — and after it the model never touches the round unless a hand presses Resort. With the switch off the close asks nothing, and the wall stands as the hand left it. The wall's read carries `asksOut`, how many asks about the round are pending, and `sortPending`, the round's sort lock held through placement consequences. The panel keeps polling through both and says Settled only when neither remains, and a phone that has handed in reads the closed round's wall until neither remains, then keeps the settled wall and reads no more until the next round opens. Turning automatic sorting off stops new automatic asks; a current sort may finish, and the panel says so explicitly. Closing preserves this intentional final sort. Requests admitted before closure may finish afterward; neither closure nor EmptyPiles cancels them. Submitted human answers and already-captured later-round snapshots remain unchanged.
 
 The switch is the run's standing consent; two more endpoints let a staff member act on purpose, and the dashboard's one button beside the switch — Resort while it is on, Empty the piles while it is off — is made of them. [Live.walls.SortNow](reaction:Live.walls.SortNow) makes one deliberate ask about the shown round, whether the switch is on or off and whether the round is open or closed, as long as the run is open and a card is in the tray: the tick's guards less the round's own openness, since the passage reads only what a closed round keeps, taking the same lock so the tick and two dashboards never ask at once. The same endpoint answers that nothing was asked where the tick would, and `CLOSED` when its proposal observes a closed run. It is an endpoint of its own rather than a flag on the tick so each request records one explicit admission outcome. [Live.walls.EmptyPiles](reaction:Live.walls.EmptyPiles) sends every card of the shown round back to the tray in one request, on any round of an open run: Categorizing empties the scope in one action while the piles stand, empty, with their names, lids, and picks, so a wall just emptied is a wall of standing piles. It takes no lock and waits for no ask — a reply that lands afterward places the cards it was asked about, and on an open round the next tick places the rest. The same action answers a wall with nothing in a pile that nothing was emptied, and refuses `CLOSED` once the run has closed. Resort — empty, then ask once — is the two requests in order on the dashboard; no endpoint. Resort on a settled round empties and asks again, so the room sees a shuffle, which is the deliberate cost of pressing it; a card sent to the tray on a settled round stays there.
 
@@ -88,7 +88,40 @@ cardId(response: String, item: String) : String
   card names neither.
 
 isSame(left: String, right: String) : Bool
-  Says whether two identities are the same, which is how a phone's own cards are marked.
+  Says whether two identities are the same, which is how a commissioned execution's outcome is read as completed.
+
+wallCardIds(values: Json, categories: Json) : Seq
+  Every identity the wall's trashed check covers: a card for each value the
+  room handed in, and whatever its piles hold, each once.
+
+trayHoldsACard(values: Json, categories: Json, removed: Seq) : Bool
+  Whether any card standing on the wall is in no pile, from the round's
+  values, its piles with their items, and the trashed among them.
+
+wallCards(values: Json, categories: Json, trashed: Seq, subscribers: Seq, presentation: Json, viewer: String) : Json
+  The wall's cards in hand-in order less the removed ones, each with its value,
+  its part's label, the pile holding it or null in the tray, whether a seated
+  participant wrote it, and whether it is the viewer's own; formed from the
+  round's values, its piles with their items, the trashed among them, and the
+  run's subscribers, read once each.
+
+wallPiles(categories: Json, trashed: Seq, definitions: Json, summaries: Json, picked: Seq) : Json
+  The wall's piles in the order opened, each with its name, its summary as its
+  description, its authored definition, the legacy text once stored on the
+  category, how many standing cards it holds, and itself as picked when it
+  was picked to carry forward.
+
+roomBegun(responses: Json) : Number
+  How many responses the round has, begun or handed in.
+
+roomHandedIn(responses: Json) : Number
+  How many of the round's responses were handed in.
+
+modelBegun(responses: Json, subscribers: Seq) : Number
+  How many of the round's responses belong to a participant seated on the run.
+
+modelHandedIn(responses: Json, subscribers: Seq) : Number
+  How many of the seated participants' responses were handed in.
 
 sorterNotes(relay: String, run: String) : String
   Joins the two notes whoever sorts a round reads as one text: the relay's
@@ -153,10 +186,6 @@ participantAnswers(reply: String, value: Json) : Json
 answerKind(value: Json, answer: String) : String
   Answers `choice` when the answer is one of the choices the captured question
   offered, and `written` otherwise.
-
-partLabel(value: Json, item: String) : String
-  Answers the label of the part an item names, and an empty string for a
-  question without parts.
 ```
 
 ```endpoints

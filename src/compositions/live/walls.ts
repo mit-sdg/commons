@@ -2,7 +2,6 @@ import {
   compute,
   count,
   earlier,
-  each,
   former,
   is,
   no,
@@ -85,17 +84,19 @@ const cardStands = view("(card) stands on its wall", ({ card }, _outputs, _bindi
 /** Whether any card of the round is still in the tray. */
 const roundHasACardInTheTray = view(
   "(round) has a card still in the tray",
-  ({ round }, _outputs, { response, item, card }) =>
+  ({ round }, _outputs, { values, categories, cardIds, removed, waiting }) =>
     where(
-      Responding._submittedAnswers({ subject: round }).is({ response, item }),
-      compute(computations.cardId, { response, item }, card),
-      cardStands({ card }),
-      no(Categorizing._getCategory({ item: card })),
+      Responding._valuesForSubject({ subject: round }).is({ values }),
+      Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+      compute(computations.wallCardIds, { values, categories }, cardIds),
+      Trashing._trashedAmong({ items: cardIds }).is({ trashed: removed }),
+      compute(computations.trayHoldsACard, { values, categories, removed }, waiting),
+      is.among(waiting, [true]),
     ),
 ).holds();
 
 const noAskStandsAbout = view("nothing is still out about (round)", ({ round }, _o, _b) =>
-  where(no(Reasoning._pending({}).is({ about: round }))),
+  where(no(Reasoning._pendingAbout({ about: round }))),
 ).holds();
 
 /**
@@ -193,12 +194,10 @@ const nameIsAChoiceOf = view(
     ),
 ).holds();
 
-/** Which pile of the round carries forward, when this one does: a pinned pile. */
-const thePickOn = former("the pick of (pile) on (round)", ({ round, pile }, _bindings) =>
-  where(Pinning._isPinned({ item: pile, scope: round }).is({ pinned: true })).form({
-    picked: pile,
-  }),
-).optional();
+/** How many asks about the round are still out. */
+const theAsksOutAbout = view("the asks out about (round)", ({ round }, { asksOut }, _bindings) =>
+  where(count(Reasoning._pendingAbout, { about: round }, asksOut)),
+).one();
 
 /** Only authored definitions influence category meaning; summaries are results. */
 const sortingPiles = view(
@@ -232,32 +231,28 @@ export const theWall = former(
       leg,
       number,
       questions,
-      begun,
-      handedIn,
-      modelBegun,
-      modelHandedIn,
-      seat,
-      response,
-      participant,
-      item,
-      value,
-      card,
-      pile,
       run,
-      model,
-      mine,
-      part,
-      category,
-      name,
-      description,
-      definition,
-      summary,
-      held,
       failure,
       failedAt,
       notes,
-      pendingAsk,
       sortPending,
+      asksOut,
+      values,
+      responses,
+      categories,
+      subjects,
+      definitions,
+      summaries,
+      cardIds,
+      trashed,
+      subscribers,
+      picked,
+      begun,
+      handedIn,
+      begunByModel,
+      handedInByModel,
+      cards,
+      piles,
     },
   ) =>
     where(
@@ -272,10 +267,34 @@ export const theWall = former(
       compute(computations.participantQuestions, { value: presentation }, questions),
       whether(Relaying._legFor({ material: questionnaire }).is({ leg, position: number })),
       whether(Reasoning._lastFailureAbout({ about: round }).is({ account: failure, failedAt })),
-      // The run is the round's: read once for the wall, not once a card.
       whether(theRunOf({ round }).is({ run })),
       Guiding._guidanceText({ subject: round, use: SORTING_USE }).is({ text: notes }),
       Locking._isLocked({ target: round }).is({ locked: sortPending }),
+      theAsksOutAbout({ round }).is({ asksOut }),
+      Responding._valuesForSubject({ subject: round }).is({ values }),
+      Responding._responsesOf({ subject: round }).is({ responses }),
+      Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+      compute(computations.sortingPileSubjects, { categories }, subjects),
+      Guiding._guidanceTexts({ subjects, use: "pile-definition" }).is({ texts: definitions }),
+      Guiding._guidanceTexts({ subjects, use: "pile-summary" }).is({ texts: summaries }),
+      compute(computations.wallCardIds, { values, categories }, cardIds),
+      Trashing._trashedAmong({ items: cardIds }).is({ trashed }),
+      Subscribing._subscribersOf({ target: run }).is({ users: subscribers }),
+      Pinning._pinnedItems({ scope: round }).is({ items: picked }),
+      compute(computations.roomBegun, { responses }, begun),
+      compute(computations.roomHandedIn, { responses }, handedIn),
+      compute(computations.modelBegun, { responses, subscribers }, begunByModel),
+      compute(computations.modelHandedIn, { responses, subscribers }, handedInByModel),
+      compute(
+        computations.wallCards,
+        { values, categories, trashed, subscribers, presentation, viewer },
+        cards,
+      ),
+      compute(
+        computations.wallPiles,
+        { categories, trashed, definitions, summaries, picked },
+        piles,
+      ),
     ).form({
       round,
       number,
@@ -288,58 +307,13 @@ export const theWall = former(
       failedAt,
       notes,
       sortPending,
-      asksOut: each(Reasoning._pending({}).is({ asking: pendingAsk, about: round })).count(),
-      begun: each(Responding._responsesFor({ subject: round }).is({ response: begun })).count(),
-      handedIn: each(
-        Responding._responsesFor({ subject: round }).is({ response: handedIn, submitted: true }),
-      ).count(),
-      begunByModel: each(
-        Responding._responsesFor({ subject: round }).is({
-          response: modelBegun,
-          participant: seat,
-        }),
-      )
-        .where(theRunOf({ round }).is({ run }), participantIsSeated({ participant: seat, run }))
-        .count(),
-      handedInByModel: each(
-        Responding._responsesFor({ subject: round }).is({
-          response: modelHandedIn,
-          participant: seat,
-          submitted: true,
-        }),
-      )
-        .where(theRunOf({ round }).is({ run }), participantIsSeated({ participant: seat, run }))
-        .count(),
-      cards: each(
-        Responding._submittedAnswers({ subject: round }).is({ response, participant, item, value }),
-      )
-        .where(
-          compute(computations.cardId, { response, item }, card),
-          cardStands({ card }),
-          Subscribing._isSubscribed({ user: participant, target: run }).is({ subscribed: model }),
-          compute(computations.isSame, { left: response, right: viewer }, mine),
-          compute(computations.partLabel, { value: presentation, item }, part),
-          whether(Categorizing._getCategory({ item: card }).is({ category: pile })),
-        )
-        .form({ card, value, part, pile, model, mine }),
-      piles: each(Categorizing._categoriesIn({ scope: round }).is({ category, name, description }))
-        .where(
-          Guiding._guidanceText({ subject: category, use: "pile-definition" }).is({
-            text: definition,
-          }),
-          Guiding._guidanceText({ subject: category, use: "pile-summary" }).is({ text: summary }),
-        )
-        .form({
-          pile: category,
-          name,
-          description: summary,
-          definition,
-          legacyText: description,
-          count: each(Categorizing._getItems({ category }).is({ item: held }))
-            .where(cardStands({ card: held }))
-            .count(),
-        })
-        .splicing(whether(thePickOn({ round, pile: category }))),
+      asksOut,
+      begun,
+      handedIn,
+      begunByModel,
+      handedInByModel,
+      cards,
+      piles,
     }),
 ).optional();
 
@@ -365,7 +339,7 @@ export const HandedInBallotsJoinTheirPiles = reaction(
 
 /** The model's placing reply becomes an offering of suggestions about the round. */
 export const ReplyPlacesCards = reaction(
-  ({ asking, reply, round, categories, values, removed, reading, lines, at }) =>
+  ({ asking, reply, round, categories, values, cardIds, removed, reading, lines, at }) =>
     when(Reasoning.answer({ asking, reply }).responds())
       .where(
         now(at),
@@ -373,7 +347,8 @@ export const ReplyPlacesCards = reaction(
         roundIsAWall({ round }),
         sortingPiles({ round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
-        Trashing._trashedItems({}).is({ items: removed }),
+        compute(computations.wallCardIds, { values, categories }, cardIds),
+        Trashing._trashedAmong({ items: cardIds }).is({ trashed: removed }),
         compute(computations.placingReading, { reply, categories, values, removed }, reading),
         is.among(reading, ["placed"]),
         compute(computations.placingLines, { reply, categories, values, removed }, lines),
@@ -382,7 +357,7 @@ export const ReplyPlacesCards = reaction(
 );
 
 export const ReplyOffersLid = reaction(
-  ({ asking, reply, round, categories, values, removed, reading, lines, at }) =>
+  ({ asking, reply, round, categories, values, cardIds, removed, reading, lines, at }) =>
     when(Reasoning.answer({ asking, reply }).responds())
       .where(
         now(at),
@@ -390,7 +365,8 @@ export const ReplyOffersLid = reaction(
         roundIsAWall({ round }),
         sortingPiles({ round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
-        Trashing._trashedItems({}).is({ items: removed }),
+        compute(computations.wallCardIds, { values, categories }, cardIds),
+        Trashing._trashedAmong({ items: cardIds }).is({ trashed: removed }),
         compute(computations.placingReading, { reply, categories, values, removed }, reading),
         is.among(reading, ["lid"]),
         compute(computations.lidLines, { reply, categories }, lines),
@@ -399,14 +375,15 @@ export const ReplyOffersLid = reaction(
 );
 
 export const ReplyUnusableComplains = reaction(
-  ({ asking, reply, round, categories, values, removed, reading, account }) =>
+  ({ asking, reply, round, categories, values, cardIds, removed, reading, account }) =>
     when(Reasoning.answer({ asking, reply }).responds())
       .where(
         Reasoning._asking({ asking }).is({ about: round }),
         roundIsAWall({ round }),
         sortingPiles({ round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
-        Trashing._trashedItems({}).is({ items: removed }),
+        compute(computations.wallCardIds, { values, categories }, cardIds),
+        Trashing._trashedAmong({ items: cardIds }).is({ trashed: removed }),
         compute(computations.placingReading, { reply, categories, values, removed }, reading),
         is.among(reading, ["neither"]),
         compute(computations.placingReason, { reply, categories, values, removed }, account),
@@ -461,14 +438,15 @@ export const TakenLidDescribesPile = reaction(({ suggestion, kind, target, value
  * upon.
  */
 export const PlacedReplySatisfiesInsistence = reaction(
-  ({ asking, reply, round, categories, values, removed, reading }) =>
+  ({ asking, reply, round, categories, values, cardIds, removed, reading }) =>
     when(Reasoning.answer({ asking, reply }).responds())
       .where(
         Reasoning._asking({ asking }).is({ about: round }),
         roundIsAWall({ round }),
         sortingPiles({ round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
-        Trashing._trashedItems({}).is({ items: removed }),
+        compute(computations.wallCardIds, { values, categories }, cardIds),
+        Trashing._trashedAmong({ items: cardIds }).is({ trashed: removed }),
         compute(computations.placingReading, { reply, categories, values, removed }, reading),
         is.among(reading, ["placed", "nothing", "lid"]),
         Insisting._unsettledFor({ aim: round }),
@@ -485,6 +463,7 @@ export const ComplaintRetriesTheAsk = reaction(
     value,
     categories,
     values,
+    cardIds,
     removed,
     notes,
     passage,
@@ -500,7 +479,8 @@ export const ComplaintRetriesTheAsk = reaction(
         RunSnapshotting._snapshot({ subject: round }).is({ value }),
         sortingPiles({ round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
-        Trashing._trashedItems({}).is({ items: removed }),
+        compute(computations.wallCardIds, { values, categories }, cardIds),
+        Trashing._trashedAmong({ items: cardIds }).is({ trashed: removed }),
         theNotesFor({ round }).is({ notes }),
         compute(
           computations.placingRepairPassage,
@@ -1154,6 +1134,7 @@ export const Sort = endpoint(
     value,
     categories,
     values,
+    cardIds,
     removed,
     notes,
     commission,
@@ -1178,7 +1159,8 @@ export const Sort = endpoint(
           whether(RunSnapshotting._snapshot({ subject: round }).is({ value })),
           sortingPiles({ round }).is({ categories }),
           Responding._valuesForSubject({ subject: round }).is({ values }),
-          Trashing._trashedItems({}).is({ items: removed }),
+          compute(computations.wallCardIds, { values, categories }, cardIds),
+          Trashing._trashedAmong({ items: cardIds }).is({ trashed: removed }),
           whether(theNotesFor({ round }).is({ notes })),
           compute(
             computations.sortingAdmission,
@@ -1267,7 +1249,18 @@ const commissionedExecutionResult = view(
   (
     { asking },
     { successful, account },
-    { round, reply, failure, insistence, categories, values, removed, outcome, successors },
+    {
+      round,
+      reply,
+      failure,
+      insistence,
+      categories,
+      values,
+      cardIds,
+      removed,
+      outcome,
+      successors,
+    },
   ) =>
     where(
       Reasoning._asking({ asking }).is({ about: round }),
@@ -1279,7 +1272,8 @@ const commissionedExecutionResult = view(
       count(Reasoning._followups, { previous: asking }, successors),
       sortingPiles({ round }).is({ categories }),
       Responding._valuesForSubject({ subject: round }).is({ values }),
-      Trashing._trashedItems({}).is({ items: removed }),
+      compute(computations.wallCardIds, { values, categories }, cardIds),
+      Trashing._trashedAmong({ items: cardIds }).is({ trashed: removed }),
       compute(
         computations.commissionOutcome,
         { reply, failure, insistence, categories, values, removed, successors },
@@ -1370,6 +1364,7 @@ export const ClosedRoundSettlesWall = reaction(
     value,
     categories,
     values,
+    cardIds,
     removed,
     notes,
     passage,
@@ -1389,7 +1384,8 @@ export const ClosedRoundSettlesWall = reaction(
         RunSnapshotting._snapshot({ subject: round }).is({ value }),
         sortingPiles({ round }).is({ categories }),
         Responding._valuesForSubject({ subject: round }).is({ values }),
-        Trashing._trashedItems({}).is({ items: removed }),
+        compute(computations.wallCardIds, { values, categories }, cardIds),
+        Trashing._trashedAmong({ items: cardIds }).is({ trashed: removed }),
         theNotesFor({ round }).is({ notes }),
         compute(
           computations.placingPassage,
@@ -1431,6 +1427,7 @@ export const SortNow = endpoint(
     value,
     categories,
     values,
+    cardIds,
     removed,
     notes,
     commission,
@@ -1455,7 +1452,8 @@ export const SortNow = endpoint(
           whether(RunSnapshotting._snapshot({ subject: round }).is({ value })),
           sortingPiles({ round }).is({ categories }),
           Responding._valuesForSubject({ subject: round }).is({ values }),
-          Trashing._trashedItems({}).is({ items: removed }),
+          compute(computations.wallCardIds, { values, categories }, cardIds),
+          Trashing._trashedAmong({ items: cardIds }).is({ trashed: removed }),
           whether(theNotesFor({ round }).is({ notes })),
           compute(
             computations.sortingAdmission,
@@ -1633,6 +1631,7 @@ export const Summarize = endpoint(
     round,
     categories,
     values,
+    cardIds,
     removed,
     passage,
     asking,
@@ -1653,7 +1652,8 @@ export const Summarize = endpoint(
           Categorizing._getCategoryDetail({ category: pile }).is({ scope: round }),
           sortingPiles({ round }).is({ categories }),
           Responding._valuesForSubject({ subject: round }).is({ values }),
-          Trashing._trashedItems({}).is({ items: removed }),
+          compute(computations.wallCardIds, { values, categories }, cardIds),
+          Trashing._trashedAmong({ items: cardIds }).is({ trashed: removed }),
           compute(computations.lidPassage, { pile, categories, values, removed }, passage),
           compute(computations.summaryAdmission, { items }, account),
         ).then(

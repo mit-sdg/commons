@@ -60,11 +60,16 @@ export class MongoSuggestingConcept {
   private readonly offerings: Collection<OfferingDoc>;
   private readonly suggestions: Collection<SuggestionDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
+  private indexes: Promise<unknown> | undefined;
 
   constructor(db: Db) {
     this.offerings = db.collection<OfferingDoc>("suggesting.offerings");
     this.suggestions = db.collection<SuggestionDoc>("suggesting.suggestions");
     this.counters = db.collection("suggesting.counters");
+  }
+
+  async #ready() {
+    await (this.indexes ??= this.offerings.createIndex({ subject: 1, offeredAt: -1, seq: -1 }));
   }
 
   async #nextSeq(name: string): Promise<number> {
@@ -138,6 +143,7 @@ export class MongoSuggestingConcept {
   }
 
   async _offeringsAbout({ subject }: { subject: string }) {
+    await this.#ready();
     const docs = await this.offerings.find({ subject }).sort({ offeredAt: -1, seq: -1 }).toArray();
     return docs.map((doc) => ({ offering: doc._id, offeredAt: doc.offeredAt }));
   }

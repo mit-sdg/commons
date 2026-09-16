@@ -35,9 +35,16 @@ import { PageContainer } from "@/components/page";
 import { SIGN_IN_ENDED } from "@/components/sign-in-ended";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
+import { useAdrift } from "@/hooks/use-adrift";
 import { useQuery } from "@/hooks/use-query";
 import { api, isApiError, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import {
+  NO_CONNECTION,
+  outOfReach,
+  POLL_DEADLINE_MS,
+  startPolling,
+} from "@/lib/poll";
 import { cn } from "@/lib/utils";
 
 /** Fast enough that the room sees itself answer, slow enough to be polite. */
@@ -46,11 +53,9 @@ const POLL_MS = 3_000;
 /** What a run left locked with no round open says, above the tap that frees it. */
 const STRANDED = "No round is open, but the run is still locked.";
 
-/** What a wall that has stopped answering says: the phone's word, on the staff screen. */
-const NO_CONNECTION = "No connection.";
-
-/** One poll may drop; two in a row is the server, not the network's hiccup. */
-const ADRIFT = 2;
+/** Where the status line stands: out of the flow, above the wall, so nothing moves when it appears or clears. */
+const STATUS_LINE =
+  "absolute inset-x-0 bottom-full block h-5 text-muted-foreground text-sm sm:text-end";
 
 /** The disabled Open button names the line that says why. */
 const REFUSAL_ID = "open-refusal";
@@ -96,12 +101,13 @@ type Reader = (error: string) => Reading | Promise<Reading>;
  */
 export function RelayRunBoard({
   run,
-  error,
+  answeredAt: runAnsweredAt,
   refetch,
   ended = false,
 }: {
   run: RelayRun;
-  error: string | null;
+  /** When the run was last read, whatever has failed since. */
+  answeredAt: number | null;
   refetch: () => void;
   /** The page's sign-in ended: it says so once; the board asks the model nothing. */
   ended?: boolean;
@@ -116,8 +122,6 @@ export function RelayRunBoard({
   } | null>(null);
   /** When Open was refused with nothing open to show for it, which the next poll confirms. */
   const [refusedAt, setRefusedAt] = useState<number | null>(null);
-  /** The clock a fresh failure is read against, which the poll moves on. */
-  const [now, setNow] = useState(() => Date.now());
   const [askedFor, setAskedFor] = useState<string | null>(null);
   /** The round Resort was pressed for and nothing was asked about. */
   const [notAsked, setNotAsked] = useState<string | null>(null);
@@ -128,17 +132,10 @@ export function RelayRunBoard({
   const [busy, setBusy] = useState(false);
   /** The button the focus goes to once the move it was on has landed. */
   const focusOn = useRef<"open" | "close" | null>(null);
-  /** Polls that went unanswered one after another, which an answer sets back. */
-  const misses = useRef(0);
-  const [adrift, setAdrift] = useState(false);
   const openButton = useRef<HTMLButtonElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
 
-  const {
-    data: relayData,
-    error: relayError,
-    refetch: refetchRelay,
-  } = useQuery(
+  const { data: relayData, refetch: refetchRelay } = useQuery(
     session
       ? () => api["/live/relays/get"]({ relay: run.relay }).then(unwrap)
       : null,
@@ -177,13 +174,18 @@ export function RelayRunBoard({
   const {
     data: wallData,
     error: wallError,
+    answeredAt: wallAnsweredAt,
     refetch: refetchWall,
   } = useQuery(
     session && shown !== null
-      ? () => api["/live/walls/read"]({ round: shown }).then(unwrap)
+      ? () =>
+          api["/live/walls/read"](
+            { round: shown },
+            { timeoutMs: POLL_DEADLINE_MS },
+          ).then(unwrap)
       : null,
-    [session, shown, openRound],
-    { retainOnTransportError: true },
+    [session, shown],
+    { retainOnTransportError: true, refreshOn: [openRound] },
   );
   const wall = wallData?.wall ?? null;
 
@@ -203,13 +205,13 @@ export function RelayRunBoard({
     shownTake === null || shownTake.use === "parts"
       ? null
       : (run.rounds.find((one) => one.leg === shownTake.source)?.round ?? null);
-  const {
-    data: sourceData,
-    error: sourceError,
-    refetch: refetchSource,
-  } = useQuery(
+  const { data: sourceData, refetch: refetchSource } = useQuery(
     session && choiceSource !== null
-      ? () => api["/live/walls/read"]({ round: choiceSource }).then(unwrap)
+      ? () =>
+          api["/live/walls/read"](
+            { round: choiceSource },
+            { timeoutMs: POLL_DEADLINE_MS },
+          ).then(unwrap)
       : null,
     [session, choiceSource],
     { retainOnTransportError: true },
@@ -246,31 +248,22 @@ export function RelayRunBoard({
     return () => clearInterval(timer);
   }, [run.open, refetch]);
 
-  // A frozen figure reads like a quiet room, so the wall says when it has
-  // stopped hearing: the poll's failures are counted, and an answered poll —
-  // which is a run this screen has not seen before — clears the count.
-  useEffect(() => {
-    if (error === null) return;
-    misses.current += 1;
-    if (misses.current >= ADRIFT) setAdrift(true);
-  }, [error]);
-
-  useEffect(() => {
-    misses.current = 0;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- an answered poll is the one thing that takes the line away
-    setAdrift(false);
-  }, [run]);
-
-  // A failure is only worth saying while the room would still be waiting on
-  // it, so the clock it is read against moves with the poll.
   // The close sends one last placing ask, so the wall is read until that
   // ask has landed and nothing is out, closed or not.
   const settling = wall?.sortPending === true || (wall?.asksOut ?? 0) > 0;
-  useEffect(() => {
-    if (!run.open && !settling) return;
-    const timer = setInterval(() => setNow(Date.now()), POLL_MS);
-    return () => clearInterval(timer);
-  }, [run.open, settling]);
+
+  // A frozen figure reads like a quiet room, so the wall says when it has
+  // stopped hearing: the last answer to the run's or the wall's poll is ten
+  // seconds old. The clock the line is read against lives as long as the
+  // polling, and a fresh failure of the model is read against it too.
+  const { adrift: stale, now } = useAdrift(
+    [
+      { answeredAt: runAnsweredAt, polling: run.open },
+      { answeredAt: wallAnsweredAt, polling: run.open || settling },
+    ],
+    POLL_MS,
+  );
+  const adrift = !ended && stale;
 
   useEffect(() => {
     if (!run.open && !settling) return;
@@ -280,21 +273,21 @@ export function RelayRunBoard({
 
   useEffect(() => {
     if (!run.modelSorts || openRound === null || voting || ended) return;
-    let live = true;
-    const sort = async () => {
-      const answer = await api["/live/walls/sort"]({ round: openRound });
-      if (!live || isApiError(answer)) return;
-      if (answer.asked) {
-        setAskedFor(openRound);
-        setNotAsked(null);
-      }
-    };
-    void sort();
-    const timer = setInterval(() => void sort(), POLL_MS);
-    return () => {
-      live = false;
-      clearInterval(timer);
-    };
+    return startPolling(
+      async () => {
+        const answer = await api["/live/walls/sort"](
+          { round: openRound },
+          { timeoutMs: POLL_DEADLINE_MS },
+        );
+        if (outOfReach(answer)) return false;
+        if (!isApiError(answer) && answer.asked) {
+          setAskedFor(openRound);
+          setNotAsked(null);
+        }
+        return true;
+      },
+      { everyMs: POLL_MS },
+    );
   }, [run.modelSorts, openRound, voting, ended]);
 
   const openEntry =
@@ -756,7 +749,7 @@ export function RelayRunBoard({
   const tray = inHand === null ? [] : trayOf(inHand.cards);
   const piled = inHand === null ? 0 : inHand.cards.length - tray.length;
   const sorting = shown !== null && askedFor === shown && tray.length > 0;
-  /** The model's last try at this round failed, so nothing is coming. */
+  /** The model's last try at this round failed, so nothing is coming while it is asked. */
   const silent = modelSilent(inHand, now);
   const modelWord =
     inHand === null
@@ -991,30 +984,12 @@ export function RelayRunBoard({
         )}
       </div>
 
-      {/* Adrift, the figure's own line says it; the banner is for a refusal. */}
-      {error !== null && !adrift ? (
-        <p className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2 text-destructive text-sm">
-          {error} This wall is stale.
-        </p>
-      ) : null}
-
-      {relayError || sourceError || (shownWall !== null && wallError) ? (
-        <p role="status" className="mb-4 text-muted-foreground text-sm">
-          {relayError ?? sourceError ?? wallError} This wall is stale.
-        </p>
-      ) : null}
-
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="order-2 flex min-w-0 flex-col gap-3 lg:order-1">
+        <div className="relative order-2 flex min-w-0 flex-col gap-3 lg:order-1">
           {/* Beside the figure, which is the number that has stopped moving. */}
-          {adrift ? (
-            <p
-              role="status"
-              className="text-muted-foreground text-sm sm:text-end"
-            >
-              {NO_CONNECTION}
-            </p>
-          ) : null}
+          <p role="status" className={STATUS_LINE}>
+            {adrift ? NO_CONNECTION : null}
+          </p>
           {shownWall === null ? (
             wallError !== null ? (
               <ErrorState message={wallError} onRetry={refetchWall} />
@@ -1266,7 +1241,9 @@ export function sortingWord({
   const pending = asksOut > 0 || sortPending || sorting;
   if (pending && !modelSorts)
     return "Finishing current sort; automatic sorting is off.";
-  if (silent) return "The model is not answering.";
+  // With the switch off the host has taken the wall by hand, and the word
+  // would only say what they already know.
+  if (silent && modelSorts) return "The model is not answering.";
   if (pending) return open ? "sorting…" : "settling…";
   if (!open) return "Settled";
   return notAsked ? NOTHING_TO_SORT : null;

@@ -14,18 +14,50 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { useQuery } from "@/hooks/use-query";
 import { api, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { outOfReach, POLL_DEADLINE_MS } from "@/lib/poll";
 import { cn } from "@/lib/utils";
 
 /** The wall keeps pace with the room the same way the dashboard does. */
 const POLL_MS = 3_000;
+
+/**
+ * The room can act on nothing, so a projector that has nothing to show yet
+ * keeps reading on the cadence rather than offering a Retry.
+ */
+function useKeepReading(read: boolean, refetch: () => void) {
+  useEffect(() => {
+    if (!read) return;
+    const timer = setInterval(refetch, POLL_MS);
+    return () => clearInterval(timer);
+  }, [read, refetch]);
+}
+
+/** A declared refusal is an answer, and the one thing the projector says in place of a wall. */
+function refusedOutright(refused: string | null): boolean {
+  return refused !== null && !outOfReach({ error: refused });
+}
+
+function Quiet({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-dvh items-center justify-center px-6">
+      {children}
+    </div>
+  );
+}
 
 /** A relay run projects its wall; anything else projects the join page below. */
 function ProjectorContent() {
   const { run } = useParams<{ run: string }>();
   const { session } = useAuth();
 
-  const { data, loading, error, refused, refetch } = useQuery(
-    session ? () => api["/live/relays/run"]({ run }).then(unwrap) : null,
+  const { data, error, refused, refetch } = useQuery(
+    session
+      ? () =>
+          api["/live/relays/run"](
+            { run },
+            { timeoutMs: POLL_DEADLINE_MS },
+          ).then(unwrap)
+      : null,
     [session, run],
     { retainOnTransportError: true },
   );
@@ -34,19 +66,18 @@ function ProjectorContent() {
   // A sign-in that ended is said once, in a corner, with the way back in; the
   // wall stays up for the room, since it belongs to the run.
   const ended = refused === "UNAUTHORIZED";
+  const refusedRun = !ended && refusedOutright(refused);
+  useKeepReading(data === null && !ended && !refusedRun, refetch);
 
-  if (loading && data === null) {
+  if (data === null) {
     return (
-      <div className="flex min-h-dvh items-center justify-center">
-        <LoadingState label="Loading…" />
-      </div>
-    );
-  }
-  if (error !== null && data === null) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center px-6">
-        <ErrorState message={error} onRetry={refetch} />
-      </div>
+      <Quiet>
+        {refusedRun && error !== null ? (
+          <ErrorState message={error} refused={refused} />
+        ) : (
+          <LoadingState label="Loading…" />
+        )}
+      </Quiet>
     );
   }
   const notice = ended ? (
@@ -58,12 +89,7 @@ function ProjectorContent() {
     return (
       <>
         {notice}
-        <RelayProjector
-          run={relayRun}
-          refetch={refetch}
-          ended={ended}
-          error={error}
-        />
+        <RelayProjector run={relayRun} refetch={refetch} />
       </>
     );
   return (
@@ -78,34 +104,32 @@ function QuizProjector() {
   const { run } = useParams<{ run: string }>();
   const { session } = useAuth();
 
-  const { data, loading, error, refetch } = useQuery(
-    session ? () => api["/live/runs/results"]({ run }).then(unwrap) : null,
+  const { data, error, refused, refetch } = useQuery(
+    session
+      ? () =>
+          api["/live/runs/results"](
+            { run },
+            { timeoutMs: POLL_DEADLINE_MS },
+          ).then(unwrap)
+      : null,
     [session, run],
     { retainOnTransportError: true },
   );
 
   const board = data?.board ?? null;
   const open = board?.open ?? false;
+  const refusedBoard = refused !== "UNAUTHORIZED" && refusedOutright(refused);
+  useKeepReading((data === null && !refusedBoard) || open, refetch);
 
-  useEffect(() => {
-    if (!open) return;
-    const timer = setInterval(refetch, POLL_MS);
-    return () => clearInterval(timer);
-  }, [open, refetch]);
-
-  if (loading && data === null) {
+  if (data === null) {
     return (
-      <div className="flex min-h-dvh items-center justify-center">
-        <LoadingState label="Loading…" />
-      </div>
-    );
-  }
-
-  if (error !== null && data === null) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center px-6">
-        <ErrorState message={error} onRetry={refetch} />
-      </div>
+      <Quiet>
+        {refusedBoard && error !== null ? (
+          <ErrorState message={error} refused={refused} />
+        ) : (
+          <LoadingState label="Loading…" />
+        )}
+      </Quiet>
     );
   }
 
@@ -125,7 +149,7 @@ function QuizProjector() {
   const results = !open && board.questions.length > 0;
 
   return (
-    <div className="flex h-dvh flex-col items-center justify-center gap-[clamp(0.75rem,2.5dvh,2rem)] overflow-hidden px-6 py-[clamp(1rem,3dvh,2.5rem)] text-center">
+    <div className="relative flex h-dvh flex-col items-center justify-center gap-[clamp(0.75rem,2.5dvh,2rem)] overflow-hidden px-6 py-[clamp(1rem,3dvh,2.5rem)] text-center">
       <h1
         dir="auto"
         className={cn(
@@ -154,11 +178,6 @@ function QuizProjector() {
             <span>{board.started - model.begun} joined</span>
             <span>{board.handedIn - model.handedIn} handed in</span>
           </Facts>
-          {error !== null ? (
-            <p className="text-amber-700 text-sm dark:text-amber-300">
-              No connection.
-            </p>
-          ) : null}
         </>
       )}
     </div>

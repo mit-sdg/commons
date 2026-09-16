@@ -12,11 +12,18 @@ interface SubscriptionDoc {
 export class MongoSubscribingConcept {
   private readonly subscriptions: Collection<SubscriptionDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
-  private index: Promise<string> | undefined;
+  private indexes: Promise<unknown> | undefined;
 
   constructor(db: Db) {
     this.subscriptions = db.collection<SubscriptionDoc>("subscribing.subscriptions");
     this.counters = db.collection("subscribing.counters");
+  }
+
+  async #ready() {
+    await (this.indexes ??= this.subscriptions.createIndexes([
+      { key: { user: 1, target: 1 } },
+      { key: { target: 1, seq: 1 } },
+    ]));
   }
 
   async #nextSeq(): Promise<number> {
@@ -29,6 +36,7 @@ export class MongoSubscribingConcept {
   }
 
   async subscribe({ user, target, at }: { user: string; target: string; at: Date }) {
+    await this.#ready();
     const existing = await this.subscriptions.findOne({ user, target });
     if (existing !== null) {
       throw new AlreadySubscribed(`${user} ${target}`);
@@ -40,6 +48,7 @@ export class MongoSubscribingConcept {
   }
 
   async unsubscribe({ user, target }: { user: string; target: string }) {
+    await this.#ready();
     const doc = await this.subscriptions.findOne({ user, target });
     if (doc === null) {
       throw new NotSubscribed(`${user} ${target}`);
@@ -49,16 +58,24 @@ export class MongoSubscribingConcept {
   }
 
   async clearTarget({ target }: { target: string }) {
+    await this.#ready();
     await this.subscriptions.deleteMany({ target });
     return { target };
   }
 
   async _getSubscribers({ target }: { target: string }) {
+    await this.#ready();
     const docs = await this.subscriptions.find({ target }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => ({ user: doc.user }));
   }
 
+  /** The same people `_getSubscribers` gives, handed over as one value. */
+  async _subscribersOf({ target }: { target: string }) {
+    return { users: (await this._getSubscribers({ target })).map(({ user }) => user) };
+  }
+
   async _getSubscriptions({ user }: { user: string }) {
+    await this.#ready();
     const docs = await this.subscriptions
       .find({ user })
       .sort({ subscribedAt: -1, seq: -1 })
@@ -67,8 +84,7 @@ export class MongoSubscribingConcept {
   }
 
   async _isSubscribed({ user, target }: { user: string; target: string }) {
-    // The wall asks this once a card, so the pair is indexed rather than scanned.
-    await (this.index ??= this.subscriptions.createIndex({ user: 1, target: 1 }));
+    await this.#ready();
     const doc = await this.subscriptions.findOne({ user, target });
     return { subscribed: doc !== null };
   }

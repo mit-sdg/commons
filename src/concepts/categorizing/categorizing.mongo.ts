@@ -27,6 +27,7 @@ export class MongoCategorizingConcept {
   private readonly categories: Collection<CategoryDoc>;
   private readonly memberships: Collection<MembershipDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
+  private indexes: Promise<unknown> | undefined;
 
   constructor(db: Db, instance = "Categorizing") {
     const prefix = `${instance[0]?.toLowerCase() ?? ""}${instance.slice(1)}`;
@@ -49,6 +50,16 @@ export class MongoCategorizingConcept {
     return result;
   }
 
+  async #ready() {
+    await (this.indexes ??= Promise.all([
+      this.categories.createIndexes([
+        { key: { scope: 1, seq: 1 } },
+        { key: { scope: 1, name: 1 } },
+      ]),
+      this.memberships.createIndex({ category: 1, seq: 1 }),
+    ]));
+  }
+
   async #nextSeq(name: string): Promise<number> {
     const counter = await this.counters.findOneAndUpdate(
       { _id: name },
@@ -68,6 +79,7 @@ export class MongoCategorizingConcept {
     description: string;
   }) {
     return this.#write(async () => {
+      await this.#ready();
       const clash = await this.categories.findOne({ scope, name });
       if (clash !== null) {
         throw new CategoryAlreadyExists(name);
@@ -97,6 +109,7 @@ export class MongoCategorizingConcept {
     name: string;
     description: string;
   }) {
+    await this.#ready();
     const existing = await this.categories.findOne({ scope, name });
     if (existing !== null) return { category: existing._id };
     return { category: await this.#add({ scope, name, description }) };
@@ -119,6 +132,7 @@ export class MongoCategorizingConcept {
 
   async renameCategory({ category, name }: { category: string; name: string }) {
     return this.#write(async () => {
+      await this.#ready();
       const doc = await this.categories.findOne({ _id: category });
       if (doc === null) {
         throw new CategoryNotFound(category);
@@ -151,6 +165,7 @@ export class MongoCategorizingConcept {
 
   async mergeCategory({ category, into }: { category: string; into: string }) {
     return this.#write(async () => {
+      await this.#ready();
       const source = await this.categories.findOne({ _id: category });
       const target = await this.categories.findOne({ _id: into });
       if (source === null || target === null) {
@@ -209,6 +224,7 @@ export class MongoCategorizingConcept {
   /** Empty a scope as one action, including the already-empty case. */
   async empty({ scope }: { scope: string }) {
     return this.#write(async () => {
+      await this.#ready();
       const categories = await this.categories.find({ scope }).toArray();
       const removed = await this.memberships.deleteMany({
         category: { $in: categories.map((category) => category._id) },
@@ -220,6 +236,7 @@ export class MongoCategorizingConcept {
   /** Recheck every proposed deletion; an intervening assignment keeps its pile. */
   async deleteEmptyCategories({ categories }: { categories: string[] }) {
     return this.#write(async () => {
+      await this.#ready();
       let deleted = false;
       for (const category of categories) {
         if (await this.memberships.findOne({ category })) continue;
@@ -232,6 +249,7 @@ export class MongoCategorizingConcept {
 
   async deleteCategory({ category }: { category: string }) {
     return this.#write(async () => {
+      await this.#ready();
       const removed = await this.categories.deleteOne({ _id: category });
       if (removed.deletedCount === 0) {
         throw new CategoryNotFound(category);
@@ -244,6 +262,7 @@ export class MongoCategorizingConcept {
   /** Delete only if still empty when this action owns the write queue. */
   async deleteEmptyCategory({ category }: { category: string }) {
     return this.#write(async () => {
+      await this.#ready();
       if (await this.memberships.findOne({ category })) return { category, deleted: false };
       const removed = await this.categories.deleteOne({ _id: category });
       return { category, deleted: removed.deletedCount > 0 };
@@ -269,16 +288,19 @@ export class MongoCategorizingConcept {
   }
 
   async _getItems({ category }: { category: string }) {
+    await this.#ready();
     const docs = await this.memberships.find({ category }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => ({ item: doc._id }));
   }
 
   async _categoriesIn({ scope }: { scope: string }) {
+    await this.#ready();
     const docs = await this.categories.find({ scope }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => ({ category: doc._id, name: doc.name, description: doc.description }));
   }
 
   async _categoriesInScopes({ scopes }: { scopes: string[] }) {
+    await this.#ready();
     const docs = await this.categories
       .find({ scope: { $in: scopes } })
       .sort({ seq: 1, _id: 1 })
@@ -298,6 +320,7 @@ export class MongoCategorizingConcept {
   }
 
   async _categoriesWithItems({ scope }: { scope: string }) {
+    await this.#ready();
     const docs = await this.categories.find({ scope }).sort({ seq: 1 }).toArray();
     if (docs.length === 0) return { categories: [] };
     const memberships = await this.memberships

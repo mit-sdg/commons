@@ -183,6 +183,15 @@ export class MongoRespondingConcept {
     }));
   }
 
+  /** The same responses `_responsesFor` gives, handed over as one value. */
+  async _responsesOf({ subject }: { subject: string }) {
+    return {
+      responses: (await this._responsesFor({ subject })).map(
+        ({ response, participant, submitted }) => ({ response, participant, submitted }),
+      ),
+    };
+  }
+
   async _answers({ response }: { response: string }) {
     const doc = await this.responses.findOne({ _id: response });
     return doc?.answers ?? [];

@@ -97,6 +97,39 @@ test("login fixes cookie expiry at the cap; successful reads slide only the serv
   expect(f.refresh).toHaveBeenCalledTimes(1);
 });
 
+test("a session is refreshed at most once per quantum", async () => {
+  const f = await fixture();
+  f.atHour(1);
+  expect((await f.request("/auth/me")).status).toBe(200);
+  expect(f.refresh).toHaveBeenCalledTimes(1);
+  expect((await f.records.findOne({ _id: f.session }))?.expiresAt.getTime()).toBe(
+    f.startedAt.getTime() + 73 * HOUR,
+  );
+  // Polling inside the quantum reads without writing.
+  f.atHour(6);
+  expect((await f.request("/auth/me")).status).toBe(200);
+  f.atHour(12.9);
+  expect((await f.request("/auth/me")).status).toBe(200);
+  expect(f.refresh).toHaveBeenCalledTimes(1);
+  expect((await f.records.findOne({ _id: f.session }))?.expiresAt.getTime()).toBe(
+    f.startedAt.getTime() + 73 * HOUR,
+  );
+  // The first request after the quantum writes again.
+  f.atHour(13);
+  expect((await f.request("/auth/me")).status).toBe(200);
+  expect(f.refresh).toHaveBeenCalledTimes(2);
+  expect((await f.records.findOne({ _id: f.session }))?.expiresAt.getTime()).toBe(
+    f.startedAt.getTime() + 85 * HOUR,
+  );
+  // The idle window is never shorter than 72 hours less one quantum.
+  f.atHour(84.9);
+  expect((await f.request("/auth/me")).status).toBe(200);
+  expect(f.refresh).toHaveBeenCalledTimes(3);
+  f.atHour(85);
+  expect((await f.request("/auth/me")).status).toBe(200);
+  expect(f.refresh).toHaveBeenCalledTimes(3);
+});
+
 test("public, rejected, and direct application calls do not renew", async () => {
   const f = await fixture();
   f.atHour(24);
@@ -160,6 +193,14 @@ test("a failed renewal preserves an already committed mutation and logs no crede
   expect(JSON.stringify(log.mock.calls)).not.toContain(f.session);
   expect((await f.records.findOne({ _id: f.session }))?.expiresAt.getTime()).toBe(
     f.startedAt.getTime() + 72 * HOUR,
+  );
+  // A failed write is no refresh: the next request inside the quantum tries again.
+  f.refresh.mockImplementation(f.realRefresh);
+  f.atHour(25);
+  expect((await f.request("/auth/me")).status).toBe(200);
+  expect(f.refresh).toHaveBeenCalledTimes(2);
+  expect((await f.records.findOne({ _id: f.session }))?.expiresAt.getTime()).toBe(
+    f.startedAt.getTime() + 97 * HOUR,
   );
 });
 
@@ -230,10 +271,14 @@ test("stalled HTTP renewals overlap without blocking login or engine-managed rev
     email: "other@example.test",
   });
   const otherSession = await f.edge.application.concepts.Sessioning.start({ user: other.user });
+  // Four sessions, since one session is refreshed once per quantum.
+  const second = await f.edge.application.concepts.Sessioning.start({ user: f.user });
+  const third = await f.edge.application.concepts.Sessioning.start({ user: other.user });
   const cookies = [
     f.cookie,
-    f.cookie,
-    ...Array<string>(2).fill(`__Host-commons-session=${otherSession.session}`),
+    `__Host-commons-session=${second.session}`,
+    `__Host-commons-session=${otherSession.session}`,
+    `__Host-commons-session=${third.session}`,
   ];
   const held = Promise.withResolvers<void>();
   let entered = 0;
