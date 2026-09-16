@@ -9,13 +9,17 @@ import { StatusBadge } from "@/components/lms/status-badge";
 import { EmptyState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Output } from "@/lib/api";
+import {
+  type Assessment,
+  type CompetencyCriterion,
+  competencyCriteria,
+  competencyJudgments,
+  pointCriteria,
+  pointJudgments,
+} from "@/lib/grading";
 
-export type Assessment = Extract<
-  Output<"/grades/for-me">,
-  { grades: unknown }
->["grades"][number];
-export type Rubric = Assessment["criteria"][number];
+export type { Assessment } from "@/lib/grading";
+export type Rubric = CompetencyCriterion;
 export const LEVELS = [
   "DEFICIENT",
   "EMERGENT",
@@ -156,7 +160,11 @@ export function AssessmentCard({
   skill?: string;
   preview?: boolean;
 }) {
-  const criteria = a.criteria.filter((c) => !skill || c.standard === skill);
+  const criteria = competencyCriteria(a.criteria).filter(
+    (criterion) => !skill || criterion.standard === skill,
+  );
+  const points = pointCriteria(a.criteria);
+  const scores = pointJudgments(a.judgments);
   return (
     <Card density="compact" id={`assessment-${a.grade}`}>
       <CardHeader>
@@ -180,12 +188,15 @@ export function AssessmentCard({
             )}
           </Facts>
           <Facts as="div" className="text-xs">
-            {skill && a.status !== "EXCUSED" && (
+            {skill && a.method === "COMPETENCY" && a.status !== "EXCUSED" && (
               <span className="rounded-md bg-muted px-2 py-1 font-medium">
-                {a.judgments.find((j) => j.criterion === criteria[0]?.criterion)
+                {competencyJudgments(a.judgments).find(
+                  (judgment) => judgment.criterion === criteria[0]?.criterion,
+                )
                   ? levelLabel(
-                      a.judgments.find(
-                        (j) => j.criterion === criteria[0]?.criterion,
+                      competencyJudgments(a.judgments).find(
+                        (judgment) =>
+                          judgment.criterion === criteria[0]?.criterion,
                       )!.rating,
                     )
                   : "Awaiting assessment"}
@@ -213,22 +224,74 @@ export function AssessmentCard({
             <Fact.When verb="Submitted" at={a.submittedAt} form="absolute" />
             <Fact.When verb="Released" at={a.releasedAt} form="absolute" />
           </Facts>
-          {criteria.map((c) => (
-            <div key={c.criterion} className="mt-3 space-y-2">
-              <p>
-                Rubric used{skill ? "" : `: ${c.name}`}, edition {c.number}
-              </p>
-              <RubricDescription rubric={c} showEdition={false} />
+          {a.method === "POINTS" ? (
+            <div className="mt-3 space-y-1">
+              <p>Point criteria used</p>
+              {points.map((criterion) => (
+                <p key={criterion.criterion}>
+                  {criterion.name}: {criterion.maxPoints} points
+                </p>
+              ))}
             </div>
-          ))}
+          ) : (
+            criteria.map((criterion) => (
+              <div key={criterion.criterion} className="mt-3 space-y-2">
+                <p>
+                  Rubric used{skill ? "" : `: ${criterion.name}`}, edition{" "}
+                  {criterion.number}
+                </p>
+                <RubricDescription rubric={criterion} showEdition={false} />
+              </div>
+            ))
+          )}
         </details>
       </CardHeader>
       <CardContent>
         {a.status === "EXCUSED" ? (
-          <p className="text-sm">Excused. No competency judgment was made.</p>
+          <p className="text-sm">
+            {a.evidence
+              ? `Attempt${a.attempt ? ` ${a.attempt}` : ""} excused.`
+              : "Assignment excused."}{" "}
+            No {a.method === "POINTS" ? "score" : "competency judgment"} was
+            recorded.
+          </p>
+        ) : a.method === "POINTS" ? (
+          <div className="space-y-3">
+            {a.scored ? (
+              <p className="text-2xl font-semibold tabular-nums">
+                {a.score}{" "}
+                <span className="text-base font-normal">/ {a.outOf}</span>
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No complete score yet.
+              </p>
+            )}
+            <div className="divide-y rounded-md border border-border">
+              {points.map((criterion) => {
+                const judgment = scores.find(
+                  (entry) => entry.criterion === criterion.criterion,
+                );
+                return (
+                  <div
+                    key={criterion.criterion}
+                    className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+                  >
+                    <span className="font-medium">{criterion.name}</span>
+                    <span className="shrink-0 tabular-nums text-muted-foreground">
+                      {judgment ? judgment.score : "Not scored"} /{" "}
+                      {criterion.maxPoints}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         ) : (
           criteria.map((c) => {
-            const j = a.judgments.find((j) => j.criterion === c.criterion);
+            const j = competencyJudgments(a.judgments).find(
+              (judgment) => judgment.criterion === c.criterion,
+            );
             const description = j ? levelDescription(c, j.rating).trim() : "";
             const feedback = j?.feedback.trim() ?? "";
             const row = (
@@ -302,26 +365,54 @@ export function AssessmentCard({
                         : "Superseded assessment"}
                     </span>
                   </Facts>
-                  {h.judgments
-                    .filter((j) =>
-                      criteria.some((c) => c.criterion === j.criterion),
-                    )
-                    .map((j) => (
-                      <div key={j.criterion}>
-                        <p>
+                  {h.status === "EXCUSED" ? (
+                    <p>
+                      {a.evidence ? "Attempt excused" : "Assignment excused"}
+                    </p>
+                  ) : a.method === "POINTS" ? (
+                    <>
+                      <p className="font-medium tabular-nums">
+                        {h.scored ? `${h.score} / ${h.outOf}` : "Incomplete"}
+                      </p>
+                      {pointJudgments(h.judgments).map((judgment) => (
+                        <p key={judgment.criterion}>
                           {
-                            criteria.find((c) => c.criterion === j.criterion)
-                              ?.name
+                            points.find(
+                              (criterion) =>
+                                criterion.criterion === judgment.criterion,
+                            )?.name
                           }
-                          : {levelLabel(j.rating)}
+                          : {judgment.score}
                         </p>
-                        {j.feedback && (
-                          <p className="whitespace-pre-wrap text-muted-foreground">
-                            {j.feedback}
+                      ))}
+                    </>
+                  ) : (
+                    competencyJudgments(h.judgments)
+                      .filter((judgment) =>
+                        criteria.some(
+                          (criterion) =>
+                            criterion.criterion === judgment.criterion,
+                        ),
+                      )
+                      .map((judgment) => (
+                        <div key={judgment.criterion}>
+                          <p>
+                            {
+                              criteria.find(
+                                (criterion) =>
+                                  criterion.criterion === judgment.criterion,
+                              )?.name
+                            }
+                            : {levelLabel(judgment.rating)}
                           </p>
-                        )}
-                      </div>
-                    ))}
+                          {judgment.feedback && (
+                            <p className="whitespace-pre-wrap text-muted-foreground">
+                              {judgment.feedback}
+                            </p>
+                          )}
+                        </div>
+                      ))
+                  )}
                   {h.feedback && (
                     <p className="whitespace-pre-wrap">{h.feedback}</p>
                   )}
@@ -350,25 +441,40 @@ export function AssessmentHistory({
       a.grade.localeCompare(b.grade),
   );
   const skills = new Map<string, Rubric>();
-  for (const a of sorted) for (const c of a.criteria) skills.set(c.standard, c);
+  for (const assessment of sorted)
+    for (const criterion of competencyCriteria(assessment.criteria))
+      skills.set(criterion.standard, criterion);
+  const hasSkills = skills.size > 0;
+  const hasPointAssessments = sorted.some(
+    (assessment) => assessment.method === "POINTS",
+  );
+  const effectiveView = view === "skill" && hasSkills ? "skill" : "assignment";
   return (
     <div className="space-y-5">
-      {toggle && (
-        <div className="flex gap-2" aria-label="Assessment grouping">
-          <Button
-            variant={view === "assignment" ? "default" : "outline"}
-            aria-pressed={view === "assignment"}
-            onClick={() => setView("assignment")}
-          >
-            By assignment
-          </Button>
-          <Button
-            variant={view === "skill" ? "default" : "outline"}
-            aria-pressed={view === "skill"}
-            onClick={() => setView("skill")}
-          >
-            By skill
-          </Button>
+      {toggle && hasSkills && (
+        <div className="space-y-2">
+          <div className="flex gap-2" aria-label="Assessment grouping">
+            <Button
+              variant={effectiveView === "assignment" ? "default" : "outline"}
+              aria-pressed={effectiveView === "assignment"}
+              onClick={() => setView("assignment")}
+            >
+              By assignment
+            </Button>
+            <Button
+              variant={effectiveView === "skill" ? "default" : "outline"}
+              aria-pressed={effectiveView === "skill"}
+              onClick={() => setView("skill")}
+            >
+              By skill
+            </Button>
+          </div>
+          {hasPointAssessments && (
+            <p className="text-xs text-muted-foreground">
+              Skill grouping shows competency assessments. Point assessments
+              remain under By assignment.
+            </p>
+          )}
         </div>
       )}
       {sorted.length === 0 ? (
@@ -377,7 +483,7 @@ export function AssessmentHistory({
           title="No assessments yet"
           description="Released feedback on your work appears here."
         />
-      ) : view === "assignment" || !toggle ? (
+      ) : effectiveView === "assignment" || !toggle ? (
         <div className="space-y-4">
           {sorted.map((a) => (
             <AssessmentCard key={a.grade} assessment={a} staff={staff} />
@@ -391,7 +497,11 @@ export function AssessmentHistory({
                 <h2 className="text-lg font-semibold">{rubric.name}</h2>
               </div>
               {sorted
-                .filter((a) => a.criteria.some((c) => c.standard === id))
+                .filter((assessment) =>
+                  competencyCriteria(assessment.criteria).some(
+                    (criterion) => criterion.standard === id,
+                  ),
+                )
                 .map((a) => (
                   <AssessmentCard
                     key={a.grade}

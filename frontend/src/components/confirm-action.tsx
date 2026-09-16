@@ -20,6 +20,7 @@ export function ConfirmAction({
   confirmLabel,
   onConfirm,
   destructive = false,
+  confirmDisabled = false,
   open: openProp,
   onOpenChange,
 }: {
@@ -30,6 +31,7 @@ export function ConfirmAction({
   confirmLabel: string;
   onConfirm: () => void | Promise<void>;
   destructive?: boolean;
+  confirmDisabled?: boolean;
   /** Pass both to drive the dialog from outside; omit both to let it govern itself. */
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -75,9 +77,9 @@ export function ConfirmAction({
           <Button
             variant={destructive ? "destructive" : "default"}
             onClick={() => {
-              if (!busy) confirm();
+              if (!busy && !confirmDisabled) confirm();
             }}
-            aria-disabled={busy || undefined}
+            aria-disabled={busy || confirmDisabled || undefined}
           >
             {busy ? "Working…" : confirmLabel}
           </Button>

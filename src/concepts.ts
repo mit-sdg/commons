@@ -4,6 +4,11 @@ import {
   liveRequiresSignIn,
 } from "./computations/live-access.ts";
 import { submissionAllowed } from "./computations/assessment-eligibility.ts";
+import {
+  competencyEditionIds,
+  gradingRevisionMatches,
+  resolveGradingCriteria,
+} from "./computations/grading.ts";
 import { ownsTaskScope } from "./computations/task-scopes.ts";
 import { validPostControlSelection } from "./computations/post-controls.ts";
 import { noticeRecord } from "./computations/forum-notices.ts";
@@ -59,6 +64,7 @@ import { bookmarking } from "./concepts/bookmarking/registry.ts";
 import { categorizing } from "./concepts/categorizing/registry.ts";
 import { commissioning } from "./concepts/commissioning/registry.ts";
 import { conversing } from "./concepts/conversing/registry.ts";
+import { delegating } from "./concepts/delegating/registry.ts";
 import { drafting } from "./concepts/drafting/registry.ts";
 import { flagging } from "./concepts/flagging/registry.ts";
 import { formatting } from "./concepts/formatting/registry.ts";
@@ -102,6 +108,11 @@ import { trashing } from "./concepts/trashing/registry.ts";
 import { vouching } from "./concepts/vouching/registry.ts";
 import { wording } from "./concepts/wording/registry.ts";
 import { setupSecretMatches } from "./computations/admin-setup.ts";
+import {
+  allChosenAdmitted,
+  validDelegationIdentityInput,
+  validDelegationSpreadInput,
+} from "./computations/delegation.ts";
 import {
   capabilitiesAreKnown,
   carriesAdminister,
@@ -274,6 +285,7 @@ const registrations = {
   Categorizing: categorizing,
   Commissioning: commissioning,
   Conversing: conversing,
+  Delegating: delegating,
   Drafting: drafting,
   DraftTrashing: trashing,
   Flagging: flagging,
@@ -322,10 +334,16 @@ const registrations = {
 };
 
 export const learningConcepts = conceptSet(registrations, {
+  allChosenAdmitted,
+  validDelegationIdentityInput,
+  validDelegationSpreadInput,
   liveAccessHolders,
   liveAccessMode,
   liveRequiresSignIn,
   submissionAllowed,
+  competencyEditionIds,
+  gradingRevisionMatches,
+  resolveGradingCriteria,
   validPostControlSelection,
   validProfileSelection,
   validFeedOrder,

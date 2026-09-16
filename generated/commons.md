@@ -26,9 +26,9 @@ Defined in [Accessing](../design/concepts/Accessing.md), line 1.
 
 #### Instances
 
-- `Accessing` — instance of `Accessing` — [Commons application](../design/application.md), line 124.
-  - `Holder` is `AudienceHolder` — [Commons application](../design/application.md), line 126.
-  - `Resource` is `Conversing.Conversation` — [Commons application](../design/application.md), line 125.
+- `Accessing` — instance of `Accessing` — [Commons application](../design/application.md), line 130.
+  - `Holder` is `AudienceHolder` — [Commons application](../design/application.md), line 132.
+  - `Resource` is `Conversing.Conversation` — [Commons application](../design/application.md), line 131.
 
 ### Assigning
 
@@ -70,15 +70,16 @@ Defined in [Assigning](../design/concepts/Assigning.md), line 1.
 - `_getAssigned(assignee: String) : many (assignment: String, release: String, dueOverride: String | Null, status: ASSIGNED)`
 - `_getAssignees(assignment: String) : many (assignee: String)`
 - `_isAssigned(assignment: String, assignee: String) : one (assigned: Boolean)`
+- `_assignedAmong(assignment: String, assignees: Seq) : one (assigned: Seq)`
 - `_getPublishedForAudience(audience: String | Null) : many (assignment: String)`
 - `_getPublishedInWindow(start: String | Date, end: String | Date) : many (assignment: String)`
 
 #### Instances
 
-- `Assigning` — instance of `Assigning` — [Commons application](../design/application.md), line 136.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 138.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 137.
-  - `Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 139.
+- `Assigning` — instance of `Assigning` — [Commons application](../design/application.md), line 142.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 144.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 143.
+  - `Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 145.
 
 ### Authenticating
 
@@ -117,7 +118,7 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 
 #### Instances
 
-- `Authenticating` — instance of `Authenticating` — [Commons application](../design/application.md), line 141.
+- `Authenticating` — instance of `Authenticating` — [Commons application](../design/application.md), line 147.
 
 ### Banking
 
@@ -152,9 +153,9 @@ Defined in [Banking](../design/concepts/Banking.md), line 1.
 
 #### Instances
 
-- `Banking` — instance of `Banking` — [Commons application](../design/application.md), line 143.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 145.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 144.
+- `Banking` — instance of `Banking` — [Commons application](../design/application.md), line 149.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 151.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 150.
 
 ### Bookmarking
 
@@ -175,9 +176,9 @@ Defined in [Bookmarking](../design/concepts/Bookmarking.md), line 1.
 
 #### Instances
 
-- `Bookmarking` — instance of `Bookmarking` — [Commons application](../design/application.md), line 147.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 149.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 148.
+- `Bookmarking` — instance of `Bookmarking` — [Commons application](../design/application.md), line 153.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 155.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 154.
 
 ### Categorizing
 
@@ -220,9 +221,9 @@ Defined in [Categorizing](../design/concepts/Categorizing.md), line 1.
 
 #### Instances
 
-- `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 151.
-  - `Item` is `Categorizable` — [Commons application](../design/application.md), line 153.
-  - `Scope` is `CategoryScope` — [Commons application](../design/application.md), line 152.
+- `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 157.
+  - `Item` is `Categorizable` — [Commons application](../design/application.md), line 159.
+  - `Scope` is `CategoryScope` — [Commons application](../design/application.md), line 158.
 
 ### Commissioning
 
@@ -250,9 +251,9 @@ Defined in [Commissioning](../design/concepts/Commissioning.md), line 1.
 
 #### Instances
 
-- `Commissioning` — instance of `Commissioning` — [Commons application](../design/application.md), line 128.
-  - `Execution` is `LiveExecution` — [Commons application](../design/application.md), line 130.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 129.
+- `Commissioning` — instance of `Commissioning` — [Commons application](../design/application.md), line 134.
+  - `Execution` is `LiveExecution` — [Commons application](../design/application.md), line 136.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 135.
 
 ### Conversing
 
@@ -287,8 +288,33 @@ Defined in [Conversing](../design/concepts/Conversing.md), line 1.
 
 #### Instances
 
-- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 155.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 156.
+- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 161.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 162.
+
+### Delegating
+
+Defined in [Delegating](../design/concepts/Delegating.md), line 1.
+
+#### Actions
+
+- `delegate(item: Item, subject: Subject, delegate: Delegate) : return (delegation: Delegation)`
+- `withdraw(item: Item, subject: Subject) : return (delegation: Delegation)`
+  - Refuses `DELEGATION_NOT_FOUND`: No delegate is named for this subject.
+- `spread(item: Item, subjects: Seq, delegates: Seq, replace: Bool) : return (assigned: Rows)`
+  - Refuses `INVALID_SPREAD`: Choose at least one subject and at least one delegate, each named once.
+- `clearItem(item: Item) : return (cleared: Number)`
+
+#### Queries
+
+- `_getDelegations(item: String) : many (delegation: String, subject: String, delegate: String)`
+- `_getDelegation(item: String, subject: String) : optional (delegation: String, delegate: String)`
+
+#### Instances
+
+- `Delegating` — instance of `Delegating` — [Commons application](../design/application.md), line 164.
+  - `Delegate` is `Authenticating.User` — [Commons application](../design/application.md), line 167.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 165.
+  - `Subject` is `Authenticating.User` — [Commons application](../design/application.md), line 166.
 
 ### Drafting
 
@@ -340,9 +366,9 @@ Defined in [Drafting](../design/concepts/Drafting.md), line 1.
 
 #### Instances
 
-- `Drafting` — instance of `Drafting` — [Commons application](../design/application.md), line 158.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 159.
-  - `Origin` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 160.
+- `Drafting` — instance of `Drafting` — [Commons application](../design/application.md), line 169.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 170.
+  - `Origin` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 171.
 
 ### Flagging
 
@@ -364,9 +390,9 @@ Defined in [Flagging](../design/concepts/Flagging.md), line 1.
 
 #### Instances
 
-- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 166.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 168.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 167.
+- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 177.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 179.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 178.
 
 ### Formatting
 
@@ -383,8 +409,8 @@ Defined in [Formatting](../design/concepts/Formatting.md), line 1.
 
 #### Instances
 
-- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 170.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 171.
+- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 181.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 182.
 
 ### Grading
 
@@ -392,16 +418,16 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 
 #### Actions
 
-- `record(learner: Learner, item: Item, evidence: Evidence, grader: Grader, criteria: Json, at: Date) : return (grade: Grade, version: Number)`
-  - Refuses `INVALID_JUDGMENTS`: Select distinct criteria.
+- `record(learner: Learner, item: Item, evidence: Evidence, grader: Grader, method: String, setupRevision: Number, criteria: Json, at: Date) : return (grade: Grade, version: Number, method: String)`
+  - Refuses `INVALID_JUDGMENTS`: Select a valid complete grading setup.
 - `save(grade: Grade, version: Number, grader: Grader, judgments: Json, feedback: String, at: Date) : return (grade: Grade, version: Number)`
   - Refuses `GRADE_NOT_FOUND`: There is no assessment.
   - Refuses `GRADE_CONFLICT`: This assessment changed or is locked. Reload before editing.
-  - Refuses `INVALID_JUDGMENTS`: Use one valid level or Not assessed per criterion.
+  - Refuses `INVALID_JUDGMENTS`: Use valid judgments for the stored criteria.
 - `release(grade: Grade, version: Number, grader: Grader, at: Date) : return (grade: Grade, version: Number)`
   - Refuses `GRADE_NOT_FOUND`: There is no assessment.
   - Refuses `GRADE_CONFLICT`: This assessment changed or is locked. Reload before editing.
-  - Refuses `GRADE_INCOMPLETE`: Assess every criterion or explicitly mark it Not assessed before release.
+  - Refuses `GRADE_INCOMPLETE`: Complete every criterion before release.
 - `releaseItem(item: Item, grader: Grader, at: Date) : return (released: Json, skipped: Json, unconfirmed: Json)`
 - `retract(grade: Grade, version: Number, grader: Grader, at: Date) : return (grade: Grade, version: Number)`
   - Refuses `GRADE_NOT_FOUND`: There is no assessment.
@@ -416,19 +442,18 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 
 #### Queries
 
-- `_getCriteria(grade: String) : many (criterion: String)`
-- `_getGrade(grade: String) : optional (grade: String, learner: String, item: String, evidence: String, grader: String, criteria: Json, judgments: Json, feedback: String, status: String, version: Number, createdAt: Date, updatedAt: Date, releasedAt: Date, history: Json)`
-- `_getGradesForLearner(learner: String) : many (grade: String, learner: String, item: String, evidence: String, grader: String, criteria: Json, judgments: Json, feedback: String, status: String, version: Number, createdAt: Date, updatedAt: Date, releasedAt: Date, history: Json)`
-- `_getGradesForItem(item: String) : many (grade: String, learner: String, item: String, evidence: String, grader: String, criteria: Json, judgments: Json, feedback: String, status: String, version: Number, createdAt: Date, updatedAt: Date, releasedAt: Date, history: Json)`
+- `_getAssessment(learner: String, item: String, evidence: String) : optional (grade: String, version: Number, method: String, status: String)`
+- `_getGrade(grade: String) : optional (grade: String, learner: String, item: String, evidence: String, grader: String, method: String, setupRevision: Number, criteria: Json, judgments: Json, feedback: String, status: String, version: Number, score: Number, outOf: Number, scored: Bool, createdAt: Date, updatedAt: Date, releasedAt: Date, history: Json)`
+- `_getGradesForLearner(learner: String) : many (grade: String, learner: String, item: String, evidence: String, grader: String, method: String, setupRevision: Number, criteria: Json, judgments: Json, feedback: String, status: String, version: Number, score: Number, outOf: Number, scored: Bool, createdAt: Date, updatedAt: Date, releasedAt: Date, history: Json)`
+- `_getGradesForItem(item: String) : many (grade: String, learner: String, item: String, evidence: String, grader: String, method: String, setupRevision: Number, criteria: Json, judgments: Json, feedback: String, status: String, version: Number, score: Number, outOf: Number, scored: Bool, createdAt: Date, updatedAt: Date, releasedAt: Date, history: Json)`
 
 #### Instances
 
-- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 173.
-  - `Criterion` is `Itemizing.Criterion` — [Commons application](../design/application.md), line 177.
-  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 178.
-  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 174.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 176.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 175.
+- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 184.
+  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 188.
+  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 185.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 187.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 186.
 
 ### Grouping
 
@@ -465,8 +490,8 @@ Defined in [Grouping](../design/concepts/Grouping.md), line 1.
 
 #### Instances
 
-- `Grouping` — instance of `Grouping` — [Commons application](../design/application.md), line 180.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 181.
+- `Grouping` — instance of `Grouping` — [Commons application](../design/application.md), line 190.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 191.
 
 ### Guiding
 
@@ -507,8 +532,8 @@ Defined in [Guiding](../design/concepts/Guiding.md), line 1.
 
 #### Instances
 
-- `Guiding` — instance of `Guiding` — [Commons application](../design/application.md), line 183.
-  - `Subject` is `GuidanceSubject` — [Commons application](../design/application.md), line 184.
+- `Guiding` — instance of `Guiding` — [Commons application](../design/application.md), line 193.
+  - `Subject` is `GuidanceSubject` — [Commons application](../design/application.md), line 194.
 
 ### Insisting
 
@@ -534,8 +559,8 @@ Defined in [Insisting](../design/concepts/Insisting.md), line 1.
 
 #### Instances
 
-- `Insisting` — instance of `Insisting` — [Commons application](../design/application.md), line 186.
-  - `Aim` is `LiveSubject` — [Commons application](../design/application.md), line 187.
+- `Insisting` — instance of `Insisting` — [Commons application](../design/application.md), line 196.
+  - `Aim` is `LiveSubject` — [Commons application](../design/application.md), line 197.
 
 ### Inviting
 
@@ -561,8 +586,8 @@ Defined in [Inviting](../design/concepts/Inviting.md), line 1.
 
 #### Instances
 
-- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 189.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 190.
+- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 199.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 200.
 
 ### Itemizing
 
@@ -574,28 +599,32 @@ Defined in [Itemizing](../design/concepts/Itemizing.md), line 1.
 - `ensureItem(item: Item, label: String) : return (gradeItem: GradeItem)`
 - `archiveItem(item: Item) : return (gradeItem: GradeItem)`
   - Refuses `GRADE_ITEM_NOT_FOUND`: There is no active item.
-- `addCriterion(item: Item, basis: Basis, position: Number) : return (criterion: Criterion)`
+- `configureSetup(item: Item, method: String, revision: Number, criteria: Json, resolvedCriteria: Json) : return (gradeItem: GradeItem, label: String, status: String, method: String, revision: Number, criteria: Json, maxPoints: Number)`
   - Refuses `GRADE_ITEM_NOT_FOUND`: There is no active item.
-  - Refuses `INVALID_CRITERION`: Select a distinct basis and a nonnegative integer position.
-- `reviseCriterion(criterion: Criterion, position: Number) : return (criterion: Criterion)`
-  - Refuses `CRITERION_NOT_FOUND`: There is no active criterion.
-  - Refuses `INVALID_CRITERION`: Use a nonnegative integer position.
-- `removeCriterion(criterion: Criterion) : return (criterion: Criterion)`
+  - Refuses `GRADE_ITEM_CONFLICT`: This grading setup changed. Reload before saving.
+  - Refuses `INVALID_CRITERION`: Supply a valid complete grading setup.
+- `addCriterion(item: Item, basis: Basis, position: Number, revision: Number) : return (criterion: Criterion, revision: Number)`
+  - Refuses `INVALID_CRITERION`: Select a distinct rubric edition and valid position.
+- `reviseCriterion(criterion: Criterion, position: Number, revision: Number) : return (criterion: Criterion, revision: Number)`
+  - Refuses `CRITERION_NOT_FOUND`: There is no active competency criterion.
+- `addPointCriterion(item: Item, name: String, maxPoints: Number, position: Number, revision: Number) : return (criterion: Criterion, revision: Number)`
+  - Refuses `INVALID_CRITERION`: Supply a valid point criterion.
+- `revisePointCriterion(criterion: Criterion, name: String, maxPoints: Number, position: Number, revision: Number) : return (criterion: Criterion, revision: Number)`
+  - Refuses `CRITERION_NOT_FOUND`: There is no active point criterion.
+- `removeCriterion(criterion: Criterion, revision: Number) : return (criterion: Criterion, revision: Number)`
   - Refuses `CRITERION_NOT_FOUND`: There is no active criterion.
 
 #### Queries
 
-- `_getSelection(item: String) : optional (criteria: Json)`
-- `_getItem(item: String) : optional (item: String, label: String, status: String)`
-- `_getItems() : many (item: String, label: String)`
-- `_getCriteria(item: String) : many (criterion: String, basis: String, position: Number)`
-- `_getCriterion(criterion: String) : optional (item: String, basis: String, position: Number, active: Bool)`
+- `_getItem(item: String) : optional (item: String, label: String, status: String, method: String, revision: Number, maxPoints: Number)`
+- `_getItems() : many (item: String, label: String, method: String, revision: Number, maxPoints: Number)`
+- `_getSetup(item: String) : optional (item: String, label: String, status: String, method: String, revision: Number, criteria: Json, maxPoints: Number)`
 
 #### Instances
 
-- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 194.
-  - `Basis` is `StandardSetting.Edition` — [Commons application](../design/application.md), line 196.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 195.
+- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 204.
+  - `Basis` is `StandardSetting.Edition` — [Commons application](../design/application.md), line 206.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 205.
 
 ### Linking
 
@@ -615,12 +644,12 @@ Defined in [Linking](../design/concepts/Linking.md), line 1.
 
 #### Instances
 
-- `AdoptLinking` — instance of `Linking` — [Commons application](../design/application.md), line 202.
-  - `Source` is `Drafting.Brief` — [Commons application](../design/application.md), line 203.
-  - `Target` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 204.
-- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 198.
-  - `Source` is `Linkable` — [Commons application](../design/application.md), line 199.
-  - `Target` is `Linkable` — [Commons application](../design/application.md), line 200.
+- `AdoptLinking` — instance of `Linking` — [Commons application](../design/application.md), line 212.
+  - `Source` is `Drafting.Brief` — [Commons application](../design/application.md), line 213.
+  - `Target` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 214.
+- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 208.
+  - `Source` is `Linkable` — [Commons application](../design/application.md), line 209.
+  - `Target` is `Linkable` — [Commons application](../design/application.md), line 210.
 
 ### Locating
 
@@ -639,8 +668,8 @@ Defined in [Locating](../design/concepts/Locating.md), line 1.
 
 #### Instances
 
-- `Locating` — instance of `Locating` — [Commons application](../design/application.md), line 209.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 210.
+- `Locating` — instance of `Locating` — [Commons application](../design/application.md), line 219.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 220.
 
 ### Locking
 
@@ -660,8 +689,8 @@ Defined in [Locking](../design/concepts/Locking.md), line 1.
 
 #### Instances
 
-- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 206.
-  - `Target` is `Lockable` — [Commons application](../design/application.md), line 207.
+- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 216.
+  - `Target` is `Lockable` — [Commons application](../design/application.md), line 217.
 
 ### Mailing
 
@@ -687,8 +716,8 @@ Defined in [Mailing](../design/concepts/Mailing.md), line 1.
 
 #### Instances
 
-- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 212.
-  - `Key` is `MailKey` — [Commons application](../design/application.md), line 213.
+- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 222.
+  - `Key` is `MailKey` — [Commons application](../design/application.md), line 223.
 
 ### Notifying
 
@@ -712,14 +741,14 @@ Defined in [Notifying](../design/concepts/Notifying.md), line 1.
 
 #### Instances
 
-- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 215.
-  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 218.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 216.
-  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 217.
-- `TaskNotifying` — instance of `Notifying` — [Commons application](../design/application.md), line 220.
-  - `Link` is `TaskSubject` — [Commons application](../design/application.md), line 223.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 221.
-  - `Subject` is `TaskSubject` — [Commons application](../design/application.md), line 222.
+- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 225.
+  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 228.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 226.
+  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 227.
+- `TaskNotifying` — instance of `Notifying` — [Commons application](../design/application.md), line 230.
+  - `Link` is `TaskSubject` — [Commons application](../design/application.md), line 233.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 231.
+  - `Subject` is `TaskSubject` — [Commons application](../design/application.md), line 232.
 
 ### Noting
 
@@ -757,9 +786,9 @@ Defined in [Noting](../design/concepts/Noting.md), line 1.
 
 #### Instances
 
-- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 225.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 226.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 227.
+- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 235.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 236.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 237.
 
 ### Pinning
 
@@ -782,9 +811,9 @@ Defined in [Pinning](../design/concepts/Pinning.md), line 1.
 
 #### Instances
 
-- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 229.
-  - `Item` is `Pinnable` — [Commons application](../design/application.md), line 230.
-  - `Scope` is `PinScope` — [Commons application](../design/application.md), line 231.
+- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 239.
+  - `Item` is `Pinnable` — [Commons application](../design/application.md), line 240.
+  - `Scope` is `PinScope` — [Commons application](../design/application.md), line 241.
 
 ### Posting
 
@@ -808,8 +837,8 @@ Defined in [Posting](../design/concepts/Posting.md), line 1.
 
 #### Instances
 
-- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 233.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 234.
+- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 243.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 244.
 
 ### Profiling
 
@@ -834,8 +863,8 @@ Defined in [Profiling](../design/concepts/Profiling.md), line 1.
 
 #### Instances
 
-- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 236.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 237.
+- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 246.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 247.
 
 ### Publishing
 
@@ -858,9 +887,9 @@ Defined in [Publishing](../design/concepts/Publishing.md), line 1.
 
 #### Instances
 
-- `Publishing` — instance of `Publishing` — [Commons application](../design/application.md), line 239.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 240.
-  - `Material` is `LiveMaterial` — [Commons application](../design/application.md), line 241.
+- `Publishing` — instance of `Publishing` — [Commons application](../design/application.md), line 249.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 250.
+  - `Material` is `LiveMaterial` — [Commons application](../design/application.md), line 251.
 
 ### Questioning
 
@@ -933,8 +962,8 @@ Defined in [Questioning](../design/concepts/Questioning.md), line 1.
 
 #### Instances
 
-- `Questioning` — instance of `Questioning` — [Commons application](../design/application.md), line 243.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 244.
+- `Questioning` — instance of `Questioning` — [Commons application](../design/application.md), line 253.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 254.
 
 ### Reacting
 
@@ -957,9 +986,9 @@ Defined in [Reacting](../design/concepts/Reacting.md), line 1.
 
 #### Instances
 
-- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 246.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 247.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 248.
+- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 256.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 257.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 258.
 
 ### Reasoning
 
@@ -992,9 +1021,9 @@ Defined in [Reasoning](../design/concepts/Reasoning.md), line 1.
 
 #### Instances
 
-- `Reasoning` — instance of `Reasoning` — [Commons application](../design/application.md), line 250.
-  - `Reasoner` is `LiveReasoner` — [Commons application](../design/application.md), line 251.
-  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 252.
+- `Reasoning` — instance of `Reasoning` — [Commons application](../design/application.md), line 260.
+  - `Reasoner` is `LiveReasoner` — [Commons application](../design/application.md), line 261.
+  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 262.
 
 ### Relaying
 
@@ -1040,9 +1069,9 @@ Defined in [Relaying](../design/concepts/Relaying.md), line 1.
 
 #### Instances
 
-- `Relaying` — instance of `Relaying` — [Commons application](../design/application.md), line 254.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 255.
-  - `Material` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 256.
+- `Relaying` — instance of `Relaying` — [Commons application](../design/application.md), line 264.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 265.
+  - `Material` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 266.
 
 ### Resolving
 
@@ -1062,10 +1091,10 @@ Defined in [Resolving](../design/concepts/Resolving.md), line 1.
 
 #### Instances
 
-- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 263.
-  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 266.
-  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 265.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 264.
+- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 273.
+  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 276.
+  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 275.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 274.
 
 ### Responding
 
@@ -1099,10 +1128,10 @@ Defined in [Responding](../design/concepts/Responding.md), line 1.
 
 #### Instances
 
-- `Responding` — instance of `Responding` — [Commons application](../design/application.md), line 258.
-  - `Item` is `LiveItem` — [Commons application](../design/application.md), line 261.
-  - `Participant` is `LiveParticipant` — [Commons application](../design/application.md), line 260.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 259.
+- `Responding` — instance of `Responding` — [Commons application](../design/application.md), line 268.
+  - `Item` is `LiveItem` — [Commons application](../design/application.md), line 271.
+  - `Participant` is `LiveParticipant` — [Commons application](../design/application.md), line 270.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 269.
 
 ### Revising
 
@@ -1121,8 +1150,8 @@ Defined in [Revising](../design/concepts/Revising.md), line 1.
 
 #### Instances
 
-- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 268.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 269.
+- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 278.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 279.
 
 ### Roling
 
@@ -1150,6 +1179,7 @@ Defined in [Roling](../design/concepts/Roling.md), line 1.
 - `_capableUsers(users: Seq, context: Context, capabilities: Seq) : one (capable: Seq)`
 - `_hasCapability(user: String, context: String, capability: String) : one (allowed: Boolean)`
 - `_hasCapabilityHolder(context: String, capability: String) : one (present: Boolean)`
+- `_getCapabilityHolders(context: String, capability: String) : many (user: String)`
 - `_isSoleCapabilityHolder(user: String, context: String, capability: String) : one (sole: Boolean)`
 - `_holdsRoleNamed(user: String, context: String, name: String) : one (held: Boolean)`
 - `_getRole(user: String, context: String) : optional (role: String)`
@@ -1162,9 +1192,9 @@ Defined in [Roling](../design/concepts/Roling.md), line 1.
 
 #### Instances
 
-- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 271.
-  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 273.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 272.
+- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 281.
+  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 283.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 282.
 
 ### Rostering
 
@@ -1221,8 +1251,8 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 
 #### Instances
 
-- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 275.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 276.
+- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 285.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 286.
 
 ### Scoring
 
@@ -1247,10 +1277,10 @@ Defined in [Scoring](../design/concepts/Scoring.md), line 1.
 
 #### Instances
 
-- `Scoring` — instance of `Scoring` — [Commons application](../design/application.md), line 278.
-  - `Item` is `Questioning.Question` — [Commons application](../design/application.md), line 280.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 279.
-  - `Submission` is `Responding.Response` — [Commons application](../design/application.md), line 281.
+- `Scoring` — instance of `Scoring` — [Commons application](../design/application.md), line 288.
+  - `Item` is `Questioning.Question` — [Commons application](../design/application.md), line 290.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 289.
+  - `Submission` is `Responding.Response` — [Commons application](../design/application.md), line 291.
 
 ### Sessioning
 
@@ -1271,8 +1301,8 @@ Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 
 #### Instances
 
-- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 291.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 292.
+- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 301.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 302.
 
 ### Sharing
 
@@ -1291,8 +1321,8 @@ Defined in [Sharing](../design/concepts/Sharing.md), line 1.
 
 #### Instances
 
-- `Sharing` — instance of `Sharing` — [Commons application](../design/application.md), line 294.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 295.
+- `Sharing` — instance of `Sharing` — [Commons application](../design/application.md), line 304.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 305.
 
 ### Snapshotting
 
@@ -1309,12 +1339,12 @@ Defined in [Snapshotting](../design/concepts/Snapshotting.md), line 1.
 
 #### Instances
 
-- `NoticeSnapshotting` — instance of `Snapshotting` — [Commons application](../design/application.md), line 283.
-  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 284.
-  - `Value` is `ForumNotice` — [Commons application](../design/application.md), line 285.
-- `RunSnapshotting` — instance of `Snapshotting` — [Commons application](../design/application.md), line 287.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 288.
-  - `Value` is `LiveRunSnapshot` — [Commons application](../design/application.md), line 289.
+- `NoticeSnapshotting` — instance of `Snapshotting` — [Commons application](../design/application.md), line 293.
+  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 294.
+  - `Value` is `ForumNotice` — [Commons application](../design/application.md), line 295.
+- `RunSnapshotting` — instance of `Snapshotting` — [Commons application](../design/application.md), line 297.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 298.
+  - `Value` is `LiveRunSnapshot` — [Commons application](../design/application.md), line 299.
 
 ### StandardSetting
 
@@ -1333,10 +1363,13 @@ Defined in [StandardSetting](../design/concepts/StandardSetting.md), line 1.
 
 - `_getStandards() : many (standard: String, edition: String, number: Number, name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String)`
 - `_getEdition(edition: String) : optional (standard: String, edition: String, number: Number, name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String)`
+- `_getEditions() : many (standard: String, edition: String, number: Number, name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String)`
+- `_getEditionCatalog() : optional (editions: Json)`
+- `_hasEditions(editions: Json) : optional (valid: Bool)`
 
 #### Instances
 
-- `StandardSetting` — instance of `StandardSetting` — [Commons application](../design/application.md), line 192.
+- `StandardSetting` — instance of `StandardSetting` — [Commons application](../design/application.md), line 202.
 
 ### Submitting
 
@@ -1361,10 +1394,10 @@ Defined in [Submitting](../design/concepts/Submitting.md), line 1.
 
 #### Instances
 
-- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 300.
-  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 303.
-  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 302.
-  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 301.
+- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 310.
+  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 313.
+  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 312.
+  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 311.
 
 ### Subscribing
 
@@ -1387,9 +1420,9 @@ Defined in [Subscribing](../design/concepts/Subscribing.md), line 1.
 
 #### Instances
 
-- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 305.
-  - `Person` is `Subscriber` — [Commons application](../design/application.md), line 306.
-  - `Target` is `Subscribable` — [Commons application](../design/application.md), line 307.
+- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 315.
+  - `Person` is `Subscriber` — [Commons application](../design/application.md), line 316.
+  - `Target` is `Subscribable` — [Commons application](../design/application.md), line 317.
 
 ### Suggesting
 
@@ -1417,8 +1450,8 @@ Defined in [Suggesting](../design/concepts/Suggesting.md), line 1.
 
 #### Instances
 
-- `Suggesting` — instance of `Suggesting` — [Commons application](../design/application.md), line 297.
-  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 298.
+- `Suggesting` — instance of `Suggesting` — [Commons application](../design/application.md), line 307.
+  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 308.
 
 ### Tagging
 
@@ -1446,8 +1479,8 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 
 #### Instances
 
-- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 309.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 310.
+- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 319.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 320.
 
 ### Tasking
 
@@ -1498,9 +1531,9 @@ Defined in [Tasking](../design/concepts/Tasking.md), line 1.
 
 #### Instances
 
-- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 312.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 314.
-  - `Scope` is `Grouping.Group` — [Commons application](../design/application.md), line 313.
+- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 322.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 324.
+  - `Scope` is `Grouping.Group` — [Commons application](../design/application.md), line 323.
 
 ### Tracking
 
@@ -1524,10 +1557,10 @@ Defined in [Tracking](../design/concepts/Tracking.md), line 1.
 
 #### Instances
 
-- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 316.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 318.
-  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 319.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 317.
+- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 326.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 328.
+  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 329.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 327.
 
 ### Trashing
 
@@ -1552,15 +1585,15 @@ Defined in [Trashing](../design/concepts/Trashing.md), line 1.
 
 #### Instances
 
-- `Archiving` — instance of `Trashing` — [Commons application](../design/application.md), line 132.
-  - `Item` is `Authenticating.User` — [Commons application](../design/application.md), line 134.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 133.
-- `DraftTrashing` — instance of `Trashing` — [Commons application](../design/application.md), line 162.
-  - `Item` is `Drafting.Brief` — [Commons application](../design/application.md), line 164.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 163.
-- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 321.
-  - `Item` is `Trashable` — [Commons application](../design/application.md), line 323.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 322.
+- `Archiving` — instance of `Trashing` — [Commons application](../design/application.md), line 138.
+  - `Item` is `Authenticating.User` — [Commons application](../design/application.md), line 140.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 139.
+- `DraftTrashing` — instance of `Trashing` — [Commons application](../design/application.md), line 173.
+  - `Item` is `Drafting.Brief` — [Commons application](../design/application.md), line 175.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 174.
+- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 331.
+  - `Item` is `Trashable` — [Commons application](../design/application.md), line 333.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 332.
 
 ### Vouching
 
@@ -1581,8 +1614,8 @@ Defined in [Vouching](../design/concepts/Vouching.md), line 1.
 
 #### Instances
 
-- `PasswordResetVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 325.
-  - `Subject` is `Authenticating.User` — [Commons application](../design/application.md), line 326.
+- `PasswordResetVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 335.
+  - `Subject` is `Authenticating.User` — [Commons application](../design/application.md), line 336.
 
 ### Wording
 
@@ -1600,70 +1633,72 @@ Defined in [Wording](../design/concepts/Wording.md), line 1.
 
 #### Instances
 
-- `Wording` — instance of `Wording` — [Commons application](../design/application.md), line 328.
-  - `Place` is `MailPlace` — [Commons application](../design/application.md), line 329.
+- `Wording` — instance of `Wording` — [Commons application](../design/application.md), line 338.
+  - `Place` is `MailPlace` — [Commons application](../design/application.md), line 339.
 
 ## Application types
 
 Concrete types:
 
-- `AudienceHolder` — [Commons application](../design/application.md), line 15.
-- `Categorizable` — [Commons application](../design/application.md), line 113.
-- `CategoryScope` — [Commons application](../design/application.md), line 100.
-- `ForumNotice` — [Commons application](../design/application.md), line 46.
-- `GuidanceSubject` — [Commons application](../design/application.md), line 106.
-- `Linkable` — [Commons application](../design/application.md), line 80.
-- `LiveExecution` — [Commons application](../design/application.md), line 50.
-- `LiveItem` — [Commons application](../design/application.md), line 58.
-- `LiveMaterial` — [Commons application](../design/application.md), line 54.
-- `LiveParticipant` — [Commons application](../design/application.md), line 33.
-- `LiveReasoner` — [Commons application](../design/application.md), line 38.
-- `LiveRunSnapshot` — [Commons application](../design/application.md), line 42.
-- `LiveSubject` — [Commons application](../design/application.md), line 62.
-- `Lockable` — [Commons application](../design/application.md), line 24.
-- `MailKey` — [Commons application](../design/application.md), line 18.
-- `MailPlace` — [Commons application](../design/application.md), line 21.
-- `PinScope` — [Commons application](../design/application.md), line 95.
-- `Pinnable` — [Commons application](../design/application.md), line 90.
-- `Subscribable` — [Commons application](../design/application.md), line 76.
-- `Subscriber` — [Commons application](../design/application.md), line 72.
-- `TaskSubject` — [Commons application](../design/application.md), line 30.
-- `Trashable` — [Commons application](../design/application.md), line 84.
+- `AudienceHolder` — [Commons application](../design/application.md), line 21.
+- `Categorizable` — [Commons application](../design/application.md), line 119.
+- `CategoryScope` — [Commons application](../design/application.md), line 106.
+- `ForumNotice` — [Commons application](../design/application.md), line 52.
+- `GuidanceSubject` — [Commons application](../design/application.md), line 112.
+- `Linkable` — [Commons application](../design/application.md), line 86.
+- `LiveExecution` — [Commons application](../design/application.md), line 56.
+- `LiveItem` — [Commons application](../design/application.md), line 64.
+- `LiveMaterial` — [Commons application](../design/application.md), line 60.
+- `LiveParticipant` — [Commons application](../design/application.md), line 39.
+- `LiveReasoner` — [Commons application](../design/application.md), line 44.
+- `LiveRunSnapshot` — [Commons application](../design/application.md), line 48.
+- `LiveSubject` — [Commons application](../design/application.md), line 68.
+- `Lockable` — [Commons application](../design/application.md), line 30.
+- `MailKey` — [Commons application](../design/application.md), line 24.
+- `MailPlace` — [Commons application](../design/application.md), line 27.
+- `PinScope` — [Commons application](../design/application.md), line 101.
+- `Pinnable` — [Commons application](../design/application.md), line 96.
+- `Subscribable` — [Commons application](../design/application.md), line 82.
+- `Subscriber` — [Commons application](../design/application.md), line 78.
+- `TaskSubject` — [Commons application](../design/application.md), line 36.
+- `Trashable` — [Commons application](../design/application.md), line 90.
 
 ## Computations
 
-- `addressingPeople(user: String, holders: Strings) : Strings` — [Commons application](../design/application.md), line 444.
+- `addressingPeople(user: String, holders: Strings) : Strings` — [Commons application](../design/application.md), line 463.
+- `allChosenAdmitted(chosen: Strings, admitted: Strings) : Bool` — [Commons application](../design/application.md), line 424.
 - `answerKind(value: Json, answer: String) : String` — [The wall](../design/compositions/live/walls.md), line 186.
 - `answerReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 147.
-- `assignmentNotificationMailHtml(kind: String, title: String, url: String, author: String, due: String) : String` — [Commons application](../design/application.md), line 525.
-- `assignmentNotificationMailText(kind: String, title: String, url: String, author: String, due: String) : String` — [Commons application](../design/application.md), line 522.
-- `assignmentNotificationUrl(assignment: String) : String` — [Commons application](../design/application.md), line 498.
-- `audienceLabel(kind: String, identity: String, name: Any) : String` — [Commons application](../design/application.md), line 450.
+- `assignmentNotificationMailHtml(kind: String, title: String, url: String, author: String, due: String) : String` — [Commons application](../design/application.md), line 544.
+- `assignmentNotificationMailText(kind: String, title: String, url: String, author: String, due: String) : String` — [Commons application](../design/application.md), line 541.
+- `assignmentNotificationUrl(assignment: String) : String` — [Commons application](../design/application.md), line 517.
+- `audienceLabel(kind: String, identity: String, name: Any) : String` — [Commons application](../design/application.md), line 469.
 - `boardQuestions(value: LiveRunSnapshot, values: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 143.
 - `briefStanding(request: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 32.
-- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 531.
+- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 550.
 - `cardGiven(card: String) : String` — [The wall](../design/compositions/live/walls.md), line 147.
 - `cardId(response: String, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 86.
 - `cardStanding(card: String, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 78.
-- `carriesAdminister(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 535.
+- `carriesAdminister(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 554.
 - `carryUses() : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 88.
-- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 605.
+- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 624.
 - `cleanupAdmission(authorized: Json, openRun: Json, unlocked: Json, applied: Json, standing: Json) : String` — [The wall](../design/compositions/live/walls.md), line 40.
 - `cleanupBrief(account: String, candidates: Seq) : String` — [The wall](../design/compositions/live/walls.md), line 43.
 - `cleanupCategories(brief: String) : Seq` — [The wall](../design/compositions/live/walls.md), line 46.
 - `clearablePiles(categories: Json, standing?: Json, picked: Seq, reserved: Seq) : Seq` — [The wall](../design/compositions/live/walls.md), line 53.
 - `commissionAccount(outcome: String, failure: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 69.
 - `commissionOutcome(reply: String|Null, failure: String|Null, insistence: String|Null, categories: Json, values: Json, removed: Json, successors: Number) : String` — [The wall](../design/compositions/live/walls.md), line 66.
-- `completeAddressing(user: String, holders: Strings, admitted: Number) : Bool` — [Commons application](../design/application.md), line 459.
-- `currentAddressing(user: String, holders: Strings, known: Bool, activePeople: Strings, staffPeople: Strings, trashed: Bool, groups: Bool, sections: Bool, ownSection: Any) : Bool` — [Commons application](../design/application.md), line 441.
-- `currentAudienceMembership(user: String, holders: Strings, groupMember: Bool, activeSections: Bool, section: Any, seatStatus: Any, activeStudent: Bool, capabilities: Any) : Bool` — [Commons application](../design/application.md), line 468.
+- `competencyEditionIds(criteria: Json) : Strings` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 124.
+- `completeAddressing(user: String, holders: Strings, admitted: Number) : Bool` — [Commons application](../design/application.md), line 478.
+- `currentAddressing(user: String, holders: Strings, known: Bool, activePeople: Strings, staffPeople: Strings, trashed: Bool, groups: Bool, sections: Bool, ownSection: Any) : Bool` — [Commons application](../design/application.md), line 460.
+- `currentAudienceMembership(user: String, holders: Strings, groupMember: Bool, activeSections: Bool, section: Any, seatStatus: Any, activeStudent: Bool, capabilities: Any) : Bool` — [Commons application](../design/application.md), line 487.
 - `definedSortingPiles(categories: Json, texts: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 241.
 - `draftContext(references: Strings, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 134.
 - `draftReferences(context: String) : Strings` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 137.
 - `draftRequest(request: String, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 140.
-- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 591.
-- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 595.
-- `dueWallTime(dueAt: Any, detail: Any) : String` — [Commons application](../design/application.md), line 519.
+- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 610.
+- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 614.
+- `dueWallTime(dueAt: Any, detail: Any) : String` — [Commons application](../design/application.md), line 538.
 - `editApplied(kind: String, target: String, value: String, title: Json, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Boolean` — [Edits the model proposes](../design/compositions/live/edits.md), line 69.
 - `editCap(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 121.
 - `editChoices(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 124.
@@ -1684,24 +1719,25 @@ Concrete types:
 - `editRoundTakesUse(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 96.
 - `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 103.
 - `editUse(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 130.
-- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 541.
+- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 560.
 - `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 150.
 - `failureStanding(failedAt: Date, at: Date) : String` — [The wall](../design/compositions/live/walls.md), line 73.
 - `forumMailKey(notification: String, recipient: String, post: String) : String` — [Notifications](../design/compositions/forum/notifications.md), line 81.
-- `forumNotificationMailBody(content: String, post: String, opening: Any) : String` — [Commons application](../design/application.md), line 510.
-- `forumNotificationMailHtml(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 516.
-- `forumNotificationMailText(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 513.
-- `forumNotificationUrl(conversation: String, post: String) : String` — [Commons application](../design/application.md), line 495.
+- `forumNotificationMailBody(content: String, post: String, opening: Any) : String` — [Commons application](../design/application.md), line 529.
+- `forumNotificationMailHtml(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 535.
+- `forumNotificationMailText(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 532.
+- `forumNotificationUrl(conversation: String, post: String) : String` — [Commons application](../design/application.md), line 514.
+- `gradingRevisionMatches(left: Number, right: Number) : Bool` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 128.
 - `guideScope(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 173.
 - `guideUse(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 171.
-- `hasStoredPosts(posts: Rows) : Bool` — [Commons application](../design/application.md), line 420.
-- `holderCode(kind: String, identity: String) : String` — [Commons application](../design/application.md), line 462.
-- `holderKind(holder: String) : String` — [Commons application](../design/application.md), line 456.
-- `holderSubject(holder: String) : String` — [Commons application](../design/application.md), line 453.
-- `invitationMailHtml(invitation: String, credential: String, body: String) : String` — [Commons application](../design/application.md), line 486.
-- `invitationMailText(invitation: String, credential: String, body: String) : String` — [Commons application](../design/application.md), line 483.
-- `invitationTemplateBody(body: Any) : String` — [Commons application](../design/application.md), line 480.
-- `invitationTemplateSubject(subject: Any) : String` — [Commons application](../design/application.md), line 477.
+- `hasStoredPosts(posts: Rows) : Bool` — [Commons application](../design/application.md), line 439.
+- `holderCode(kind: String, identity: String) : String` — [Commons application](../design/application.md), line 481.
+- `holderKind(holder: String) : String` — [Commons application](../design/application.md), line 475.
+- `holderSubject(holder: String) : String` — [Commons application](../design/application.md), line 472.
+- `invitationMailHtml(invitation: String, credential: String, body: String) : String` — [Commons application](../design/application.md), line 505.
+- `invitationMailText(invitation: String, credential: String, body: String) : String` — [Commons application](../design/application.md), line 502.
+- `invitationTemplateBody(body: Any) : String` — [Commons application](../design/application.md), line 499.
+- `invitationTemplateSubject(subject: Any) : String` — [Commons application](../design/application.md), line 496.
 - `isSame(left: String, right: String) : Bool` — [The wall](../design/compositions/live/walls.md), line 90.
 - `kindCap(kind: String, cap: Number) : Number` — [Relays and their runs](../design/compositions/live/relays.md), line 84.
 - `kindChoices(kind: String, choices: Strings) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 76.
@@ -1714,15 +1750,15 @@ Concrete types:
 - `liveAccessHolders(requireSignIn: Boolean) : Seq` — [Live runs](../design/compositions/live/runs.md), line 113.
 - `liveAccessMode(holders: Json, retired: Boolean) : String` — [Live runs](../design/compositions/live/runs.md), line 116.
 - `liveRequiresSignIn(mode: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 119.
-- `mailPreviewText(text: String) : String` — [Commons application](../design/application.md), line 489.
+- `mailPreviewText(text: String) : String` — [Commons application](../design/application.md), line 508.
 - `metadataOpeningAuthor(item: String, posts: Seq) : Any` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 38.
 - `modelBegun(responses: Json, subscribers: Seq) : Number` — [The wall](../design/compositions/live/walls.md), line 120.
 - `modelHandedIn(responses: Json, subscribers: Seq) : Number` — [The wall](../design/compositions/live/walls.md), line 123.
-- `noticeRecord(content: String, author: String, by: String, at: Date) : Json` — [Commons application](../design/application.md), line 528.
-- `notificationActorLabel(username: Any, displayName: Any) : String` — [Commons application](../design/application.md), line 507.
-- `notificationAuthorLabel(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 504.
-- `notificationDiscussionTitle(content: Any) : String` — [Commons application](../design/application.md), line 492.
-- `notificationMailSubject(kind: String, title: String) : String` — [Commons application](../design/application.md), line 501.
+- `noticeRecord(content: String, author: String, by: String, at: Date) : Json` — [Commons application](../design/application.md), line 547.
+- `notificationActorLabel(username: Any, displayName: Any) : String` — [Commons application](../design/application.md), line 526.
+- `notificationAuthorLabel(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 523.
+- `notificationDiscussionTitle(content: Any) : String` — [Commons application](../design/application.md), line 511.
+- `notificationMailSubject(kind: String, title: String) : String` — [Commons application](../design/application.md), line 520.
 - `openingAdmission(authorized: Json, relay: Json, legRelay: Json, open: Json, openRound: Json, ran: Json, source: Json, sourceRound: Json, sourceOpen: Json, groups: Json, content: Json) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 57.
 - `openingAuthor(brief: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 66.
 - `openingAuthorized() : Boolean` — [Relays and their runs](../design/compositions/live/relays.md), line 54.
@@ -1731,18 +1767,18 @@ Concrete types:
 - `openingMaterial(brief: String) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 69.
 - `openingPresentation(brief: String) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 72.
 - `ownsTaskScope(user: String, scope: String) : Boolean` — [Tasks](../design/compositions/tasks/tasks.md), line 116.
-- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 615.
-- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 619.
-- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 622.
-- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 626.
-- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 630.
+- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 634.
+- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 638.
+- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 641.
+- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 645.
+- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 649.
 - `participantAnswers(reply: String, value: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 182.
 - `participantPassage(value: Json, participant: String) : String` — [The wall](../design/compositions/live/walls.md), line 175.
 - `participantQuestions(value: LiveRunSnapshot) : Seq` — [Live runs](../design/compositions/live/runs.md), line 139.
-- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 546.
-- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 551.
-- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 557.
-- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 554.
+- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 565.
+- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 570.
+- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 576.
+- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 573.
 - `pickPriority(count: Number) : Number` — [The wall](../design/compositions/live/walls.md), line 82.
 - `pileCards(pile: String, categories: Json, values: Json, value: Json) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 103.
 - `placingLines(reply: String, categories: Json, values: Json, removed: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 157.
@@ -1750,19 +1786,20 @@ Concrete types:
 - `placingReading(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 151.
 - `placingReason(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 162.
 - `placingRepairPassage(value: Json, categories: Json, values: Json, removed: Json, notes: String, offering: String, account: String) : String` — [The wall](../design/compositions/live/walls.md), line 143.
-- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 638.
-- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 643.
+- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 657.
+- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 662.
 - `postPreview(content: String) : Record` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 40.
-- `previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings` — [Commons application](../design/application.md), line 438.
-- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 647.
+- `previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings` — [Commons application](../design/application.md), line 457.
+- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 666.
 - `relayDraftPassage(request: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json, classDocuments: Json, relayDocuments: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 36.
 - `relayDraftReading(reply: String, passage: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 54.
 - `relayDraftReason(reply: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 59.
 - `relayDraftRepairPassage(passage: String, offering: String, account: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 50.
 - `relayEditLines(reply: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 63.
 - `relayGiven(relay: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 143.
-- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 610.
-- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 600.
+- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 629.
+- `resolveGradingCriteria(criteria: Json, editions: Json) : Json` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 126.
+- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 619.
 - `roomBegun(responses: Json) : Number` — [The wall](../design/compositions/live/walls.md), line 114.
 - `roomHandedIn(responses: Json) : Number` — [The wall](../design/compositions/live/walls.md), line 117.
 - `roundMaterialIsValid(title: String, prompt: String, choices: Strings, parts: Strings, cap: Number) : Boolean` — [Relays and their runs](../design/compositions/live/relays.md), line 158.
@@ -1776,44 +1813,46 @@ Concrete types:
 - `samplingResolvedPassage(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 50.
 - `samplingResolvedPreview(resolution: Json) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 60.
 - `samplingResolvedStanding(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 53.
-- `selectedIdentities(holders: Strings, kind: String) : Strings` — [Commons application](../design/application.md), line 447.
-- `selectedSection(section: Any) : Strings` — [Commons application](../design/application.md), line 471.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 560.
-- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 563.
+- `selectedIdentities(holders: Strings, kind: String) : Strings` — [Commons application](../design/application.md), line 466.
+- `selectedSection(section: Any) : Strings` — [Commons application](../design/application.md), line 490.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 579.
+- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 582.
 - `snapshotForm(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 125.
 - `snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 128.
 - `snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 135.
 - `snapshotRequirements(value: Json) : Seq` — [Live runs](../design/compositions/live/runs.md), line 132.
 - `snapshotTitle(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 122.
-- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 634.
+- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 653.
 - `sorterNotes(relay: String, run: String) : String` — [The wall](../design/compositions/live/walls.md), line 126.
 - `sortingAdmission(mode: String, authorized: Boolean|Null, live: Boolean|Null, openRun: Boolean|Null, waiting: Boolean|Null, unlocked: Boolean|Null, answered: Boolean|Null, applied: Boolean|Null, ready: Boolean|Null, value: Json) : String` — [The wall](../design/compositions/live/walls.md), line 60.
 - `sortingBrief(account: String, value: Json, categories: Json, values: Json, removed: Json, notes: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 63.
 - `sortingObservationPresent() : Boolean` — [The wall](../design/compositions/live/walls.md), line 57.
 - `sortingPileSubjects(categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 238.
-- `staffCapabilities(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 465.
+- `staffCapabilities(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 484.
 - `staffQuestion(holders: Seq, nonStaffAuthor: Any) : Boolean` — [Feeds and thread context](../design/compositions/forum/feed.md), line 32.
-- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 569.
-- `submissionAllowed(detail: Json, section: String, at: Date) : Bool` — [Commons application](../design/application.md), line 414.
+- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 588.
+- `submissionAllowed(detail: Json, section: String, at: Date) : Bool` — [Commons application](../design/application.md), line 433.
 - `summaryAdmission(items: Number) : String` — [The wall](../design/compositions/live/walls.md), line 50.
-- `taskListMailHtml(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 579.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 573.
-- `taskListMailText(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 576.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 588.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 582.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 585.
-- `threadLastActivity(posts: Rows) : Any` — [Commons application](../design/application.md), line 432.
-- `threadParticipants(posts: Rows) : Strings` — [Commons application](../design/application.md), line 435.
-- `threadPostIds(nodes: Rows) : Strings` — [Commons application](../design/application.md), line 423.
-- `threadReplyCount(posts: Rows) : Number` — [Commons application](../design/application.md), line 429.
+- `taskListMailHtml(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 598.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 592.
+- `taskListMailText(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 595.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 607.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 601.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 604.
+- `threadLastActivity(posts: Rows) : Any` — [Commons application](../design/application.md), line 451.
+- `threadParticipants(posts: Rows) : Strings` — [Commons application](../design/application.md), line 454.
+- `threadPostIds(nodes: Rows) : Strings` — [Commons application](../design/application.md), line 442.
+- `threadReplyCount(posts: Rows) : Number` — [Commons application](../design/application.md), line 448.
 - `trayHoldsACard(values: Json, categories: Json, removed: Seq) : Bool` — [The wall](../design/compositions/live/walls.md), line 97.
 - `useFit(use: String, kind: String, choices: Strings, parts: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 97.
+- `validDelegationIdentityInput(item: String, learner?: String, grader?: String) : Bool` — [Commons application](../design/application.md), line 430.
+- `validDelegationSpreadInput(item: String, learners: Strings, graders: Strings, replace: Bool) : Bool` — [Commons application](../design/application.md), line 427.
 - `validFeedOrder(order: String) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 34.
 - `validPostControlSelection(posts: Seq) : Boolean` — [Selected post controls](../design/compositions/forum/post-controls.md), line 33.
-- `validProfileSelection(users: Strings) : Bool` — [Commons application](../design/application.md), line 417.
+- `validProfileSelection(users: Strings) : Bool` — [Commons application](../design/application.md), line 436.
 - `validThreadSelection(conversations: Seq) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 36.
-- `visibleAnswer(answer: Any) : Bool` — [Commons application](../design/application.md), line 474.
-- `visibleThreadPosts(nodes: Any, posts: Any, trashed: Any) : Rows` — [Commons application](../design/application.md), line 426.
+- `visibleAnswer(answer: Any) : Bool` — [Commons application](../design/application.md), line 493.
+- `visibleThreadPosts(nodes: Any, posts: Any, trashed: Any) : Rows` — [Commons application](../design/application.md), line 445.
 - `voteStanding(kind: String, choices: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 92.
 - `wallCardIds(values: Json, categories: Json) : Seq` — [The wall](../design/compositions/live/walls.md), line 93.
 - `wallCards(values: Json, categories: Json, trashed: Seq, subscribers: Seq, presentation: Json, viewer: String) : Json` — [The wall](../design/compositions/live/walls.md), line 101.
@@ -2048,6 +2087,27 @@ Authored path: `Forum.moderation.unfinishedThreadPurge`.
     Trashing._isTrashed (item: post) has (trashed: true)
 ```
 
+### (user) may grade
+
+```view
+(user) may grade — inputs (user); outputs (); bindings ()
+  where Roling._hasCapability (capability: "grade", context: "commons", user) has (allowed: true)
+  where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
+```
+
+### (grader) is an available grader
+
+Authored path: `Course.delegation.availableGrader`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 22.
+
+```view
+(grader) is an available grader — inputs (grader); outputs (); bindings ()
+  where
+    Authenticating._getById (user: grader)
+    Archiving._isTrashed (item: grader) has (trashed: false)
+    view "(user) may grade" with (user: grader)
+```
+
 ### (holders) include the whole course
 
 Authored path: `Forum.notifications.courseWideNotificationAudience`.
@@ -2094,13 +2154,13 @@ Authored path: `Forum.threads.intact`.
   where Rostering._isActiveStudent (user) has (active: true)
 ```
 
-### (learner) may be assessed on (item) using (evidence)
+### (learner) may start assessment on (item) using (evidence)
 
 Authored path: `Course.grades.mayStartAssessment`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 79.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 45.
 
 ```view
-(learner) may be assessed on (item) using (evidence) — inputs (learner, item, evidence); outputs (); bindings ()
+(learner) may start assessment on (item) using (evidence) — inputs (learner, item, evidence); outputs (); bindings ()
   where
     view "(user) is an active student" with (user: learner)
     Itemizing._getItem (item) has (status: "ACTIVE")
@@ -2877,14 +2937,6 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
     Locking._isLocked (target: conversation) has (locked: false)
 ```
 
-### (user) may grade
-
-```view
-(user) may grade — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "grade", context: "commons", user) has (allowed: true)
-  where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
-```
-
 ### (user) may inspect stored forum post (post)
 
 ```view
@@ -3045,7 +3097,7 @@ Authored path: `Course.submissions.mayReadSubmissionArtifact`.
 ### (user) may read assessment (grade)
 
 Authored path: `Course.grades.mayReadAssessment`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 29.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 43.
 
 ```view
 (user) may read assessment (grade) — inputs (user, grade); outputs (); bindings (status)
@@ -3059,7 +3111,7 @@ Authored path: `Course.grades.mayReadAssessment`.
 ### (user) may read assessment item (item)
 
 Authored path: `Course.grades.mayReadItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 27.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 41.
 
 ```view
 (user) may read assessment item (item) — inputs (user, item); outputs (); bindings ()
@@ -3246,6 +3298,34 @@ editable reference activity (subject) — inputs (subject); outputs (); bindings
     Relaying._relay (relay: subject)
     view "(relay) is not retired" with (relay: subject)
   where Questioning._getQuestionnaire (questionnaire: subject) has (retired: false)
+```
+
+### every grader in (graders) is available
+
+Authored path: `Course.delegation.everyGraderIsAvailable`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 26.
+
+```view
+every grader in (graders) is available — inputs (graders); outputs (); bindings (capable, complete)
+  where
+    Authenticating._knownUsers (users: graders) has (known: true)
+    Archiving._anyTrashed (items: graders) has (trashed: false)
+    Roling._capableUsers (capabilities: ["grade"], context: "commons", users: graders) has (capable)
+    complete is allChosenAdmitted (admitted: capable, chosen: graders)
+    complete is among [true]
+```
+
+### every learner in (learners) is assigned (item)
+
+Authored path: `Course.delegation.everyLearnerIsAssigned`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 27.
+
+```view
+every learner in (learners) is assigned (item) — inputs (item, learners); outputs (); bindings (assigned, complete)
+  where
+    Assigning._assignedAmong (assignees: learners, assignment: item) has (assigned)
+    complete is allChosenAdmitted (admitted: assigned, chosen: learners)
+    complete is among [true]
 ```
 
 ### live sorting observation
@@ -4148,45 +4228,20 @@ Former "the artifact (artifact) of (assignment) by (submitter) for (user)" — i
     rendered
 ```
 
-### the fixed criteria of assessment (grade)
-
-Authored path: `Course.grades.theAssessmentCriteria`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 33.
-
-```former
-Former "the fixed criteria of assessment (grade)" — inputs (grade); bindings (criterion, basis, position, standard, number, name, description, deficient, emergent, competent, expert, referenceUrl); promises exactly one record — forms:
-  each Grading._getCriteria (grade) has (criterion)
-    where Itemizing._getCriterion (criterion) has (basis, position)
-    where StandardSetting._getEdition (edition: basis) has (competent, deficient, description, emergent, expert, name, number, referenceUrl, standard)
-    form a record of
-      basis
-      competent
-      criterion
-      deficient
-      description
-      emergent
-      expert
-      name
-      number
-      position
-      referenceUrl
-      standard
-```
-
 ### the assessment (grade)
 
 Authored path: `Course.grades.theAssessment`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 43.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 55.
 
 ```former
-Former "the assessment (grade)" — inputs (grade); bindings (learner, item, evidence, grader, judgments, feedback, status, version, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
-  each Grading._getGrade (grade) has (createdAt, evidence, feedback, grade, grader, history, item, judgments, learner, releasedAt, status, updatedAt, version)
+Former "the assessment (grade)" — inputs (grade); bindings (learner, item, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
+  each Grading._getGrade (grade) has (createdAt, criteria, evidence, feedback, grade, grader, history, item, judgments, learner, method, outOf, releasedAt, score, scored, setupRevision, status, updatedAt, version)
     where whether Itemizing._getItem (item) has (label)
     where whether Submitting._getAttempts (assignment: item, submitter: learner) has (number, submission: evidence, submittedAt)
     form a record of
       attempt: number
       createdAt
-      criteria: former "the fixed criteria of assessment (grade)" with (grade)
+      criteria
       evidence
       feedback
       grade
@@ -4196,7 +4251,12 @@ Former "the assessment (grade)" — inputs (grade); bindings (learner, item, evi
       judgments
       label
       learner
+      method
+      outOf
       releasedAt
+      score
+      scored
+      setupRevision
       status
       submittedAt
       updatedAt
@@ -4206,17 +4266,17 @@ Former "the assessment (grade)" — inputs (grade); bindings (learner, item, evi
 ### the assessments of (learner)
 
 Authored path: `Course.grades.theGradesOf`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 39.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 51.
 
 ```former
-Former "the assessments of (learner)" — inputs (learner); bindings (grade, item, evidence, grader, judgments, feedback, status, version, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
-  each Grading._getGradesForLearner (learner) has (createdAt, evidence, feedback, grade, grader, history, item, judgments, learner, releasedAt, status, updatedAt, version)
+Former "the assessments of (learner)" — inputs (learner); bindings (grade, item, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
+  each Grading._getGradesForLearner (learner) has (createdAt, criteria, evidence, feedback, grade, grader, history, item, judgments, learner, method, outOf, releasedAt, score, scored, setupRevision, status, updatedAt, version)
     where whether Itemizing._getItem (item) has (label)
     where whether Submitting._getAttempts (assignment: item, submitter: learner) has (number, submission: evidence, submittedAt)
     form a record of
       attempt: number
       createdAt
-      criteria: former "the fixed criteria of assessment (grade)" with (grade)
+      criteria
       evidence
       feedback
       grade
@@ -4226,7 +4286,12 @@ Former "the assessments of (learner)" — inputs (learner); bindings (grade, ite
       judgments
       label
       learner
+      method
+      outOf
       releasedAt
+      score
+      scored
+      setupRevision
       status
       submittedAt
       updatedAt
@@ -4236,17 +4301,18 @@ Former "the assessments of (learner)" — inputs (learner); bindings (grade, ite
 ### the assessments on (item)
 
 Authored path: `Course.grades.theGradesOn`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 41.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 53.
 
 ```former
-Former "the assessments on (item)" — inputs (item); bindings (grade, learner, evidence, grader, judgments, feedback, status, version, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
-  each Grading._getGradesForItem (item) has (createdAt, evidence, feedback, grade, grader, history, item, judgments, learner, releasedAt, status, updatedAt, version)
-    where whether Itemizing._getItem (item) has (label)
+Former "the assessments on (item)" — inputs (item); bindings (grade, learner, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history, displayName, submittedAt, number); promises exactly one record — forms:
+  each Grading._getGradesForItem (item) has (createdAt, criteria, evidence, feedback, grade, grader, history, item, judgments, learner, method, outOf, releasedAt, score, scored, setupRevision, status, updatedAt, version)
+    where whether Profiling._getProfileFields (user: learner) has (displayName)
     where whether Submitting._getAttempts (assignment: item, submitter: learner) has (number, submission: evidence, submittedAt)
     form a record of
       attempt: number
       createdAt
-      criteria: former "the fixed criteria of assessment (grade)" with (grade)
+      criteria
+      displayName
       evidence
       feedback
       grade
@@ -4254,9 +4320,13 @@ Former "the assessments on (item)" — inputs (item); bindings (grade, learner, 
       history
       item
       judgments
-      label
       learner
+      method
+      outOf
       releasedAt
+      score
+      scored
+      setupRevision
       status
       submittedAt
       updatedAt
@@ -4269,16 +4339,21 @@ Authored path: `Course.submissions.theAssignedPopulationForAssignment`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
 
 ```former
-Former "the assigned population for (assignment)" — inputs (assignment); bindings (assignee, displayName, release, dueOverride, releaseStatus); promises exactly one record — forms:
+Former "the assigned population for (assignment)" — inputs (assignment); bindings (assignee, displayName, username, email, section, release, dueOverride, releaseStatus); promises exactly one record — forms:
   each Assigning._getAssignees (assignment) has (assignee)
     where whether Profiling._getProfileFields (user: assignee) has (displayName)
+    where whether Authenticating._getById (user: assignee) has (username)
+    where whether Rostering._getSeatByUser (user: assignee) has (email, section)
     where Assigning._getAssigned (assignee) has (assignment, dueOverride, release, status: releaseStatus)
     form a record of
       assignee
       displayName
       dueOverride
+      email
       release
+      section
       status: releaseStatus
+      username
 ```
 
 ### the assignment notification presentation of (assignment) for (user)
@@ -4324,6 +4399,23 @@ Former "the attempts for (assignment) by (submitter)" — inputs (assignment, su
       status
       submission
       submittedAt
+```
+
+### the available graders ()
+
+Authored path: `Course.delegation.theGraders`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 9.
+
+```former
+Former "the available graders ()" — inputs (); bindings (grader, displayName, username); promises exactly one record — forms:
+  each Roling._getCapabilityHolders (capability: "grade", context: "commons") has (user: grader)
+    where Archiving._isTrashed (item: grader) has (trashed: false)
+    where Authenticating._getById (user: grader) has (username)
+    where whether Profiling._getProfileFields (user: grader) has (displayName)
+    form a record of
+      displayName
+      grader
+      username
 ```
 
 ### the background documents of (relay)
@@ -4569,30 +4661,6 @@ Former "the creation-ordered feed index for (reader)" — inputs (reader); bindi
       … former "the feed metadata of (conversation) for (reader)" with (conversation, item, reader)
 ```
 
-### the criteria of (item)
-
-Authored path: `Course.grades.theCriteriaOf`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 31.
-
-```former
-Former "the criteria of (item)" — inputs (item); bindings (criterion, basis, position, standard, number, name, description, deficient, emergent, competent, expert, referenceUrl); promises exactly one record — forms:
-  each Itemizing._getCriteria (item) has (basis, criterion, position)
-    where StandardSetting._getEdition (edition: basis) has (competent, deficient, description, emergent, expert, name, number, referenceUrl, standard)
-    form a record of
-      basis
-      competent
-      criterion
-      deficient
-      description
-      emergent
-      expert
-      name
-      number
-      position
-      referenceUrl
-      standard
-```
-
 ### the current audience options of (user)
 
 Authored path: `Forum.audiences.theOptions`.
@@ -4621,7 +4689,7 @@ Former "the current mail eligibility of (recipient) for (post) at (queued)" — 
 ### the current standards ()
 
 Authored path: `Course.grades.theStandards`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 49.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 61.
 
 ```former
 Former "the current standards ()" — inputs (); bindings (standard, edition, number, name, description, deficient, emergent, competent, expert, referenceUrl); promises exactly one record — forms:
@@ -4964,7 +5032,7 @@ Former "the forward links of (source) for (reader)" — inputs (source, reader);
 ### the gradebook learners ()
 
 Authored path: `Course.grades.theGradebookLearners`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 45.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 57.
 
 ```former
 Former "the gradebook learners ()" — inputs (); bindings (user, seat, section, email, displayName); promises exactly one record — forms:
@@ -4982,16 +5050,36 @@ Former "the gradebook learners ()" — inputs (); bindings (user, seat, section,
 ### the gradebook ()
 
 Authored path: `Course.grades.theGradebook`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 47.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 59.
 
 ```former
-Former "the gradebook ()" — inputs (); bindings (item, label); promises exactly one record — forms:
+Former "the gradebook ()" — inputs (); bindings (item, label, method, revision, maxPoints); promises exactly one record — forms:
   a record of
-    items: each Itemizing._getItems () has (item, label)
+    items: each Itemizing._getItems () has (item, label, maxPoints, method, revision)
       form a record of
         item
         label
+        maxPoints
+        method
+        revision
     learners: former "the gradebook learners ()"
+```
+
+### the grading delegations on (item)
+
+Authored path: `Course.delegation.theDelegationsOn`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 14.
+
+```former
+Former "the grading delegations on (item)" — inputs (item); bindings (learner, grader, graderName, graderUsername); promises exactly one record — forms:
+  each Delegating._getDelegations (item) has (delegate: grader, subject: learner)
+    where whether Profiling._getProfileFields (user: grader) has (displayName: graderName)
+    where whether Authenticating._getById (user: grader) has (username: graderUsername)
+    form a record of
+      grader
+      graderName
+      graderUsername
+      learner
 ```
 
 ### the thread stats of (conversation) for (reader)
@@ -5779,18 +5867,18 @@ Former "the relays" — inputs (); bindings (relay, title, createdAt, leg, mater
 ### the released assessments of (learner)
 
 Authored path: `Course.grades.theReleasedGradesOf`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 37.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 49.
 
 ```former
-Former "the released assessments of (learner)" — inputs (learner); bindings (grade, item, evidence, grader, judgments, feedback, status, version, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
-  each Grading._getGradesForLearner (learner) has (createdAt, evidence, feedback, grade, grader, history, item, judgments, learner, releasedAt, status, updatedAt, version)
+Former "the released assessments of (learner)" — inputs (learner); bindings (grade, item, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
+  each Grading._getGradesForLearner (learner) has (createdAt, criteria, evidence, feedback, grade, grader, history, item, judgments, learner, method, outOf, releasedAt, score, scored, setupRevision, status, updatedAt, version)
     where status is among ["RELEASED", "EXCUSED"]
     where whether Itemizing._getItem (item) has (label)
     where whether Submitting._getAttempts (assignment: item, submitter: learner) has (number, submission: evidence, submittedAt)
     form a record of
       attempt: number
       createdAt
-      criteria: former "the fixed criteria of assessment (grade)" with (grade)
+      criteria
       evidence
       feedback
       grade
@@ -5800,7 +5888,12 @@ Former "the released assessments of (learner)" — inputs (learner); bindings (g
       judgments
       label
       learner
+      method
+      outOf
       releasedAt
+      score
+      scored
+      setupRevision
       status
       submittedAt
       updatedAt
@@ -5819,6 +5912,26 @@ Former "the resolution of (question) for (reader)" — inputs (question, reader)
       answer
       resolvedAt
       resolvedBy
+```
+
+### the resolved grading setup of (item)
+
+Authored path: `Course.grades.theSetupOf`.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 47.
+
+```former
+Former "the resolved grading setup of (item)" — inputs (item); bindings (label, status, method, revision, storedCriteria, maxPoints, editions, criteria); promises exactly one record — forms:
+  each Itemizing._getSetup (item) has (criteria: storedCriteria, item, label, maxPoints, method, revision, status)
+    where StandardSetting._getEditionCatalog () has (editions)
+    where criteria is resolveGradingCriteria (criteria: storedCriteria, editions)
+    form a record of
+      criteria
+      item
+      label
+      maxPoints
+      method
+      revision
+      status
 ```
 
 ### the revision history of (item)
@@ -5987,18 +6100,6 @@ Former "the sections ()" — inputs (); bindings (section, name, location, meeti
       name
       section
       status
-```
-
-### the selected criterion identities of (item)
-
-Authored path: `Course.grades.selectedCriteria`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 35.
-
-```former
-Former "the selected criterion identities of (item)" — inputs (item); bindings (criterion); promises exactly one record — forms:
-  each Itemizing._getCriteria (item) has (criterion)
-    form a record of
-      criterion
 ```
 
 ### the selected summary of (conversation) for (reader)
@@ -9147,6 +9248,513 @@ then
   RequestBoundary.respond (counts: former "the staff dashboard counts ()", dashboard: former "the staff dashboard ()", requestId)
 ```
 
+### Course.delegation.DelegationClear:assignment-missing
+
+Authored path: `Course.delegation.DelegationClear`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 19.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 50.
+
+```reaction
+when RequestBoundary.request (item, learner, path: "/delegation/clear", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationIdentityInput (item, learner)
+  valid is among [true]
+  no Assigning._getAssignments () has (assignment: item)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.delegation.DelegationClear:forbidden
+
+Authored path: `Course.delegation.DelegationClear`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 19.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 50.
+
+```reaction
+when RequestBoundary.request (item, learner, path: "/delegation/clear", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.delegation.DelegationClear:invalid-input
+
+Authored path: `Course.delegation.DelegationClear`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 19.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 50.
+
+```reaction
+when RequestBoundary.request (item, learner, path: "/delegation/clear", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationIdentityInput (item, learner)
+  valid is among [false]
+then
+  RequestBoundary.respond (error: "INVALID_REQUEST", requestId)
+```
+
+### Course.delegation.DelegationClear:learner-missing
+
+Authored path: `Course.delegation.DelegationClear`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 19.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 50.
+
+```reaction
+when RequestBoundary.request (item, learner, path: "/delegation/clear", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationIdentityInput (item, learner)
+  valid is among [true]
+  Assigning._getAssignments () has (assignment: item)
+  Assigning._isAssigned (assignee: learner, assignment: item) has (assigned: false)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.delegation.DelegationClear:success
+
+Authored path: `Course.delegation.DelegationClear`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 19.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 50.
+
+```reaction
+when RequestBoundary.request (item, learner, path: "/delegation/clear", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationIdentityInput (item, learner)
+  valid is among [true]
+  Assigning._getAssignments () has (assignment: item)
+  Assigning._isAssigned (assignee: learner, assignment: item) has (assigned: true)
+then
+  Delegating.withdraw (item, subject: learner)
+```
+
+### Course.delegation.DelegationClear:success#2
+
+Authored path: `Course.delegation.DelegationClear`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 19.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 50.
+
+```reaction
+when Delegating.withdraw (item, subject: learner, delegation), asked by Course.delegation.DelegationClear:success
+where
+  earlier, RequestBoundary.request (item, learner, path: "/delegation/clear", requestId, session)
+then
+  RequestBoundary.respond (delegation, requestId)
+```
+
+### Course.delegation.DelegationClearItem:forbidden
+
+Authored path: `Course.delegation.DelegationClearItem`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 41.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 51.
+
+```reaction
+when RequestBoundary.request (item, path: "/delegation/clear-item", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.delegation.DelegationClearItem:invalid-input
+
+Authored path: `Course.delegation.DelegationClearItem`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 41.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 51.
+
+```reaction
+when RequestBoundary.request (item, path: "/delegation/clear-item", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationIdentityInput (item)
+  valid is among [false]
+then
+  RequestBoundary.respond (error: "INVALID_REQUEST", requestId)
+```
+
+### Course.delegation.DelegationClearItem:missing
+
+Authored path: `Course.delegation.DelegationClearItem`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 41.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 51.
+
+```reaction
+when RequestBoundary.request (item, path: "/delegation/clear-item", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationIdentityInput (item)
+  valid is among [true]
+  no Assigning._getAssignments () has (assignment: item)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.delegation.DelegationClearItem:success
+
+Authored path: `Course.delegation.DelegationClearItem`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 41.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 51.
+
+```reaction
+when RequestBoundary.request (item, path: "/delegation/clear-item", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationIdentityInput (item)
+  valid is among [true]
+  Assigning._getAssignments () has (assignment: item)
+then
+  Delegating.clearItem (item)
+```
+
+### Course.delegation.DelegationClearItem:success#2
+
+Authored path: `Course.delegation.DelegationClearItem`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 41.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 51.
+
+```reaction
+when Delegating.clearItem (item, cleared), asked by Course.delegation.DelegationClearItem:success
+where
+  earlier, RequestBoundary.request (item, path: "/delegation/clear-item", requestId, session)
+then
+  RequestBoundary.respond (cleared, requestId)
+```
+
+### Course.delegation.DelegationForItem:forbidden
+
+Authored path: `Course.delegation.DelegationForItem`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 13.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 52.
+
+```reaction
+when RequestBoundary.request (item, path: "/delegation/for-item", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.delegation.DelegationForItem:invalid-input
+
+Authored path: `Course.delegation.DelegationForItem`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 13.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 52.
+
+```reaction
+when RequestBoundary.request (item, path: "/delegation/for-item", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationIdentityInput (item)
+  valid is among [false]
+then
+  RequestBoundary.respond (error: "INVALID_REQUEST", requestId)
+```
+
+### Course.delegation.DelegationForItem:missing
+
+Authored path: `Course.delegation.DelegationForItem`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 13.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 52.
+
+```reaction
+when RequestBoundary.request (item, path: "/delegation/for-item", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationIdentityInput (item)
+  valid is among [true]
+  no Assigning._getAssignments () has (assignment: item)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.delegation.DelegationForItem:success
+
+Authored path: `Course.delegation.DelegationForItem`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 13.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 52.
+
+```reaction
+when RequestBoundary.request (item, path: "/delegation/for-item", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationIdentityInput (item)
+  valid is among [true]
+  Assigning._getAssignments () has (assignment: item)
+then
+  RequestBoundary.respond (delegations: former "the grading delegations on (item)" with (item), requestId)
+```
+
+### Course.delegation.DelegationGraders:forbidden
+
+Authored path: `Course.delegation.DelegationGraders`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 8.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 53.
+
+```reaction
+when RequestBoundary.request (path: "/delegation/graders", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.delegation.DelegationGraders:success
+
+Authored path: `Course.delegation.DelegationGraders`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 8.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 53.
+
+```reaction
+when RequestBoundary.request (path: "/delegation/graders", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+then
+  RequestBoundary.respond (graders: former "the available graders ()", requestId)
+```
+
+### Course.delegation.DelegationSet:assignment-missing
+
+Authored path: `Course.delegation.DelegationSet`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 18.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 54.
+
+```reaction
+when RequestBoundary.request (grader, item, learner, path: "/delegation/set", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationIdentityInput (grader, item, learner)
+  valid is among [true]
+  no Assigning._getAssignments () has (assignment: item)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.delegation.DelegationSet:forbidden
+
+Authored path: `Course.delegation.DelegationSet`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 18.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 54.
+
+```reaction
+when RequestBoundary.request (grader, item, learner, path: "/delegation/set", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.delegation.DelegationSet:grader-unavailable
+
+Authored path: `Course.delegation.DelegationSet`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 18.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 54.
+
+```reaction
+when RequestBoundary.request (grader, item, learner, path: "/delegation/set", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationIdentityInput (grader, item, learner)
+  valid is among [true]
+  Assigning._getAssignments () has (assignment: item)
+  Assigning._isAssigned (assignee: learner, assignment: item) has (assigned: true)
+  no view "(grader) is an available grader" with (grader)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.delegation.DelegationSet:invalid-input
+
+Authored path: `Course.delegation.DelegationSet`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 18.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 54.
+
+```reaction
+when RequestBoundary.request (grader, item, learner, path: "/delegation/set", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationIdentityInput (grader, item, learner)
+  valid is among [false]
+then
+  RequestBoundary.respond (error: "INVALID_REQUEST", requestId)
+```
+
+### Course.delegation.DelegationSet:learner-missing
+
+Authored path: `Course.delegation.DelegationSet`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 18.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 54.
+
+```reaction
+when RequestBoundary.request (grader, item, learner, path: "/delegation/set", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationIdentityInput (grader, item, learner)
+  valid is among [true]
+  Assigning._getAssignments () has (assignment: item)
+  Assigning._isAssigned (assignee: learner, assignment: item) has (assigned: false)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.delegation.DelegationSet:success
+
+Authored path: `Course.delegation.DelegationSet`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 18.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 54.
+
+```reaction
+when RequestBoundary.request (grader, item, learner, path: "/delegation/set", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationIdentityInput (grader, item, learner)
+  valid is among [true]
+  Assigning._getAssignments () has (assignment: item)
+  Assigning._isAssigned (assignee: learner, assignment: item) has (assigned: true)
+  view "(grader) is an available grader" with (grader)
+then
+  Delegating.delegate (delegate: grader, item, subject: learner)
+```
+
+### Course.delegation.DelegationSet:success#2
+
+Authored path: `Course.delegation.DelegationSet`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 18.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 54.
+
+```reaction
+when Delegating.delegate (delegate: grader, item, subject: learner, delegation), asked by Course.delegation.DelegationSet:success
+where
+  earlier, RequestBoundary.request (grader, item, learner, path: "/delegation/set", requestId, session)
+then
+  RequestBoundary.respond (delegation, requestId)
+```
+
+### Course.delegation.DelegationSpread:forbidden
+
+Authored path: `Course.delegation.DelegationSpread`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 25.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 55.
+
+```reaction
+when RequestBoundary.request (graders, item, learners, path: "/delegation/spread", replace, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.delegation.DelegationSpread:grader-unavailable
+
+Authored path: `Course.delegation.DelegationSpread`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 25.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 55.
+
+```reaction
+when RequestBoundary.request (graders, item, learners, path: "/delegation/spread", replace, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationSpreadInput (graders, item, learners, replace)
+  valid is among [true]
+  no view "every grader in (graders) is available" with (graders)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.delegation.DelegationSpread:invalid-input
+
+Authored path: `Course.delegation.DelegationSpread`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 25.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 55.
+
+```reaction
+when RequestBoundary.request (graders, item, learners, path: "/delegation/spread", replace, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationSpreadInput (graders, item, learners, replace)
+  valid is among [false]
+then
+  RequestBoundary.respond (error: "INVALID_REQUEST", requestId)
+```
+
+### Course.delegation.DelegationSpread:learner-unavailable
+
+Authored path: `Course.delegation.DelegationSpread`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 25.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 55.
+
+```reaction
+when RequestBoundary.request (graders, item, learners, path: "/delegation/spread", replace, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationSpreadInput (graders, item, learners, replace)
+  valid is among [true]
+  view "every grader in (graders) is available" with (graders)
+  no view "every learner in (learners) is assigned (item)" with (item, learners)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.delegation.DelegationSpread:success
+
+Authored path: `Course.delegation.DelegationSpread`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 25.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 55.
+
+```reaction
+when RequestBoundary.request (graders, item, learners, path: "/delegation/spread", replace, requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  valid is validDelegationSpreadInput (graders, item, learners, replace)
+  valid is among [true]
+  view "every grader in (graders) is available" with (graders)
+  view "every learner in (learners) is assigned (item)" with (item, learners)
+then
+  Delegating.spread (delegates: graders, item, replace, subjects: learners)
+```
+
+### Course.delegation.DelegationSpread:success#2
+
+Authored path: `Course.delegation.DelegationSpread`.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 25.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 55.
+
+```reaction
+when Delegating.spread (delegates: graders, item, replace, subjects: learners, assigned), asked by Course.delegation.DelegationSpread:success
+where
+  earlier, RequestBoundary.request (graders, item, learners, path: "/delegation/spread", replace, requestId, session)
+then
+  RequestBoundary.respond (assigned, requestId)
+```
+
 ### Course.gradeItems.DraftAcceptingAssignmentGetsGradeItem
 
 Authored path: `Course.gradeItems.DraftAcceptingAssignmentGetsGradeItem`.
@@ -9182,72 +9790,11 @@ then
   Itemizing.ensureItem (item: assignment, label: title)
 ```
 
-### Course.grades.GradesAddCriterion:forbidden
-
-Authored path: `Course.grades.GradesAddCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 73.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 107.
-
-```reaction
-when RequestBoundary.request (basis, item, path: "/grades/add-criterion", position, requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may not grade" with (user)
-then
-  RequestBoundary.respond (error: "FORBIDDEN", requestId)
-```
-
-### Course.grades.GradesAddCriterion:missing
-
-Authored path: `Course.grades.GradesAddCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 73.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 107.
-
-```reaction
-when RequestBoundary.request (basis, item, path: "/grades/add-criterion", position, requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may grade" with (user)
-  no StandardSetting._getEdition (edition: basis)
-then
-  RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### Course.grades.GradesAddCriterion:success
-
-Authored path: `Course.grades.GradesAddCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 73.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 107.
-
-```reaction
-when RequestBoundary.request (basis, item, path: "/grades/add-criterion", position, requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may grade" with (user)
-  StandardSetting._getEdition (edition: basis)
-then
-  Itemizing.addCriterion (basis, item, position)
-```
-
-### Course.grades.GradesAddCriterion:success#2
-
-Authored path: `Course.grades.GradesAddCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 73.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 107.
-
-```reaction
-when Itemizing.addCriterion (basis, item, position, criterion), asked by Course.grades.GradesAddCriterion:success
-where
-  earlier, RequestBoundary.request (basis, item, path: "/grades/add-criterion", position, requestId, session)
-then
-  RequestBoundary.respond (criterion, requestId)
-```
-
 ### Course.grades.GradesConfigureItem:forbidden
 
 Authored path: `Course.grades.GradesConfigureItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 71.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 106.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 67.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 104.
 
 ```reaction
 when RequestBoundary.request (item, label, path: "/grades/configure-item", requestId, session)
@@ -9261,8 +9808,8 @@ then
 ### Course.grades.GradesConfigureItem:missing
 
 Authored path: `Course.grades.GradesConfigureItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 71.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 106.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 67.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 104.
 
 ```reaction
 when RequestBoundary.request (item, label, path: "/grades/configure-item", requestId, session)
@@ -9277,8 +9824,8 @@ then
 ### Course.grades.GradesConfigureItem:success
 
 Authored path: `Course.grades.GradesConfigureItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 71.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 106.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 67.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 104.
 
 ```reaction
 when RequestBoundary.request (item, label, path: "/grades/configure-item", requestId, session)
@@ -9293,8 +9840,8 @@ then
 ### Course.grades.GradesConfigureItem:success#2
 
 Authored path: `Course.grades.GradesConfigureItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 71.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 106.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 67.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 104.
 
 ```reaction
 when Itemizing.configureItem (item, label, gradeItem), asked by Course.grades.GradesConfigureItem:success
@@ -9304,11 +9851,94 @@ then
   RequestBoundary.respond (gradeItem, requestId)
 ```
 
+### Course.grades.GradesConfigureSetup:forbidden
+
+Authored path: `Course.grades.GradesConfigureSetup`.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 69.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 105.
+
+```reaction
+when RequestBoundary.request (criteria, item, method, path: "/grades/configure-setup", requestId, revision, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.grades.GradesConfigureSetup:invalid-edition
+
+Authored path: `Course.grades.GradesConfigureSetup`.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 69.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 105.
+
+```reaction
+when RequestBoundary.request (criteria, item, method, path: "/grades/configure-setup", requestId, revision, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  Itemizing._getItem (item) has (status: "ACTIVE")
+  editionIds is competencyEditionIds (criteria)
+  StandardSetting._hasEditions (editions: editionIds) has (valid: false)
+then
+  RequestBoundary.respond (error: "INVALID_REQUEST", requestId)
+```
+
+### Course.grades.GradesConfigureSetup:missing
+
+Authored path: `Course.grades.GradesConfigureSetup`.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 69.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 105.
+
+```reaction
+when RequestBoundary.request (criteria, item, method, path: "/grades/configure-setup", requestId, revision, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  no Itemizing._getItem (item) has (status: "ACTIVE")
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.grades.GradesConfigureSetup:success
+
+Authored path: `Course.grades.GradesConfigureSetup`.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 69.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 105.
+
+```reaction
+when RequestBoundary.request (criteria, item, method, path: "/grades/configure-setup", requestId, revision, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  Itemizing._getItem (item) has (status: "ACTIVE")
+  editionIds is competencyEditionIds (criteria)
+  StandardSetting._hasEditions (editions: editionIds) has (valid: true)
+  StandardSetting._getEditionCatalog () has (editions)
+  resolvedCriteria is resolveGradingCriteria (criteria, editions)
+then
+  Itemizing.configureSetup (criteria, item, method, resolvedCriteria, revision)
+```
+
+### Course.grades.GradesConfigureSetup:success#2
+
+Authored path: `Course.grades.GradesConfigureSetup`.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 69.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 105.
+
+```reaction
+when Itemizing.configureSetup (criteria, item, method, resolvedCriteria, revision, result.criteria: savedCriteria, gradeItem, label, maxPoints, result.method: savedMethod, result.revision: savedRevision, status), asked by Course.grades.GradesConfigureSetup:success
+where
+  earlier, RequestBoundary.request (criteria, item, method, path: "/grades/configure-setup", requestId, revision, session)
+then
+  RequestBoundary.respond (criteria: savedCriteria, item, label, maxPoints, method: savedMethod, requestId, revision: savedRevision, status)
+```
+
 ### Course.grades.GradesDefineStandard:forbidden
 
 Authored path: `Course.grades.GradesDefineStandard`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 51.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 96.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 63.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 102.
 
 ```reaction
 when RequestBoundary.request (competent, deficient, description, emergent, expert, name, path: "/grades/define-standard", referenceUrl, requestId, session)
@@ -9322,8 +9952,8 @@ then
 ### Course.grades.GradesDefineStandard:success
 
 Authored path: `Course.grades.GradesDefineStandard`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 51.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 96.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 63.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 102.
 
 ```reaction
 when RequestBoundary.request (competent, deficient, description, emergent, expert, name, path: "/grades/define-standard", referenceUrl, requestId, session)
@@ -9338,8 +9968,8 @@ then
 ### Course.grades.GradesDefineStandard:success#2
 
 Authored path: `Course.grades.GradesDefineStandard`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 51.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 96.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 63.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 102.
 
 ```reaction
 when StandardSetting.define (competent, deficient, description, emergent, expert, name, referenceUrl, edition, standard), asked by Course.grades.GradesDefineStandard:success
@@ -9352,8 +9982,8 @@ then
 ### Course.grades.GradesDetail:hidden
 
 Authored path: `Course.grades.GradesDetail`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 77.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 109.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 85.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 113.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/detail", requestId, session)
@@ -9367,8 +9997,8 @@ then
 ### Course.grades.GradesDetail:missing
 
 Authored path: `Course.grades.GradesDetail`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 77.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 109.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 85.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 113.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/detail", requestId, session)
@@ -9383,8 +10013,8 @@ then
 ### Course.grades.GradesDetail:success
 
 Authored path: `Course.grades.GradesDetail`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 77.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 109.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 85.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 113.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/detail", requestId, session)
@@ -9399,8 +10029,8 @@ then
 ### Course.grades.GradesExcuse:forbidden
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 67.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 104.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 79.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 110.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, path: "/grades/excuse", requestId, session, version)
@@ -9414,8 +10044,8 @@ then
 ### Course.grades.GradesExcuse:success
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 67.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 104.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 79.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 110.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, path: "/grades/excuse", requestId, session, version)
@@ -9430,8 +10060,8 @@ then
 ### Course.grades.GradesExcuse:success#2
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 67.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 104.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 79.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 110.
 
 ```reaction
 when Grading.excuse (at, feedback, grade, grader: user, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesExcuse:success
@@ -9444,8 +10074,8 @@ then
 ### Course.grades.GradesExport:forbidden
 
 Authored path: `Course.grades.GradesExport`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 93.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 116.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 99.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 120.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -9459,8 +10089,8 @@ then
 ### Course.grades.GradesExport:success
 
 Authored path: `Course.grades.GradesExport`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 93.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 116.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 99.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 120.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -9474,8 +10104,8 @@ then
 ### Course.grades.GradesForItem:forbidden
 
 Authored path: `Course.grades.GradesForItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 89.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 95.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 118.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
@@ -9489,8 +10119,8 @@ then
 ### Course.grades.GradesForItem:success
 
 Authored path: `Course.grades.GradesForItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 89.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 95.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 118.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
@@ -9504,8 +10134,8 @@ then
 ### Course.grades.GradesForMe:not-student
 
 Authored path: `Course.grades.GradesForMe`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 83.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 111.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 89.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 115.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
@@ -9519,8 +10149,8 @@ then
 ### Course.grades.GradesForMe:success
 
 Authored path: `Course.grades.GradesForMe`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 83.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 111.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 89.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 115.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
@@ -9534,8 +10164,8 @@ then
 ### Course.grades.GradesForStudent:forbidden
 
 Authored path: `Course.grades.GradesForStudent`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 87.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 113.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 93.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 117.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
@@ -9549,8 +10179,8 @@ then
 ### Course.grades.GradesForStudent:success
 
 Authored path: `Course.grades.GradesForStudent`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 87.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 113.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 93.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 117.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
@@ -9564,8 +10194,8 @@ then
 ### Course.grades.GradesGradebook:forbidden
 
 Authored path: `Course.grades.GradesGradebook`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 91.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 115.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 97.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 119.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
@@ -9579,8 +10209,8 @@ then
 ### Course.grades.GradesGradebook:success
 
 Authored path: `Course.grades.GradesGradebook`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 91.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 115.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 97.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 119.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
@@ -9594,8 +10224,8 @@ then
 ### Course.grades.GradesItem:hidden
 
 Authored path: `Course.grades.GradesItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 75.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 108.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 83.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 112.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -9609,8 +10239,8 @@ then
 ### Course.grades.GradesItem:missing
 
 Authored path: `Course.grades.GradesItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 75.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 108.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 83.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 112.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -9625,27 +10255,83 @@ then
 ### Course.grades.GradesItem:success
 
 Authored path: `Course.grades.GradesItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 75.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 108.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 83.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 112.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may read assessment item (item)" with (item, user)
-  Itemizing._getItem (item) has (label, status)
+  Itemizing._getSetup (item) has (criteria: storedCriteria, label, maxPoints, method, revision, status)
+  StandardSetting._getEditionCatalog () has (editions)
+  criteria is resolveGradingCriteria (criteria: storedCriteria, editions)
 then
-  RequestBoundary.respond (criteria: former "the criteria of (item)" with (item), item, label, requestId, status)
+  RequestBoundary.respond (criteria, item, label, maxPoints, method, requestId, revision, status)
+```
+
+### Course.grades.GradesRecord:created
+
+Authored path: `Course.grades.GradesRecord`.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 87.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+
+```reaction
+when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  no Grading._getAssessment (evidence, item, learner)
+  view "(learner) may start assessment on (item) using (evidence)" with (evidence, item, learner)
+  Itemizing._getSetup (item) has (criteria: storedCriteria, method, revision: currentRevision)
+  StandardSetting._getEditionCatalog () has (editions)
+  criteria is resolveGradingCriteria (criteria: storedCriteria, editions)
+  revisionMatches is gradingRevisionMatches (left: currentRevision, right: revision)
+  revisionMatches is among [true]
+then
+  Grading.record (at, criteria, evidence, grader: user, item, learner, method, setupRevision: currentRevision)
+```
+
+### Course.grades.GradesRecord:created#2
+
+Authored path: `Course.grades.GradesRecord`.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 87.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+
+```reaction
+when Grading.record (at, criteria, evidence, grader: user, item, learner, method, setupRevision: currentRevision, grade, version), asked by Course.grades.GradesRecord:created
+where
+  earlier, RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
+then
+  RequestBoundary.respond (grade, method, requestId, version)
+```
+
+### Course.grades.GradesRecord:existing
+
+Authored path: `Course.grades.GradesRecord`.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 87.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+
+```reaction
+when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+  Grading._getAssessment (evidence, item, learner) has (grade, method, version)
+then
+  RequestBoundary.respond (grade, method, requestId, version)
 ```
 
 ### Course.grades.GradesRecord:forbidden
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 81.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 110.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 87.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
 
 ```reaction
-when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, session)
+when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not grade" with (user)
@@ -9656,56 +10342,45 @@ then
 ### Course.grades.GradesRecord:invalid-evidence
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 81.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 110.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 87.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
 
 ```reaction
-when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, session)
+when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may grade" with (user)
-  no view "(learner) may be assessed on (item) using (evidence)" with (evidence, item, learner)
+  no Grading._getAssessment (evidence, item, learner)
+  no view "(learner) may start assessment on (item) using (evidence)" with (evidence, item, learner)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### Course.grades.GradesRecord:success
+### Course.grades.GradesRecord:stale-setup
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 81.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 110.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 87.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
 
 ```reaction
-when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, session)
+when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
 where
-  at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may grade" with (user)
-  view "(learner) may be assessed on (item) using (evidence)" with (evidence, item, learner)
-  Itemizing._getSelection (item) has (criteria)
+  no Grading._getAssessment (evidence, item, learner)
+  view "(learner) may start assessment on (item) using (evidence)" with (evidence, item, learner)
+  Itemizing._getSetup (item) has (revision: currentRevision)
+  revisionMatches is gradingRevisionMatches (left: currentRevision, right: revision)
+  revisionMatches is among [false]
 then
-  Grading.record (at, criteria, evidence, grader: user, item, learner)
-```
-
-### Course.grades.GradesRecord:success#2
-
-Authored path: `Course.grades.GradesRecord`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 81.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 110.
-
-```reaction
-when Grading.record (at, criteria, evidence, grader: user, item, learner, grade, version), asked by Course.grades.GradesRecord:success
-where
-  earlier, RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, session)
-then
-  RequestBoundary.respond (grade, requestId, version)
+  RequestBoundary.respond (error: "CONFLICT", requestId)
 ```
 
 ### Course.grades.GradesRelease:forbidden
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 61.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 101.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 73.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 107.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/release", requestId, session, version)
@@ -9719,8 +10394,8 @@ then
 ### Course.grades.GradesRelease:success
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 61.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 101.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 73.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 107.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/release", requestId, session, version)
@@ -9735,8 +10410,8 @@ then
 ### Course.grades.GradesRelease:success#2
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 61.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 101.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 73.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 107.
 
 ```reaction
 when Grading.release (at, grade, grader: user, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesRelease:success
@@ -9749,8 +10424,8 @@ then
 ### Course.grades.GradesReleaseItem:forbidden
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 69.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 105.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 81.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 111.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
@@ -9764,8 +10439,8 @@ then
 ### Course.grades.GradesReleaseItem:success
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 69.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 105.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 81.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 111.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
@@ -9780,8 +10455,8 @@ then
 ### Course.grades.GradesReleaseItem:success#2
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 69.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 105.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 81.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 111.
 
 ```reaction
 when Grading.releaseItem (at, grader: user, item, released, skipped, unconfirmed), asked by Course.grades.GradesReleaseItem:success
@@ -9791,56 +10466,11 @@ then
   RequestBoundary.respond (released, requestId, skipped, unconfirmed)
 ```
 
-### Course.grades.GradesRemoveCriterion:forbidden
-
-Authored path: `Course.grades.GradesRemoveCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 57.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 99.
-
-```reaction
-when RequestBoundary.request (criterion, path: "/grades/remove-criterion", requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may not grade" with (user)
-then
-  RequestBoundary.respond (error: "FORBIDDEN", requestId)
-```
-
-### Course.grades.GradesRemoveCriterion:success
-
-Authored path: `Course.grades.GradesRemoveCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 57.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 99.
-
-```reaction
-when RequestBoundary.request (criterion, path: "/grades/remove-criterion", requestId, session)
-where
-  at is the current flow's instant
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may grade" with (user)
-then
-  Itemizing.removeCriterion (criterion)
-```
-
-### Course.grades.GradesRemoveCriterion:success#2
-
-Authored path: `Course.grades.GradesRemoveCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 57.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 99.
-
-```reaction
-when Itemizing.removeCriterion (criterion), asked by Course.grades.GradesRemoveCriterion:success
-where
-  earlier, RequestBoundary.request (criterion, path: "/grades/remove-criterion", requestId, session)
-then
-  RequestBoundary.respond (criterion, requestId)
-```
-
 ### Course.grades.GradesRestoreExcused:forbidden
 
 Authored path: `Course.grades.GradesRestoreExcused`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 65.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 103.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 77.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 109.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/restore-excused", requestId, session, version)
@@ -9854,8 +10484,8 @@ then
 ### Course.grades.GradesRestoreExcused:success
 
 Authored path: `Course.grades.GradesRestoreExcused`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 65.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 103.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 77.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 109.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/restore-excused", requestId, session, version)
@@ -9870,8 +10500,8 @@ then
 ### Course.grades.GradesRestoreExcused:success#2
 
 Authored path: `Course.grades.GradesRestoreExcused`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 65.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 103.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 77.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 109.
 
 ```reaction
 when Grading.restoreExcused (at, grade, grader: user, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesRestoreExcused:success
@@ -9884,8 +10514,8 @@ then
 ### Course.grades.GradesRetract:forbidden
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 63.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 102.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 75.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 108.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/retract", requestId, session, version)
@@ -9899,8 +10529,8 @@ then
 ### Course.grades.GradesRetract:success
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 63.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 102.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 75.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 108.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/retract", requestId, session, version)
@@ -9915,8 +10545,8 @@ then
 ### Course.grades.GradesRetract:success#2
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 63.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 102.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 75.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 108.
 
 ```reaction
 when Grading.retract (at, grade, grader: user, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesRetract:success
@@ -9926,56 +10556,11 @@ then
   RequestBoundary.respond (grade: saved, requestId, version: savedVersion)
 ```
 
-### Course.grades.GradesReviseCriterion:forbidden
-
-Authored path: `Course.grades.GradesReviseCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 55.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 98.
-
-```reaction
-when RequestBoundary.request (criterion, path: "/grades/revise-criterion", position, requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may not grade" with (user)
-then
-  RequestBoundary.respond (error: "FORBIDDEN", requestId)
-```
-
-### Course.grades.GradesReviseCriterion:success
-
-Authored path: `Course.grades.GradesReviseCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 55.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 98.
-
-```reaction
-when RequestBoundary.request (criterion, path: "/grades/revise-criterion", position, requestId, session)
-where
-  at is the current flow's instant
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may grade" with (user)
-then
-  Itemizing.reviseCriterion (criterion, position)
-```
-
-### Course.grades.GradesReviseCriterion:success#2
-
-Authored path: `Course.grades.GradesReviseCriterion`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 55.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 98.
-
-```reaction
-when Itemizing.reviseCriterion (criterion, position), asked by Course.grades.GradesReviseCriterion:success
-where
-  earlier, RequestBoundary.request (criterion, path: "/grades/revise-criterion", position, requestId, session)
-then
-  RequestBoundary.respond (criterion, requestId)
-```
-
 ### Course.grades.GradesReviseStandard:forbidden
 
 Authored path: `Course.grades.GradesReviseStandard`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 53.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 97.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 65.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 103.
 
 ```reaction
 when RequestBoundary.request (competent, deficient, description, emergent, expectedEdition, expert, name, path: "/grades/revise-standard", referenceUrl, requestId, session, standard)
@@ -9989,8 +10574,8 @@ then
 ### Course.grades.GradesReviseStandard:success
 
 Authored path: `Course.grades.GradesReviseStandard`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 53.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 97.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 65.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 103.
 
 ```reaction
 when RequestBoundary.request (competent, deficient, description, emergent, expectedEdition, expert, name, path: "/grades/revise-standard", referenceUrl, requestId, session, standard)
@@ -10005,8 +10590,8 @@ then
 ### Course.grades.GradesReviseStandard:success#2
 
 Authored path: `Course.grades.GradesReviseStandard`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 53.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 97.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 65.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 103.
 
 ```reaction
 when StandardSetting.revise (competent, deficient, description, emergent, expectedEdition, expert, name, referenceUrl, standard, edition), asked by Course.grades.GradesReviseStandard:success
@@ -10019,8 +10604,8 @@ then
 ### Course.grades.GradesSave:forbidden
 
 Authored path: `Course.grades.GradesSave`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 59.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 100.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 71.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 106.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, judgments, path: "/grades/save", requestId, session, version)
@@ -10034,8 +10619,8 @@ then
 ### Course.grades.GradesSave:success
 
 Authored path: `Course.grades.GradesSave`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 59.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 100.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 71.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 106.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, judgments, path: "/grades/save", requestId, session, version)
@@ -10050,8 +10635,8 @@ then
 ### Course.grades.GradesSave:success#2
 
 Authored path: `Course.grades.GradesSave`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 59.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 100.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 71.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 106.
 
 ```reaction
 when Grading.save (at, feedback, grade, grader: user, judgments, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesSave:success
@@ -10064,8 +10649,8 @@ then
 ### Course.grades.GradesStandards:forbidden
 
 Authored path: `Course.grades.GradesStandards`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 85.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 112.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 91.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 116.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/standards", requestId, session)
@@ -10079,8 +10664,8 @@ then
 ### Course.grades.GradesStandards:success
 
 Authored path: `Course.grades.GradesStandards`.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 85.
-- Covered by [Assessments and standards](../design/compositions/course/grades.md), line 112.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 91.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 116.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/standards", requestId, session)
@@ -29663,12 +30248,18 @@ not listed here have no explicit input contract.
 - `/categories/items` — requires `category`, `session`
 - `/categories/list` — requires `session`
 - `/categories/unassign` — requires `item`, `session`
+- `/delegation/clear` — requires `session`, `item`, `learner`
+- `/delegation/clear-item` — requires `session`, `item`
+- `/delegation/for-item` — requires `session`, `item`
+- `/delegation/graders` — requires `session`
+- `/delegation/set` — requires `session`, `item`, `learner`, `grader`
+- `/delegation/spread` — requires `session`, `item`, `learners`, `graders`, `replace`
 - `/flags/forTarget` — requires `session`, `target`
 - `/flags/open` — requires `session`
 - `/flags/raise` — requires `reason`, `session`, `target`
 - `/flags/resolve` — requires `session`, `target`, `outcome`
-- `/grades/add-criterion` — requires `basis`, `item`, `position`, `session`
 - `/grades/configure-item` — requires `item`, `label`, `session`
+- `/grades/configure-setup` — requires `criteria`, `item`, `method`, `revision`, `session`
 - `/grades/define-standard` — requires `competent`, `deficient`, `description`, `emergent`, `expert`, `name`, `referenceUrl`, `session`
 - `/grades/detail` — requires `grade`, `session`
 - `/grades/excuse` — requires `feedback`, `grade`, `session`, `version`
@@ -29678,13 +30269,11 @@ not listed here have no explicit input contract.
 - `/grades/for-student` — requires `learner`, `session`
 - `/grades/gradebook` — requires `session`
 - `/grades/item` — requires `item`, `session`
-- `/grades/record` — requires `evidence`, `item`, `learner`, `session`
+- `/grades/record` — requires `evidence`, `item`, `learner`, `revision`, `session`
 - `/grades/release` — requires `grade`, `session`, `version`
 - `/grades/release-item` — requires `item`, `session`
-- `/grades/remove-criterion` — requires `criterion`, `session`
 - `/grades/restore-excused` — requires `grade`, `session`, `version`
 - `/grades/retract` — requires `grade`, `session`, `version`
-- `/grades/revise-criterion` — requires `criterion`, `position`, `session`
 - `/grades/revise-standard` — requires `competent`, `deficient`, `description`, `emergent`, `expectedEdition`, `expert`, `name`, `referenceUrl`, `session`, `standard`
 - `/grades/save` — requires `feedback`, `grade`, `judgments`, `session`, `version`
 - `/grades/standards` — requires `session`

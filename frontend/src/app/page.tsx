@@ -84,7 +84,6 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
     learnerReady && session ? () => loadGradesForMe() : null,
     [learnerReady, session],
   );
-
   const { data: notesData } = useQuery(
     learnerReady && session ? () => loadVisibleNotes() : null,
     [learnerReady, session],
@@ -140,8 +139,8 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
           <GraduationCap className="size-5" /> Course staff
         </h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage the roster, assignments, assessments, and calendar from the
-          staff pages.
+          Manage the roster, assignments, grades, and calendar from the staff
+          pages.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button asChild size="sm">
@@ -151,7 +150,7 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
             <Link href="/staff/assignments">Assignments</Link>
           </Button>
           <Button asChild size="sm" variant="outline">
-            <Link href="/staff/gradebook">Assessments</Link>
+            <Link href="/staff/gradebook">Gradebook</Link>
           </Button>
           <Button asChild size="sm" variant="outline">
             <Link href="/staff/calendar">Calendar</Link>
@@ -164,7 +163,8 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
   const assigned =
     assignmentsData?.assignments?.filter((a) => a.status === "ASSIGNED") ?? [];
   const released =
-    gradesData?.grades?.filter((g) => g.status === "RELEASED") ?? [];
+    gradesData?.grades?.filter((grade) => grade.status === "RELEASED").length ??
+    0;
   const unacknowledged =
     notesData?.notes?.filter((n) => !n.acknowledgedAt).length ?? 0;
 
@@ -177,7 +177,7 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
               <GraduationCap className="size-5" /> Course overview
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Review your assignments, assessments, notes, and late-day balance.
+              Review your assignments, grades, notes, and late-day balance.
             </p>
           </div>
           <div className="flex gap-2">
@@ -188,7 +188,7 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
             </Button>
             <Button asChild size="sm" variant="outline" className="gap-1.5">
               <Link href="/grades">
-                <GraduationCap className="size-4" /> Assessments
+                <GraduationCap className="size-4" /> Grades
               </Link>
             </Button>
           </div>
@@ -214,8 +214,8 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
             href="/grades"
             className="rounded-lg border border-border bg-card p-3 hover:bg-muted/50 transition-colors"
           >
-            <p className="text-xs text-muted-foreground">Assessments</p>
-            <p className="text-2xl font-semibold">{released.length}</p>
+            <p className="text-xs text-muted-foreground">Grades</p>
+            <p className="text-2xl font-semibold">{released}</p>
             <p className="text-xs text-muted-foreground">released</p>
           </Link>
           <div className="rounded-lg border border-border bg-card p-3">

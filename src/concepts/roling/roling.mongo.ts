@@ -168,6 +168,18 @@ export class MongoRolingConcept {
     return { present: (await this.#holdersOf(context, capability)).length > 0 };
   }
 
+  async _getCapabilityHolders({ context, capability }: { context: string; capability: string }) {
+    const roles = await this.roles
+      .find({ capabilities: { $in: [capability, "administer"] } }, { projection: { _id: 1 } })
+      .toArray();
+    if (roles.length === 0) return [];
+    const docs = await this.assignments
+      .find({ context, role: { $in: roles.map((role) => role._id) } })
+      .sort({ seq: 1 })
+      .toArray();
+    return docs.map((doc) => ({ user: doc.user }));
+  }
+
   async _isSoleCapabilityHolder({
     user,
     context,

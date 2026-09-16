@@ -1,6 +1,7 @@
 "use client";
 
-import { Archive, Eye, Send } from "lucide-react";
+import { AlertTriangle, Archive, Eye, Send } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
@@ -12,8 +13,14 @@ import {
   AssignmentInstructions,
   AssignmentSkills,
 } from "@/components/lms/assignment-reading";
-import { GradeInput } from "@/components/lms/grade-input";
+import { AssessmentInput } from "@/components/lms/grade-input";
 import { GradeSetup } from "@/components/lms/grade-setup";
+import { GradingDataNotice } from "@/components/lms/grading-data-notice";
+import {
+  type GraderFilter,
+  GraderSelect,
+  GradingDelegationToolbar,
+} from "@/components/lms/grading-delegation";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { BackLink, PageContainer } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
@@ -33,16 +40,34 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@/hooks/use-query";
-import { api, publicErrorMessage, unwrap } from "@/lib/api";
+import {
+  api,
+  publicErrorMessage,
+  requestErrorMessage,
+  unwrap,
+} from "@/lib/api";
 import { assignmentTypeLabel } from "@/lib/assignment-types";
 import { useAuth } from "@/lib/auth";
 import { useCourse } from "@/lib/course";
-import { dueTime, fromZonedInput, toZonedInput } from "@/lib/format";
 import {
+  ALL_GRADERS,
+  learnerMatchesGraderFilter,
+} from "@/lib/delegation-filter";
+import { dueTime, fromZonedInput, toZonedInput } from "@/lib/format";
+import type { Assessment, GradingSetup } from "@/lib/grading";
+import {
+  loadDelegationForItem,
+  loadDelegationGraders,
   loadGradesForItem,
   loadLateDaysForAssignment,
+  loadSections,
   loadSubmissionsForAssignment,
 } from "@/lib/lms";
+import {
+  downloadSubmissionsCsv,
+  selectExportAssessment,
+  selectSubmissionAttempt,
+} from "@/lib/submissions-export";
 
 /** The evidence menu needs a value for "no attempt"; a submission id never looks like this. */
 const EXCUSAL = "excusal";
@@ -139,46 +164,53 @@ function StaffAssignmentDetailPageContent({
   params: Promise<{ assignment: string }>;
 }) {
   const { assignment } = use(params);
-  const { session, permissions } = useAuth();
+  const router = useRouter();
+  const { session, me, permissions } = useAuth();
   const canManage = permissions.can("course:manage");
   const canGrade = permissions.can("grade");
+  const canReadStudentRecords = permissions.can("student-records");
   const [editing, setEditing] = useState(false);
   const [gradingUser, setGradingUser] = useState<string | null>(null);
   const [gradingEvidence, setGradingEvidence] = useState<string | null>(null);
+  const [gradingDirty, setGradingDirty] = useState(false);
+  const [setupDirty, setSetupDirty] = useState(false);
+  const [pendingGradingTarget, setPendingGradingTarget] = useState<{
+    learner: string;
+    evidence: string | null;
+  } | null>(null);
+  const [pendingEdit, setPendingEdit] = useState(false);
+  const [pendingLeave, setPendingLeave] = useState<string | null>(null);
   const [tab, setTab] = useState("overview");
+  const [pendingAttemptHash, setPendingAttemptHash] = useState<string | null>(
+    null,
+  );
+  const [graderFilter, setGraderFilter] = useState<GraderFilter>(ALL_GRADERS);
+  const [exporting, setExporting] = useState(false);
 
   const {
     data: asgnData,
     loading,
     error,
+    refused,
     refetch,
   } = useQuery(
     session
       ? () => api.assignments["staff-summary"]({ assignment }).then(unwrap)
       : null,
     [session, assignment],
+    { retainOnTransportError: true },
   );
 
-  const { data: subsData, refetch: refetchSubmissions } = useQuery<{
-    assigned: {
-      assignee: string;
-      displayName: string | null;
-      release: string;
-      dueOverride: string | null;
-      status: string;
-    }[];
-    submissions: {
-      submitter: string;
-      submitterName: string | null;
-      submission: string;
-      artifacts: string[];
-      submittedAt: string;
-      number: number;
-      status: string;
-    }[];
-  }>(
+  const {
+    data: subsData,
+    loading: submissionsLoading,
+    error: submissionsError,
+    refused: submissionsRefused,
+    refetch: refetchSubmissions,
+  } = useQuery(
     session && canGrade ? () => loadSubmissionsForAssignment(assignment) : null,
     [session, assignment],
+    { retainOnTransportError: true },
   );
 
   const submissions = subsData?.submissions ?? [];
@@ -210,54 +242,285 @@ function StaffAssignmentDetailPageContent({
     [subsData],
   );
 
-  const { data: gradesData, refetch: refetchGrades } = useQuery(
+  const gradesQuery = useQuery(
     session && canGrade ? () => loadGradesForItem(assignment) : null,
     [session, assignment],
+    { retainOnTransportError: true },
+  );
+  const { refetch: refetchGrades } = gradesQuery;
+
+  const {
+    data: lateData,
+    loading: lateLoading,
+    refetch: refetchLateDays,
+  } = useQuery(
+    session && canReadStudentRecords
+      ? () => loadLateDaysForAssignment(assignment)
+      : null,
+    [session, assignment, canReadStudentRecords],
   );
 
-  const { data: lateData } = useQuery<{
-    users: { learner: string; days: number }[];
-  }>(session && canGrade ? () => loadLateDaysForAssignment(assignment) : null, [
-    session,
-    assignment,
-  ]);
+  const delegationQuery = useQuery(
+    session && canGrade ? () => loadDelegationForItem(assignment) : null,
+    [session, assignment],
+    { retainOnTransportError: true },
+  );
+  const gradersQuery = useQuery(
+    session && canGrade ? () => loadDelegationGraders() : null,
+    [session],
+    { retainOnTransportError: true },
+  );
 
-  const previewSkills = useQuery(
+  const gradingSetup = useQuery(
     session && canGrade
       ? () => api.grades.item({ item: assignment }).then(unwrap)
       : null,
     [session, assignment],
+    { retainOnTransportError: true },
   );
   const detail = asgnData?.summary;
   const assigned = subsData?.assigned ?? [];
-  const grades = gradesData?.grades ?? [];
+  const grades = (gradesQuery.data?.grades ?? []) as Assessment[];
+  const currentSetup = gradingSetup.data as GradingSetup | null;
+  const gradingDataReady = Boolean(currentSetup && gradesQuery.data);
+  const gradingDataLoading = gradingSetup.loading || gradesQuery.loading;
+  const gradingDataError = gradingSetup.error ?? gradesQuery.error ?? null;
+  const gradingDataRefused = !gradingSetup.data
+    ? gradingSetup.refused
+    : gradesQuery.refused;
+  const gradingDataUnavailable =
+    !gradingDataReady ||
+    gradingDataLoading ||
+    Boolean(gradingDataError) ||
+    submissionsLoading ||
+    Boolean(submissionsError);
   const lateUsers = lateData?.users ?? [];
-  const draftCount = grades.filter((grade) => grade.status === "DRAFT").length;
+  const draftCount = gradingDataReady
+    ? grades.filter((record) => record.status === "DRAFT").length
+    : 0;
+
+  function refetchGradingData() {
+    gradingSetup.refetch();
+    refetchGrades();
+  }
+
+  function openAssessment(learner: string, evidence: string | null) {
+    if (
+      gradingDirty &&
+      (gradingUser !== learner || gradingEvidence !== evidence)
+    ) {
+      setPendingGradingTarget({ learner, evidence });
+      return;
+    }
+    setGradingUser(learner);
+    setGradingEvidence(evidence);
+  }
 
   useEffect(() => {
-    let frame = 0;
-    function followAttempt() {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        if (!canGrade || !window.location.hash.startsWith("#attempt-")) return;
-        const target = document.getElementById(window.location.hash.slice(1));
-        if (!(target instanceof HTMLDetailsElement)) return;
-        setTab("submissions");
-        target.open = true;
-        frame = requestAnimationFrame(() => target.scrollIntoView());
-      });
+    function queueAttempt() {
+      setPendingAttemptHash(
+        canGrade && window.location.hash.startsWith("#attempt-")
+          ? window.location.hash.slice(1)
+          : null,
+      );
     }
-    followAttempt();
-    window.addEventListener("hashchange", followAttempt);
+    queueAttempt();
+    window.addEventListener("hashchange", queueAttempt);
     return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("hashchange", followAttempt);
+      window.removeEventListener("hashchange", queueAttempt);
     };
-  }, [canGrade, loading, subsData]);
+  }, [canGrade]);
 
-  const submittedIds = new Set(submissions.map((s) => s.submitter));
+  useEffect(() => {
+    if (!canGrade || !pendingAttemptHash) return;
+    let scrollFrame = 0;
+    const revealFrame = requestAnimationFrame(() => {
+      const target = document.getElementById(pendingAttemptHash);
+      if (!(target instanceof HTMLDetailsElement)) return;
+      setTab("submissions");
+      target.open = true;
+      scrollFrame = requestAnimationFrame(() => {
+        target.scrollIntoView();
+        setPendingAttemptHash(null);
+      });
+    });
+    return () => {
+      cancelAnimationFrame(revealFrame);
+      cancelAnimationFrame(scrollFrame);
+    };
+  }, [canGrade, pendingAttemptHash, loading, subsData, gradingDataReady]);
+
+  const submittedIds = new Set(
+    submissions
+      .filter((submission) => submission.status === "SUBMITTED")
+      .map((submission) => submission.submitter),
+  );
 
   const lateMap = new Map(lateUsers.map((u) => [u.learner, u.days]));
+
+  const graders = gradersQuery.data?.graders ?? [];
+  const delegations = delegationQuery.data?.delegations ?? [];
+  const delegationByLearner = new Map(
+    delegations.map((row) => [String(row.learner), row] as const),
+  );
+  const byLearner = new Map(
+    delegations.map(
+      (row) => [String(row.learner), String(row.grader)] as const,
+    ),
+  );
+  const learnerIds = assigned.map((learner) => String(learner.assignee));
+  const visibleAssigned = assigned.filter((learner) =>
+    learnerMatchesGraderFilter(
+      String(learner.assignee),
+      graderFilter,
+      byLearner,
+      me?.user ?? null,
+    ),
+  );
+  const visibleLearnerIds = visibleAssigned.map((learner) =>
+    String(learner.assignee),
+  );
+  const visibleLearnerSet = new Set(visibleLearnerIds);
+  // Keep the open editor mounted even if a filter or grader reassignment hides it.
+  // Its draft stays in memory, and refusals still clear the workspace below.
+  const workspaceAssigned = assigned.filter(
+    (learner) =>
+      visibleLearnerSet.has(String(learner.assignee)) ||
+      String(learner.assignee) === gradingUser,
+  );
+  const visibleSubmitted = new Set(
+    submissions
+      .filter(
+        (submission) =>
+          submission.status === "SUBMITTED" &&
+          visibleLearnerSet.has(String(submission.submitter)),
+      )
+      .map((submission) => String(submission.submitter)),
+  ).size;
+  const hiddenDraftCount = grades.filter(
+    (grade) =>
+      grade.status === "DRAFT" && !visibleLearnerSet.has(String(grade.learner)),
+  ).length;
+  const delegationLoading = delegationQuery.loading || gradersQuery.loading;
+  const delegationError = delegationQuery.error ?? gradersQuery.error;
+  const refreshing =
+    loading ||
+    submissionsLoading ||
+    gradingSetup.loading ||
+    gradesQuery.loading ||
+    lateLoading ||
+    delegationLoading;
+
+  function refreshSubmissionWorkspace() {
+    refetch();
+    refetchSubmissions();
+    refetchGradingData();
+    refetchLateDays();
+    delegationQuery.refetch();
+    gradersQuery.refetch();
+  }
+
+  async function exportCurrentView() {
+    if (!session || !me || !detail) return;
+    setExporting(true);
+    try {
+      const [
+        freshAssignment,
+        freshSubmissions,
+        freshDelegations,
+        freshGraders,
+        observedGrading,
+      ] = await Promise.all([
+        api.assignments["staff-summary"]({ assignment }).then(unwrap),
+        loadSubmissionsForAssignment(assignment),
+        loadDelegationForItem(assignment),
+        loadDelegationGraders(),
+        api.grades.item({ item: assignment }).then(unwrap),
+      ]);
+      if (!freshAssignment.summary) {
+        toast.error(
+          "CSV was not downloaded. This assignment is no longer available.",
+        );
+        return;
+      }
+      const freshByLearner = new Map(
+        freshDelegations.delegations.map(
+          (row) => [String(row.learner), String(row.grader)] as const,
+        ),
+      );
+      const scopedLearners = freshSubmissions.assigned.filter((learner) =>
+        learnerMatchesGraderFilter(
+          String(learner.assignee),
+          graderFilter,
+          freshByLearner,
+          me.user,
+        ),
+      );
+      if (scopedLearners.length === 0) {
+        toast.info(
+          "No learners are in the current scope. No CSV was downloaded.",
+        );
+        return;
+      }
+
+      const [freshSections, freshLateDays, latePolicy, freshGrades] =
+        await Promise.all([
+          canManage ? loadSections() : Promise.resolve(null),
+          canReadStudentRecords
+            ? loadLateDaysForAssignment(assignment)
+            : Promise.resolve(null),
+          canReadStudentRecords
+            ? api["late-days"].policy({}).then(unwrap)
+            : Promise.resolve(null),
+          loadGradesForItem(assignment),
+        ]);
+      const confirmedGrading = await api.grades
+        .item({ item: assignment })
+        .then(unwrap);
+      if (confirmedGrading.revision !== observedGrading.revision) {
+        toast.info(
+          "CSV was not downloaded because the grading setup changed. Try again.",
+        );
+        return;
+      }
+      downloadSubmissionsCsv({
+        assignment,
+        title: freshAssignment.summary.title,
+        dueAt: freshAssignment.summary.dueAt,
+        assigned: scopedLearners,
+        submissions: freshSubmissions.submissions,
+        grades: freshGrades.grades,
+        grading: {
+          method: confirmedGrading.method,
+          revision: confirmedGrading.revision,
+          maxPoints: confirmedGrading.maxPoints,
+        },
+        delegations: freshDelegations.delegations,
+        graders: freshGraders.graders,
+        sectionNames: new Map(
+          (freshSections?.sections ?? []).map(
+            (section) => [String(section.section), section.name] as const,
+          ),
+        ),
+        lateDays: freshLateDays
+          ? new Map(
+              freshLateDays.users.map(
+                (row) => [String(row.learner), row.days] as const,
+              ),
+            )
+          : null,
+        lateDayUnitHours: latePolicy?.unitHours ?? null,
+        origin: window.location.origin,
+      });
+      toast.success(
+        `${scopedLearners.length} ${scopedLearners.length === 1 ? "learner" : "learners"} exported`,
+      );
+    } catch (error) {
+      toast.error(`CSV was not downloaded. ${requestErrorMessage(error)}`);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   async function publish() {
     if (!session) return;
@@ -281,31 +544,37 @@ function StaffAssignmentDetailPageContent({
 
   async function releaseAll() {
     if (!session) return;
-    const result = await api.grades["release-item"]({
-      item: assignment,
-    });
-    if ("error" in result) toast.error(publicErrorMessage(result.error));
-    else {
-      const summary = `${result.released.length} assessments released; ${result.skipped.length} skipped (incomplete or changed).`;
-      if (result.unconfirmed.length)
-        toast.error(
-          `${summary} ${result.unconfirmed.length} outcomes could not be confirmed. Review the refreshed assessments before retrying.`,
-        );
-      else toast.success(summary);
+    if (!currentSetup || gradingDataUnavailable) return;
+    try {
+      const result = await api.grades["release-item"]({ item: assignment });
+      if ("error" in result) toast.error(publicErrorMessage(result.error));
+      else {
+        const summary = `${result.released.length} assessments released; ${result.skipped.length} skipped (incomplete or changed).`;
+        if (result.unconfirmed.length)
+          toast.error(
+            `${summary} ${result.unconfirmed.length} outcomes could not be confirmed. Review the refreshed grades before retrying.`,
+          );
+        else toast.success(summary);
+      }
+    } catch {
+      toast.error(
+        "Release outcomes could not be confirmed. Grades were refreshed before retrying.",
+      );
+    } finally {
       refetchGrades();
     }
   }
 
-  if (loading)
+  if (loading && !detail)
     return (
       <PageContainer>
         <LoadingState label="Loading assignment…" />
       </PageContainer>
     );
-  if (error)
+  if (error && !detail)
     return (
       <PageContainer>
-        <ErrorState message={error} onRetry={refetch} />
+        <ErrorState message={error} refused={refused} onRetry={refetch} />
       </PageContainer>
     );
   if (!detail)
@@ -340,7 +609,16 @@ function StaffAssignmentDetailPageContent({
 
   return (
     <PageContainer>
-      <BackLink href={canManage ? "/staff/assignments" : "/staff/gradebook"}>
+      <BackLink
+        href={canManage ? "/staff/assignments" : "/staff/gradebook"}
+        onClick={(event) => {
+          if (!setupDirty && !gradingDirty) return;
+          event.preventDefault();
+          setPendingLeave(
+            canManage ? "/staff/assignments" : "/staff/gradebook",
+          );
+        }}
+      >
         {canManage ? "Back to assignments" : "Back to assessment book"}
       </BackLink>
 
@@ -363,7 +641,10 @@ function StaffAssignmentDetailPageContent({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => setEditing(true)}
+                onClick={() => {
+                  if (setupDirty || gradingDirty) setPendingEdit(true);
+                  else setEditing(true);
+                }}
               >
                 Edit
               </Button>
@@ -411,12 +692,28 @@ function StaffAssignmentDetailPageContent({
         )}
       </div>
 
+      {error ? (
+        <div
+          role="status"
+          className="mb-6 flex flex-wrap items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+        >
+          <AlertTriangle className="size-4 shrink-0" />
+          <span className="min-w-0 flex-1">
+            {error} Assignment details may be out of date.
+          </span>
+          <Button size="sm" variant="outline" onClick={refetch}>
+            Retry details
+          </Button>
+        </div>
+      ) : null}
+
       <Tabs
         value={tab}
         className="gap-6"
         onValueChange={(value) => {
+          setPendingAttemptHash(null);
           setTab(value);
-          if (value === "preview") previewSkills.refetch();
+          if (value === "preview") gradingSetup.refetch();
         }}
       >
         <TabsList variant="line">
@@ -426,7 +723,12 @@ function StaffAssignmentDetailPageContent({
           )}
           <TabsTrigger value="preview">Student preview</TabsTrigger>
         </TabsList>
-        <TabsContent value="overview" className="space-y-8">
+        <TabsContent
+          value="overview"
+          forceMount
+          hidden={tab !== "overview"}
+          className="space-y-8"
+        >
           <section className="space-y-3">
             <h2 className="font-medium">Instructions</h2>
             {detail.instructions ? (
@@ -470,10 +772,19 @@ function StaffAssignmentDetailPageContent({
               title={detail.title}
               published={detail.status === "PUBLISHED"}
               readOnly={detail.status === "ARCHIVED"}
+              onMethodChange={() => {
+                refetchGradingData();
+              }}
+              onDirtyChange={setSetupDirty}
             />
           )}
         </TabsContent>
-        <TabsContent value="preview" className="space-y-4">
+        <TabsContent
+          value="preview"
+          forceMount
+          hidden={tab !== "preview"}
+          className="space-y-4"
+        >
           <p className="text-sm text-muted-foreground">
             Assignment content as shown to students. Personal history, late
             days, and deadline overrides are omitted; submission controls are
@@ -484,8 +795,27 @@ function StaffAssignmentDetailPageContent({
               {detail.instructions && (
                 <AssignmentInstructions instructions={detail.instructions} />
               )}
-              {previewSkills.data && (
-                <AssignmentSkills criteria={previewSkills.data.criteria} />
+              {canGrade && gradingSetup.loading && !gradingSetup.data ? (
+                <LoadingState label="Loading grading setup…" />
+              ) : canGrade && gradingSetup.error && !gradingSetup.data ? (
+                <ErrorState
+                  message={gradingSetup.error}
+                  refused={gradingSetup.refused}
+                  onRetry={gradingSetup.refetch}
+                />
+              ) : (
+                <>
+                  {canGrade && gradingSetup.data ? (
+                    <GradingDataNotice
+                      loading={gradingSetup.loading}
+                      error={gradingSetup.error}
+                      onRetry={gradingSetup.refetch}
+                    />
+                  ) : null}
+                  {currentSetup ? (
+                    <AssignmentSkills criteria={currentSetup.criteria} />
+                  ) : null}
+                </>
               )}
               {detail.acceptsSubmissions && (
                 <Card density="compact">
@@ -531,64 +861,163 @@ function StaffAssignmentDetailPageContent({
               />
               <Fact.Count n={totalMissing} noun="missing" plural="missing" />
             </Facts>
+            <GradingDelegationToolbar
+              item={assignment}
+              filter={graderFilter}
+              onFilter={setGraderFilter}
+              graders={graders}
+              delegations={delegations}
+              allLearners={learnerIds}
+              visibleLearners={visibleLearnerIds}
+              visibleSubmitted={visibleSubmitted}
+              byLearner={byLearner}
+              loading={delegationLoading}
+              error={delegationError}
+              refreshing={refreshing}
+              exporting={exporting}
+              onRetry={() => {
+                delegationQuery.refetch();
+                gradersQuery.refetch();
+              }}
+              onChanged={delegationQuery.refetch}
+              onRefresh={refreshSubmissionWorkspace}
+              onExport={exportCurrentView}
+            />
             {canGrade && (
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between gap-3">
+                <CardHeader className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <CardTitle className="text-base">
-                      Learner work and assessments
+                      Learner work and grades
                     </CardTitle>
                   </div>
                   <ConfirmAction
-                    title="Release complete draft assessments?"
-                    description="Complete drafts will become visible to learners. Incomplete or concurrently changed assessments will be skipped and reported."
-                    confirmLabel="Release assessments"
+                    title="Release all complete assessment drafts for this assignment?"
+                    description={`This applies across the full assignment, not only the current grader scope.${hiddenDraftCount > 0 ? ` ${hiddenDraftCount} draft${hiddenDraftCount === 1 ? " is" : "s are"} outside the current scope.` : ""} Complete assessment drafts become visible to learners; incomplete or concurrently changed drafts are skipped and reported.`}
+                    confirmLabel="Release all assignment drafts"
+                    confirmDisabled={gradingDataUnavailable || draftCount === 0}
                     onConfirm={releaseAll}
                     trigger={
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={draftCount === 0}
+                        className="w-full sm:w-auto"
+                        disabled={gradingDataUnavailable || draftCount === 0}
                       >
-                        <Send className="size-4" /> Release drafts ({draftCount}
-                        )
+                        <Send className="size-4" /> Release all drafts
+                        {gradingDataReady ? ` (${draftCount})` : ""}
                       </Button>
                     }
                   />
                 </CardHeader>
                 <CardContent>
-                  {assigned.length === 0 ? (
+                  {submissionsLoading && !subsData ? (
+                    <LoadingState label="Loading learner work…" />
+                  ) : submissionsError && !subsData ? (
+                    <ErrorState
+                      message={submissionsError}
+                      refused={submissionsRefused}
+                      onRetry={refetchSubmissions}
+                    />
+                  ) : !gradingDataReady ? (
+                    gradingDataLoading ? (
+                      <LoadingState label="Loading grading data…" />
+                    ) : (
+                      <ErrorState
+                        message={
+                          gradingDataError ?? "Grading data is unavailable."
+                        }
+                        refused={gradingDataRefused}
+                        onRetry={refetchGradingData}
+                      />
+                    )
+                  ) : assigned.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
                       No learners are assigned yet.
                     </p>
                   ) : (
                     <div className="space-y-3">
-                      {assigned.map((learner) => {
+                      {submissionsError ? (
+                        <div
+                          role="alert"
+                          className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm"
+                        >
+                          <p className="min-w-0 flex-1">
+                            Learner work could not be refreshed. Last loaded
+                            work and unsaved grading input are retained. Retry
+                            before making grade changes.
+                          </p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={submissionsLoading}
+                            onClick={refetchSubmissions}
+                          >
+                            {submissionsLoading
+                              ? "Retrying…"
+                              : "Retry learner work"}
+                          </Button>
+                        </div>
+                      ) : null}
+                      {visibleAssigned.length === 0 ? (
+                        <div className="space-y-3 py-6 text-center">
+                          <p className="text-sm text-muted-foreground">
+                            No learners match this grader scope.
+                          </p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setGraderFilter(ALL_GRADERS)}
+                          >
+                            Show all learners
+                          </Button>
+                        </div>
+                      ) : null}
+                      <GradingDataNotice
+                        loading={gradingDataLoading}
+                        error={gradingDataError}
+                        onRetry={refetchGradingData}
+                      />
+                      {workspaceAssigned.map((learner) => {
                         const learnerId = String(learner.assignee);
+                        const learnerLabel =
+                          learner.displayName ??
+                          learner.username ??
+                          learner.email ??
+                          learnerId;
                         const attempts = submissions
                           .filter(
                             (submission) => submission.submitter === learnerId,
                           )
                           .sort((left, right) => left.number - right.number);
-                        const latest = attempts
-                          .filter((a) => a.status === "SUBMITTED")
-                          .at(-1);
+                        const latest = selectSubmissionAttempt(attempts);
                         const learnerGrades = grades.filter(
-                          (g) => g.learner === learnerId,
+                          (grade) =>
+                            grade.learner === learnerId &&
+                            grade.item === assignment,
+                        );
+                        const visibleAssessment = selectExportAssessment(
+                          learnerGrades,
+                          latest,
+                        ).record;
+                        const newAttemptNeedsReview = Boolean(
+                          latest?.status === "SUBMITTED" && !visibleAssessment,
                         );
                         const lateDays = lateMap.get(learnerId) ?? 0;
                         const isGrading = gradingUser === learnerId;
+                        const selectedAssessment = learnerGrades.find(
+                          (grade) => grade.evidence === (gradingEvidence ?? ""),
+                        );
 
                         return (
                           <div
                             key={learnerId}
+                            hidden={!visibleLearnerSet.has(learnerId)}
                             className="space-y-3 rounded-lg border border-border p-3"
                           >
                             <div className="flex flex-wrap items-start justify-between gap-3">
                               <div>
-                                <p className="font-medium">
-                                  {learner.displayName}
-                                </p>
+                                <p className="font-medium">{learnerLabel}</p>
                                 <Facts className="text-muted-foreground text-xs">
                                   {latest ? (
                                     <Fact.Count
@@ -598,6 +1027,9 @@ function StaffAssignmentDetailPageContent({
                                   ) : (
                                     <span>No submission yet</span>
                                   )}
+                                  {latest?.status === "WITHDRAWN" ? (
+                                    <Fact.Status status="WITHDRAWN" />
+                                  ) : null}
                                   {lateDays > 0 ? (
                                     <Fact.Count n={lateDays} noun="late day" />
                                   ) : null}
@@ -654,19 +1086,20 @@ function StaffAssignmentDetailPageContent({
                                             size="sm"
                                             variant="outline"
                                             disabled={
-                                              attempt.status !== "SUBMITTED" &&
-                                              !learnerGrades.some(
-                                                (g) =>
-                                                  g.evidence ===
-                                                  attempt.submission,
+                                              gradingDataUnavailable ||
+                                              (attempt.status !== "SUBMITTED" &&
+                                                !learnerGrades.some(
+                                                  (g) =>
+                                                    g.evidence ===
+                                                    attempt.submission,
+                                                ))
+                                            }
+                                            onClick={() =>
+                                              openAssessment(
+                                                learnerId,
+                                                attempt.submission,
                                               )
                                             }
-                                            onClick={() => {
-                                              setGradingEvidence(
-                                                attempt.submission,
-                                              );
-                                              setGradingUser(learnerId);
-                                            }}
                                           >
                                             Assess this attempt
                                           </Button>
@@ -676,11 +1109,55 @@ function StaffAssignmentDetailPageContent({
                                   </div>
                                 ) : null}
                               </div>
-                              <span className="text-sm text-muted-foreground">
-                                {learnerGrades.length
-                                  ? `${learnerGrades.length} assessment${learnerGrades.length === 1 ? "" : "s"}`
-                                  : "Not assessed"}
-                              </span>
+                              <div className="flex flex-wrap items-end gap-4">
+                                <GraderSelect
+                                  item={assignment}
+                                  learner={learnerId}
+                                  learnerLabel={learnerLabel}
+                                  graders={graders}
+                                  current={
+                                    delegationByLearner.get(learnerId) ?? null
+                                  }
+                                  disabled={
+                                    delegationLoading ||
+                                    Boolean(delegationError)
+                                  }
+                                  onChanged={delegationQuery.refetch}
+                                />
+                                <div className="space-y-1 pb-2 text-right text-sm">
+                                  <div className="flex items-center justify-end gap-2">
+                                    {visibleAssessment ? (
+                                      <StatusBadge
+                                        status={visibleAssessment.status}
+                                      />
+                                    ) : null}
+                                    <span className="text-muted-foreground tabular-nums">
+                                      {!visibleAssessment
+                                        ? "Not assessed"
+                                        : visibleAssessment.status === "EXCUSED"
+                                          ? visibleAssessment.evidence
+                                            ? "Attempt excused"
+                                            : "Assignment excused"
+                                          : visibleAssessment.method ===
+                                                "POINTS" &&
+                                              visibleAssessment.scored
+                                            ? `${visibleAssessment.score} / ${visibleAssessment.outOf}`
+                                            : `${learnerGrades.length} assessment${learnerGrades.length === 1 ? "" : "s"}`}
+                                    </span>
+                                  </div>
+                                  {visibleAssessment?.attempt ? (
+                                    <p className="text-xs text-muted-foreground">
+                                      Assessed attempt #
+                                      {visibleAssessment.attempt}
+                                    </p>
+                                  ) : null}
+                                  {newAttemptNeedsReview ? (
+                                    <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                                      New attempt needs review
+                                    </p>
+                                  ) : null}
+                                </div>
+                              </div>
                             </div>
 
                             {canManage && (
@@ -710,8 +1187,10 @@ function StaffAssignmentDetailPageContent({
                                 </Label>
                                 <Select
                                   value={gradingEvidence ?? EXCUSAL}
+                                  disabled={gradingDataUnavailable}
                                   onValueChange={(value) =>
-                                    setGradingEvidence(
+                                    openAssessment(
+                                      learnerId,
                                       value === EXCUSAL ? null : value,
                                     )
                                   }
@@ -747,9 +1226,9 @@ function StaffAssignmentDetailPageContent({
                                 </Select>
                               </div>
                             )}
-                            {isGrading ? (
-                              <GradeInput
-                                key={`${learnerId}-${gradingEvidence ?? "excusal"}-${learnerGrades.find((g) => g.evidence === (gradingEvidence ?? ""))?.version ?? "new"}`}
+                            {isGrading && currentSetup ? (
+                              <AssessmentInput
+                                key={`${learnerId}-${gradingEvidence ?? "assignment"}`}
                                 learner={learnerId}
                                 learnerLabel={
                                   learner.displayName ?? learner.assignee
@@ -757,20 +1236,30 @@ function StaffAssignmentDetailPageContent({
                                 item={assignment}
                                 itemLabel={detail.title}
                                 evidence={gradingEvidence ?? ""}
-                                onSaved={() => {
-                                  refetchGrades();
-                                }}
+                                recordVersion={selectedAssessment?.version}
+                                disabled={gradingDataUnavailable}
+                                onDirtyChange={setGradingDirty}
+                                onSaved={refetchGrades}
                               />
                             ) : (
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => {
-                                  setGradingEvidence(
-                                    latest?.submission ?? null,
-                                  );
-                                  setGradingUser(learnerId);
-                                }}
+                                disabled={gradingDataUnavailable}
+                                onClick={() =>
+                                  openAssessment(
+                                    learnerId,
+                                    latest &&
+                                      (latest.status === "SUBMITTED" ||
+                                        learnerGrades.some(
+                                          (grade) =>
+                                            grade.evidence ===
+                                            latest.submission,
+                                        ))
+                                      ? latest.submission
+                                      : null,
+                                  )
+                                }
                               >
                                 Review assessments
                               </Button>
@@ -786,6 +1275,52 @@ function StaffAssignmentDetailPageContent({
           </TabsContent>
         )}
       </Tabs>
+      <ConfirmAction
+        open={pendingGradingTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingGradingTarget(null);
+        }}
+        title="Switch assessments?"
+        description="This discards only the unsaved scores or feedback in the open editor. Saved assessments and correction history are unchanged."
+        confirmLabel="Discard draft and switch"
+        onConfirm={() => {
+          if (!pendingGradingTarget) return;
+          setGradingDirty(false);
+          setGradingUser(pendingGradingTarget.learner);
+          setGradingEvidence(pendingGradingTarget.evidence);
+          setPendingGradingTarget(null);
+        }}
+      />
+      <ConfirmAction
+        open={pendingEdit}
+        onOpenChange={setPendingEdit}
+        title="Leave the grading setup?"
+        description="This discards only unsaved setup or assessment input on this page. Existing assessments, released grades, and correction history are unchanged."
+        confirmLabel="Discard draft and edit assignment"
+        onConfirm={() => {
+          setSetupDirty(false);
+          setGradingDirty(false);
+          setPendingEdit(false);
+          setEditing(true);
+        }}
+      />
+      <ConfirmAction
+        open={pendingLeave !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingLeave(null);
+        }}
+        title="Leave this assignment?"
+        description="This discards only unsaved setup or assessment input on this page. Existing assessments, released grades, and correction history are unchanged."
+        confirmLabel="Discard draft and leave"
+        onConfirm={() => {
+          if (!pendingLeave) return;
+          const destination = pendingLeave;
+          setSetupDirty(false);
+          setGradingDirty(false);
+          setPendingLeave(null);
+          router.push(destination);
+        }}
+      />
     </PageContainer>
   );
 }

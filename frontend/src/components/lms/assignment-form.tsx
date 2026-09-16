@@ -20,6 +20,7 @@ import { ASSIGNMENT_TYPES } from "@/lib/assignment-types";
 import { useAuth } from "@/lib/auth";
 import { useCourse } from "@/lib/course";
 import { fromZonedInput, toZonedInput } from "@/lib/format";
+import type { SetupCriterionInput } from "@/lib/grading";
 import { loadSections } from "@/lib/lms";
 import { CreationSkills } from "./grade-setup";
 
@@ -78,6 +79,10 @@ export function AssignmentForm({
     () => existing?.targets?.map(String) ?? [],
   );
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [gradingMethod, setGradingMethod] = useState<"COMPETENCY" | "POINTS">(
+    "COMPETENCY",
+  );
+  const [maxPoints, setMaxPoints] = useState("100");
   const [showClose, setShowClose] = useState(Boolean(existing?.closeAt));
   const [loading, setLoading] = useState(false);
   const { data: sectionsData, loading: sectionsLoading } = useQuery(
@@ -97,6 +102,14 @@ export function AssignmentForm({
       : "";
   const scheduleValid =
     Boolean(availableAt && dueAt) && !availableError && !dueError;
+  const numericMaximum = Number(maxPoints);
+  const maximumValid =
+    Boolean(existing) ||
+    !acceptsSubmissions ||
+    gradingMethod !== "POINTS" ||
+    (maxPoints.trim() !== "" &&
+      Number.isFinite(numericMaximum) &&
+      numericMaximum > 0);
 
   function toggleTarget(section: string) {
     setTargets((current) =>
@@ -107,7 +120,7 @@ export function AssignmentForm({
   }
 
   async function save() {
-    if (!session || !scheduleValid) return;
+    if (!session || !scheduleValid || !maximumValid) return;
     setLoading(true);
     try {
       const rawPayload = {
@@ -169,21 +182,33 @@ export function AssignmentForm({
           existing?.assignment ??
           ("assignment" in result ? result.assignment : "");
         if (!existing && acceptsSubmissions) {
-          for (const [position, basis] of selectedSkills.entries()) {
-            try {
-              const added = await api.grades["add-criterion"]({
-                item: savedAssignment,
-                basis,
-                position,
-              });
-              if ("error" in added)
-                throw new Error(publicErrorMessage(added.error));
-            } catch {
-              toast.error(
-                "Draft saved, but some skills could not be added. Review its skills before publishing.",
-              );
-              break;
-            }
+          try {
+            const criteria: SetupCriterionInput[] =
+              gradingMethod === "POINTS"
+                ? [
+                    {
+                      kind: "POINTS",
+                      name: "Overall",
+                      maxPoints: numericMaximum,
+                      position: 0,
+                    },
+                  ]
+                : selectedSkills.map((basis, position) => ({
+                    kind: "COMPETENCY",
+                    basis,
+                    position,
+                  }));
+            const configured = await api.grades["configure-setup"]({
+              item: savedAssignment,
+              method: gradingMethod,
+              revision: 0,
+              criteria,
+            });
+            if ("error" in configured) throw new Error(configured.error);
+          } catch {
+            toast.error(
+              "Draft saved, but its grading setup could not be configured. Review the setup before publishing.",
+            );
           }
         }
         onSaved(savedAssignment);
@@ -314,12 +339,73 @@ export function AssignmentForm({
       ) : null}
 
       {!existing && acceptsSubmissions && permissions.can("grade") && (
-        <CreationSkills
-          selected={selectedSkills}
-          onChange={setSelectedSkills}
-          disabled={loading}
-        />
+        <section className="space-y-3 border-t pt-6">
+          <h2 className="font-medium">Grading</h2>
+          <div className="flex flex-wrap gap-2" aria-label="Grading method">
+            {(
+              [
+                ["COMPETENCY", "Competency"],
+                ["POINTS", "Points"],
+              ] as const
+            ).map(([value, label]) => (
+              <Button
+                key={value}
+                type="button"
+                size="sm"
+                variant={gradingMethod === value ? "default" : "outline"}
+                aria-pressed={gradingMethod === value}
+                disabled={loading}
+                onClick={() => setGradingMethod(value)}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {gradingMethod === "POINTS"
+              ? "Start with one Overall criterion. You can add named subsections in the assignment setup."
+              : "Assess the selected skills against their rubrics."}
+          </p>
+          {gradingMethod === "POINTS" && (
+            <div className="space-y-2">
+              <Label htmlFor="asgn-max-points">Maximum points</Label>
+              <Input
+                id="asgn-max-points"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="any"
+                className="w-32"
+                value={maxPoints}
+                disabled={loading}
+                aria-invalid={!maximumValid}
+                aria-describedby={
+                  maximumValid ? undefined : "asgn-max-points-error"
+                }
+                onChange={(event) => setMaxPoints(event.target.value)}
+              />
+              {!maximumValid && (
+                <p
+                  id="asgn-max-points-error"
+                  className="text-xs text-destructive"
+                >
+                  Enter a maximum greater than zero.
+                </p>
+              )}
+            </div>
+          )}
+        </section>
       )}
+      {!existing &&
+        acceptsSubmissions &&
+        permissions.can("grade") &&
+        gradingMethod === "COMPETENCY" && (
+          <CreationSkills
+            selected={selectedSkills}
+            onChange={setSelectedSkills}
+            disabled={loading}
+          />
+        )}
       <section className="space-y-4 border-t pt-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="font-medium">Schedule</h2>
@@ -422,6 +508,7 @@ export function AssignmentForm({
             loading ||
             !title.trim() ||
             !scheduleValid ||
+            !maximumValid ||
             (audience === "TARGETS" && targets.length === 0)
           }
         >

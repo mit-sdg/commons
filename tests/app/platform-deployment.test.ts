@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, test, vi } from "vite-plus/test";
 import { allowedDevOriginsFromPublicOrigin } from "../../frontend/deployment-config.ts";
 import { backendReadinessResponse } from "../../frontend/src/lib/health.ts";
-import { stackBackendEnvironment } from "../../scripts/stack-environment.ts";
+import { stackBackendEnvironment, stackFrontendProcess } from "../../scripts/stack-environment.ts";
 import { platformProcessEnvironments } from "../../scripts/start-platform.ts";
 import { validateDeploymentConfiguration } from "../../src/deployment.ts";
 
@@ -102,6 +102,55 @@ describe("the managed-platform deployment", () => {
 });
 
 describe("the local development stack", () => {
+  test("keeps development startup and isolates the frontend from the backend port", () => {
+    const inherited = { PORT: "4755", PATH: "/usr/bin", LOG_LEVEL: "error" };
+    const frontend = stackFrontendProcess({
+      root: "/app",
+      edgeOrigin: "http://127.0.0.1:4755",
+      webHost: "127.0.0.1",
+      webPort: "3755",
+      inherited,
+    });
+    expect(frontend.command).toEqual([
+      "bun",
+      "run",
+      "dev",
+      "--",
+      "--hostname",
+      "127.0.0.1",
+      "--port",
+      "3755",
+    ]);
+    expect(frontend.cwd).toBe("/app/frontend");
+    expect(frontend.env).toMatchObject({
+      BACKEND_ORIGIN: "http://127.0.0.1:4755",
+      WATCHPACK_POLLING: "true",
+      LOG_LEVEL: "error",
+    });
+    expect(frontend.env).not.toHaveProperty("PORT");
+    expect(inherited.PORT).toBe("4755");
+  });
+
+  test("serves the prepared standalone frontend for browser CI on its own loopback port", () => {
+    const inherited = { COMMONS_E2E_STANDALONE: "1", PORT: "4755", NODE_ENV: "development" };
+    const frontend = stackFrontendProcess({
+      root: "/app",
+      edgeOrigin: "http://127.0.0.1:4755",
+      webHost: "127.0.0.1",
+      webPort: "3755",
+      inherited,
+    });
+    expect(frontend.command).toEqual(["node", ".next/standalone/frontend/server.js"]);
+    expect(frontend.env).toMatchObject({
+      PORT: "3755",
+      HOSTNAME: "127.0.0.1",
+      NODE_ENV: "production",
+      BACKEND_ORIGIN: "http://127.0.0.1:4755",
+    });
+    expect(frontend.env).not.toHaveProperty("WATCHPACK_POLLING");
+    expect(inherited).toMatchObject({ PORT: "4755", NODE_ENV: "development" });
+  });
+
   test("derives the exact Next.js development hostname from the current public origin", () => {
     const publicOrigin = "https://ephemeral-tunnel.example.test";
 

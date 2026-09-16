@@ -1,4 +1,4 @@
-import { stackBackendEnvironment } from "./stack-environment.ts";
+import { stackBackendEnvironment, stackFrontendProcess } from "./stack-environment.ts";
 
 const root = `${import.meta.dir}/..`;
 
@@ -116,17 +116,14 @@ try {
       await seedDemoData(process.env.MONGODB_URL, edgeOrigin);
     }
 
-    const webEnv = { ...process.env };
-    delete webEnv.PORT;
-    web = spawnPiped(["bun", "run", "dev", "--", "--hostname", webHost, "--port", webPort], {
-      cwd: `${root}/frontend`,
-      env: {
-        ...webEnv,
-        BACKEND_ORIGIN: edgeOrigin,
-        PATH: `${root}/frontend/node_modules/.bin:${process.env.PATH}`,
-        WATCHPACK_POLLING: "true",
-      },
+    const { command, ...options } = stackFrontendProcess({
+      root,
+      edgeOrigin,
+      webHost,
+      webPort,
+      inherited: process.env,
     });
+    web = spawnPiped(command, options);
     webExited = web.exited;
     relays.push(relay(web.stdout, "[web]"), relay(web.stderr, "[web]"));
     console.log(`[stack] frontend starting at ${publicOrigin}`);

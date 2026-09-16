@@ -2,7 +2,8 @@ import { Clock } from "lucide-react";
 import { Fact } from "@/components/facts";
 import { TaskMarkdown } from "@/components/tasks/task-markdown";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Output } from "@/lib/api";
+import type { Criterion } from "@/lib/grading";
+import { competencyCriteria, pointCriteria } from "@/lib/grading";
 import { RubricDescription } from "./assessment-history";
 export function AssignmentInstructions({
   instructions,
@@ -60,27 +61,45 @@ export function AssignmentDates({
     </Card>
   );
 }
-export function AssignmentSkills({
-  criteria,
-}: {
-  criteria: Extract<Output<"/grades/item">, { criteria: unknown }>["criteria"];
-}) {
+export function AssignmentSkills({ criteria }: { criteria: Criterion[] }) {
   if (!criteria.length) return null;
+  const points = pointCriteria(criteria);
+  const rubrics = competencyCriteria(criteria);
+  const usesPoints = points.length > 0;
   return (
     <details className="rounded-lg border p-4 text-sm">
       <summary className="cursor-pointer font-medium">
-        Assessment criteria{" "}
+        {usesPoints ? "Grading criteria" : "Assessment criteria"}{" "}
         <span className="ml-2 text-muted-foreground font-normal">
-          {criteria.length} {criteria.length === 1 ? "skill" : "skills"}
+          {criteria.length}{" "}
+          {usesPoints
+            ? criteria.length === 1
+              ? "criterion"
+              : "criteria"
+            : criteria.length === 1
+              ? "skill"
+              : "skills"}
         </span>
       </summary>
       <div className="mt-2 divide-y">
-        {criteria.map((c) => (
-          <div key={c.criterion} className="space-y-2 p-3">
-            <h3 className="text-sm font-medium">{c.name}</h3>
-            <RubricDescription rubric={c} showEdition={false} />
-          </div>
-        ))}
+        {usesPoints
+          ? points.map((criterion) => (
+              <div
+                key={criterion.criterion}
+                className="flex items-center justify-between gap-3 p-3"
+              >
+                <h3 className="text-sm font-medium">{criterion.name}</h3>
+                <span className="tabular-nums text-muted-foreground">
+                  {criterion.maxPoints} points
+                </span>
+              </div>
+            ))
+          : rubrics.map((criterion) => (
+              <div key={criterion.criterion} className="space-y-2 p-3">
+                <h3 className="text-sm font-medium">{criterion.name}</h3>
+                <RubricDescription rubric={criterion} showEdition={false} />
+              </div>
+            ))}
       </div>
     </details>
   );

@@ -24,6 +24,11 @@ import { api, publicErrorMessage } from "@/lib/api";
 import { assignmentTypeLabel } from "@/lib/assignment-types";
 import { useAuth } from "@/lib/auth";
 import {
+  type Assessment,
+  assessmentForEvidence,
+  type GradingSetup,
+} from "@/lib/grading";
+import {
   loadAssignmentDetail,
   loadAssignments,
   loadGradesForMe,
@@ -203,6 +208,29 @@ export default function AssignmentDetailPage({
     Boolean(asgnData && "canSubmit" in asgnData && asgnData.canSubmit) &&
     !isPastClose &&
     new Date(detail.availableAt) <= now;
+  const assessments = (gradesData?.grades ?? []) as Assessment[];
+  const latestEvidence = [...attempts]
+    .filter((attempt) => attempt.status === "SUBMITTED")
+    .sort((left, right) => left.number - right.number)
+    .at(-1)?.submission;
+  const selectedAssessment = me
+    ? assessmentForEvidence(
+        assessments,
+        String(me.user),
+        assignment,
+        latestEvidence ?? "",
+      )
+    : undefined;
+  const previousAssessments = assessments.filter(
+    (assessment) =>
+      assessment.item === assignment &&
+      assessment.learner === String(me?.user ?? "") &&
+      assessment.grade !== selectedAssessment?.grade,
+  );
+  const currentSetup =
+    gradeItemData && !("error" in gradeItemData)
+      ? (gradeItemData as GradingSetup)
+      : null;
 
   return (
     <PageContainer>
@@ -227,7 +255,7 @@ export default function AssignmentDetailPage({
         </div>
         <Button asChild variant="outline" size="sm" className="shrink-0">
           <Link href="/grades">
-            <GraduationCap className="size-4 mr-1" /> View assessments
+            <GraduationCap className="size-4 mr-1" /> View grades
           </Link>
         </Button>
       </div>
@@ -238,8 +266,8 @@ export default function AssignmentDetailPage({
             <AssignmentInstructions instructions={detail.instructions} />
           )}
 
-          {gradeItemData && !("error" in gradeItemData) && (
-            <AssignmentSkills criteria={gradeItemData.criteria} />
+          {currentSetup && (
+            <AssignmentSkills criteria={currentSetup.criteria} />
           )}
 
           {canSubmit && (
@@ -334,14 +362,36 @@ export default function AssignmentDetailPage({
           )}
 
           <section className="space-y-4">
-            <h2 className="text-lg font-semibold">Assessments</h2>
-            <AssessmentHistory
-              assessments={(gradesData?.grades ?? []).filter(
-                (g) => g.item === assignment,
-              )}
-              toggle={false}
-            />
+            <h2 className="text-lg font-semibold">Current result</h2>
+            {selectedAssessment ? (
+              <AssessmentHistory
+                assessments={[selectedAssessment]}
+                toggle={false}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {latestEvidence
+                  ? "The latest submitted attempt has not been assessed yet."
+                  : "No released assessment yet."}
+              </p>
+            )}
           </section>
+
+          {previousAssessments.length > 0 && (
+            <section className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold">Previous assessments</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Results for earlier attempts remain available with the grading
+                  criteria used at the time.
+                </p>
+              </div>
+              <AssessmentHistory
+                assessments={previousAssessments}
+                toggle={false}
+              />
+            </section>
+          )}
         </div>
 
         <aside className="space-y-5">

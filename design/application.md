@@ -7,6 +7,12 @@ an account created by Authenticating. These bindings enumerate relationships
 between concept types, not every literal value an application may reserve in an
 opaque role.
 
+Grading setup composition uses
+[competencyEditionIds](computation:competencyEditionIds),
+[resolveGradingCriteria](computation:resolveGradingCriteria), and
+[gradingRevisionMatches](computation:gradingRevisionMatches) to validate and
+freeze one coherent current setup at the application boundary.
+
 ## Types
 
 This list is exhaustive for external roles used by Commons concepts.
@@ -155,6 +161,11 @@ instantiate Categorizing with
 instantiate Conversing with
   Item is Posting.Post
 
+instantiate Delegating with
+  Item is Assigning.Assignment
+  Subject is Authenticating.User
+  Delegate is Authenticating.User
+
 instantiate Drafting with
   Author is Authenticating.User
   Origin is Questioning.Questionnaire
@@ -174,7 +185,6 @@ instantiate Grading with
   Grader is Authenticating.User
   Learner is Authenticating.User
   Item is Assigning.Assignment
-  Criterion is Itemizing.Criterion
   Evidence is Submitting.Submission
 
 instantiate Grouping with
@@ -411,6 +421,15 @@ rendered message, even if a code fence was cut.
 ## Computations
 
 ```computations
+allChosenAdmitted(chosen: Strings, admitted: Strings) : Bool
+  Answers whether the chosen names are a non-repeating selection of at least one identity, every one of which the current-state read admitted.
+
+validDelegationSpreadInput(item: String, learners: Strings, graders: Strings, replace: Bool) : Bool
+  Answers whether item is a nonempty string, learners and graders are non-empty sequences of distinct nonempty strings, and replace is strictly boolean, before those values reach state queries.
+
+validDelegationIdentityInput(item: String, learner?: String, grader?: String) : Bool
+  Answers whether every supplied delegation identity is a nonempty string, before any identity is used in a Mongo selector.
+
 submissionAllowed(detail: Json, section: String, at: Date) : Bool
   Answers whether the published accepting assignment currently targets the learner section and is within its availability and hard close boundaries. Due overrides and late-day use do not extend the hard close.
 

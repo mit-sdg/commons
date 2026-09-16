@@ -81,7 +81,6 @@ function StudentDetailPageContent({
     session ? () => loadGradesForStudent(user) : null,
     [session, user],
   );
-
   const { data: lateBalance } = useQuery<{
     balance: { granted: number; used: number; remaining: number };
   }>(() => loadLateDayBalance(user), [user]);
@@ -204,15 +203,12 @@ function StudentDetailPageContent({
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <GraduationCap className="size-4" /> Assessments (
-                {grades.length})
+                <GraduationCap className="size-4" /> Grades ({grades.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
               {grades.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No assessments yet.
-                </p>
+                <p className="text-sm text-muted-foreground">No grades yet.</p>
               ) : (
                 <AssessmentHistory assessments={grades} staff />
               )}

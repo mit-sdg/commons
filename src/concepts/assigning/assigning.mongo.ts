@@ -349,6 +349,14 @@ export class MongoAssigningConcept {
     return { assigned: rel !== null };
   }
 
+  async _assignedAmong({ assignment, assignees }: { assignment: string; assignees: string[] }) {
+    const docs = await this.releases
+      .find({ assignment, assignee: { $in: assignees } })
+      .sort({ seq: 1 })
+      .toArray();
+    return { assigned: [...new Set(docs.map((release) => release.assignee))] };
+  }
+
   async _getPublishedForAudience({ audience }: { audience: string | null }) {
     const docs = await this.assignments.find({ status: "PUBLISHED" }).sort({ seq: 1 }).toArray();
     return docs

@@ -4,7 +4,8 @@ import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { isActiveStudent, isNotActiveStudent, mayGrade, mayNotGrade } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 
-const { Assigning, Formatting, Posting, Profiling, Submitting } = concepts;
+const { Assigning, Authenticating, Formatting, Posting, Profiling, Rostering, Submitting } =
+  concepts;
 
 /** What is this learner's latest submission for this assignment? */
 export const theLatestSubmission = view(
@@ -85,13 +86,18 @@ export const theSubmissionsForAssignment = former(
       }),
 );
 
-/** Who was assigned this assignment? */
+/** Who was assigned this assignment, with the identity fields a staff export needs? */
 export const theAssignedPopulationForAssignment = former(
   "the assigned population for (assignment)",
-  ({ assignment }, { assignee, displayName, release, dueOverride, releaseStatus }) =>
+  (
+    { assignment },
+    { assignee, displayName, username, email, section, release, dueOverride, releaseStatus },
+  ) =>
     each(Assigning._getAssignees({ assignment }).is({ assignee }))
       .where(
         whether(Profiling._getProfileFields({ user: assignee }).is({ displayName })),
+        whether(Authenticating._getById({ user: assignee }).is({ username })),
+        whether(Rostering._getSeatByUser({ user: assignee }).is({ email, section })),
         Assigning._getAssigned({ assignee }).is({
           assignment,
           release,
@@ -99,7 +105,16 @@ export const theAssignedPopulationForAssignment = former(
           status: releaseStatus,
         }),
       )
-      .form({ assignee, displayName, release, dueOverride, status: releaseStatus }),
+      .form({
+        assignee,
+        displayName,
+        username,
+        email,
+        section,
+        release,
+        dueOverride,
+        status: releaseStatus,
+      }),
 );
 
 /** Which submissions belong to this learner? */
