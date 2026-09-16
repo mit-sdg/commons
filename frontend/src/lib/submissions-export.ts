@@ -81,6 +81,15 @@ function latestByNumber(attempts: readonly LearnerAttempt[]) {
     .at(-1);
 }
 
+/** Shared by the submissions workspace and CSV, including withdrawn-only work. */
+export function selectSubmissionAttempt(attempts: readonly LearnerAttempt[]) {
+  return (
+    latestByNumber(
+      attempts.filter((attempt) => attempt.status === "SUBMITTED"),
+    ) ?? latestByNumber(attempts)
+  );
+}
+
 function latestGradeRecord<T extends { createdAt: string; updatedAt: string }>(
   records: readonly T[],
 ) {
@@ -126,15 +135,6 @@ export function selectExportAssessment<
   };
 }
 
-function exportedGrade<
-  T extends { evidence: string; status: string } & {
-    createdAt: string;
-    updatedAt: string;
-  },
->(records: readonly T[], attempt: LearnerAttempt | undefined) {
-  return selectExportAssessment(records, attempt);
-}
-
 function effectiveDue(
   dueAt: string,
   override: string | null,
@@ -170,17 +170,14 @@ export function submissionsCsv(source: SubmissionsExportSource): {
     const attempts = source.submissions.filter(
       (attempt) => String(attempt.submitter) === learnerId,
     );
-    const active = latestByNumber(
-      attempts.filter((attempt) => attempt.status === "SUBMITTED"),
-    );
-    const recorded = latestByNumber(attempts);
-    const attempt = active ?? recorded;
+    const attempt = selectSubmissionAttempt(attempts);
+    const active = attempt?.status === "SUBMITTED" ? attempt : undefined;
     const submissionStatus = active
       ? "Submitted"
-      : recorded
+      : attempt
         ? "Withdrawn"
         : "Missing";
-    const selected = exportedGrade(
+    const selected = selectExportAssessment(
       source.grades.filter((grade) => String(grade.learner) === learnerId),
       attempt,
     );

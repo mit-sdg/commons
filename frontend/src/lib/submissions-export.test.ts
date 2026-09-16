@@ -3,6 +3,7 @@ import type { SubmissionsExportSource } from "./submissions-export.ts";
 import {
   SUBMISSIONS_CSV_COLUMNS,
   selectExportAssessment,
+  selectSubmissionAttempt,
   submissionsCsv,
 } from "./submissions-export.ts";
 
@@ -89,6 +90,101 @@ const source = {
 } as unknown as SubmissionsExportSource;
 
 describe("submission export", () => {
+  test("page and CSV choose an active attempt before newer withdrawn work, then a withdrawn fallback", () => {
+    expect(
+      selectSubmissionAttempt(source.submissions.slice(0, 2))?.submission,
+    ).toBe("active-attempt");
+    expect(
+      selectSubmissionAttempt(
+        source.submissions
+          .slice(0, 2)
+          .map((attempt) => ({ ...attempt, status: "WITHDRAWN" })),
+      )?.submission,
+    ).toBe("withdrawn-attempt");
+    expect(selectSubmissionAttempt([])).toBeUndefined();
+  });
+
+  test.each([
+    "DRAFT",
+    "RELEASED",
+    "EXCUSED",
+  ])("a withdrawn attempt's %s assessment wins over assignment excusal in the shared selector and CSV", (status) => {
+    const attempt = selectSubmissionAttempt(source.submissions.slice(2));
+    const grades = [
+      {
+        grade: "withdrawn-grade",
+        learner: "learner-2",
+        item: source.assignment,
+        evidence: "withdrawn-only",
+        method: "POINTS",
+        status,
+        score: 8,
+        outOf: 10,
+        scored: true,
+        createdAt: "2026-09-11T00:00:00Z",
+        updatedAt: "2026-09-11T01:00:00Z",
+      },
+      {
+        grade: "assignment-excusal",
+        learner: "learner-2",
+        item: source.assignment,
+        evidence: "",
+        method: "POINTS",
+        status: "EXCUSED",
+        score: 0,
+        outOf: 100,
+        scored: false,
+        createdAt: "2026-09-12T00:00:00Z",
+        updatedAt: "2026-09-12T01:00:00Z",
+      },
+    ];
+    expect(selectExportAssessment(grades, attempt)).toEqual({
+      record: grades[0],
+      scope: "Attempt 1",
+    });
+    const { csv } = submissionsCsv({
+      ...source,
+      assigned: source.assigned.slice(1, 2),
+      grades: grades as unknown as SubmissionsExportSource["grades"],
+    });
+    expect(csv).toContain(`Attempt 1,${status},withdrawn-grade`);
+    expect(csv).toContain(
+      status === "EXCUSED" ? ",,10,https://" : ",8,10,https://",
+    );
+    expect(csv).not.toContain("assignment-excusal");
+  });
+
+  test("without a matching attempt assessment only a released assignment excusal is a fallback", () => {
+    const attempt = selectSubmissionAttempt(source.submissions.slice(2));
+    const records = [
+      {
+        evidence: "older-attempt",
+        status: "EXCUSED",
+        createdAt: "2026-09-10",
+        updatedAt: "2026-09-10",
+      },
+      {
+        evidence: "",
+        status: "DRAFT",
+        createdAt: "2026-09-11",
+        updatedAt: "2026-09-11",
+      },
+    ];
+    expect(selectExportAssessment(records, attempt)).toEqual({
+      record: undefined,
+      scope: "",
+    });
+    expect(selectExportAssessment(records, undefined)).toEqual({
+      record: undefined,
+      scope: "",
+    });
+    const excusal = { ...records[1]!, status: "EXCUSED" };
+    expect(selectExportAssessment([records[0]!, excusal], attempt)).toEqual({
+      record: excusal,
+      scope: "Assignment excusal",
+    });
+  });
+
   test("selects a unified assessment by evidence before interpreting its saved method", () => {
     const assessments = [
       {
