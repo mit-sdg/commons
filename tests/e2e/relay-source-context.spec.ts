@@ -142,6 +142,7 @@ test("a phone can read every source scenario after write, vote, and list, then r
   const voting = await call<{ round: string }>(host, "/live/relays/open-round", {
     run,
     leg: vote.leg,
+    picked: [main.pile, desires.pile],
   });
   const voteQuestion = await questionOf(host, token);
   expect(voteQuestion.choices).toEqual([LONG_PILE, OTHER_PILE]);
@@ -151,13 +152,11 @@ test("a phone can read every source scenario after write, vote, and list, then r
   await expect.poll(async () => (await wall(voting.round)).piles.length).toBe(2);
   await call(host, "/live/relays/close-round", { round: voting.round });
   const votePiles = (await wall(voting.round)).piles;
-  for (const name of [LONG_PILE, OTHER_PILE]) {
-    await call(host, "/live/walls/pick", {
-      round: voting.round,
-      pile: votePiles.find((pile) => pile.name === name)!.pile,
-    });
-  }
-  await call(host, "/live/relays/open-round", { run, leg: list.leg });
+  const carried = [LONG_PILE, OTHER_PILE].map(
+    (name) => votePiles.find((pile) => pile.name === name)!.pile,
+  );
+  for (const pile of carried) await call(host, "/live/walls/pick", { round: voting.round, pile });
+  await call(host, "/live/relays/open-round", { run, leg: list.leg, picked: carried });
   const listQuestion = await questionOf(host, token);
   expect(listQuestion.parts).toEqual([LONG_PILE, OTHER_PILE]);
   expect(listQuestion.context).toEqual([

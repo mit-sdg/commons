@@ -32,6 +32,7 @@ import { concepts } from "../../concepts.ts";
 import { computations } from "../../concepts.ts";
 
 const {
+  Attending,
   Authenticating,
   Locating,
   Publishing,
@@ -191,6 +192,52 @@ export const Arrive = endpoint(
           .named("unavailable"),
       ),
   { input: { required: ["token"] } },
+);
+
+/**
+ * A page on a relay run checks in with the open round it has on its screen,
+ * or with nothing while it has none: its own request, so no arrive waits on
+ * the room.
+ */
+export const Attend = endpoint(
+  "/live/p/attend",
+  ({ token, device, holding, run, at }) =>
+    receive({ token, device, holding }).then(
+      where(
+        now(at),
+        Sharing._share({ token }).is({ subject: run }),
+        runIsARelayRun({ run }),
+        participationAvailable({ subject: run }),
+      )
+        .then(Attending.attend({ gathering: run, attendee: device, holding, at }))
+        .then(respond({}))
+        .named("attend"),
+      where(no(Sharing._share({ token })))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("nothing-shared"),
+      where(Sharing._share({ token }).is({ subject: run }), no(runIsARelayRun({ run })))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("no-room"),
+      where(
+        Sharing._share({ token }).is({ subject: run }),
+        runIsARelayRun({ run }),
+        no(participationAvailable({ subject: run })),
+      )
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("unavailable"),
+    ),
+  { input: { required: ["token", "device", "holding"] } },
+);
+
+/** A page closing on a relay run leaves its room. */
+export const Leave = endpoint(
+  "/live/p/leave",
+  ({ token, device, run }) =>
+    receive({ token, device })
+      .then(Sharing.open({ token }).responds({ subject: run }))
+      .then(Attending.leave({ gathering: run, attendee: device }))
+      .then(respond({})),
+  { input: { required: ["token", "device"] } },
 );
 
 /** Turn the room-friendly code into the existing participation token. */

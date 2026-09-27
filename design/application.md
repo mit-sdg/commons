@@ -29,9 +29,8 @@ concrete MailPlace
 
 concrete Lockable
   A post or conversation identity that moderation may lock, or a Publishing
-  edition that is a relay run, locked while one of its rounds is open, or a
-  round, locked while a placing ask about it is out; or a Reasoning asking,
-  locked while its reply is applied.
+  edition that is a relay round, locked while a placing ask about it is out;
+  or a Reasoning asking, locked while its reply is applied.
 
 concrete TaskSubject
   A task-list group or task identity that a task-domain notification is about and links to.
@@ -40,6 +39,10 @@ concrete LiveParticipant
   A live-run participant identity: an Authenticating user when the participant
   was signed in, or the device-minted identifier an anonymous participant
   presents.
+
+concrete LiveDevice
+  The identifier a participant page mints for its device and keeps in the
+  browser; a signed-in participant's device has one too.
 
 concrete LiveReasoner
   The name of the reasoner the floor's worker serves; the deployment configures
@@ -54,8 +57,7 @@ concrete ForumNotice
   staff account that sent it, and the moment it was sent.
 
 concrete LiveExecution
-  A Reasoning asking that sorts a round or summarizes a pile, or a Publishing
-  edition created when a relay round opens.
+  A Reasoning asking that sorts a round or summarizes a pile.
 
 concrete LiveMaterial
   What a live edition releases: a Questioning questionnaire for a quiz, survey,
@@ -84,8 +86,7 @@ concrete Subscribable
   relay run, whose every round reaches the seated.
 
 concrete Linkable
-  What links or is linked to: a forum post, or a Publishing edition — a round's
-  edition links to the run it opened in.
+  What links or is linked to: a forum post.
 
 concrete Trashable
   What a person may move to trash: a forum post; a relay whose teaching life has
@@ -143,6 +144,10 @@ instantiate Assigning with
   Author is Authenticating.User
   Assignee is Authenticating.User
   Sections is Rostering.Section
+
+instantiate Attending with
+  Gathering is Publishing.Edition
+  Attendee is LiveDevice
 
 instantiate Authenticating
 
@@ -396,7 +401,9 @@ serves. Adopting a candidate is what turns drafted material into an ordinary
 editable questionnaire; nothing else crosses from the drafting line into the
 live domain.
 
-A relay is a Relaying relay whose legs' materials are one-question questionnaires of the survey form, so `LiveMaterial` has two owners the way `Lockable` does: Publishing releases a questionnaire as a quiz, survey, or round, and a relay as the run those rounds belong to. Linking ties each round's edition to its run, the picked piles of a closed round are Pinning pins in the round's scope, read back in the order they were taken, and Seating holds the run's model seats: a `LiveParticipant` the dashboard invited follows the run, and every round that opens reaches it. `LiveItem` widens Responding's item: a question with parts is answered one part at a time, each part its own item. Piles are Categorizing categories whose scope is the round's edition, holding `LiveCard` identities the wall computations mint; the forum's categories stand in the `forum` scope beside them. Reasoning, Insisting, and Suggesting share `LiveSubject`; every reaction that reads a reply or a complaint binds the concept that answers for its subject, so a reply about a brief never reaches a wall's reactions and a reply about a round never reaches drafting's. The forum's one Categorizing scope is the reserved constant `forum`, a Commons decision like `commons`.
+A relay is a Relaying relay whose legs' materials are one-question questionnaires of the survey form, so `LiveMaterial` has two owners the way `Lockable` does: Publishing releases a questionnaire as a quiz, survey, or round, and a relay as the run those rounds belong to: each round is published within its run, so the round's edition names its run as its whole. The picked piles of a closed round are Pinning pins in the round's scope, read back in the order they were taken, and Seating holds the run's model seats: a `LiveParticipant` the dashboard invited follows the run, and every round that opens reaches it. `LiveItem` widens Responding's item: a question with parts is answered one part at a time, each part its own item. Piles are Categorizing categories whose scope is the round's edition, holding `LiveCard` identities the wall computations mint; the forum's categories stand in the `forum` scope beside them. Reasoning, Insisting, and Suggesting share `LiveSubject`; every reaction that reads a reply or a complaint binds the concept that answers for its subject, so a reply about a brief never reaches a wall's reactions and a reply about a round never reaches drafting's. The forum's one Categorizing scope is the reserved constant `forum`, a Commons decision like `commons`.
+
+Attending keeps the room of a run: its gathering is the run's Publishing edition, the whole, and its attendee a `LiveDevice`, the identifier the participant page mints and keeps in the browser whether or not its person signed in, so a device counts once and a person on two devices counts twice. A page attends holding the open round edition it has on its screen, to answer or as its receipt, or nothing while it has none, and leaves as it closes; the check-in is a request of its own, so arriving never waits on the room. Model seats never attend, so the room never counts them. Only the run's dashboard reads the room.
 
 DraftTrashing marks an author deliberately leaving an unfinished draft line.
 The drafting composition applies it to the canonical root brief and uses the

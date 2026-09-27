@@ -120,9 +120,11 @@ beforeAll(async () => {
 afterAll(stopTestDb);
 
 describe("two dashboards opening rounds in one instant", () => {
-  test("closing during a round's publication cannot leave that round open afterward", async () => {
-    const instances = mongoImplementations(await testDb());
-    const original = instances.Linking.setLinks.bind(instances.Linking);
+  test("closing during a round's opening cannot leave that round open afterward", async () => {
+    const database = await testDb();
+    const instances = mongoImplementations(database);
+    const snapshotting = instances.RunSnapshotting;
+    const original = snapshotting.capture.bind(snapshotting);
     let reached!: () => void;
     let release!: () => void;
     const paused = new Promise<void>((resolve) => {
@@ -131,10 +133,10 @@ describe("two dashboards opening rounds in one instant", () => {
     const resume = new Promise<void>((resolve) => {
       release = resolve;
     });
-    instances.Linking.setLinks = async function setLinks({ source, targets }) {
+    snapshotting.capture = async function capture(input) {
       reached();
       await resume;
-      return original({ source, targets });
+      return original(input);
     };
     const isolated = createEdge(instances);
     const host = await registerHost(isolated);
@@ -156,16 +158,10 @@ describe("two dashboards opening rounds in one instant", () => {
     } finally {
       release();
     }
-    const { round } = await opening;
-    expect(typeof round).toBe("string");
-    const edition = await until(
-      () => isolated.application.concepts.Publishing._edition({ edition: round }),
-      (rows) => rows[0]?.open === false,
-    );
-    expect(edition[0].open).toBe(false);
-    expect(await isolated.application.concepts.Locking._isLocked({ target: run })).toEqual({
-      locked: false,
-    });
+    await opening;
+    const [part] = await isolated.application.concepts.Publishing._parts({ whole: run });
+    expect(part?.open).toBe(false);
+    expect(await isolated.application.concepts.Publishing._openPart({ whole: run })).toEqual([]);
   });
 
   test("concurrent launches leave one readable run and one participation token", async () => {
@@ -185,7 +181,7 @@ describe("two dashboards opening rounds in one instant", () => {
     await post(edge, "/live/relays/close", { run }, cookie);
   });
 
-  test("every trial leaves one round open, refuses the other, and the run still reads", async () => {
+  test("every trial leaves one round open, turns the others away, and the run still reads", async () => {
     for (let trial = 0; trial < 25; trial += 1) {
       const run = await launch();
       const answers = await Promise.all([
@@ -194,9 +190,11 @@ describe("two dashboards opening rounds in one instant", () => {
         openRound(run, legs[2]),
       ]);
       const opened = answers.filter((answer) => typeof answer.round === "string");
-      const refused = answers.filter((answer) => answer.error === "CONFLICT");
+      const turned = answers.filter(
+        (answer) => answer.error === "CONFLICT" || answer.declined === "ROUND_OPEN",
+      );
       expect(opened, `trial ${trial}: ${JSON.stringify(answers)}`).toHaveLength(1);
-      expect(refused, `trial ${trial}: ${JSON.stringify(answers)}`).toHaveLength(2);
+      expect(turned, `trial ${trial}: ${JSON.stringify(answers)}`).toHaveLength(2);
 
       const read = await readRun(run);
       expect(read.run?.openRound).toBe(opened[0].round);
@@ -208,51 +206,27 @@ describe("two dashboards opening rounds in one instant", () => {
       expect(closed.round).toBe(opened[0].round);
       const after = await readRun(run);
       expect(after.run?.openRound).toBeNull();
-      expect(await edge.application.concepts.Locking._isLocked({ target: run })).toEqual({
-        locked: false,
-      });
 
       const ran = read.run?.rounds.find((round) => round.round === opened[0].round)?.leg;
       const loser = legs.find((leg) => leg !== ran) as string;
       const next = await openRound(run, loser);
       expect(typeof next.round, `trial ${trial}: ${JSON.stringify(next)}`).toBe("string");
       await post(edge, "/live/relays/close", { run }, cookie);
-      expect(await edge.application.concepts.Locking._isLocked({ target: run })).toEqual({
-        locked: false,
-      });
+      expect(await edge.application.concepts.Publishing._openPart({ whole: run })).toEqual([]);
     }
   });
 
-  test("closing the run with a round open gives the lock back too", async () => {
-    const run = await launch();
-    const opened = await openRound(run, legs[0]);
-    expect(typeof opened.round, JSON.stringify(opened)).toBe("string");
-    expect(await edge.application.concepts.Locking._isLocked({ target: run })).toEqual({
-      locked: true,
-    });
-    await post(edge, "/live/relays/close", { run }, cookie);
-    expect(await edge.application.concepts.Locking._isLocked({ target: run })).toEqual({
-      locked: false,
-    });
-  });
-
-  test("a parent close also closes a round already linked to it", async () => {
+  test("a parent close also closes the round it holds open", async () => {
     const run = await launch();
     const { round } = await openRound(run, legs[0]);
-    // Exercise the parent-close event itself, including a round linked after
-    // the Close endpoint selected which child it would close first.
+    // Exercise the parent-close event itself, as when the Close endpoint read
+    // the run before a round was published within it.
     await edge.application.concepts.Publishing.close({ edition: run, at: new Date() });
     const edition = await until(
       () => edge.application.concepts.Publishing._edition({ edition: round }),
       (rows) => rows[0]?.open === false,
     );
     expect(edition[0].open).toBe(false);
-    expect(
-      await until(
-        () => isLocked(run),
-        (lock) => !lock.locked,
-      ),
-    ).toEqual({ locked: false });
   });
 });
 
@@ -271,29 +245,6 @@ describe("the run's Model sorts switch", () => {
     await post(edge, "/live/relays/close", { run }, cookie);
     const closed = await json(await post(edge, "/live/relays/sort-by-model", { run }, cookie));
     expect(closed.error).toBe("CONFLICT");
-  });
-});
-
-describe("a run left locked with no round open", () => {
-  test("is freed by one unlock, and opens again afterward", async () => {
-    const run = await launch();
-    await edge.application.concepts.Locking.lock({ target: run, at: new Date() });
-    const refused = await openRound(run, legs[0] as string);
-    expect(refused.error, JSON.stringify(refused)).toBe("CONFLICT");
-
-    const freed = await json(await post(edge, "/live/relays/unlock", { run }, cookie));
-    expect(freed.run).toBe(run);
-    expect(await isLocked(run)).toEqual({ locked: false });
-
-    // Unlocking a run that holds no lock changes nothing and answers the run.
-    const again = await json(await post(edge, "/live/relays/unlock", { run }, cookie));
-    expect(again.run).toBe(run);
-
-    const opened = await openRound(run, legs[0] as string);
-    expect(typeof opened.round, JSON.stringify(opened)).toBe("string");
-    const blocked = await json(await post(edge, "/live/relays/unlock", { run }, cookie));
-    expect(blocked.error).toBe("CONFLICT");
-    await post(edge, "/live/relays/close", { run }, cookie);
   });
 });
 

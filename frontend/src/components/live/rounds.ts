@@ -39,18 +39,102 @@ export interface RoundRef {
   title: string;
 }
 
-/** Which of done, open, or next a round is, from whether it ran and whether it is still open. */
-export function standingOf(round: {
-  round: string | null;
-  open: boolean | null;
-}): RoundStanding {
+/**
+ * Which of done, open, or next a round of a run is. Open and opening are the
+ * run's to say: one read is not taken at one moment, so a round's own flag can
+ * read open before the run names it, and until then the round has not opened.
+ * A round left opening is still the one Open offers.
+ */
+export function standingInRun(
+  run: { openRound: string | null; opening?: string | null },
+  round: { round: string | null; open: boolean | null },
+): RoundStanding {
   if (round.round === null) return "next";
-  return round.open ? "open" : "done";
+  if (round.round === run.openRound) return "open";
+  return round.open === false && round.round !== run.opening ? "done" : "next";
 }
 
-/** The standing of a run's round, whose openness sits under its figure. */
-export function roundStanding(round: RelayRunRound): RoundStanding {
-  return standingOf({ round: round.round, open: round.figure.open });
+/** The round the run names open to the room, among its rounds. */
+export function openEntryOf<Round extends { round: string | null }>(run: {
+  openRound: string | null;
+  rounds: Round[];
+}): Round | null {
+  if (run.openRound === null) return null;
+  return run.rounds.find((round) => round.round === run.openRound) ?? null;
+}
+
+/**
+ * The open round a phone has on its screen, for the run's room to count: its
+ * question to answer or its receipt, once the phone's own state belongs to
+ * that round and its join has been answered or its hand-in stands. A round
+ * still opening on the phone, or state the round before left behind, is "".
+ */
+export function roundOnScreen(phone: {
+  /** The round the run has open, or null. */
+  round: string | null;
+  runOpen: boolean;
+  /** The round the phone's response and hand-in belong to. */
+  inHand: string | null;
+  joined: boolean;
+  handedIn: boolean;
+}): string {
+  const { round, runOpen, inHand, joined, handedIn } = phone;
+  return round !== null && runOpen && inHand === round && (joined || handedIn)
+    ? round
+    : "";
+}
+
+/** The standing of a run's round, whose closing sits under its figure. */
+export function roundStanding(
+  run: Pick<RelayRun, "openRound" | "opening">,
+  round: RelayRunRound,
+): RoundStanding {
+  return standingInRun(run, { round: round.round, open: round.figure.open });
+}
+
+/**
+ * The closed round whose wall stands once no round is open: the one closed
+ * last, passing over a round read to have no wall, which closed while it was
+ * still opening.
+ */
+export function lastClosedWall(
+  run: Pick<RelayRun, "openRound" | "opening" | "rounds">,
+  wallless: ReadonlySet<string>,
+): string | null {
+  let latest: RelayRunRound | null = null;
+  for (const round of run.rounds) {
+    if (
+      round.round === null ||
+      wallless.has(round.round) ||
+      roundStanding(run, round) !== "done"
+    )
+      continue;
+    if (
+      latest === null ||
+      (round.figure.closedAt ?? "") > (latest.figure.closedAt ?? "")
+    )
+      latest = round;
+  }
+  return latest?.round ?? null;
+}
+
+/**
+ * The rounds read to have no wall, once one more read of a round's wall has
+ * answered: a round answered with none has none, and one answered with a wall
+ * leaves the set. A read that changes nothing gives the same set back.
+ */
+export function afterWallRead(
+  wallless: ReadonlySet<string>,
+  round: string | null,
+  answer: { wall: object | null } | null,
+): ReadonlySet<string> {
+  if (round === null || answer === null) return wallless;
+  const none = answer.wall === null;
+  if (none === wallless.has(round)) return wallless;
+  const next = new Set(wallless);
+  if (none) next.add(round);
+  else next.delete(round);
+  return next;
 }
 
 /** The three kinds a round is. */

@@ -102,7 +102,7 @@ test("assignment release notifications target actual assignees and disappear whe
     title: "New exercise",
     instructions: "Private instructions",
     kind: "HOMEWORK",
-    availableAt: new Date().toISOString(),
+    availableAt: new Date("2026-09-14T13:00:00.000Z").toISOString(),
     dueAt: new Date("2026-09-19T03:59:00.000Z").toISOString(),
     audience: "EVERYONE",
     acceptsSubmissions: true,

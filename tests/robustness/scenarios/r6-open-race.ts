@@ -1,14 +1,16 @@
 /**
  * R6, the open race. Two staff sessions on one run — a lecturer's laptop and a
  * TA's — ask to open two different rounds in the same tick, a hundred times.
- * Every trial must leave one round open and answer the other with a conflict,
- * every read of the run afterwards must answer, and closing the round must give
- * the run's lock back so the loser's round opens next.
+ * Every trial must leave one round open and answer the other either declined
+ * `ROUND_OPEN`, naming the winner's round, or, when both presses passed the
+ * server's reads together and met at the round itself, `CONFLICT`. Every read
+ * of the run afterwards must answer, and once the round closes the loser's
+ * round opens next.
  *
  *   bun tests/robustness/scenarios/r6-open-race.ts [arm-name]
  */
 
-import { type Client, Log, outDir, readRun, type Reply, signIn } from "../drive.ts";
+import { type Client, Log, type Opened, outDir, readRun, type Reply, signIn } from "../drive.ts";
 
 const ARM = process.argv[2] ?? "r6-open-race";
 const TRIALS = Number(process.env.TRIALS ?? 100);
@@ -37,7 +39,8 @@ async function plan(host: Client): Promise<{ relay: string; legs: string[] }> {
 
 interface Trial {
   opened: number;
-  conflicts: number;
+  /** Losers answered `CONFLICT` or declined `ROUND_OPEN` naming the winner. */
+  lost: number;
   others: string[];
   readAnswered: boolean;
   openRoundMatches: boolean;
@@ -50,9 +53,9 @@ async function timedOpen(
   client: Client,
   run: string,
   leg: string,
-): Promise<{ reply: Reply<{ round?: string }>; took: number }> {
+): Promise<{ reply: Reply<Opened>; took: number }> {
   const from = Date.now();
-  const reply = await client.call<{ round?: string }>("/live/relays/open-round", { run, leg });
+  const reply = await client.call<Opened>("/live/relays/open-round", { run, leg, picked: [] });
   return { reply, took: Date.now() - from };
 }
 
@@ -74,27 +77,35 @@ try {
       timedOpen(laptopB, run, legs[1] as string),
     ]);
     const replies = [first.reply, second.reply];
-    const opened = replies.filter((reply) => typeof reply.round === "string");
-    const conflicts = replies.filter((reply) => reply.error === "CONFLICT");
-    const others = replies
-      .map((reply) => reply.error)
-      .filter((error): error is string => error !== undefined && error !== "CONFLICT");
+    const opened = replies.filter(
+      (reply) => typeof reply.round === "string" && reply.declined === undefined,
+    );
 
     const read = await readRun(laptopA, run);
     const ran = read.run?.rounds.filter((round) => round.round !== null) ?? [];
     const openRound = read.run?.openRound ?? null;
-    const winner = opened[0]?.round ?? null;
+    const winner = typeof opened[0]?.round === "string" ? opened[0].round : null;
+    const winnerNumber = ran.find((round) => round.round === winner)?.number;
+    const lost = replies.filter(
+      (reply) =>
+        reply.error === "CONFLICT" ||
+        (reply.declined === "ROUND_OPEN" && Number(reply.round) === winnerNumber),
+    );
+    const others = replies
+      .filter((reply) => !opened.includes(reply) && !lost.includes(reply))
+      .map((reply) => JSON.stringify(reply));
 
     let loserOpened = false;
     if (winner !== null) {
       const closed = await laptopB.call("/live/relays/close-round", { round: winner });
       if (closed.error) log.refused("close-round refused", `trial ${trial}`, closed);
       const loser = ran[0]?.leg === legs[0] ? legs[1] : legs[0];
-      const next = await laptopB.call<{ round?: string }>("/live/relays/open-round", {
+      const next = await laptopB.call<Opened>("/live/relays/open-round", {
         run,
         leg: loser as string,
+        picked: [],
       });
-      loserOpened = typeof next.round === "string";
+      loserOpened = typeof next.round === "string" && next.declined === undefined;
       if (!loserOpened)
         log.refused("the loser's round did not open after the close", `trial ${trial}`, next);
     }
@@ -102,7 +113,7 @@ try {
 
     trials.push({
       opened: opened.length,
-      conflicts: conflicts.length,
+      lost: lost.length,
       others,
       readAnswered: read.error === undefined && read.run !== null,
       openRoundMatches: openRound === winner,
@@ -116,7 +127,7 @@ try {
   const wrong = trials.filter(
     (one) =>
       one.opened !== 1 ||
-      one.conflicts !== 1 ||
+      one.lost !== 1 ||
       one.others.length > 0 ||
       !one.readAnswered ||
       !one.openRoundMatches ||

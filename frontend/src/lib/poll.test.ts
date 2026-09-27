@@ -1,12 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import {
   adrift,
+  CHECK_IN_EVERY_MS,
+  checkInDue,
   nextWait,
   outOfReach,
   POLL_CAP_MS,
   startPolling,
   type Timers,
   type WakeEvent,
+  withDeadline,
 } from "./poll.ts";
 
 /**
@@ -554,5 +557,56 @@ describe("whether a screen has stopped hearing", () => {
 
   test("never keeps standing on the first answer alone", () => {
     expect(adrift(40_000, null, 40_000, stale)).toBe(false);
+  });
+});
+
+describe("withDeadline", () => {
+  test("answers the request's own result when it comes in time", async () => {
+    await expect(
+      withDeadline(Promise.resolve({ ok: true }), 50),
+    ).resolves.toEqual({
+      ok: true,
+    });
+  });
+
+  test("answers the timed-out word once the deadline passes", async () => {
+    const never = new Promise<never>(() => {});
+    await expect(withDeadline(never, 5)).resolves.toEqual({
+      error: "TIMED_OUT",
+    });
+  });
+});
+
+describe("when a page checks in", () => {
+  const round = "round-1";
+
+  test("checks in on its first answer, waiting or on a round", () => {
+    expect(checkInDue("", 0, null, null)).toBe(true);
+    expect(checkInDue(round, 0, null, null)).toBe(true);
+  });
+
+  test("keeps one landed check-in on the same round for fifteen seconds", () => {
+    const landed = { holding: round, at: 0 };
+    expect(checkInDue(round, 3_000, landed, null)).toBe(false);
+    expect(checkInDue(round, CHECK_IN_EVERY_MS - 1, landed, null)).toBe(false);
+    expect(checkInDue(round, CHECK_IN_EVERY_MS, landed, null)).toBe(true);
+  });
+
+  test("checks in at once when the round on its screen changes", () => {
+    expect(checkInDue(round, 3_000, { holding: "", at: 0 }, null)).toBe(true);
+    expect(checkInDue("", 3_000, { holding: round, at: 0 }, null)).toBe(true);
+  });
+
+  test("waits on a check-in still out for the same round, and sends one for a new round", () => {
+    const out = { holding: "", at: 0 };
+    expect(checkInDue("", 3_000, null, out)).toBe(false);
+    expect(checkInDue("", CHECK_IN_EVERY_MS * 2, null, out)).toBe(false);
+    expect(checkInDue(round, 3_000, null, out)).toBe(true);
+  });
+
+  test("checks in again on the next answer when the last one never landed", () => {
+    const landed = { holding: "", at: 0 };
+    expect(checkInDue(round, 3_000, landed, null)).toBe(true);
+    expect(checkInDue("", 3_000, landed, null)).toBe(false);
   });
 });

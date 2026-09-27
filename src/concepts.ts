@@ -46,18 +46,16 @@ import {
 } from "./computations/audiences.ts";
 import { accessing } from "./concepts/accessing/registry.ts";
 import {
-  openingAuthorized,
-  openingBrief,
-  openingAdmission,
   openingGroups,
-  openingAuthor,
-  openingMaterial,
-  openingPresentation,
+  pickStanding,
+  roundPresentation,
 } from "./computations/live-round-opening.ts";
 import { draftContext, draftReferences, draftRequest } from "./computations/live-background.ts";
+import { roomSince } from "./computations/live-room.ts";
 import { conceptSet } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
 import { assigning } from "./concepts/assigning/registry.ts";
+import { attending } from "./concepts/attending/registry.ts";
 import { authenticating } from "./concepts/authenticating/registry.ts";
 import { banking } from "./concepts/banking/registry.ts";
 import { bookmarking } from "./concepts/bookmarking/registry.ts";
@@ -279,6 +277,7 @@ const registrations = {
   AdoptLinking: linking,
   Archiving: trashing,
   Assigning: assigning,
+  Attending: attending,
   Authenticating: authenticating,
   Banking: banking,
   Bookmarking: bookmarking,
@@ -372,13 +371,10 @@ export const learningConcepts = conceptSet(registrations, {
   addressingPeople,
   currentAddressing,
   previewHolders,
-  openingAuthorized,
-  openingBrief,
-  openingAdmission,
   openingGroups,
-  openingAuthor,
-  openingMaterial,
-  openingPresentation,
+  pickStanding,
+  roundPresentation,
+  roomSince,
   answerReceipt,
   boardQuestions,
   capabilitiesAreKnown,

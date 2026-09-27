@@ -96,6 +96,7 @@ for (const surface of ["dashboard", "projector"] as const) {
       const voting = await call<{ round: string }>(page, "/live/relays/open-round", {
         run,
         leg: vote.leg,
+        picked: [pile],
       });
       await handIn(CHOICE, "voter");
       await expect.poll(async () => (await wallOf(voting.round)).piles.length).toBe(1);

@@ -322,6 +322,7 @@ describe("the model participant and the wall", () => {
       ).length;
     const later = () => new Date(Date.now() + 60_000);
     const playRound = async (round: string, seats: number) => {
+      await serveParticipantsOnce(edge.application.concepts);
       await until(
         async () => await edge.application.concepts.Responding._responsesFor({ subject: round }),
         (responses) => responses.length === seats,
@@ -338,7 +339,8 @@ describe("the model participant and the wall", () => {
       );
     };
 
-    // A seat taken before any round opens waits for the first.
+    // A seat taken before any round opens waits for the first; the worker's pass
+    // after the opening begins it.
     const first = await json(
       await post(edge, "/live/runs/invite", { run, device: "seat-a" }, cookie),
     );

@@ -9,7 +9,7 @@ import {
   samplingResolution,
 } from "../../src/computations/live-sampling.ts";
 import { scriptedWallReply } from "../../src/reasoning/scripted-walls.ts";
-import { openingBrief, openingGroups } from "../../src/computations/live-round-opening.ts";
+import { openingGroups, roundPresentation } from "../../src/computations/live-round-opening.ts";
 import { cardId } from "../../src/computations/live-rounds.ts";
 
 /** Two piles standing on the round before the room answers, each with its sentence. */
@@ -121,19 +121,14 @@ describe("preview selection and source history", () => {
     answer(plan, "write", originals);
     plan.picks.write = ["Access", "Timing"];
     const carried = samplingResolution({ ...plan, leg: "vote" }).preview.groups;
-    const captured = JSON.parse(
-      openingBrief({
-        account: "",
-        author: "host",
-        questionnaire: "m2",
-        kind: "vote",
-        use: "choices",
-        content: { questions: [{ item: "q", prompt: "Choose", choices: [], parts: [], cap: 0 }] },
-        groups: carried,
-        sourceValue: { title: "Earlier question" },
-        sourceNumber: 2,
-      }),
-    ).presentation;
+    const captured = roundPresentation({
+      kind: "vote",
+      use: "choices",
+      content: { questions: [{ item: "q", prompt: "Choose", choices: [], parts: [], cap: 0 }] },
+      groups: carried,
+      sourceValue: { title: "Earlier question" },
+      sourceNumber: 2,
+    });
     expect(captured.questions[0].contextSource).toEqual({ number: 2, title: "Earlier question" });
     const ballot = { response: "r", item: "q", value: "Access" };
     const liveGroups = openingGroups({

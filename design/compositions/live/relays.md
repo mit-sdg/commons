@@ -22,56 +22,60 @@ A round is one of three kinds: **write** (one box), **list** (parts: labeled box
 
 A question's parts are how one phone hands in several answers: labeled boxes (one, two, three) or one box repeated up to a cap. Each box is an item of its own, `question#n`, and each value handed in is one card on the wall. The shelf's questionnaire list leaves a round's questionnaire out, since a round is reached through its relay.
 
-[Live.relays.List](reaction:Live.relays.List) forms [the relays](former:Live.relays.theRelays) — every relay, newest first, with its rounds as number and title, its open run and the round open in it when one stands, and the figure of that round (begun and handed in) — which is what the Live list shows beside the questionnaires. [Live.relays.Get](reaction:Live.relays.Get) forms [one relay whole](former:Live.relays.theRelay): each round with its questionnaire, question, prompt, parts, choices, and takes, its standing piles and its note to the sorter — which the rounds page owns — and the relay's runs, newest first, each with the rounds that ran in it and their figures.
+[Live.relays.List](reaction:Live.relays.List) forms [the relays](former:Live.relays.theRelays) — every relay, newest first, with its rounds as number and title and the edition each has in the open run, its open run and the round open to the room in it when one stands, and the figure of that round (begun and handed in) — which is what the Live list shows beside the questionnaires. [Live.relays.Get](reaction:Live.relays.Get) forms [one relay whole](former:Live.relays.theRelay): each round with its questionnaire, question, prompt, parts, choices, and takes, its standing piles and its note to the sorter — which the rounds page owns — and the relay's runs, newest first, each with the rounds published within it, earliest first, and their figures.
 
 ## A run, and a run per round
 
 [Live.relays.Launch](reaction:Live.relays.Launch) publishes the relay itself as an open edition — the run — and issues its share token and durable room code in the same request, exactly as a questionnaire launches. Nothing is captured at launch: the relay stays editable between rounds, and each round freezes only when it opens. A participant's token stays on the run for the whole meeting.
 
-[Live.relays.OpenRound](reaction:Live.relays.OpenRound) prepares a Commissioning undertaking before branching. [openingAdmission](computation:openingAdmission) gives one account of the observed eligibility: FORBIDDEN, LEG_NOT_FOUND, CLOSED, ROUND_OPEN, ROUND_DONE, SOURCE_OPEN, NOTHING_PICKED, or permission to proceed. [openingAuthorized](computation:openingAuthorized) carries the host observation. These observations are not a transaction across concepts; the recorded decision belongs to this proposal and is never recomputed by competing response branches.
+A round is published within its run: [Live.relays.OpenRound](reaction:Live.relays.OpenRound) asks Publishing to publish the round's questionnaire within the run, so the round is tied to its run by the same write that opens it. Publishing's own rules then keep a run to one open round and each round to one opening in a run, across processes as well as within one, and publish a round only within a run that is still open. Opening is two writes: the round, then its presentation. Between them the round is **opening**: it is the run's open part with nothing yet for a phone to show. It becomes **open to the room** once its presentation is captured, and every reader that means the room answers this round — a phone's face, Begin, a seat taken while it is open — reads the open round in that sense.
 
-[openingGroups](computation:openingGroups) resolves the source's selected groups once in pick order. [pileCards](computation:pileCards) keeps written answers literally and carries ballots' original supporting examples from their immutable snapshots, preserving that history through later renaming and merging. [openingBrief](computation:openingBrief) records the author, questionnaire identity, and complete presentation as a JSON publication instruction. Choices and parts receive the selected group names; all take uses preserve the groups as context, and dynamic choices preserve their examples as choiceSources. A later unpick, rename, or questionnaire edit cannot change the admitted publication. Declined proposals retain an empty brief.
+The request says what it opens: `{ run, leg, picked }`, where `picked` is the piles the dashboard showed as picked, in the order the closed wall shows them, fullest first, and defaults to none. A round opens when the host may host, the round is one of this run's relay, it has not run in this run, no round of the run is open or opening, the run is open, and the round is ready: it takes nothing, or the round it takes from has closed in this run and every picked pile still stands on that round's wall ([pickStanding](computation:pickStanding)). The capture stage then forms the presentation with [roundPresentation](computation:roundPresentation) from the leg's question as it stands and the groups [openingGroups](computation:openingGroups) resolves from the request's picks, in the request's order. [pileCards](computation:pileCards) keeps written answers literally and carries ballots' original supporting examples from their captured questions, preserving that history through later renaming and merging. Choices and parts receive the picked group names; every take use keeps the groups as context, and dynamic choices keep their examples as choiceSources. The answer is `{ round }`, given as soon as the presentation is captured. If the run closed between the round and its presentation, the round was closed with it, nothing is captured, and the answer is `{ declined: "CLOSED" }`.
 
-An admitted opening acquires the existing run lock, accepts the commission, and publishes the material and author recovered by [openingMaterial](computation:openingMaterial) and [openingAuthor](computation:openingAuthor). It associates the new edition with the commission before linking it to the run. [Live.relays.TiedRoundCapturesPresentation](reaction:Live.relays.TiedRoundCapturesPresentation) captures [openingPresentation](computation:openingPresentation) from that fixed brief. Only after its capture has settled does the opening conclude and return the round. A contended lock is refused; the shared commissioning refusal reaction records the losing proposal without unlocking the winner.
+A press is safe to repeat. [Live.relays.OpenRoundAgain](reaction:Live.relays.OpenRoundAgain) answers a press for the round already open to the room with that round, and ensures again on its wall any standing pile of the leg that is missing or has lost its reservation — the same writes the capture's seeding makes, which a fault can leave undone. A press for the round the run holds open captures its presentation from that press's picks and answers the round, so the lecturer's next press finishes an opening the chain stopped partway through. It reads the run's open part, not whether the presentation has landed, so a press whose reads straddle another press's capture is still answered: when the presentation already stands, Snapshotting refuses the capture and the press is answered at once with the refusal's category, `CONFLICT`, and the board reads the run, which shows the round open.
 
-[Live.relays.ClosedRoundUnlocksRun](reaction:Live.relays.ClosedRoundUnlocksRun) returns the run lock when a round closes. [Live.relays.Unlock](reaction:Live.relays.Unlock) remains the deliberate recovery action for a run left locked without an open round. This sequence does not provide crash-atomic publication or storage recovery.
+A press that cannot open its round is answered as data by [Live.relays.OpenRoundDeclined](reaction:Live.relays.OpenRoundDeclined): `{ declined: WORD }` with the facts the board's sentence needs, never as an error. When several words hold, the first in this order answers:
 
-[Live.relays.CloseRound](reaction:Live.relays.CloseRound) closes the round's edition; phones that answer afterward meet the same `CLOSED` refusal a closed quiz gives. [Live.relays.Close](reaction:Live.relays.Close) closes the run, closing its open round first when one stands. [Live.relays.ClosedRunClosesRounds](reaction:Live.relays.ClosedRunClosesRounds) closes any open rounds linked when the parent closes; [Live.relays.RoundTiedToClosedRunCloses](reaction:Live.relays.RoundTiedToClosedRunCloses) closes one linked afterward. Together they cover opening and closing that overlap between publishing and linking. Closure converges through reactions in the running engine; these actions are not a crash-atomic transaction. Showing a closed round again is a read of its wall, never a change of state.
+| Word             | When                                                                       | Facts                             |
+| ---------------- | -------------------------------------------------------------------------- | --------------------------------- |
+| `LEG_NOT_FOUND`  | the round is not one of this run's relay, or there is no such run or round | —                                 |
+| `CLOSED`         | the run is closed                                                          | —                                 |
+| `ROUND_DONE`     | this round already ran in this run and has closed                          | `round`: this round's number      |
+| `SOURCE_UNRUN`   | the round it takes from has not run in this run                            | `source`: that round's number     |
+| `SOURCE_OPEN`    | the round it takes from is still open or opening                           | `source`: that round's number     |
+| `ROUND_OPEN`     | another round of the run is open or opening                                | `round`: the number of that round |
+| `NOTHING_PICKED` | the round takes from another and the request picks nothing                 | —                                 |
+| `PILE_GONE`      | a picked pile is no longer on the wall the round takes from                | —                                 |
 
-[Live.relays.Run](reaction:Live.relays.Run) forms [the run](former:Live.relays.theRelayRun): the relay's title, whether the run is open, its token and code, and every round with its number, title, and — when it ran in this run — its edition and [its figure](former:Live.relays.theRoundFigure): whether it is open, when it opened and closed, and how many responses were begun and handed in. The dashboard and the projector poll this while the run is open.
+`NOTHING_PICKED` and `PILE_GONE` also answer a press for a round left opening, since its presentation would be formed from those picks. A user who may not host is answered `FORBIDDEN`, as on every staff endpoint. Two presses that pass these reads together meet Publishing's rules: the loser's publish is refused, and that refusal reaches the board as its category, `CONFLICT`. An endpoint answers only along the posture its chain asks for, so no authored path can answer the refusal with the word; the board reads the run, which carries the round open or opening and every round's standing.
+
+[Live.relays.CloseRound](reaction:Live.relays.CloseRound) closes the round's edition, open to the room or still opening; phones that answer afterward meet the same `CLOSED` refusal a closed quiz gives, and a round closed while opening counts as run. [Live.relays.Close](reaction:Live.relays.Close) closes the run, closing the round it holds open first, whether open or opening; a run already closed is answered `{ run }` at once, which a dashboard that has not yet read the close takes as done. [Live.relays.ClosedRunClosesRounds](reaction:Live.relays.ClosedRunClosesRounds) closes the run's open round whichever path closed the run, so a round published in the same instant the run closed does not stay open. Showing a closed round again is a read of its wall, never a change of state.
+
+[Live.relays.Run](reaction:Live.relays.Run) forms [the run](former:Live.relays.theRelayRun): the relay's title, whether the run is open, its token and code, the round open to the room as `openRound`, the round left opening as `opening`, and every round with its number, title, and — when it was published in this run — its edition and [its figure](former:Live.relays.theRoundFigure): whether it is open, when it opened and closed, and how many responses were begun and handed in. It also carries the room: `here`, the devices on the participant link heard in the last minute, and `onOpenRound`, how many of those hold the round open to the room. The minute is counted back from the request's own instant by [roomSince](computation:roomSince). The room is Attending's alone, not the wall's figures: a device is here once its page checks in on the run, before it has begun anything, and stops counting a minute after it last checked in. The dashboard and the projector poll this while the run is open.
 
 ## The model participant
 
-Seats live on the runs page now: `Live.runs.Invite` takes one, `Live.runs.Dismiss` gives it up, and the runs page states what a seat is and what the two endpoints refuse. On a relay run the seat is answered round by round: [Live.relays.SeatedParticipantAnswersOpenRound](reaction:Live.relays.SeatedParticipantAnswersOpenRound) begins the new seat's response to the round open at that moment, and [Live.relays.CapturedRoundSeatsParticipants](reaction:Live.relays.CapturedRoundSeatsParticipants) begins a response for every seat still standing once a round's presentation is captured, so the seats invited on round one answer round two without a second invitation. From the begin on, the wall page's reactions and the participant worker hand the model's response in exactly as a phone would, on the participant's own clock. The run's read carries the seats standing, in the order they were taken, the round's figure how many of its hand-ins were the model's and how many of its seats nothing is coming for — a seat whose ask failed with no reply after, which the Model row says as not answering rather than writing — and the wall marks the model's cards; that mark is the only trace on any wall.
+Seats live on the runs page now: `Live.runs.Invite` takes one, `Live.runs.Dismiss` gives it up, and the runs page states what a seat is and what the two endpoints refuse. On a relay run the seat is answered round by round: [Live.relays.SeatedParticipantAnswersOpenRound](reaction:Live.relays.SeatedParticipantAnswersOpenRound) begins the new seat's response to the round open to the room at that moment, and the participant worker begins a response for every seat still standing on each round open to the room that the seat has not begun, so the seats invited on round one answer round two without a second invitation, and a seat whose begin was lost is begun on the worker's next pass. From the begin on, the wall page's reactions and the participant worker hand the model's response in exactly as a phone would, on the participant's own clock. The run's read carries the seats standing, in the order they were taken, the round's figure how many of its hand-ins were the model's and how many of its seats nothing is coming for — a seat whose ask failed with no reply after, which the Model row says as not answering rather than writing — and the wall marks the model's cards; that mark is the only trace on any wall.
 
 "Model sorts" is the run's switch, the same on every dashboard and readable by the projector: a Pinning pin of the run in the reserved scope `sorting`, set by [Live.relays.SortByModel](reaction:Live.relays.SortByModel) and cleared by [Live.relays.SortByHand](reaction:Live.relays.SortByHand), each answering the switch as it then stands and refusing `CLOSED` once the run has closed. The run's read carries it as `modelSorts`. A staff member who flips it flips it for the room; the wall page's cadence still runs from whichever dashboards are open, so a run with no dashboard open is not sorted.
 
 ## What a phone meets
 
-The participation page owns the phone's endpoints; this page owns what they read for a relay. [The face of a relay run](former:Live.relays.theRelayFace) is what Arrive forms when the token opens onto a run whose material is a relay: the relay's title, whether the run is open, its rounds as number, title, and standing — done, open, or next — and the open round's edition and its question, with prompt, parts, and choices only. A phone begins a response to the open round, answers each part as an item of its own, and hands in; the round's edition is its subject, so the guards that refuse a closed run refuse a round that is not open.
+The participation page owns the phone's endpoints; this page owns what they read for a relay. [The face of a relay run](former:Live.relays.theRelayFace) is what Arrive forms when the token opens onto a run whose material is a relay: the relay's title, whether the run is open, its rounds as number, title, and standing — done, open, or next — and the open round's edition and its question, with prompt, parts, and choices only. A round still opening is not on the face at all: the phone keeps waiting until the round is open to the room. A round closed while it was opening has no presentation either, but it is on the face as a round that ran, done, so the phone names the round after it as next. A phone begins a response to the open round, answers each part as an item of its own, and hands in; the round's edition is its subject, so the guards that refuse a closed run refuse a round that is not open.
 
 ```computations
-openingAuthorized() : Boolean
-  Supplies a witness for an observed host authorization.
+pickStanding(picked: Strings, categories: Json) : String
+  Answers `none` when the request picks no pile, `gone` when a picked pile is
+  not among the wall's piles, and `ready` otherwise.
 
-openingAdmission(authorized: Json, relay: Json, legRelay: Json, open: Json, openRound: Json, ran: Json, source: Json, sourceRound: Json, sourceOpen: Json, groups: Json, content: Json) : String
-  Chooses the first applicable refusal from supplied observations, or an empty account for an admitted opening.
+openingGroups(picked: Strings, categories: Json, values: Json, value: Json) : Json
+  Resolves the picked piles' names and supporting cards in the order the
+  request names them.
 
-openingGroups(picked: Seq, categories: Json, values: Json, value: Json) : Json
-  Resolves the selected names and their supporting cards in the observed pick order.
-
-openingBrief(account: String, author: String, questionnaire: String, kind: String, use: Json, content: Json, groups: Json, sourceNumber?: Json, sourceValue?: Json) : String
-  Serializes the publication instruction with its complete immutable presentation, or leaves a declined proposal's brief empty.
-
-openingAuthor(brief: String) : String
-  Reads the author from the recorded publication instruction.
-
-openingMaterial(brief: String) : String
-  Reads the questionnaire identity from the recorded publication instruction.
-
-openingPresentation(brief: String) : Json
-  Reads the complete presentation from the recorded publication instruction.
-
+roundPresentation(content: Json, kind: String, use: Json, groups: Json, sourceValue: Json, sourceNumber: Json) : Json
+  Forms the presentation a round opens with: the leg's question under its
+  kind, with the picked groups as its choices, parts, or context by the take's
+  use, and the round they came from.
 
 kindChoices(kind: String, choices: Strings) : Strings
   Answers the choices the kind puts before the room: the round's own under
@@ -100,6 +104,10 @@ useFit(use: String, kind: String, choices: Strings, parts: Strings) : String
   such a leg holds neither and the take is what makes it a kind; `closed` when
   the table shuts it to that kind; and `unknown` when the word names no use.
 
+roomSince(at: Date) : Date
+  Answers the instant one minute before at: a device heard at or after it is
+  here.
+
 pileCards(pile: String, categories: Json, values: Json, value: Json) : Strings
   Answers written cards in hand-in order. Ballots contribute distinct examples
   from their original choiceSources in the captured question, preserving
@@ -116,6 +124,8 @@ Live.relays.Launch at /live/relays/launch
 Live.relays.List at /live/relays/list
 Live.relays.MoveRound at /live/relays/move-round
 Live.relays.OpenRound at /live/relays/open-round
+Live.relays.OpenRoundAgain at /live/relays/open-round
+Live.relays.OpenRoundDeclined at /live/relays/open-round
 Live.relays.Plan at /live/relays/plan
 Live.relays.RemoveRound at /live/relays/remove-round
 Live.relays.Retire at /live/relays/retire
@@ -127,7 +137,6 @@ Live.relays.SetKind at /live/relays/set-kind
 Live.relays.SetTakes at /live/relays/set-takes
 Live.relays.SortByHand at /live/relays/sort-by-hand
 Live.relays.SortByModel at /live/relays/sort-by-model
-Live.relays.Unlock at /live/relays/unlock
 Live.relays.Uses at /live/relays/uses
 ```
 

@@ -2,50 +2,28 @@ import { kindChoices, kindParts, kindCap } from "./live-rounds.ts";
 import { pileCards } from "./live-carries.ts";
 import type { ContextGroup, RunSnapshot } from "./live-snapshots.ts";
 
-/** An observed admission is used once to prepare this round-opening proposal. */
-export function openingAuthorized(_input: Record<string, never>): boolean {
-  return true;
+interface Pile {
+  category: string;
 }
 
-export function openingAdmission({
-  authorized,
-  relay,
-  legRelay,
-  open,
-  openRound,
-  ran,
-  source,
-  sourceRound,
-  sourceOpen,
-  groups,
-  content,
+/**
+ * How the piles a request picks stand on the wall they are picked from: `none`
+ * when it picks nothing, `gone` when a picked pile is no longer there, and
+ * `ready` otherwise.
+ */
+export function pickStanding({
+  picked,
+  categories,
 }: {
-  authorized: unknown;
-  relay: unknown;
-  legRelay: unknown;
-  open: unknown;
-  openRound: unknown;
-  ran: unknown;
-  source: unknown;
-  sourceRound: unknown;
-  sourceOpen: unknown;
-  groups: unknown;
-  content: unknown;
+  picked: string[];
+  categories: Pile[];
 }): string {
-  if (authorized !== true) return "FORBIDDEN";
-  if (typeof relay !== "string" || relay !== legRelay) return "LEG_NOT_FOUND";
-  if (content == null) return "LEG_NOT_FOUND";
-  if (open !== true) return "CLOSED";
-  if (typeof openRound === "string") return "ROUND_OPEN";
-  if (typeof ran === "string") return "ROUND_DONE";
-  if (typeof source === "string") {
-    if (typeof sourceRound !== "string" || sourceOpen !== false) return "SOURCE_OPEN";
-    if (!Array.isArray(groups) || groups.length === 0) return "NOTHING_PICKED";
-  }
-  return "";
+  if (picked.length === 0) return "none";
+  const standing = new Set(categories.map(({ category }) => category));
+  return picked.every((pile) => standing.has(pile)) ? "ready" : "gone";
 }
 
-/** Resolve names and examples once, in the observed pick order. */
+/** Resolve names and examples once, in the order the request names them. */
 export function openingGroups({
   picked,
   categories,
@@ -60,47 +38,39 @@ export function openingGroups({
   });
 }
 
-interface OpeningBrief {
-  author: string;
-  material: string;
-  presentation: RunSnapshot;
-}
-
-/** The publication instruction carries the whole presentation, not a later reread. */
-export function openingBrief({
-  account,
-  author,
-  questionnaire,
+/**
+ * The round as the room meets it: the leg's question as it stands, under its
+ * kind, with what it takes from its source filled in from the picked groups.
+ */
+export function roundPresentation({
+  content,
   kind,
   use,
-  content,
   groups,
   sourceValue,
   sourceNumber,
 }: {
-  sourceValue?: unknown;
-  sourceNumber?: unknown;
-  account: string;
-  author: string;
-  questionnaire: string;
+  content: unknown;
   kind: string;
   use: unknown;
-  content: unknown;
   groups: unknown;
-}): string {
-  if (account !== "") return "";
+  sourceValue: unknown;
+  sourceNumber: unknown;
+}): RunSnapshot {
   const source = content as RunSnapshot;
   const carried = (groups ?? []) as ContextGroup[];
   const names = [...new Set(carried.map(({ name }) => name))];
-  const presentation: RunSnapshot = {
+  const from =
+    typeof sourceNumber === "number" && sourceValue != null
+      ? { contextSource: { number: sourceNumber, title: (sourceValue as RunSnapshot).title } }
+      : {};
+  return {
     ...source,
     questions: source.questions.map((question) => {
       if (use === "choices")
         return {
           ...question,
-          ...(typeof sourceNumber === "number" && sourceValue != null
-            ? { contextSource: { number: sourceNumber, title: (sourceValue as RunSnapshot).title } }
-            : {}),
+          ...from,
           choices: names,
           parts: [],
           cap: 0,
@@ -111,9 +81,7 @@ export function openingBrief({
       if (use === "parts")
         return {
           ...question,
-          ...(typeof sourceNumber === "number" && sourceValue != null
-            ? { contextSource: { number: sourceNumber, title: (sourceValue as RunSnapshot).title } }
-            : {}),
+          ...from,
           choices: [],
           parts: names,
           cap: 0,
@@ -122,9 +90,7 @@ export function openingBrief({
         };
       return {
         ...question,
-        ...(typeof sourceNumber === "number" && sourceValue != null
-          ? { contextSource: { number: sourceNumber, title: (sourceValue as RunSnapshot).title } }
-          : {}),
+        ...from,
         choices: kindChoices({ kind, choices: question.choices }),
         parts: kindParts({ kind, parts: question.parts ?? [] }),
         cap: kindCap({ kind, cap: question.cap ?? 0 }),
@@ -132,17 +98,4 @@ export function openingBrief({
       };
     }),
   };
-  return JSON.stringify({ author, material: questionnaire, presentation } satisfies OpeningBrief);
-}
-
-export function openingAuthor({ brief }: { brief: string }): string {
-  return (JSON.parse(brief) as OpeningBrief).author;
-}
-
-export function openingMaterial({ brief }: { brief: string }): string {
-  return (JSON.parse(brief) as OpeningBrief).material;
-}
-
-export function openingPresentation({ brief }: { brief: string }): RunSnapshot {
-  return (JSON.parse(brief) as OpeningBrief).presentation;
 }

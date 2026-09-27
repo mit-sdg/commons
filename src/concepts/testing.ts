@@ -34,10 +34,23 @@ export async function testDbUri(): Promise<string> {
   return (await shared).server.getUri();
 }
 
+/**
+ * The server's own stop waits ten seconds on a graceful shutdown before it
+ * kills mongod, longer than a hook may take under load. Its data is thrown
+ * away, so a mongod still shutting down after a moment is killed at once.
+ */
+const GRACE_MS = 1_000;
+
 export async function stopTestDb(): Promise<void> {
   if (shared === undefined) return;
   const { client, server } = await shared;
   shared = undefined;
   await client.close();
-  await server.stop();
+  const mongod = server.instanceInfo?.instance.mongodProcess;
+  const kill = setTimeout(() => mongod?.kill("SIGKILL"), GRACE_MS);
+  try {
+    await server.stop();
+  } finally {
+    clearTimeout(kill);
+  }
 }

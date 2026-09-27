@@ -1,6 +1,7 @@
 import {
   compute,
   each,
+  form,
   former,
   is,
   no,
@@ -14,9 +15,14 @@ import {
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { activeUser } from "../access/session.ts";
 import {
+  legHasNotRunInRun,
+  legIsOfRun,
+  legSourcesHaveClosed,
+  legTakesNothing,
   liveLaunchInput,
   mayHostLive,
   mayNotHostLive,
+  openRoundInput,
   participantIsSeated,
   questionnaireHasAnOpenRun,
   questionnaireHasNoOpenRun,
@@ -24,12 +30,12 @@ import {
   relayHasNoOpenRun,
   relayIsNotRetired,
   relayIsRetired,
-  runHasAnOpenRound,
-  runHasNoOpenRound,
   runIsARelayRun,
   runIsClosed,
   runIsOpen,
   seatIsNotDismissed,
+  theOpeningOf,
+  theOpenPartOf,
   theOpenRoundOf,
   theRoundOfLegInRun,
   theRoundOfMaterialInRun,
@@ -38,16 +44,14 @@ import {
   theTakeOf,
 } from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
-import { SORTING_USE } from "./rounds.ts";
+import { RESERVED_PILES, SORTING_USE } from "./rounds.ts";
 
 const {
   Accessing,
+  Attending,
   Categorizing,
-  Commissioning,
   Guiding,
-  Linking,
   Locating,
-  Locking,
   Pinning,
   Publishing,
   Questioning,
@@ -298,7 +302,7 @@ export const theRelay = former(
           closedAt,
           token,
           code,
-          rounds: each(Linking._getBacklinks({ target: run }).is({ source: ran })).form({
+          rounds: each(Publishing._parts({ whole: run }).is({ edition: ran })).form({
             round: ran,
             figure: whether(theRoundFigure({ round: ran })),
           }),
@@ -306,11 +310,15 @@ export const theRelay = former(
     }),
 ).optional();
 
-/** One run: which rounds ran, which is open, and the figure of each. */
+/**
+ * One run: which rounds ran, which is open or opening, the figure of each, and
+ * the room: how many devices were heard since the given instant, and how many
+ * of them hold the open round.
+ */
 export const theRelayRun = former(
-  "the run (run)",
+  "the run (run) with its room since (since)",
   (
-    { run },
+    { run, since },
     {
       relay,
       title,
@@ -322,6 +330,7 @@ export const theRelayRun = former(
       token,
       code,
       openRound,
+      opening,
       leg,
       material,
       position,
@@ -330,6 +339,9 @@ export const theRelayRun = former(
       takenFrom,
       seat,
       modelSorts,
+      attendee,
+      onRound,
+      held,
     },
   ) =>
     where(
@@ -337,6 +349,7 @@ export const theRelayRun = former(
       Relaying._relay({ relay }).is({ title }),
       whether(Locating._for({ subject: run }).is({ code })),
       whether(theOpenRoundOf({ run }).is({ round: openRound })),
+      whether(theOpeningOf({ run }).is({ round: opening })),
       Pinning._isPinned({ item: run, scope: SORTING }).is({ pinned: modelSorts }),
       Guiding._guidanceText({ subject: relay, use: "relay-description" }).is({ text: description }),
     ).form({
@@ -351,7 +364,16 @@ export const theRelayRun = former(
       token: each(Sharing._sharesFor({ subject: run }).is({ token })).first(token),
       code,
       openRound,
+      opening,
       modelSorts,
+      room: form({
+        here: each(Attending._present({ gathering: run, since }).is({ attendee })).count(),
+        onOpenRound: each(
+          Attending._present({ gathering: run, since }).is({ attendee: onRound, holding: held }),
+        )
+          .where(theOpenRoundOf({ run }).is({ round: held }))
+          .count(),
+      }),
       seats: each(Subscribing._getSubscribers({ target: run }).is({ user: seat }))
         .where(seatIsNotDismissed({ participant: seat }))
         .form({ participant: seat }),
@@ -374,6 +396,19 @@ export const theRelayRun = former(
           takes: each(Relaying._draws({ leg }).is({ source: takenFrom })).count(),
         }),
     }),
+).optional();
+
+/**
+ * A round the room has met in a run: every round published within it but the
+ * one still opening, so a round closed before it opened counts as run.
+ */
+const theRoundMetInRun = view(
+  "the round of (material) the room met in (run)",
+  ({ run, material }, { round, open }, _bindings) =>
+    where(
+      theRoundOfMaterialInRun({ run, material }).is({ round, open }),
+      no(theOpeningOf({ run }).is({ round })),
+    ),
 ).optional();
 
 /** What a phone meets on a relay run: the rounds' standing and the open round's face. */
@@ -416,7 +451,7 @@ export const theRelayFace = former(
       rounds: each(Relaying._legs({ relay }).is({ leg, material, position }))
         .where(
           Questioning._getQuestionnaire({ questionnaire: material }).is({ title: roundTitle }),
-          whether(theRoundOfMaterialInRun({ run, material }).is({ round, open: roundOpen })),
+          whether(theRoundMetInRun({ run, material }).is({ round, open: roundOpen })),
         )
         .form({ leg, number: position, title: roundTitle, round, open: roundOpen }),
     }),
@@ -468,10 +503,15 @@ export const Get = endpoint(
 
 export const Run = endpoint(
   "/live/relays/run",
-  ({ session, run, user, at }) =>
+  ({ session, run, user, at, since }) =>
     receive({ session, run }).then(
-      where(now(at), activeUser({ session }).is({ user }), mayHostLive({ user }))
-        .then(respond({ run: theRelayRun({ run }) }))
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        compute(computations.roomSince, { at }, since),
+      )
+        .then(respond({ run: theRelayRun({ run, since }) }))
         .named("success"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
@@ -1078,21 +1118,50 @@ export const Launch = endpoint(
   },
 );
 
-/** Resolve the source and its picked material in one optional observation. */
-const openingSource = view(
-  "the source for opening (leg) in (run)",
+/** How the request's picks stand on the closed wall the round takes from. */
+const thePickStandingOf = view(
+  "how (picked) stands on the wall (leg) takes from in (run)",
+  ({ run, leg, picked }, { standing }, { source, round, categories }) =>
+    where(
+      theTakeOf({ leg }).is({ source }),
+      theRoundOfLegInRun({ run, leg: source }).is({ round, open: false }),
+      Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+      compute(computations.pickStanding, { picked, categories }, standing),
+    ),
+).optional();
+
+/** Ready on the request's picks: the round takes nothing, or every pile it picks stands. */
+const legIsReady = view(
+  "(leg) is ready to open in (run) on (picked)",
+  ({ run, leg, picked }, _outputs, _bindings) => [
+    where(legTakesNothing({ leg })),
+    where(thePickStandingOf({ run, leg, picked }).is({ standing: "ready" })),
+  ],
+).holds();
+
+/** Due its presentation: nothing is open and the round has not run, or it is the round opening. */
+const legIsDueInRun = view(
+  "(leg) is due its presentation in (run)",
+  ({ run, leg }, _outputs, { round }) => [
+    where(legHasNotRunInRun({ run, leg }), no(theOpenPartOf({ run }))),
+    where(theOpeningOf({ run }).is({ round }), theRoundOfLegInRun({ run, leg }).is({ round })),
+  ],
+).holds();
+
+/** What the picked piles carry from the round it takes from, in the order the request names them. */
+const theCarryOf = view(
+  "what (picked) carries from the round (leg) takes in (run)",
   (
-    { run, leg },
-    { source, sourceRound, sourceOpen, groups, sourceValue, sourceNumber },
-    { picked, categories, values },
+    { run, leg, picked },
+    { groups, sourceValue, sourceNumber },
+    { source, round, categories, values },
   ) =>
     where(
       theTakeOf({ leg }).is({ source }),
-      theRoundOfLegInRun({ run, leg: source }).is({ round: sourceRound, open: sourceOpen }),
-      Pinning._pinnedItems({ scope: sourceRound }).is({ items: picked }),
-      Categorizing._categoriesWithItems({ scope: sourceRound }).is({ categories }),
-      Responding._valuesForSubject({ subject: sourceRound }).is({ values }),
-      RunSnapshotting._snapshot({ subject: sourceRound }).is({ value: sourceValue }),
+      theRoundOfLegInRun({ run, leg: source }).is({ round }),
+      Categorizing._categoriesWithItems({ scope: round }).is({ categories }),
+      Responding._valuesForSubject({ subject: round }).is({ values }),
+      RunSnapshotting._snapshot({ subject: round }).is({ value: sourceValue }),
       Relaying._leg({ leg: source }).is({ position: sourceNumber }),
       compute(
         computations.openingGroups,
@@ -1102,225 +1171,231 @@ const openingSource = view(
     ),
 ).optional();
 
-const openingContent = view(
-  "the material for opening (leg)",
-  ({ leg }, { content }, { questionnaire }) =>
+/** The round as the room will meet it: the leg's question as it stands, on the request's picks. */
+const theRoundPresentation = view(
+  "the presentation of (leg) in (run) on (picked)",
+  (
+    { run, leg, picked },
+    { value },
+    { questionnaire, kind, content, use, groups, sourceValue, sourceNumber },
+  ) =>
     where(
-      Relaying._leg({ leg }).is({ material: questionnaire }),
+      Relaying._leg({ leg }).is({ material: questionnaire, kind }),
       Questioning._content({ questionnaire }).is({ content }),
+      whether(theTakeOf({ leg }).is({ use })),
+      whether(theCarryOf({ run, leg, picked }).is({ groups, sourceValue, sourceNumber })),
+      compute(
+        computations.roundPresentation,
+        { content, kind, use, groups, sourceValue, sourceNumber },
+        value,
+      ),
     ),
 ).optional();
 
-const openingHost = view(
-  "(user) may commission a round opening",
-  ({ user }, { authorized }, _bindings) =>
-    where(mayHostLive({ user }), compute(computations.openingAuthorized, {}, authorized)),
-).optional();
-
 /**
- * Opening is one undertaking: remember the admission decision before branches
- * run, acquire the run's existing exclusion, publish, link, and capture its
- * presentation from the fixed brief. Later changes to the source cannot
- * change the choices, parts, or examples being published. A refused proposal neither publishes nor takes the lock.
+ * Opening a round is two writes: the round published within its run, then its
+ * presentation. The request names the piles it opens on, as the screen showed
+ * them, so nothing read after the press can change what the round carries.
  */
 export const OpenRound = endpoint(
   "/live/relays/open-round",
-  ({
-    session,
-    run,
-    leg,
-    user,
-    at,
-    authorized,
-    relay,
-    legRelay,
-    questionnaire,
-    open,
-    openRound,
-    ran,
-    source,
-    sourceRound,
-    sourceOpen,
-    sourceValue,
-    sourceNumber,
-    groups,
-    kind,
-    use,
-    content,
-    account,
-    commission,
-    status,
-    brief,
-    round,
-    tie,
-    completed,
-    author,
-    material,
-  }) =>
-    receive({ session, run, leg })
+  ({ session, run, leg, picked, user, at, questionnaire, round, value }) =>
+    receive({ session, run, leg, picked })
       .then(
         where(
           now(at),
           activeUser({ session }).is({ user }),
-          whether(openingHost({ user }).is({ authorized })),
-          whether(Publishing._edition({ edition: run }).is({ material: relay, open })),
-          whether(Relaying._leg({ leg }).is({ relay: legRelay, material: questionnaire, kind })),
-          whether(theOpenRoundOf({ run }).is({ round: openRound })),
-          whether(theRoundOfLegInRun({ run, leg }).is({ round: ran })),
-          whether(theTakeOf({ leg }).is({ source, use })),
-          whether(
-            openingSource({ run, leg }).is({
-              sourceRound,
-              sourceOpen,
-              groups,
-              sourceValue,
-              sourceNumber,
-            }),
-          ),
-          whether(openingContent({ leg }).is({ content })),
-          compute(
-            computations.openingAdmission,
-            {
-              authorized,
-              relay,
-              legRelay,
-              open,
-              openRound,
-              ran,
-              source,
-              sourceRound,
-              sourceOpen,
-              groups,
-              content,
-            },
-            account,
-          ),
-          compute(
-            computations.openingBrief,
-            {
-              account,
-              author: user,
-              questionnaire,
-              kind,
-              use,
-              content,
-              groups,
-              sourceValue,
-              sourceNumber,
-            },
-            brief,
-          ),
+          mayHostLive({ user }),
+          legIsOfRun({ run, leg }),
+          runIsOpen({ run }),
+          legHasNotRunInRun({ run, leg }),
+          no(theOpenPartOf({ run })),
+          legIsReady({ run, leg, picked }),
+          Relaying._leg({ leg }).is({ material: questionnaire }),
         ).then(
-          Commissioning.prepare({ subject: run, brief, account, at }).responds({
-            commission,
-            status,
-            account,
-            brief,
-          }),
+          Publishing.publishWithin({
+            whole: run,
+            author: user,
+            material: questionnaire,
+            at,
+          }).responds({ edition: round }),
         ),
       )
       .then(
-        where(is.among(status, ["prepared"]))
-          .then(Locking.lock({ target: run, at }).responds())
-          .then(Commissioning.accept({ commission, at }).responds({ brief }))
-          .named("accepted"),
-        where(is.among(status, ["declined"]), is.among(account, ["FORBIDDEN"]))
-          .then(respond({ error: "FORBIDDEN" }))
-          .named("forbidden"),
-        where(is.among(status, ["declined"]), is.among(account, ["LEG_NOT_FOUND"]))
-          .then(respond({ error: "LEG_NOT_FOUND" }))
-          .named("leg-not-found"),
-        where(is.among(status, ["declined"]), is.among(account, ["CLOSED"]))
-          .then(respond({ error: "CLOSED" }))
+        where(runIsOpen({ run }), theRoundPresentation({ run, leg, picked }).is({ value }))
+          .then(RunSnapshotting.capture({ subject: round, value }).responds())
+          .then(respond({ round }))
+          .named("captured"),
+        where(runIsClosed({ run }))
+          .then(respond({ declined: "CLOSED" }))
           .named("closed"),
-        where(is.among(status, ["declined"]), is.among(account, ["ROUND_OPEN"]))
-          .then(respond({ error: "ROUND_OPEN" }))
-          .named("round-open"),
-        where(is.among(status, ["declined"]), is.among(account, ["ROUND_DONE"]))
-          .then(respond({ error: "ROUND_DONE" }))
-          .named("round-done"),
-        where(is.among(status, ["declined"]), is.among(account, ["SOURCE_OPEN"]))
-          .then(respond({ error: "SOURCE_OPEN" }))
-          .named("source-open"),
-        where(is.among(status, ["declined"]), is.among(account, ["NOTHING_PICKED"]))
-          .then(respond({ error: "NOTHING_PICKED" }))
-          .named("nothing-picked"),
-      )
-      .then(
-        where(
-          is.among(status, ["prepared"]),
-          compute(computations.openingAuthor, { brief }, author),
-          compute(computations.openingMaterial, { brief }, material),
-        ).then(Publishing.publish({ author, material, at }).responds({ edition: round })),
-      )
-      .then(Commissioning.assign({ commission, execution: round, at }).responds())
-      .then(
-        where(compute(computations.soleTarget, { target: run }, tie)).then(
-          Linking.setLinks({ source: round, targets: tie }).responds(),
-        ),
-      )
-      .afterFlowSettles()
-      .where(RunSnapshotting._snapshot({ subject: round }))
-      .then(
-        Commissioning.conclude({
-          commission,
-          successful: true,
-          account: "The round presentation was captured.",
-          at,
-        }).responds({ commission: completed }),
-      )
-      .then(respond({ round })),
-  { input: { required: ["session", "run", "leg"] } },
-);
-
-/** Linking publishes the already commissioned presentation to the round's readers. */
-export const TiedRoundCapturesPresentation = reaction(({ round, commission, brief, value }) =>
-  when(Linking.setLinks({ source: round }).responds())
-    .where(
-      Commissioning._forExecution({ execution: round }).is({ commission }),
-      Commissioning._commission({ commission }).is({ brief }),
-      compute(computations.openingPresentation, { brief }, value),
-    )
-    .then(RunSnapshotting.capture({ subject: round, value })),
-);
-
-/** A round that closes gives the run's lock back, whichever path closed it. */
-export const ClosedRoundUnlocksRun = reaction(({ round, run }) =>
-  when(Publishing.close({ edition: round }).responds())
-    .where(
-      Linking._getLinks({ source: round }).is({ target: run }),
-      runIsARelayRun({ run }),
-      Locking._isLocked({ target: run }).is({ locked: true }),
-    )
-    .then(Locking.unlock({ target: run })),
+      ),
+  {
+    input: { required: ["session", "run", "leg"], defaults: { picked: [] } },
+    validators: { input: openRoundInput },
+  },
 );
 
 /**
- * Closing and opening can overlap between publication and linking. Cover
- * both event orders: a closed run closes its linked rounds, and a round
- * linked afterward closes too. This is eventual closure within the running
- * engine; it does not make publication/linking a crash-atomic transaction.
+ * Open pressed again for a round already under way: the round open to the
+ * room is answered, with any standing pile missing from its wall ensured again,
+ * and the round the run holds open is given its presentation, which
+ * Snapshotting refuses once one stands.
  */
-export const ClosedRunClosesRounds = reaction(({ run, round, at }) =>
-  when(Publishing.close({ edition: run }).responds())
-    .where(
-      now(at),
-      runIsARelayRun({ run }),
-      Linking._getBacklinks({ target: run }).is({ source: round }),
-      Publishing._edition({ edition: round }).is({ open: true }),
-    )
-    .then(Publishing.close({ edition: round, at })),
+export const OpenRoundAgain = endpoint(
+  "/live/relays/open-round",
+  ({ session, run, leg, picked, user, at, round, value, name, category }) =>
+    receive({ session, run, leg, picked }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        theOpenRoundOf({ run }).is({ round }),
+        theRoundOfLegInRun({ run, leg }).is({ round }),
+      )
+        .then(respond({ round }))
+        .named("open"),
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        theOpenRoundOf({ run }).is({ round }),
+        theRoundOfLegInRun({ run, leg }).is({ round }),
+        Relaying._leg({ leg }).is.not({ kind: "vote" }),
+        Categorizing._categoriesIn({ scope: leg }).is({ name }),
+        no(Categorizing._categoriesIn({ scope: round }).is({ name })),
+      )
+        .then(
+          Categorizing.ensureCategory({ scope: round, name, description: "" }).responds({
+            category,
+          }),
+        )
+        .then(Pinning.pin({ item: category, scope: RESERVED_PILES, priority: 0, at }))
+        .named("pile"),
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        theOpenRoundOf({ run }).is({ round }),
+        theRoundOfLegInRun({ run, leg }).is({ round }),
+        Relaying._leg({ leg }).is.not({ kind: "vote" }),
+        Categorizing._categoriesIn({ scope: leg }).is({ name }),
+        Categorizing._categoriesIn({ scope: round }).is({ category, name }),
+        Pinning._isPinned({ item: category, scope: RESERVED_PILES }).is({ pinned: false }),
+      )
+        .then(Pinning.pin({ item: category, scope: RESERVED_PILES, priority: 0, at }))
+        .named("reserve"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        runIsOpen({ run }),
+        theOpenPartOf({ run }).is({ round }),
+        theRoundOfLegInRun({ run, leg }).is({ round }),
+        legIsReady({ run, leg, picked }),
+        theRoundPresentation({ run, leg, picked }).is({ value }),
+      )
+        .then(RunSnapshotting.capture({ subject: round, value }).responds())
+        .then(respond({ round }))
+        .named("finish"),
+    ),
 );
 
-export const RoundTiedToClosedRunCloses = reaction(({ round, run, at }) =>
-  when(Linking.setLinks({ source: round }).responds())
-    .where(
-      now(at),
-      Linking._getLinks({ source: round }).is({ target: run }),
-      runIsARelayRun({ run }),
-      runIsClosed({ run }),
-      Publishing._edition({ edition: round }).is({ open: true }),
-    )
+/** A press that cannot open its round is answered with the word the board shows, as data. */
+export const OpenRoundDeclined = endpoint(
+  "/live/relays/open-round",
+  ({ session, run, leg, picked, user, number, source, underway, material }) =>
+    receive({ session, run, leg, picked }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        no(legIsOfRun({ run, leg })),
+      )
+        .then(respond({ declined: "LEG_NOT_FOUND" }))
+        .named("leg-not-found"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        legIsOfRun({ run, leg }),
+        runIsClosed({ run }),
+      )
+        .then(respond({ declined: "CLOSED" }))
+        .named("closed"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        legIsOfRun({ run, leg }),
+        runIsOpen({ run }),
+        theRoundOfLegInRun({ run, leg }).is({ open: false }),
+        Relaying._leg({ leg }).is({ position: number }),
+      )
+        .then(respond({ declined: "ROUND_DONE", round: number }))
+        .named("round-done"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        legIsOfRun({ run, leg }),
+        runIsOpen({ run }),
+        legHasNotRunInRun({ run, leg }),
+        theTakeOf({ leg }).is({ source }),
+        legHasNotRunInRun({ run, leg: source }),
+        Relaying._leg({ leg: source }).is({ position: number }),
+      )
+        .then(respond({ declined: "SOURCE_UNRUN", source: number }))
+        .named("source-unrun"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        legIsOfRun({ run, leg }),
+        runIsOpen({ run }),
+        legHasNotRunInRun({ run, leg }),
+        theTakeOf({ leg }).is({ source }),
+        theRoundOfLegInRun({ run, leg: source }).is({ open: true }),
+        Relaying._leg({ leg: source }).is({ position: number }),
+      )
+        .then(respond({ declined: "SOURCE_OPEN", source: number }))
+        .named("source-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        legIsOfRun({ run, leg }),
+        runIsOpen({ run }),
+        legHasNotRunInRun({ run, leg }),
+        legSourcesHaveClosed({ run, leg }),
+        theOpenPartOf({ run }).is({ round: underway }),
+        Publishing._edition({ edition: underway }).is({ material }),
+        Relaying._legFor({ material }).is({ position: number }),
+      )
+        .then(respond({ declined: "ROUND_OPEN", round: number }))
+        .named("round-open"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        legIsOfRun({ run, leg }),
+        runIsOpen({ run }),
+        legIsDueInRun({ run, leg }),
+        thePickStandingOf({ run, leg, picked }).is({ standing: "none" }),
+      )
+        .then(respond({ declined: "NOTHING_PICKED" }))
+        .named("nothing-picked"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayHostLive({ user }),
+        legIsOfRun({ run, leg }),
+        runIsOpen({ run }),
+        legIsDueInRun({ run, leg }),
+        thePickStandingOf({ run, leg, picked }).is({ standing: "gone" }),
+      )
+        .then(respond({ declined: "PILE_GONE" }))
+        .named("pile-gone"),
+      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+);
+
+/** A run that closes closes the round it holds open, whichever path closed it. */
+export const ClosedRunClosesRounds = reaction(({ run, round, at }) =>
+  when(Publishing.close({ edition: run }).responds())
+    .where(now(at), runIsARelayRun({ run }), theOpenPartOf({ run }).is({ round }))
     .then(Publishing.close({ edition: round, at })),
 );
 
@@ -1339,7 +1414,10 @@ export const CloseRound = endpoint(
   { input: { required: ["session", "round"] } },
 );
 
-/** Closing the run closes its open round first, so no phone is left answering. */
+/**
+ * Closing the run closes the round it holds open first, open or opening, so no
+ * phone is left answering. A run already closed is answered as closed.
+ */
 export const Close = endpoint(
   "/live/relays/close",
   ({ session, run, user, at, round, closedRound, closed }) =>
@@ -1348,7 +1426,7 @@ export const Close = endpoint(
         now(at),
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
-        theOpenRoundOf({ run }).is({ round }),
+        theOpenPartOf({ run }).is({ round }),
       )
         .then(Publishing.close({ edition: round, at }).responds({ edition: closedRound }))
         .then(Publishing.close({ edition: run, at }).responds({ edition: closed }))
@@ -1359,49 +1437,14 @@ export const Close = endpoint(
         activeUser({ session }).is({ user }),
         mayHostLive({ user }),
         runIsOpen({ run }),
-        runHasNoOpenRound({ run }),
+        no(theOpenPartOf({ run })),
       )
         .then(Publishing.close({ edition: run, at }).responds({ edition: closed }))
         .then(respond({ run: closed }))
         .named("bare"),
-      where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
-        .then(respond({ error: "FORBIDDEN" }))
-        .named("forbidden"),
-    ),
-  { input: { required: ["session", "run"] } },
-);
-
-/**
- * The way back from a run left locked with no round open, which is what a
- * crash between the lock and the publish leaves behind. The dashboard offers
- * it as one deliberate tap and never sends it on its own: a loser of the
- * opening race that read the run before the winner's publish landed would
- * unlock the winner and open the race again.
- */
-export const Unlock = endpoint(
-  "/live/relays/unlock",
-  ({ session, run, user }) =>
-    receive({ session, run }).then(
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        runHasNoOpenRound({ run }),
-        Locking._isLocked({ target: run }).is({ locked: true }),
-      )
-        .then(Locking.unlock({ target: run }).responds())
+      where(activeUser({ session }).is({ user }), mayHostLive({ user }), runIsClosed({ run }))
         .then(respond({ run }))
-        .named("success"),
-      where(
-        activeUser({ session }).is({ user }),
-        mayHostLive({ user }),
-        runHasNoOpenRound({ run }),
-        Locking._isLocked({ target: run }).is({ locked: false }),
-      )
-        .then(respond({ run }))
-        .named("not-locked"),
-      where(activeUser({ session }).is({ user }), mayHostLive({ user }), runHasAnOpenRound({ run }))
-        .then(respond({ error: "ROUND_OPEN" }))
-        .named("round-open"),
+        .named("already-closed"),
       where(activeUser({ session }).is({ user }), mayNotHostLive({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -1481,22 +1524,6 @@ export const SortByHand = endpoint(
 export const SeatedParticipantAnswersOpenRound = reaction(({ participant, run, round, at }) =>
   when(Subscribing.subscribe({ user: participant, target: run }).responds())
     .where(now(at), runIsARelayRun({ run }), theOpenRoundOf({ run }).is({ round }))
-    .then(Responding.begin({ participant, subject: round, at })),
-);
-
-/**
- * A round's presentation, once captured, is what a seat answers: every seat
- * of the run begins a response to the round, exactly as a phone that was in
- * the room would, and the model's reply follows from the begin.
- */
-export const CapturedRoundSeatsParticipants = reaction(({ round, run, participant, at }) =>
-  when(RunSnapshotting.capture({ subject: round }).responds())
-    .where(
-      now(at),
-      theRunOf({ round }).is({ run }),
-      Subscribing._getSubscribers({ target: run }).is({ user: participant }),
-      seatIsNotDismissed({ participant }),
-    )
     .then(Responding.begin({ participant, subject: round, at })),
 );
 

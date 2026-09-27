@@ -359,7 +359,9 @@ describe("invitations and email", () => {
       // the whole address, so the participation routes take no session.
       "/live/p/answer",
       "/live/p/arrive",
+      "/live/p/attend",
       "/live/p/begin",
+      "/live/p/leave",
       "/live/p/locate",
       "/live/p/outcome",
       "/live/p/submit",

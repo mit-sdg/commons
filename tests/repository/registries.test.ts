@@ -200,6 +200,8 @@ describe("application-owned design integration", () => {
       "DraftTrashing.Item is Drafting.Brief",
       "DraftTrashing.User is Authenticating.User",
       "Insisting.Aim is LiveSubject",
+      "Attending.Attendee is LiveDevice",
+      "Attending.Gathering is Publishing.Edition",
       "Locating.Subject is Publishing.Edition",
       "Publishing.Author is Authenticating.User",
       "Publishing.Material is LiveMaterial",

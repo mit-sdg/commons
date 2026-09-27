@@ -293,10 +293,31 @@ export async function launch(host: Client, relay: string): Promise<Run> {
   return { run: launched.run, token: launched.token, code: launched.code };
 }
 
-/** Opens a round and answers its edition id, or throws with the refusal. */
-export async function openRound(host: Client, run: string, leg: string): Promise<string> {
-  const opened = await host.call<{ round: string }>("/live/relays/open-round", { run, leg });
+/**
+ * What open-round answers: the round it opened, or the word it declined with
+ * and the facts its sentence names (a round's or its source's number).
+ */
+export interface Opened {
+  round?: string | number;
+  declined?: string;
+  source?: number;
+}
+
+/**
+ * Opens a round on the piles picked, in the order the dashboard sends them
+ * (none for a round that takes nothing), and answers its edition id; throws
+ * with the refusal or the declined word.
+ */
+export async function openRound(
+  host: Client,
+  run: string,
+  leg: string,
+  picked: string[] = [],
+): Promise<string> {
+  const opened = await host.call<Opened>("/live/relays/open-round", { run, leg, picked });
   if (opened.error) throw new Error(`open-round: ${opened.error}`);
+  if (opened.declined !== undefined || typeof opened.round !== "string")
+    throw new Error(`open-round declined: ${JSON.stringify(opened)}`);
   return opened.round;
 }
 
@@ -364,6 +385,7 @@ export interface RunRead {
     token: string;
     code: string;
     openRound: string | null;
+    opening: string | null;
     rounds: {
       leg: string;
       number: number;

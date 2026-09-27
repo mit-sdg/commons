@@ -134,7 +134,7 @@ export const runIsNotKeyed = view("(run) has no key", ({ run }, _outputs, _bindi
   where(no(Scoring._keyFor({ subject: run }))),
 ).holds();
 
-const { Categorizing, Linking, Pinning, Relaying, Subscribing, Trashing } = concepts;
+const { Categorizing, Pinning, Relaying, Subscribing, Trashing } = concepts;
 
 export const relayHasAnOpenRun = view("(relay) has an open run", ({ relay }, _outputs, _bindings) =>
   where(Publishing._hasOpenEditionFor({ material: relay }).is({ open: true })),
@@ -152,18 +152,24 @@ export const relayIsNotRetired = view("(relay) is not retired", ({ relay }, _out
   where(Trashing._isTrashed({ item: relay }).is({ trashed: false })),
 ).holds();
 
-/** The run's rounds are the editions Linking ties to it; at most one is open. */
+/** A run's rounds are its parts: each round is published within the run it opens in. */
+export const theOpenPartOf = view("the round (run) holds open", ({ run }, { round }, _bindings) =>
+  where(Publishing._openPart({ whole: run }).is({ edition: round })),
+).optional();
+
+/** A round is open to the room once its presentation stands on it. */
 export const theOpenRoundOf = view("the open round of (run)", ({ run }, { round }, _bindings) =>
   where(
-    Linking._getBacklinks({ target: run }).is({ source: round }),
     Publishing._edition({ edition: run }).is({ open: true }),
-    Publishing._edition({ edition: round }).is({ open: true }),
+    theOpenPartOf({ run }).is({ round }),
+    RunSnapshotting._snapshot({ subject: round }),
   ),
 ).optional();
 
-export const runHasAnOpenRound = view("(run) has a round open", ({ run }, _outputs, _bindings) =>
-  where(theOpenRoundOf({ run })),
-).holds();
+/** Until then it is opening: published within the run, with nothing yet for a phone to show. */
+export const theOpeningOf = view("the round opening in (run)", ({ run }, { round }, _bindings) =>
+  where(theOpenPartOf({ run }).is({ round }), no(RunSnapshotting._snapshot({ subject: round }))),
+).optional();
 
 export const runHasNoOpenRound = view("(run) has no round open", ({ run }, _outputs, _bindings) =>
   where(no(theOpenRoundOf({ run }))),
@@ -198,10 +204,7 @@ export const legIsNotOfRun = view(
 export const theRoundOfMaterialInRun = view(
   "the round of (material) in (run)",
   ({ run, material }, { round, open }, _bindings) =>
-    where(
-      Linking._getBacklinks({ target: run }).is({ source: round }),
-      Publishing._edition({ edition: round }).is({ material, open }),
-    ),
+    where(Publishing._parts({ whole: run }).is({ edition: round, material, open })),
 ).optional();
 
 /** The edition a round got when it opened in this run, if it did. */
@@ -267,9 +270,12 @@ export const pileIsOfRound = view(
     where(Categorizing._getCategoryDetail({ category: pile }).is({ scope: round })),
 ).holds();
 
-/** The run a round belongs to: the edition Linking tied it to when the round opened. */
+/** The run a round belongs to: the whole it was published within. */
 export const theRunOf = view("the run of (round)", ({ round }, { run }, _bindings) =>
-  where(Linking._getLinks({ source: round }).is({ target: run })),
+  where(
+    Publishing._edition({ edition: round }).is.not({ whole: null }),
+    Publishing._edition({ edition: round }).is({ whole: run }),
+  ),
 ).optional();
 
 /**
@@ -290,12 +296,11 @@ export const seatIsNotDismissed = view(
     where(Trashing._isTrashed({ item: participant }).is({ trashed: false })),
 ).holds();
 
-/** A round's run is the edition Linking tied it to when the round opened. */
 export const roundIsOfAnOpenRun = view(
   "(round) is of an open run",
   ({ round }, _outputs, { run }) =>
     where(
-      Linking._getLinks({ source: round }).is({ target: run }),
+      theRunOf({ round }).is({ run }),
       Publishing._edition({ edition: run }).is({ open: true }),
     ),
 ).holds();
@@ -304,7 +309,7 @@ export const roundIsOfAClosedRun = view(
   "(round) is of a closed run",
   ({ round }, _outputs, { run }) =>
     where(
-      Linking._getLinks({ source: round }).is({ target: run }),
+      theRunOf({ round }).is({ run }),
       Publishing._edition({ edition: run }).is({ open: false }),
     ),
 ).holds();
@@ -395,6 +400,19 @@ export const anonymousParticipationAllowed = view(
   "(subject) allows anonymous participation",
   ({ subject }) => where(theParticipationAccess({ subject }).is({ mode: "open" })),
 ).holds();
+
+/** Admission rejects picks that are not a list of pile identities before anything opens. */
+export function openRoundInput(value: unknown) {
+  return {
+    ok:
+      typeof value === "object" &&
+      value !== null &&
+      !Array.isArray(value) &&
+      (!("picked" in value) ||
+        (Array.isArray(value.picked) &&
+          value.picked.every((pile: unknown) => typeof pile === "string"))),
+  };
+}
 
 /** Admission rejects malformed toggle values before any launch action runs. */
 export function liveLaunchInput(value: unknown) {

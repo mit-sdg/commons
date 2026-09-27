@@ -232,17 +232,18 @@ describe("what a round carries from an earlier one", () => {
     );
     await post(edge, "/live/relays/close-round", { round }, cookie);
 
-    // Nothing picked: the dependent round is refused.
+    // Nothing picked: the dependent round is declined.
     const early = await json(
       await post(edge, "/live/relays/open-round", { run, leg: stranger }, cookie),
     );
-    expect(early.error).toBe("CONFLICT");
+    expect(early.declined).toBe("NOTHING_PICKED");
     await post(edge, "/live/walls/pick", { round, pile: keeping.pile }, cookie);
     await post(edge, "/live/walls/pick", { round, pile: sending.pile }, cookie);
+    const picked = [keeping.pile, sending.pile];
 
     // Context: the question as authored, with the piles and their cards above it.
     const shown = await json(
-      await post(edge, "/live/relays/open-round", { run, leg: stranger }, cookie),
+      await post(edge, "/live/relays/open-round", { run, leg: stranger, picked }, cookie),
     );
     const strangerWall = await until(
       async () =>
@@ -263,7 +264,7 @@ describe("what a round carries from an earlier one", () => {
 
     // Parts: one box per picked pile.
     const boxed = await json(
-      await post(edge, "/live/relays/open-round", { run, leg: each }, cookie),
+      await post(edge, "/live/relays/open-round", { run, leg: each, picked }, cookie),
     );
     const eachWall = await until(
       async () =>
@@ -283,7 +284,7 @@ describe("what a round carries from an earlier one", () => {
 
     // Choices: the vote, whose ballots file themselves under a pile per choice.
     const voting = await json(
-      await post(edge, "/live/relays/open-round", { run, leg: vote }, cookie),
+      await post(edge, "/live/relays/open-round", { run, leg: vote, picked }, cookie),
     );
     await until(
       async () =>
@@ -315,7 +316,7 @@ describe("what a round carries from an earlier one", () => {
     const won = voteWall.piles.find((pile) => pile.name === "keeping")?.pile;
     await post(edge, "/live/walls/pick", { round: voting.round, pile: won }, cookie);
     const after = await json(
-      await post(edge, "/live/relays/open-round", { run, leg: runoff }, cookie),
+      await post(edge, "/live/relays/open-round", { run, leg: runoff, picked: [won] }, cookie),
     );
     const runoffWall = await until(
       async () =>
@@ -366,8 +367,10 @@ describe("what a round carries from an earlier one", () => {
     const launched = await json(await post(edge, "/live/relays/launch", { relay }, cookie));
     const run = launched.run as string;
     const token = launched.token as string;
-    const open = async (leg: string) => {
-      const result = await json(await post(edge, "/live/relays/open-round", { run, leg }, cookie));
+    const open = async (leg: string, picked: string[] = []) => {
+      const result = await json(
+        await post(edge, "/live/relays/open-round", { run, leg, picked }, cookie),
+      );
       expect(result.error).toBeUndefined();
       const round = result.round as string;
       await until(
@@ -398,7 +401,7 @@ describe("what a round carries from an earlier one", () => {
     await post(edge, "/live/relays/close-round", { round: sourceRound }, cookie);
     for (const pile of [piles[1], piles[0]])
       await post(edge, "/live/walls/pick", { round: sourceRound, pile }, cookie);
-    const voteRound = await open(vote);
+    const voteRound = await open(vote, [piles[1]!, piles[0]!]);
     const support = [
       { name: "Lost edits", cards: [stories[1]] },
       { name: "Wrong time zone", cards: [stories[0]] },
@@ -433,7 +436,7 @@ describe("what a round carries from an earlier one", () => {
     await post(edge, "/live/walls/rename-pile", { pile: time, name: "Missed meeting" }, cookie);
     await post(edge, "/live/relays/close-round", { round: voteRound }, cookie);
     await post(edge, "/live/walls/pick", { round: voteRound, pile: time }, cookie);
-    const listRound = await open(list);
+    const listRound = await open(list, [time!]);
     expect((await read(listRound)).questions[0]).toMatchObject({
       parts: ["Missed meeting"],
       context: [{ name: "Missed meeting", cards: [stories[0]] }],
@@ -457,7 +460,7 @@ describe("what a round carries from an earlier one", () => {
 
     // The merged vote pile combines the distinct source examples, not repeated ballots.
     await post(edge, "/live/walls/merge-pile", { pile: edits, into: time }, cookie);
-    const contextRound = await open(context);
+    const contextRound = await open(context, [time!]);
     expect((await read(contextRound)).questions[0].context).toEqual([
       { name: "Missed meeting", cards: [stories[0], stories[1]] },
     ]);
@@ -466,7 +469,7 @@ describe("what a round carries from an earlier one", () => {
       { name: "Missed meeting", cards: [stories[0]] },
     ]);
     await post(edge, "/live/relays/close-round", { round: contextRound }, cookie);
-    const refinedRound = await open(refined);
+    const refinedRound = await open(refined, [refinement.pile]);
     expect((await read(refinedRound)).questions[0].context).toEqual([
       {
         name: "Refined story",
@@ -572,7 +575,12 @@ describe("what a round carries from an earlier one", () => {
 
     // The empty group carries into the round that takes this one as context.
     const asked = await json(
-      await post(edge, "/live/relays/open-round", { run, leg: after }, cookie),
+      await post(
+        edge,
+        "/live/relays/open-round",
+        { run, leg: after, picked: [chosen, empty.pile] },
+        cookie,
+      ),
     );
     const afterWall = await until(
       async () =>

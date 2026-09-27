@@ -1,7 +1,62 @@
 import { isApiError } from "@/lib/api";
 
-/** How long a poll waits for its answer before giving up on it; actions carry no deadline. */
+/** How long a live read or recoverable automatic join waits for its answer. */
 export const POLL_DEADLINE_MS = 10_000;
+
+/**
+ * How long a pressed action waits for its answer before the screen says it
+ * timed out; the server answers an unanswered flow in thirty seconds itself.
+ */
+const ACTION_DEADLINE_MS = 30_000;
+
+/**
+ * The request as the screen waits on it: its own answer, or the timed-out
+ * word once the deadline passes. The request itself is not cancelled; a
+ * move that lands late is read on the next poll.
+ */
+export function withDeadline<T>(
+  request: Promise<T>,
+  deadlineMs = ACTION_DEADLINE_MS,
+): Promise<T | { error: "TIMED_OUT" }> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<{ error: "TIMED_OUT" }>((resolve) => {
+    timer = setTimeout(() => resolve({ error: "TIMED_OUT" }), deadlineMs);
+  });
+  return Promise.race([request, late]).finally(() => {
+    if (timer !== undefined) clearTimeout(timer);
+  });
+}
+
+/**
+ * How old a page's last check-in on a relay run grows before the page checks
+ * in again on the same round; the room keeps a twenty-second grain.
+ */
+export const CHECK_IN_EVERY_MS = 15_000;
+
+/** A check-in a page sent: the round it held, or "" while it waited, and when. */
+export interface CheckIn {
+  holding: string;
+  at: number;
+}
+
+/**
+ * Whether a page checks in now, holding the round on its screen: when no
+ * check-in has landed, when the round is not the one the last landed
+ * check-in held, or once that one is `everyMs` old. A check-in still out
+ * for the same round is waited on, never sent twice.
+ */
+export function checkInDue(
+  holding: string,
+  now: number,
+  landed: CheckIn | null,
+  out: CheckIn | null,
+  everyMs = CHECK_IN_EVERY_MS,
+): boolean {
+  if (out !== null && out.holding === holding) return false;
+  return (
+    landed === null || landed.holding !== holding || now - landed.at >= everyMs
+  );
+}
 
 /** The longest a poller waits between tries once its requests keep failing. */
 export const POLL_CAP_MS = 30_000;
