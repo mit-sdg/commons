@@ -1,6 +1,12 @@
 "use client";
 
-import { Fragment, type ReactNode } from "react";
+import {
+  Fragment,
+  type ReactNode,
+  type Ref,
+  useCallback,
+  useState,
+} from "react";
 import {
   type CriterionRow,
   type PointPaper,
@@ -14,9 +20,12 @@ import { EACH_PAPER, NO_GRADER, RING, ROW_GRID, score } from "./common";
 import { hoverable } from "./hover";
 import type { Naming } from "./names";
 import { PaperCard } from "./paper";
+import { acrossOf, ceilingOf, layoutOf, leftOf, pilesOf } from "./piles";
 
-const DOT = 10;
-const PITCH = 12;
+/** The height of a pile's folded count. */
+const COUNT = 14;
+/** The papers a bar or a folded count lists when pointed at. */
+const LISTED = 8;
 
 export function maxOf(row: PointsRow | TotalRow) {
   return row.kind === "TOTAL" ? row.outOf : row.maxPoints;
@@ -59,15 +68,18 @@ function Plot({
   max,
   height,
   mark,
+  measure,
   children,
 }: {
   max: number;
   height: number;
   mark: number | null;
+  measure?: Ref<HTMLDivElement>;
   children: ReactNode;
 }) {
   return (
     <div
+      ref={measure}
       className="relative mx-1.5 mb-2.5 min-w-0 border-b border-border"
       style={{ height }}
     >
@@ -91,16 +103,67 @@ function Plot({
   );
 }
 
-function stacksOf<P extends { score: number }>(papers: readonly P[]) {
-  const stacks = new Map<number, P[]>();
-  for (const paper of papers)
-    stacks.set(paper.score, [...(stacks.get(paper.score) ?? []), paper]);
-  return [...stacks.entries()].sort(([left], [right]) => left - right);
+function useWidth() {
+  const [width, setWidth] = useState(0);
+  const measure = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
+    const observer = new ResizeObserver(([entry]) =>
+      setWidth(entry?.contentRect.width ?? 0),
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  return [width, measure] as const;
+}
+
+/** The papers under a bar or a folded count, for pointing at it. */
+function PapersCard({
+  papers,
+  max,
+  names,
+  heading,
+}: {
+  papers: readonly PointPaper[];
+  max: number;
+  names: Naming;
+  heading: string;
+}) {
+  const listed = papers.slice(0, LISTED);
+  return (
+    <>
+      <span className="font-semibold">{heading}</span>
+      <ul className="grid gap-1">
+        {listed.map((paper) => (
+          <li
+            key={paper.learner}
+            className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3"
+          >
+            <span className="truncate text-muted-foreground">
+              {names.student(paper) ?? names.grader(paper.grader)}
+            </span>
+            <span className="tabular-nums">
+              {score(paper.score)} of {score(max)}
+            </span>
+            <span className="col-span-2 line-clamp-1">
+              {paper.feedback.trim() || "No feedback"}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {papers.length > listed.length ? (
+        <span className="text-muted-foreground">
+          {papers.length - listed.length} more in Submissions
+        </span>
+      ) : null}
+    </>
+  );
 }
 
 /**
- * A row's papers on its axis: a dot per paper, each opening its paper, or
- * past `EACH_PAPER`, a bar per score, each opening its learners.
+ * A row's papers on its axis, a dot per paper, each showing its feedback and
+ * opening its paper. A pile stacks up to the row's ceiling and spreads
+ * sideways past it, and a pile past `MOST_LAYERS` folds its highest scores
+ * into a count that opens those learners.
  */
 export function Scores({
   papers,
@@ -109,101 +172,216 @@ export function Scores({
   names,
   onPaper,
   onLearners,
-  dots = papers.length <= EACH_PAPER,
-  height,
+  among = papers,
 }: {
   papers: readonly PointPaper[];
   max: number;
   mark: number | null;
   names: Naming;
   onPaper: (submission: string) => void;
-  onLearners: (learners: string[], value: number) => void;
-  /** Whether each paper is a dot; a grader's row follows its class row. */
-  dots?: boolean;
-  height?: number;
+  onLearners: (learners: string[], lowest: number, highest: number) => void;
+  /** The papers that size the dots and piles; a grader's row follows its class row. */
+  among?: readonly PointPaper[];
 }) {
-  const stacks = stacksOf(papers);
-  const tallest = Math.max(1, ...stacks.map(([, own]) => own.length));
-  if (dots)
-    return (
-      <Plot
-        max={max}
-        height={height ?? Math.max(24, tallest * PITCH + 4)}
-        mark={mark}
-      >
-        {stacks.map(([value, own]) => (
+  const [width, measure] = useWidth();
+  const many = among.length > EACH_PAPER;
+  const dot = many ? 6 : 10;
+  const pitch = many ? 8 : 12;
+  const reference = pilesOf(among, max, width, pitch);
+  const across = acrossOf(reference, width, pitch);
+  const ceiling = ceilingOf(reference, across);
+  const piles = pilesOf(papers, max, width, pitch, among).map((pile) => ({
+    ...pile,
+    ...layoutOf(pile.papers, ceiling, across),
+  }));
+  const layers = Math.max(
+    1,
+    ...piles.map(({ shown, wide }) => Math.ceil(shown.length / wide)),
+  );
+  const folds = piles.some(({ folded }) => folded.length > 0);
+  const place = (x: number, wide: number) =>
+    width > 0
+      ? { left: leftOf(x, wide, width, pitch) }
+      : { left: `${x * 100}%`, transform: "translateX(-50%)" };
+  return (
+    <Plot
+      max={max}
+      height={Math.max(24, layers * pitch + (folds ? COUNT : 0) + 4)}
+      mark={mark}
+      measure={measure}
+    >
+      {piles.map(({ x, shown, folded, wide }) => {
+        const lowest = folded[0]?.score ?? 0;
+        const highest = folded.at(-1)?.score ?? 0;
+        const range =
+          lowest === highest
+            ? score(lowest)
+            : `${score(lowest)} to ${score(highest)}`;
+        return (
           <span
-            key={value}
-            className="absolute bottom-0.5 flex -translate-x-1/2 flex-col-reverse"
-            style={{ left: at(value, max) }}
+            key={x}
+            className="absolute bottom-0.5 flex flex-col-reverse items-center"
+            style={{ width: wide * pitch, ...place(x, wide) }}
           >
-            {own.map((paper) => (
+            <span className="flex w-full flex-wrap-reverse justify-center">
+              {shown.map((paper) => (
+                <button
+                  key={paper.learner}
+                  type="button"
+                  data-grader={paper.grader ?? NO_GRADER}
+                  data-dot
+                  aria-label={`${names.grader(paper.grader)}, ${score(paper.score)} of ${score(max)}`}
+                  onClick={() => onPaper(paper.submission)}
+                  className={cn(
+                    "group flex shrink-0 items-center justify-center rounded-full",
+                    RING,
+                  )}
+                  style={{ width: pitch, height: pitch }}
+                  {...hoverable(() => (
+                    <PaperCard
+                      paper={paper}
+                      names={names}
+                      heading={`${score(paper.score)} of ${score(max)}`}
+                      label="Overall feedback"
+                    />
+                  ))}
+                >
+                  <span
+                    className="rounded-full bg-foreground/75 group-hover:bg-foreground group-focus-visible:bg-foreground"
+                    style={{ width: dot, height: dot }}
+                  />
+                </button>
+              ))}
+            </span>
+            {folded.length > 0 ? (
               <button
-                key={paper.learner}
                 type="button"
-                data-grader={paper.grader ?? NO_GRADER}
-                data-dot
-                aria-label={`${names.grader(paper.grader)}, ${score(paper.score)} of ${score(max)}`}
-                onClick={() => onPaper(paper.submission)}
+                data-more
+                aria-label={`${folded.length} more at ${range}`}
+                onClick={() =>
+                  onLearners(
+                    folded.map((paper) => paper.learner),
+                    lowest,
+                    highest,
+                  )
+                }
                 className={cn(
-                  "group flex shrink-0 items-center justify-center rounded-full",
+                  "shrink-0 rounded px-0.5 text-[0.68rem] leading-none font-semibold whitespace-nowrap tabular-nums text-muted-foreground hover:text-foreground",
                   RING,
                 )}
-                style={{ width: PITCH, height: PITCH }}
+                style={{ height: COUNT }}
                 {...hoverable(() => (
-                  <PaperCard
-                    paper={paper}
+                  <PapersCard
+                    papers={folded}
+                    max={max}
                     names={names}
-                    heading={`${score(paper.score)} of ${score(max)}`}
-                    label="Overall feedback"
+                    heading={`${folded.length} more at ${range}`}
                   />
                 ))}
               >
-                <span
-                  className="rounded-full bg-foreground/75 group-hover:bg-foreground group-focus-visible:bg-foreground"
-                  style={{ width: DOT, height: DOT }}
-                />
+                +{folded.length}
               </button>
-            ))}
+            ) : null}
           </span>
-        ))}
-      </Plot>
-    );
-  const room = height ?? 44;
-  const width = Math.max(0.6, 70 / Math.max(1, max));
-  const leftOf = (value: number) =>
-    Math.min(
-      Math.max((max > 0 ? (value / max) * 100 : 0) - width / 2, 0),
-      100 - width,
-    );
+        );
+      })}
+    </Plot>
+  );
+}
+
+/** The height of a bars row, and of a grader's under it. */
+const BARS_HEIGHT = 44;
+const GRADER_BARS_HEIGHT = 28;
+/** The widest a bar draws, however coarse the scores. */
+const WIDEST_BAR = 14;
+
+/** The finest step between a row's scores, and at most one point. */
+function stepOf(papers: readonly PointPaper[]) {
+  const values = [...new Set(papers.map((paper) => paper.score))].sort(
+    (left, right) => left - right,
+  );
+  return Math.min(
+    1,
+    ...values.slice(1).map((value, index) => value - (values[index] as number)),
+  );
+}
+
+/**
+ * A row's papers as a histogram: a bar per score, as wide as the step between
+ * scores allows, its height the count on `scale` (the row's tallest bar, or
+ * for a grader, the tallest of any grader's on the row). Pointing at a bar
+ * lists its papers; clicking opens those learners.
+ */
+export function Bars({
+  papers,
+  max,
+  mark,
+  names,
+  scale,
+  onLearners,
+  among = papers,
+  height = BARS_HEIGHT,
+}: {
+  papers: readonly PointPaper[];
+  max: number;
+  mark: number | null;
+  names: Naming;
+  scale?: number;
+  onLearners: (learners: string[], lowest: number, highest: number) => void;
+  /** The papers that set the bar width; a grader's row follows its class row. */
+  among?: readonly PointPaper[];
+  height?: number;
+}) {
+  const step = stepOf(among);
+  const bars = new Map<number, PointPaper[]>();
+  for (const paper of papers)
+    bars.set(paper.score, [...(bars.get(paper.score) ?? []), paper]);
+  const full =
+    scale ?? Math.max(1, ...[...bars.values()].map((own) => own.length));
   return (
-    <Plot max={max} height={room} mark={mark}>
-      {stacks.map(([value, own]) => (
+    <Plot max={max} height={height} mark={mark}>
+      {[...bars.entries()].map(([value, own]) => (
         <button
           key={value}
           type="button"
+          data-bar
           aria-label={`${own.length} at ${score(value)}`}
-          title={`${own.length} at ${score(value)}`}
           onClick={() =>
             onLearners(
               own.map((paper) => paper.learner),
               value,
+              value,
             )
           }
-          className={cn(
-            "absolute bottom-0 rounded-t-sm bg-foreground/30 hover:bg-foreground/60",
-            RING,
-          )}
+          className={cn("group absolute bottom-0 flex items-end px-px", RING)}
           style={{
-            left: `${leftOf(value)}%`,
-            width: `${width}%`,
-            height: (own.length / tallest) * (room - 4),
+            left: at(value, max),
+            width: `min(${at(step, max)}, ${WIDEST_BAR}px)`,
+            height: "100%",
+            transform: "translateX(-50%)",
           }}
-        />
+          {...hoverable(() => (
+            <PapersCard
+              papers={own}
+              max={max}
+              names={names}
+              heading={`${own.length} at ${score(value)}`}
+            />
+          ))}
+        >
+          <span
+            className="w-full rounded-t-sm bg-foreground/45 group-hover:bg-foreground/80 group-focus-visible:bg-foreground/80"
+            style={{
+              height: Math.max(2, (own.length / full) * (height - 4)),
+            }}
+          />
+        </button>
       ))}
     </Plot>
   );
 }
+
+export type Form = "bars" | "dots";
 
 export type Statistic = "median" | "mean";
 
@@ -281,28 +459,37 @@ export function StatisticText({
 }
 
 /**
- * By grader under a points row: each grader's papers on the row's axis, in
- * the row's form (dots, or past `EACH_PAPER` bars), with their statistic.
+ * By grader under a points row: each grader's papers on the row's axis, as
+ * bars on one count for all the row's graders or with the class row's dots
+ * and pile width, and their statistic.
  */
 export function GraderScores({
   row,
   statistic,
+  form,
   names,
   onPaper,
   onLearners,
 }: {
   row: PointsRow | TotalRow;
   statistic: Statistic;
+  form: Form;
   names: Naming;
   onPaper: (submission: string) => void;
   onLearners: (
     learners: string[],
-    value: number,
+    lowest: number,
+    highest: number,
     grader: string | null,
   ) => void;
 }) {
   const max = maxOf(row);
-  const dots = row.papers.length <= EACH_PAPER;
+  const counts = new Map<string, number>();
+  for (const paper of row.papers) {
+    const key = `${paper.grader ?? NO_GRADER} ${paper.score}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const scale = Math.max(1, ...counts.values());
   return (
     <div className="space-y-1.5 pt-2">
       {row.byGrader.map((own) => {
@@ -326,18 +513,32 @@ export function GraderScores({
             >
               {names.grader(grader)}
             </span>
-            <Scores
-              papers={row.papers.filter((paper) => paper.grader === grader)}
-              max={max}
-              mark={own[statistic]}
-              names={names}
-              onPaper={onPaper}
-              onLearners={(learners, value) =>
-                onLearners(learners, value, grader)
-              }
-              dots={dots}
-              height={dots ? undefined : 28}
-            />
+            {form === "bars" ? (
+              <Bars
+                papers={row.papers.filter((paper) => paper.grader === grader)}
+                max={max}
+                mark={own[statistic]}
+                names={names}
+                scale={scale}
+                onLearners={(learners, lowest, highest) =>
+                  onLearners(learners, lowest, highest, grader)
+                }
+                among={row.papers}
+                height={GRADER_BARS_HEIGHT}
+              />
+            ) : (
+              <Scores
+                papers={row.papers.filter((paper) => paper.grader === grader)}
+                max={max}
+                mark={own[statistic]}
+                names={names}
+                onPaper={onPaper}
+                onLearners={(learners, lowest, highest) =>
+                  onLearners(learners, lowest, highest, grader)
+                }
+                among={row.papers}
+              />
+            )}
             <span>
               <StatisticText statistic={statistic} scores={own} />
             </span>

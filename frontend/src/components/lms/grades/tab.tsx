@@ -28,6 +28,8 @@ import { PaperDialog } from "./paper";
 import {
   Axis,
   axesOf,
+  Bars,
+  type Form,
   GraderScores,
   maxOf,
   Scores,
@@ -102,6 +104,8 @@ export function GradesTab({
   );
   const [meanChosen, setMeanChosen] = useRemembered("commons.grades.mean");
   const statistic: Statistic = meanChosen ? "mean" : "median";
+  const [dotsChosen, setDotsChosen] = useRemembered("commons.grades.dots");
+  const form: Form = dotsChosen ? "dots" : "bars";
   const names = naming(analysis.graders, viewer, graderNames, studentNames);
   const rows = analysis.rows;
   const competency = rows.filter(
@@ -199,7 +203,8 @@ export function GradesTab({
   function openScored(
     row: CriterionRow,
     learners: string[],
-    value: number,
+    lowest: number,
+    highest: number,
     grader?: string | null,
   ) {
     const on =
@@ -210,9 +215,13 @@ export function GradesTab({
           : "";
     const by =
       grader === undefined ? "" : `, graded by ${names.grader(grader)}`;
+    const range =
+      lowest === highest
+        ? score(lowest)
+        : `${score(lowest)} to ${score(highest)}`;
     onOpenLearners(
       learners,
-      `${learners.length} scored ${score(value)} on ${on}${by}`,
+      `${learners.length} scored ${range} on ${on}${by}`,
     );
   }
 
@@ -295,6 +304,17 @@ export function GradesTab({
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             {competency.length > 0 ? <Legend /> : null}
+            {hasPoints ? (
+              <Segmented
+                label="Points view"
+                value={form}
+                options={[
+                  ["bars", "Bars"],
+                  ["dots", "Dots"],
+                ]}
+                onChange={(chosen) => setDotsChosen(chosen === "dots")}
+              />
+            ) : null}
             {hasPoints ? (
               <Segmented
                 label="Statistic"
@@ -398,6 +418,16 @@ export function GradesTab({
                           cells={scale.cells}
                           onLevel={(level) => openAt(row, level, null)}
                         />
+                      ) : form === "bars" ? (
+                        <Bars
+                          papers={row.papers}
+                          max={maxOf(row)}
+                          mark={row.scores[statistic]}
+                          names={names}
+                          onLearners={(learners, lowest, highest) =>
+                            openScored(row, learners, lowest, highest)
+                          }
+                        />
                       ) : (
                         <Scores
                           papers={row.papers}
@@ -405,8 +435,8 @@ export function GradesTab({
                           mark={row.scores[statistic]}
                           names={names}
                           onPaper={readPaper}
-                          onLearners={(learners, value) =>
-                            openScored(row, learners, value)
+                          onLearners={(learners, lowest, highest) =>
+                            openScored(row, learners, lowest, highest)
                           }
                         />
                       )}
@@ -485,10 +515,11 @@ export function GradesTab({
                       <GraderScores
                         row={row}
                         statistic={statistic}
+                        form={form}
                         names={names}
                         onPaper={readPaper}
-                        onLearners={(learners, value, grader) =>
-                          openScored(row, learners, value, grader)
+                        onLearners={(learners, lowest, highest, grader) =>
+                          openScored(row, learners, lowest, highest, grader)
                         }
                       />
                     ) : null}
