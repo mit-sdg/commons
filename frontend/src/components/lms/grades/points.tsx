@@ -24,8 +24,8 @@ import { acrossOf, ceilingOf, layoutOf, leftOf, pilesOf } from "./piles";
 
 /** The height of a pile's folded count. */
 const COUNT = 14;
-/** The folded papers a count lists when pointed at. */
-const FOLDED_LISTED = 8;
+/** The papers a bar or a folded count lists when pointed at. */
+const LISTED = 8;
 
 export function maxOf(row: PointsRow | TotalRow) {
   return row.kind === "TOTAL" ? row.outOf : row.maxPoints;
@@ -116,8 +116,8 @@ function useWidth() {
   return [width, measure] as const;
 }
 
-/** The papers a pile folds away, for pointing at its count. */
-function FoldedCard({
+/** The papers under a bar or a folded count, for pointing at it. */
+function PapersCard({
   papers,
   max,
   names,
@@ -128,7 +128,7 @@ function FoldedCard({
   names: Naming;
   heading: string;
 }) {
-  const listed = papers.slice(0, FOLDED_LISTED);
+  const listed = papers.slice(0, LISTED);
   return (
     <>
       <span className="font-semibold">{heading}</span>
@@ -271,7 +271,7 @@ export function Scores({
                 )}
                 style={{ height: COUNT }}
                 {...hoverable(() => (
-                  <FoldedCard
+                  <PapersCard
                     papers={folded}
                     max={max}
                     names={names}
@@ -288,6 +288,100 @@ export function Scores({
     </Plot>
   );
 }
+
+/** The height of a bars row, and of a grader's under it. */
+const BARS_HEIGHT = 44;
+const GRADER_BARS_HEIGHT = 28;
+/** The widest a bar draws, however coarse the scores. */
+const WIDEST_BAR = 14;
+
+/** The finest step between a row's scores, and at most one point. */
+function stepOf(papers: readonly PointPaper[]) {
+  const values = [...new Set(papers.map((paper) => paper.score))].sort(
+    (left, right) => left - right,
+  );
+  return Math.min(
+    1,
+    ...values.slice(1).map((value, index) => value - (values[index] as number)),
+  );
+}
+
+/**
+ * A row's papers as a histogram: a bar per score, as wide as the step between
+ * scores allows, its height the count on `scale` (the row's tallest bar, or
+ * for a grader, the tallest of any grader's on the row). Pointing at a bar
+ * lists its papers; clicking opens those learners.
+ */
+export function Bars({
+  papers,
+  max,
+  mark,
+  names,
+  scale,
+  onLearners,
+  among = papers,
+  height = BARS_HEIGHT,
+}: {
+  papers: readonly PointPaper[];
+  max: number;
+  mark: number | null;
+  names: Naming;
+  scale?: number;
+  onLearners: (learners: string[], lowest: number, highest: number) => void;
+  /** The papers that set the bar width; a grader's row follows its class row. */
+  among?: readonly PointPaper[];
+  height?: number;
+}) {
+  const step = stepOf(among);
+  const bars = new Map<number, PointPaper[]>();
+  for (const paper of papers)
+    bars.set(paper.score, [...(bars.get(paper.score) ?? []), paper]);
+  const full =
+    scale ?? Math.max(1, ...[...bars.values()].map((own) => own.length));
+  return (
+    <Plot max={max} height={height} mark={mark}>
+      {[...bars.entries()].map(([value, own]) => (
+        <button
+          key={value}
+          type="button"
+          data-bar
+          aria-label={`${own.length} at ${score(value)}`}
+          onClick={() =>
+            onLearners(
+              own.map((paper) => paper.learner),
+              value,
+              value,
+            )
+          }
+          className={cn("group absolute bottom-0 flex items-end px-px", RING)}
+          style={{
+            left: at(value, max),
+            width: `min(${at(step, max)}, ${WIDEST_BAR}px)`,
+            height: "100%",
+            transform: "translateX(-50%)",
+          }}
+          {...hoverable(() => (
+            <PapersCard
+              papers={own}
+              max={max}
+              names={names}
+              heading={`${own.length} at ${score(value)}`}
+            />
+          ))}
+        >
+          <span
+            className="w-full rounded-t-sm bg-foreground/45 group-hover:bg-foreground/80 group-focus-visible:bg-foreground/80"
+            style={{
+              height: Math.max(2, (own.length / full) * (height - 4)),
+            }}
+          />
+        </button>
+      ))}
+    </Plot>
+  );
+}
+
+export type Form = "bars" | "dots";
 
 export type Statistic = "median" | "mean";
 
@@ -365,18 +459,21 @@ export function StatisticText({
 }
 
 /**
- * By grader under a points row: each grader's papers on the row's axis, with
- * the class row's dots and pile width, and their statistic.
+ * By grader under a points row: each grader's papers on the row's axis, as
+ * bars on one count for all the row's graders or with the class row's dots
+ * and pile width, and their statistic.
  */
 export function GraderScores({
   row,
   statistic,
+  form,
   names,
   onPaper,
   onLearners,
 }: {
   row: PointsRow | TotalRow;
   statistic: Statistic;
+  form: Form;
   names: Naming;
   onPaper: (submission: string) => void;
   onLearners: (
@@ -387,6 +484,12 @@ export function GraderScores({
   ) => void;
 }) {
   const max = maxOf(row);
+  const counts = new Map<string, number>();
+  for (const paper of row.papers) {
+    const key = `${paper.grader ?? NO_GRADER} ${paper.score}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const scale = Math.max(1, ...counts.values());
   return (
     <div className="space-y-1.5 pt-2">
       {row.byGrader.map((own) => {
@@ -410,17 +513,32 @@ export function GraderScores({
             >
               {names.grader(grader)}
             </span>
-            <Scores
-              papers={row.papers.filter((paper) => paper.grader === grader)}
-              max={max}
-              mark={own[statistic]}
-              names={names}
-              onPaper={onPaper}
-              onLearners={(learners, lowest, highest) =>
-                onLearners(learners, lowest, highest, grader)
-              }
-              among={row.papers}
-            />
+            {form === "bars" ? (
+              <Bars
+                papers={row.papers.filter((paper) => paper.grader === grader)}
+                max={max}
+                mark={own[statistic]}
+                names={names}
+                scale={scale}
+                onLearners={(learners, lowest, highest) =>
+                  onLearners(learners, lowest, highest, grader)
+                }
+                among={row.papers}
+                height={GRADER_BARS_HEIGHT}
+              />
+            ) : (
+              <Scores
+                papers={row.papers.filter((paper) => paper.grader === grader)}
+                max={max}
+                mark={own[statistic]}
+                names={names}
+                onPaper={onPaper}
+                onLearners={(learners, lowest, highest) =>
+                  onLearners(learners, lowest, highest, grader)
+                }
+                among={row.papers}
+              />
+            )}
             <span>
               <StatisticText statistic={statistic} scores={own} />
             </span>

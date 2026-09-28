@@ -28,6 +28,8 @@ import { PaperDialog } from "./paper";
 import {
   Axis,
   axesOf,
+  Bars,
+  type Form,
   GraderScores,
   maxOf,
   Scores,
@@ -102,6 +104,8 @@ export function GradesTab({
   );
   const [meanChosen, setMeanChosen] = useRemembered("commons.grades.mean");
   const statistic: Statistic = meanChosen ? "mean" : "median";
+  const [dotsChosen, setDotsChosen] = useRemembered("commons.grades.dots");
+  const form: Form = dotsChosen ? "dots" : "bars";
   const names = naming(analysis.graders, viewer, graderNames, studentNames);
   const rows = analysis.rows;
   const competency = rows.filter(
@@ -302,6 +306,17 @@ export function GradesTab({
             {competency.length > 0 ? <Legend /> : null}
             {hasPoints ? (
               <Segmented
+                label="Points view"
+                value={form}
+                options={[
+                  ["bars", "Bars"],
+                  ["dots", "Dots"],
+                ]}
+                onChange={(chosen) => setDotsChosen(chosen === "dots")}
+              />
+            ) : null}
+            {hasPoints ? (
+              <Segmented
                 label="Statistic"
                 value={statistic}
                 options={[
@@ -403,6 +418,16 @@ export function GradesTab({
                           cells={scale.cells}
                           onLevel={(level) => openAt(row, level, null)}
                         />
+                      ) : form === "bars" ? (
+                        <Bars
+                          papers={row.papers}
+                          max={maxOf(row)}
+                          mark={row.scores[statistic]}
+                          names={names}
+                          onLearners={(learners, lowest, highest) =>
+                            openScored(row, learners, lowest, highest)
+                          }
+                        />
                       ) : (
                         <Scores
                           papers={row.papers}
@@ -490,6 +515,7 @@ export function GradesTab({
                       <GraderScores
                         row={row}
                         statistic={statistic}
+                        form={form}
                         names={names}
                         onPaper={readPaper}
                         onLearners={(learners, lowest, highest, grader) =>

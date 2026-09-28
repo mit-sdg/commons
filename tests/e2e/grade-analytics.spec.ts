@@ -623,6 +623,12 @@ function viewButton(page: Page, said: "Class" | "By grader") {
     .getByRole("button", { name: said, exact: true });
 }
 
+function formButton(page: Page, said: "Bars" | "Dots") {
+  return gradesPanel(page)
+    .getByRole("group", { name: "Points view" })
+    .getByRole("button", { name: said, exact: true });
+}
+
 function statisticButton(page: Page, said: "Median" | "Mean") {
   return gradesPanel(page)
     .getByRole("group", { name: "Statistic" })
@@ -1859,6 +1865,7 @@ test("points rows show each question's scores with a caret at the median, and Me
   const lines = pointsLines(points);
   await openAs(page);
   await openGrades(page, "", points);
+  await formButton(page, "Dots").click();
   await expect(statisticButton(page, "Median")).toHaveAttribute("aria-pressed", "true");
   await expect(statisticButton(page, "Mean")).toHaveAttribute("aria-pressed", "false");
   await expect(gradesPanel(page).getByRole("list", { name: "Rating levels" })).toHaveCount(0);
@@ -1939,6 +1946,7 @@ test("By grader puts each grader's papers under every points row on its axis, wi
   const lines = pointsLines(points);
   await openAs(page);
   await openGrades(page, "?tab=grades&by=grader", points);
+  await formButton(page, "Dots").click();
 
   for (const statistic of ["median", "mean"] as const) {
     if (statistic === "mean") await statisticButton(page, "Mean").click();
@@ -1988,6 +1996,7 @@ test("a large points class keeps a dot per paper, spreads a full-marks pile side
   expect(atFull).toBeGreaterThan(40);
   await openAs(page);
   await openGrades(page, "", large);
+  await formButton(page, "Dots").click();
 
   for (const line of lines) {
     const scope = row(page, pointsName(line));
@@ -2051,6 +2060,70 @@ test("a large points class keeps a dot per paper, spreads a full-marks pile side
   }
 });
 
+test("Bars is the default: a bar per score scaled to the row's tallest, listing its papers, opening its learners, and Dots is remembered", async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  const large = await largePointsScenario();
+  const lines = pointsLines(large);
+  const countsOf = (scores: readonly number[]) => {
+    const counts = new Map<number, number>();
+    for (const value of scores) counts.set(value, (counts.get(value) ?? 0) + 1);
+    return counts;
+  };
+  await openAs(page);
+  await openGrades(page, "", large);
+  await expect(formButton(page, "Bars")).toHaveAttribute("aria-pressed", "true");
+
+  for (const line of lines) {
+    const scope = row(page, pointsName(line));
+    const counts = countsOf(scoresOf(line));
+    const scale = Math.max(...counts.values());
+    await expect(scope.locator("button[data-dot]")).toHaveCount(0);
+    await expect(scope.locator("button[data-bar]")).toHaveCount(counts.size);
+    for (const [value, count] of counts) {
+      const bar = scope.getByRole("button", { name: `${count} at ${value}`, exact: true });
+      const height = await bar
+        .locator("span")
+        .evaluate((own) => own.getBoundingClientRect().height);
+      expect(height, `${line.name} at ${value}`).toBeCloseTo(Math.max(2, (count / scale) * 40), 0);
+    }
+  }
+
+  const question = lines[0] as PointsLine;
+  const [value, count] = [...countsOf(scoresOf(question))].sort(
+    ([, left], [, right]) => right - left,
+  )[0] as [number, number];
+  const scope = row(page, pointsName(question));
+  const bar = scope.getByRole("button", { name: `${count} at ${value}`, exact: true });
+  const shown = await pointAt(page, bar);
+  await expect(shown).toContainText(`${count} at ${value}`);
+  await expect(shown.locator("li")).toHaveCount(Math.min(count, 8));
+  if (count > 8) await expect(shown).toContainText(`${count - 8} more in Submissions`);
+
+  await viewButton(page, "By grader").click();
+  for (const grader of letters(large).keys())
+    await expect(
+      scope.locator(`[data-grader="${grader}"][data-lights] button[data-bar]`),
+    ).toHaveCount(countsOf(scoresOf(question, grader)).size);
+  await viewButton(page, "Class").click();
+
+  await bar.click();
+  await expect(page).toHaveURL(/[?&]tab=submissions(&|$)/);
+  await expect(
+    submissionsPanel(page).getByText(`${count} scored ${value} on ${question.name} from Grades`, {
+      exact: true,
+    }),
+  ).toBeVisible();
+
+  await openGrades(page, "", large);
+  await formButton(page, "Dots").click();
+  await page.reload();
+  await expect(headline(page)).toBeVisible();
+  await expect(formButton(page, "Dots")).toHaveAttribute("aria-pressed", "true");
+  await expect(scope.locator("button[data-dot]")).toHaveCount(question.papers.length);
+});
+
 test("a question's dots are its papers and nothing opens, and pointing at a grader's row darkens their papers and fades the rest", async ({
   page,
 }) => {
@@ -2062,6 +2135,7 @@ test("a question's dots are its papers and nothing opens, and pointing at a grad
     `${labelOf(paper.learner.grader, points)}, ${paper.score} of ${question.max}`;
   await openAs(page);
   await openGrades(page, "", points);
+  await formButton(page, "Dots").click();
 
   const scope = row(page, name);
   const dots = scope.getByRole("button", { name: /, \d+ of \d+$/ });
@@ -2136,6 +2210,7 @@ test("the total's dots are its papers, each showing its total and overall feedba
   const name = pointsName(total);
   await openAs(page);
   await openGrades(page, "", points);
+  await formButton(page, "Dots").click();
 
   const scope = row(page, name);
   await expect(scope.locator("button[aria-expanded]")).toHaveCount(0);
@@ -2266,6 +2341,7 @@ test("an assignment whose method changed shows the rows of the method assessed f
   expect(headings).toHaveLength(2);
   await openAs(page);
   await openGrades(page, "", scenario);
+  await formButton(page, "Dots").click();
 
   expect(await rowNames(page)).toEqual(rows.map((line) => line.label));
   await expect(gradesPanel(page).getByText(/^(Rated by level|Scored in points)$/)).toHaveText(
@@ -2335,6 +2411,7 @@ test("a points criterion whose maximum changed reads as one row per maximum, and
   expect(rows.filter((line) => line.kind === "TOTAL")).toHaveLength(2);
   await openAs(page);
   await openGrades(page, "", scenario);
+  await formButton(page, "Dots").click();
 
   expect(await rowNames(page)).toEqual(rows.map((line) => line.label));
   expect(await axisMaxima(page)).toEqual(axesOfRows(rows));
