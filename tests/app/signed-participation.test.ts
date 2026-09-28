@@ -465,22 +465,9 @@ describe("require sign-in", () => {
         expect(await edge.application.concepts.Accessing._holders({ resource: subject })).toEqual(
           [],
         );
-        await edge.application.concepts.Linking.clearLinks({ source: subject });
-        expect(
-          (await post(edge, "/live/p/answer", { response: anonymous, question: item, value: "B" }))
-            .status,
-        ).toBe(404);
-        expect(
-          (
-            await post(
-              edge,
-              "/live/p/wall-signed",
-              { response: begun.response },
-              participant.cookie,
-            )
-          ).status,
-        ).toBe(404);
-        await edge.application.concepts.Linking.setLinks({ source: subject, targets: [run] });
+        expect(await edge.application.concepts.Publishing._edition({ edition: subject })).toEqual([
+          expect.objectContaining({ whole: run }),
+        ]);
         const second = await json(
           await post(
             edge,

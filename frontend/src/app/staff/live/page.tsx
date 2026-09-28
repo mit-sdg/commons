@@ -15,7 +15,11 @@ import {
 } from "@/components/live/quiz-meta";
 import { LiveRow, RoomCode } from "@/components/live/relay-row";
 import { Figure, RoundStrip } from "@/components/live/round-token";
-import { launchRefusal, NO_ROUNDS, standingOf } from "@/components/live/rounds";
+import {
+  launchRefusal,
+  NO_ROUNDS,
+  standingInRun,
+} from "@/components/live/rounds";
 import { RunLaunchButton } from "@/components/live/run-launch-button";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
@@ -367,7 +371,7 @@ function RelayEntry({
             rounds={relay.rounds.map((round) => ({
               number: round.number,
               title: round.title,
-              standing: live ? standingOf(round) : "plain",
+              standing: live ? standingInRun(relay, round) : "plain",
             }))}
           />
         )

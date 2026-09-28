@@ -5,9 +5,10 @@ import { PROJECTOR, ProjectorFit } from "@/components/live/projector-fit";
 import { JoinCode, joinUrl } from "@/components/live/qr-code";
 import { refusalSentence } from "@/components/live/refusals";
 import {
+  afterWallRead,
   choicesOf,
+  lastClosedWall,
   type RelayRun,
-  type RelayRunRound,
   type Wall as WallShape,
 } from "@/components/live/rounds";
 import { Wall } from "@/components/live/wall";
@@ -59,8 +60,11 @@ export function RelayProjector({
   );
   const relay = relayData?.relay ?? null;
 
-  const closedRound = lastClosed(run.rounds);
-  const shownRound = run.openRound ?? closedRound;
+  /** The closed rounds whose wall was read to be none, which the projector passes over. */
+  const [wallless, setWallless] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+  const shownRound = run.openRound ?? lastClosedWall(run, wallless);
   const shownLeg =
     run.rounds.find((round) => round.round === shownRound)?.leg ?? null;
   const take =
@@ -108,6 +112,8 @@ export function RelayProjector({
 
   const wall: WallShape | null = wallData?.wall ?? null;
   const sourceWall: WallShape | null = sourceData?.wall ?? null;
+  const readWallless = afterWallRead(wallless, shownRound, wallData);
+  if (readWallless !== wallless) setWallless(readWallless);
 
   // Polls and actions refresh these resources without changing their identity.
   // Keep the source cards mounted while their replacements are being read.
@@ -248,18 +254,4 @@ function Standing({ children }: { children: string }) {
       {children}
     </span>
   );
-}
-
-/** The wall the projector keeps facing the room once a round closes. */
-function lastClosed(rounds: RelayRunRound[]): string | null {
-  let latest: RelayRunRound | null = null;
-  for (const round of rounds) {
-    if (round.round === null || round.figure.open !== false) continue;
-    if (
-      latest === null ||
-      (round.figure.closedAt ?? "") > (latest.figure.closedAt ?? "")
-    )
-      latest = round;
-  }
-  return latest?.round ?? null;
 }

@@ -101,3 +101,9 @@ export async function withRequestErrors<T>(
 }
 
 export const api = createCommonsClient();
+
+/** Calls that must outlive the page that sends them, as it closes. */
+export const partingApi = createCommonsClient({
+  fetch: ((input: RequestInfo | URL, init?: RequestInit) =>
+    fetch(input, { ...init, keepalive: true })) as typeof fetch,
+});

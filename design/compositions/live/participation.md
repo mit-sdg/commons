@@ -30,6 +30,26 @@ relay run, which the relays page owns — the rounds as number, title, and
 standing, and the open round's question — under `relay` rather than `face`,
 so the join page knows which kind of room it entered.
 
+Arrive never touches the room. A page on a relay run checks in through
+[Live.participation.Attend](reaction:Live.participation.Attend): it names its
+device, the same identifier whether or not its person signed in, and the open
+round it has on its screen, to answer or as its receipt, or nothing while it
+has none, and the device attends the run in Attending holding that round. A
+round the phone is still joining is not yet on its screen. The check-in is a
+request of its own, so no poll waits on Attending's line, and a fault there
+costs the page only that check-in. The page never waits on it: a check-in falls
+due when the round on its screen changes or fifteen seconds after its last one
+landed, and goes out a scattered moment after, up to one poll, so a room that
+learns of a round together joins it before checking in; a failed one goes again
+with the next answer. Attending's twenty-second grain keeps the
+attendance unchanged while the round stays the same. A token that shares
+nothing, or opens a questionnaire run, which keeps no room, is answered
+`NOT_FOUND`. [Live.participation.Leave](reaction:Live.participation.Leave)
+is what the page sends as it closes: the device leaves the run's room, and a
+device already gone is refused, which the page never reads. Model seats never
+attend, so they are never in the room. Nothing about the room reaches a phone;
+the run's dashboard reads it.
+
 [Live.participation.Begin](reaction:Live.participation.Begin) starts — or
 rejoins — an anonymous response under the device identifier, and
 [Live.participation.BeginSigned](reaction:Live.participation.BeginSigned) does
@@ -118,8 +138,10 @@ calculation and adds no receipt state machine.
 Live.participation.Answer at /live/p/answer
 Live.participation.AnswerSigned at /live/p/answer-signed
 Live.participation.Arrive at /live/p/arrive
+Live.participation.Attend at /live/p/attend
 Live.participation.Begin at /live/p/begin
 Live.participation.BeginSigned at /live/p/begin-signed
+Live.participation.Leave at /live/p/leave
 Live.participation.Locate at /live/p/locate
 Live.participation.Outcome at /live/p/outcome
 Live.participation.OutcomeSigned at /live/p/outcome-signed

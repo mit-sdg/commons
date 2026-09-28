@@ -1,14 +1,15 @@
-import { publicErrorMessage } from "@/lib/api";
+import { type Output, publicErrorMessage } from "@/lib/api";
 
 /**
- * The live refusals, each said in one plain sentence. The boundary answers a
- * refusal with its category only, so the screen that sent the request says
- * which word stands behind the category from what it can see — which round is
- * open, what a round takes from, whether this phone handed in — and the
- * sentence is the word's. When the boundary passes the word itself, the
- * reading goes and the table stays.
+ * The live refusals, each said in one plain sentence. Opening a round answers
+ * a declined press with its word and the facts the sentence names. Elsewhere
+ * the boundary answers a refusal with its category only, so the screen that
+ * sent the request says which word stands behind the category from what it
+ * can see — what a round takes from, whether this phone handed in — and the
+ * sentence is the word's.
  */
 export type RefusalWord =
+  | "LEG_NOT_FOUND"
   | "ROUND_OPEN"
   | "ROUND_DONE"
   | "SOURCE_OPEN"
@@ -41,6 +42,7 @@ export interface RefusalAbout {
 }
 
 const SENTENCES: Record<RefusalWord, (about: RefusalAbout) => string> = {
+  LEG_NOT_FOUND: () => "That round is gone.",
   ROUND_OPEN: ({ round }) =>
     round === undefined
       ? "Close the open round first."
@@ -49,14 +51,14 @@ const SENTENCES: Record<RefusalWord, (about: RefusalAbout) => string> = {
     round === undefined
       ? "This round already ran."
       : `Round ${round} already ran.`,
-  SOURCE_OPEN: ({ round }) =>
-    round === undefined
+  SOURCE_OPEN: ({ source }) =>
+    source === undefined
       ? "Close the round it takes from first."
-      : `Close round ${round} first. This one takes from it.`,
-  SOURCE_UNRUN: ({ round }) =>
-    round === undefined
+      : `Close round ${source} first. This one takes from it.`,
+  SOURCE_UNRUN: ({ source }) =>
+    source === undefined
       ? "Open the round it takes from first."
-      : `Run round ${round} first. This one takes from it.`,
+      : `Run round ${source} first. This one takes from it.`,
   SOURCE_UNSAMPLED: ({ round }) =>
     round === undefined
       ? "Sample the round it takes from first."
@@ -111,4 +113,18 @@ export function saidRefusal(
   return word === null
     ? publicErrorMessage(error)
     : refusalSentence(word, about);
+}
+
+/** A press of Open that did not open its round, as the answer carries it. */
+type Declined = Extract<
+  Output<"/live/relays/open-round">,
+  { declined: string }
+>;
+
+/** What a declined press of Open says: its word's sentence, with the answer's facts. */
+export function declinedSentence(answer: Declined): string {
+  return refusalSentence(answer.declined, {
+    round: "round" in answer ? answer.round : undefined,
+    source: "source" in answer ? answer.source : undefined,
+  });
 }

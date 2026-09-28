@@ -96,30 +96,163 @@ beforeAll(async () => {
 
 afterAll(stopTestDb);
 
-test("opening a missing run or round refuses without publishing", async () => {
+test("opening a missing run or round is declined as data and publishes nothing", async () => {
   const relay = await plan("Missing round");
   const leg = await addRound(relay, "One");
   const { run } = await json(await post(edge, "/live/relays/launch", { relay }, cookie));
-  const editions = await edge.application.concepts.Publishing._editionsFor({
-    material: leg.questionnaire,
-  });
   for (const body of [
     { run: "missing-run", leg: leg.leg },
     { run, leg: "missing-leg" },
     { run: "missing-run", leg: "missing-leg" },
   ]) {
     const response = await post(edge, "/live/relays/open-round", body, cookie);
-    expect(response.status).toBe(404);
-    expect(await response.json()).toEqual({ error: "NOT_FOUND" });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ declined: "LEG_NOT_FOUND" });
   }
-  expect(await edge.application.concepts.Locking._isLocked({ target: run })).toEqual({
-    locked: false,
-  });
   expect(
     await edge.application.concepts.Publishing._editionsFor({ material: leg.questionnaire }),
-  ).toEqual(editions);
+  ).toEqual([]);
   const opened = await post(edge, "/live/relays/open-round", { run, leg: leg.leg }, cookie);
   expect(opened.status).toBe(200);
+  expect(typeof ((await opened.json()) as { round?: unknown }).round).toBe("string");
+});
+
+test("picks that are not a list of piles are refused before anything opens", async () => {
+  const relay = await plan("Malformed picks");
+  const leg = await addRound(relay, "One");
+  const { run } = await json(await post(edge, "/live/relays/launch", { relay }, cookie));
+  for (const picked of ["pile", [1], null]) {
+    const response = await post(
+      edge,
+      "/live/relays/open-round",
+      { run, leg: leg.leg, picked },
+      cookie,
+    );
+    expect(response.status).toBe(400);
+  }
+  expect(await edge.application.concepts.Publishing._parts({ whole: run })).toEqual([]);
+});
+
+/** A declined opening is answered with its word and facts, and publishes and captures nothing. */
+describe("an opening that cannot go ahead is declined with its word", () => {
+  let relay: string;
+  let first: Added;
+  let second: Added;
+  let third: Added;
+  let run: string;
+  let firstRound: string;
+  let pile: string;
+
+  const open = async (leg: string, picked?: string[]) => {
+    const response = await post(
+      edge,
+      "/live/relays/open-round",
+      { run, leg, ...(picked === undefined ? {} : { picked }) },
+      cookie,
+    );
+    expect(response.status).toBe(200);
+    return (await response.json()) as Record<string, unknown>;
+  };
+  const parts = async () => edge.application.concepts.Publishing._parts({ whole: run });
+  const untouched = async (added: Added) => {
+    expect(
+      await edge.application.concepts.Publishing._editionsFor({ material: added.questionnaire }),
+    ).toEqual([]);
+  };
+
+  beforeAll(async () => {
+    relay = await plan("Declined openings");
+    first = await addRound(relay, "Three verbs");
+    second = await addRound(relay, "The stranger");
+    third = await addRound(relay, "One more");
+    await post(
+      edge,
+      "/live/relays/set-takes",
+      { leg: second.leg, source: first.leg, use: "context" },
+      cookie,
+    );
+    run = (await json(await post(edge, "/live/relays/launch", { relay }, cookie))).run;
+  });
+
+  test("a round whose source has not run names the source", async () => {
+    expect(await open(second.leg, ["any"])).toEqual({ declined: "SOURCE_UNRUN", source: 1 });
+    await untouched(second);
+    expect(await parts()).toEqual([]);
+  });
+
+  test("while a round is open, its taker names the open source and another round names it", async () => {
+    const opened = await open(first.leg);
+    firstRound = opened.round as string;
+    expect(typeof firstRound).toBe("string");
+    expect(await open(second.leg, ["any"])).toEqual({ declined: "SOURCE_OPEN", source: 1 });
+    expect(await open(third.leg)).toEqual({ declined: "ROUND_OPEN", round: 1 });
+    await untouched(second);
+    await untouched(third);
+    expect(await parts()).toHaveLength(1);
+    await post(edge, "/live/relays/close-round", { round: firstRound }, cookie);
+  });
+
+  test("a round that already ran names itself and is not published again", async () => {
+    expect(await open(first.leg)).toEqual({ declined: "ROUND_DONE", round: 1 });
+    expect(
+      await edge.application.concepts.Publishing._editionsFor({ material: first.questionnaire }),
+    ).toHaveLength(1);
+  });
+
+  test("a round that takes piles is declined when the request picks none or one that is gone", async () => {
+    const created = await edge.application.concepts.Categorizing.createCategory({
+      scope: firstRound,
+      name: "Kept",
+      description: "",
+    });
+    pile = (created as { category: string }).category;
+    const gone = (await edge.application.concepts.Categorizing.createCategory({
+      scope: firstRound,
+      name: "Merged away",
+      description: "",
+    })) as { category: string };
+    await edge.application.concepts.Categorizing.deleteCategory({ category: gone.category });
+    expect(await open(second.leg)).toEqual({ declined: "NOTHING_PICKED" });
+    expect(await open(second.leg, [])).toEqual({ declined: "NOTHING_PICKED" });
+    expect(await open(second.leg, [pile, gone.category])).toEqual({ declined: "PILE_GONE" });
+    expect(await open(second.leg, ["no-such-pile"])).toEqual({ declined: "PILE_GONE" });
+    await untouched(second);
+    expect(await parts()).toHaveLength(1);
+  });
+
+  test("the pins on the source's wall do not stand in for the request's picks", async () => {
+    await post(edge, "/live/walls/pick", { round: firstRound, pile }, cookie);
+    expect(await open(second.leg, [])).toEqual({ declined: "NOTHING_PICKED" });
+    await untouched(second);
+  });
+
+  test("a closed run is declined before anything else is said", async () => {
+    await post(edge, "/live/relays/close", { run }, cookie);
+    expect(await open(third.leg)).toEqual({ declined: "CLOSED" });
+    expect(await open(first.leg)).toEqual({ declined: "CLOSED" });
+    expect(await open(second.leg, [pile])).toEqual({ declined: "CLOSED" });
+    await untouched(third);
+    await untouched(second);
+    expect(await parts()).toHaveLength(1);
+  });
+
+  test("a user who may not host is refused, as on every staff endpoint", async () => {
+    const outsider = {
+      username: "sam",
+      password: "pw-sam-123",
+      displayName: "Sam",
+      email: "sam@example.com",
+    };
+    await edge.application.concepts.Authenticating.register(outsider);
+    const login = await post(edge, "/auth/login", {
+      username: outsider.username,
+      password: outsider.password,
+    });
+    const theirs = login.headers.get("Set-Cookie")?.split(";")[0] as string;
+    const response = await post(edge, "/live/relays/open-round", { run, leg: third.leg }, theirs);
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: "FORBIDDEN" });
+  });
 });
 
 /** The boundary answers a refusal's category, so RELAY_RETIRED arrives as CONFLICT. */

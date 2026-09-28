@@ -11,15 +11,22 @@ import { ModelRow } from "@/components/live/model-row";
 import { PickControl, usePick } from "@/components/live/pick-control";
 import { JoinCode, joinUrl } from "@/components/live/qr-code";
 import {
+  declinedSentence,
   type RefusalAbout,
   type RefusalWord,
   refusalSentence,
   saidRefusal,
 } from "@/components/live/refusals";
+import { RoomLine, type SeenOpen, seenOpen } from "@/components/live/room-line";
 import { RoundToken } from "@/components/live/round-token";
 import {
+  afterWallRead,
   choicesOf,
+  isPicked,
+  lastClosedWall,
+  openEntryOf,
   pickedPiles,
+  pilesByCount,
   type Relay,
   type RelayRun,
   type RelayRunRound,
@@ -44,14 +51,12 @@ import {
   outOfReach,
   POLL_DEADLINE_MS,
   startPolling,
+  withDeadline,
 } from "@/lib/poll";
 import { cn } from "@/lib/utils";
 
 /** Fast enough that the room sees itself answer, slow enough to be polite. */
 const POLL_MS = 3_000;
-
-/** What a run left locked with no round open says, above the tap that frees it. */
-const STRANDED = "No round is open, but the run is still locked.";
 
 /** Where the status line stands: out of the flow, above the wall, so nothing moves when it appears or clears. */
 const STATUS_LINE =
@@ -59,6 +64,12 @@ const STATUS_LINE =
 
 /** The disabled Open button names the line that says why. */
 const REFUSAL_ID = "open-refusal";
+
+/** The Open button names the line that says its source is still being sorted. */
+const SORTING_ID = "open-sorting";
+
+/** The Open button names the line that says its round is left opening. */
+const OPENING_ID = "open-opening";
 
 /** Every round in the strip sits in the same pill, tapped or not. */
 const STRIP_TOKEN = "flex min-w-0 rounded-full px-1 py-0.5";
@@ -120,8 +131,6 @@ export function RelayRunBoard({
     leg: string;
     under: string | null;
   } | null>(null);
-  /** When Open was refused with nothing open to show for it, which the next poll confirms. */
-  const [refusedAt, setRefusedAt] = useState<number | null>(null);
   const [askedFor, setAskedFor] = useState<string | null>(null);
   /** The round Resort was pressed for and nothing was asked about. */
   const [notAsked, setNotAsked] = useState<string | null>(null);
@@ -145,8 +154,9 @@ export function RelayRunBoard({
   const relay = relayData?.relay ?? null;
 
   const openRound = run.openRound;
-  const closed = run.rounds.filter(
-    (round) => round.round !== null && round.figure.open === false,
+  /** The closed rounds whose wall was read to be none, which the screen stops defaulting to. */
+  const [wallless, setWallless] = useState<ReadonlySet<string>>(
+    () => new Set(),
   );
   // A tap lapses when the round it was made under gives way to another, so a
   // round that opens takes the screen back.
@@ -156,12 +166,12 @@ export function RelayRunBoard({
       : (run.rounds.find((round) => round.leg === shownLeg.leg)?.round ?? null);
   /** The unrun round the strip was tapped for, which Open then offers instead of the first. */
   const [chosenNext, setChosenNext] = useState<string | null>(null);
-  const next =
-    run.rounds.find(
-      (round) => round.leg === chosenNext && round.round === null,
-    ) ??
-    run.rounds.find((round) => round.round === null) ??
-    null;
+  const next = offeredRound(run, chosenNext);
+  /** The round left opening, which Open finishes and Close can close. */
+  const openingEntry =
+    next !== null && next.round !== null && next.round === run.opening
+      ? next
+      : null;
   const { take, source } = takeOf(run, relay, next);
   /**
    * The wall the round about to open takes from, which is the one in hand
@@ -169,7 +179,7 @@ export function RelayRunBoard({
    * round the class ended on instead.
    */
   const taken = run.open ? source?.round : null;
-  const shown = chosen ?? openRound ?? taken ?? lastClosed(closed);
+  const shown = chosen ?? openRound ?? taken ?? lastClosedWall(run, wallless);
 
   const {
     data: wallData,
@@ -188,6 +198,8 @@ export function RelayRunBoard({
     { retainOnTransportError: true, refreshOn: [openRound] },
   );
   const wall = wallData?.wall ?? null;
+  const readWallless = afterWallRead(wallless, shown, wallData);
+  if (readWallless !== wallless) setWallless(readWallless);
 
   // A vote round's rows stand for piles on the wall its choices came from, so
   // the dashboard reads that wall too and each row spreads the cards behind it.
@@ -264,6 +276,10 @@ export function RelayRunBoard({
     POLL_MS,
   );
   const adrift = !ended && stale;
+  /** The open round, and when the read that first showed it open landed. */
+  const [openSeen, setOpenSeen] = useState<SeenOpen | null>(null);
+  const seen = seenOpen(openSeen, openRound, runAnsweredAt ?? now);
+  if (seen !== openSeen) setOpenSeen(seen);
 
   useEffect(() => {
     if (!run.open && !settling) return;
@@ -290,10 +306,7 @@ export function RelayRunBoard({
     );
   }, [run.modelSorts, openRound, voting, ended]);
 
-  const openEntry =
-    run.rounds.find(
-      (round) => round.round === openRound && round.round !== null,
-    ) ?? null;
+  const openEntry = openEntryOf(run);
   const [tapped, setTapped] = useState<{
     round: string;
     piles: string[];
@@ -325,7 +338,7 @@ export function RelayRunBoard({
     take !== null &&
     source !== null &&
     source.round === shown &&
-    source.figure.open === false;
+    roundStanding(run, source) === "done";
   /**
    * The round the shown wall's picks carry into: the one about to take them
    * while the run is on, and afterwards the one that took them, so a pick
@@ -402,7 +415,7 @@ export function RelayRunBoard({
 
   /** Sends one request; a refusal is said in the word the screen reads for it. */
   async function send(request: Promise<unknown>, read: Reader) {
-    const result = await request;
+    const result = await withDeadline(request);
     if (!isApiError(result)) return true;
     // A sign-in that ended is said once by the page, with the way back in,
     // and once here for the move that did not land; the poll learns it on
@@ -550,65 +563,60 @@ export function RelayRunBoard({
               : undefined,
         };
 
+  /**
+   * The piles the round about to open takes, in the order the closed wall
+   * shows them. A wall not in hand is read for them first.
+   */
+  async function picksToSend(): Promise<string[] | { error: string }> {
+    if (take === null || source === null || source.round === null) return [];
+    if (counted) return shownPicks(inHand);
+    const read = await withDeadline(
+      api["/live/walls/read"](
+        { round: source.round },
+        { timeoutMs: POLL_DEADLINE_MS },
+      ),
+    );
+    if (isApiError(read)) return read;
+    return read.wall === null ? [] : shownPicks(read.wall);
+  }
+
   async function openNext() {
     if (next === null || refusal !== null) return;
     const leg = next.leg;
-    const opened = await send(
-      api["/live/relays/open-round"]({ run: run.run, leg }),
-      async (error) => {
-        const fresh = await freshRun();
-        if (fresh === null) return null;
-        const asked = fresh.rounds.find((round) => round.leg === leg) ?? null;
-        if (asked !== null && asked.round !== null) return AS_ASKED;
-        // A round that neither opened nor stands in the way is a run holding
-        // its lock; one more poll says whether the winner's round is coming.
-        if (error === "CONFLICT" && fresh.openRound === null)
-          setRefusedAt(Date.now());
-        return refusalFor({
-          run: fresh,
-          relay,
-          leg,
-          piles: counted ? inHand.piles.length : null,
-          picks: counted ? picks.length : null,
-        });
-      },
-    );
-    if (opened) {
-      setRefusedAt(null);
-      focusOn.current = "close";
-      refetch();
+    const picked = await picksToSend();
+    if (!Array.isArray(picked)) {
+      await send(Promise.resolve(picked), () => null);
+      return;
     }
-  }
-
-  async function unlockRun() {
-    const freed = await send(
-      api["/live/relays/unlock"]({ run: run.run }),
-      async () => {
-        const fresh = await freshRun();
-        const open =
-          fresh?.rounds.find((round) => round.figure.open === true) ?? null;
-        return open === null
-          ? null
-          : { word: "ROUND_OPEN", about: { round: open.number } };
-      },
-    );
-    if (freed) setRefusedAt(null);
+    const opening = api["/live/relays/open-round"]({
+      run: run.run,
+      leg,
+      picked,
+    });
+    // Two presses that pass the server's reads together meet at the round
+    // itself, and the loser hears only the category: the run then says
+    // which round stands.
+    const answered = await send(opening, async (error) => {
+      if (error !== "CONFLICT") return null;
+      const fresh = await freshRun();
+      return fresh === null ? null : standingAfterRace(fresh, leg);
+    });
+    if (!answered) return;
+    const answer = await opening;
+    if (isApiError(answer)) return;
     refetch();
+    if ("declined" in answer) {
+      toast.error(declinedSentence(answer));
+      return;
+    }
+    focusOn.current = "close";
   }
 
-  async function closeRound() {
-    if (openRound === null || openEntry === null) return;
-    const round = openRound;
-    const number = openEntry.number;
+  async function closeRound(round: string, number: number) {
     const shut = await send(
       api["/live/relays/close-round"]({ round }),
-      async () => {
-        const fresh = await freshRun();
-        if (fresh !== null && !fresh.open) return { word: "CLOSED", about: {} };
-        const asked = fresh?.rounds.find((one) => one.round === round) ?? null;
-        if (asked !== null && asked.figure.open === false) return AS_ASKED;
-        return { word: "ROUND_CLOSED", about: { round: number } };
-      },
+      async (error) =>
+        standingAfterClose(error, await freshRun(), round, number),
     );
     if (shut) focusOn.current = "open";
     refetch();
@@ -780,30 +788,55 @@ export function RelayRunBoard({
 
   /** The pick counts for the round about to open only once its wall is read. */
   const counted = takesShown && inHand !== null;
-  const refusal = refusalFor({
-    run,
-    relay,
-    leg: next?.leg ?? null,
+  const refusal = openReadiness({
+    open: run.open,
+    openRound: openEntry?.number ?? null,
+    source:
+      source === null
+        ? null
+        : {
+            number: source.number,
+            ran: roundStanding(run, source) !== "next",
+          },
     piles: counted ? inHand.piles.length : null,
     picks: counted ? picks.length : null,
   });
   const openRefused = refusal !== null;
-  /** A run whose lock outlived its round: Open was refused and no round came. */
-  const stranded =
-    refusedAt !== null &&
-    run.open &&
-    openRound === null &&
-    now - refusedAt >= POLL_MS;
   /** Open is the run's own move only while nothing else is in hand. */
   const openPrimary = openEntry === null && !openRefused;
-  /** The Close button says the round is open, so only the unseen reasons are printed. */
-  const refusalLine =
-    refusal === null || refusal.word === "ROUND_OPEN"
-      ? null
-      : refusalSentence(refusal.word, refusal.about);
+  /** The wall the round about to open takes from, while its cards are still being placed. */
+  const sortLine =
+    counted && source !== null
+      ? stillSorting({
+          round: source.number,
+          unplaced: tray.length,
+          pending: inHand.asksOut > 0 || inHand.sortPending,
+        })
+      : null;
+  const refusalLine = printedRefusal(refusal, sortLine !== null);
+  const openDescribed =
+    [
+      refusalLine === null ? null : REFUSAL_ID,
+      sortLine === null ? null : SORTING_ID,
+      openingEntry === null ? null : OPENING_ID,
+    ]
+      .filter((id) => id !== null)
+      .join(" ") || undefined;
 
   /** The shown wall is a vote round's, which has nothing to sort. */
   const shownVotes = inHand !== null && choicesOf(inHand).length > 0;
+  const place = wallPlace({
+    shown:
+      shown === null
+        ? null
+        : {
+            number: shownEntry?.number ?? null,
+            closed:
+              shownEntry !== null && roundStanding(run, shownEntry) === "done",
+          },
+    none: wallData !== null && wallData.wall === null,
+    opening: run.opening !== null,
+  });
   const panel = (
     <SortingPanel
       modelSorts={run.modelSorts}
@@ -885,7 +918,7 @@ export function RelayRunBoard({
             {run.rounds.map((round) => {
               // A closed run has no next round, so one that never ran is only
               // written.
-              const ran = roundStanding(round);
+              const ran = roundStanding(run, round);
               const standing = ran === "next" && !run.open ? "plain" : ran;
               const token = (
                 <RoundToken
@@ -993,12 +1026,12 @@ export function RelayRunBoard({
           {shownWall === null ? (
             wallError !== null ? (
               <ErrorState message={wallError} onRetry={refetchWall} />
-            ) : shown === null ? (
-              <p className="rounded-2xl border border-border border-dashed bg-card/40 px-7 py-16 text-center text-muted-foreground">
-                No round has opened yet.
-              </p>
-            ) : (
+            ) : place === READING_WALL ? (
               <LoadingState label="Loading the wall…" />
+            ) : (
+              <p className="flex min-h-40 items-center justify-center rounded-2xl border border-border border-dashed bg-card/40 px-7 py-16 text-center text-muted-foreground">
+                {place}
+              </p>
             )
           ) : (
             <Wall
@@ -1042,6 +1075,11 @@ export function RelayRunBoard({
           ) : (
             <>
               <div className="order-1 flex flex-col gap-3.5 rounded-xl border border-border bg-card p-5">
+                <RoomLine
+                  room={run.room}
+                  round={openEntry?.number ?? null}
+                  waited={seen === null ? 0 : now - seen.at}
+                />
                 {openEntry === null ? null : (
                   <Button
                     ref={closeButton}
@@ -1049,8 +1087,8 @@ export function RelayRunBoard({
                     className="w-full justify-start gap-2 pr-3.5 pl-4"
                     aria-disabled={busy}
                     onClick={() => {
-                      if (busy) return;
-                      void move(closeRound);
+                      if (busy || openRound === null) return;
+                      void move(() => closeRound(openRound, openEntry.number));
                     }}
                   >
                     Close
@@ -1097,9 +1135,7 @@ export function RelayRunBoard({
                       )}
                       aria-disabled={openRefused || busy}
                       title={refusalLine ?? undefined}
-                      aria-describedby={
-                        refusalLine === null ? undefined : REFUSAL_ID
-                      }
+                      aria-describedby={openDescribed}
                       onClick={() => {
                         if (openRefused || busy) return;
                         void move(openNext);
@@ -1134,24 +1170,38 @@ export function RelayRunBoard({
                         {refusalLine}
                       </p>
                     )}
-                    {stranded ? (
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-muted-foreground text-xs">
-                          {STRANDED}
+                    {sortLine === null ? null : (
+                      <p
+                        id={SORTING_ID}
+                        className="text-muted-foreground text-xs"
+                      >
+                        {sortLine}
+                      </p>
+                    )}
+                    {openingEntry === null ? null : (
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p
+                          id={OPENING_ID}
+                          className="text-muted-foreground text-xs"
+                        >
+                          Round {openingEntry.number} is opening.
                         </p>
                         <Button
                           variant="outline"
                           size="sm"
                           aria-disabled={busy}
                           onClick={() => {
-                            if (busy) return;
-                            void move(unlockRun);
+                            if (busy || openingEntry.round === null) return;
+                            const round = openingEntry.round;
+                            void move(() =>
+                              closeRound(round, openingEntry.number),
+                            );
                           }}
                         >
-                          Unlock
+                          Close round {openingEntry.number}
                         </Button>
                       </div>
-                    ) : null}
+                    )}
                   </>
                 )}
                 {everyRoundRan ? (
@@ -1278,17 +1328,24 @@ export function tokenName(
     .join(", ");
 }
 
-/** The closed round whose wall stands until another is shown or opened. */
-function lastClosed(closed: RelayRunRound[]): string | null {
-  let latest: RelayRunRound | null = null;
-  for (const round of closed) {
-    if (
-      latest === null ||
-      (round.figure.closedAt ?? "") > (latest.figure.closedAt ?? "")
-    )
-      latest = round;
-  }
-  return latest?.round ?? null;
+/**
+ * The round Open offers: the one left opening, else the unrun round the strip
+ * was tapped for, else the first unrun.
+ */
+export function offeredRound(
+  run: Pick<RelayRun, "openRound" | "opening" | "rounds">,
+  chosen: string | null,
+): RelayRunRound | null {
+  const opening =
+    run.opening === null
+      ? undefined
+      : run.rounds.find((round) => round.round === run.opening);
+  const unrun = run.rounds.filter(
+    (round) => roundStanding(run, round) === "next",
+  );
+  return (
+    opening ?? unrun.find((round) => round.leg === chosen) ?? unrun[0] ?? null
+  );
 }
 
 /** What a round takes from an earlier one, and how that source stands in this run. */
@@ -1325,42 +1382,154 @@ function drawerOf(
   );
 }
 
-/** Why a round does not open, in the words the open-round refusals stand for. */
-export function refusalFor({
-  run,
-  relay,
-  leg,
+/**
+ * Why Open is out before it is pressed, from what the screen already holds:
+ * the run, the round open, the round it takes from, and that round's wall.
+ */
+export function openReadiness({
+  open,
+  openRound,
+  source,
   piles,
   picks,
 }: {
-  run: RelayRun;
-  relay: Relay | null;
-  leg: string | null;
+  /** The run is open. */
+  open: boolean;
+  /** The number of the round open to the room, if one is. */
+  openRound: number | null;
+  /** The round the one about to open takes from, and whether it ran in this run. */
+  source: { number: number; ran: boolean } | null;
   /** How many piles stand on the wall the round takes from, once it is read. */
   piles: number | null;
   picks: number | null;
 }): Refusal | null {
-  if (!run.open) return { word: "CLOSED", about: {} };
-  const open = run.rounds.find((round) => round.figure.open === true) ?? null;
-  const round =
-    leg === null ? null : (run.rounds.find((one) => one.leg === leg) ?? null);
-  const { take, source } = takeOf(run, relay, round);
-  // The open round is the one this round takes from: the sentence says why.
-  if (open !== null && source !== null && source.leg === open.leg)
-    return { word: "SOURCE_OPEN", about: { round: source.number } };
-  if (open !== null)
-    return { word: "ROUND_OPEN", about: { round: open.number } };
-  if (round === null) return null;
-  if (round.round !== null)
-    return { word: "ROUND_DONE", about: { round: round.number } };
-  if (source !== null && source.round === null)
-    return { word: "SOURCE_UNRUN", about: { round: source.number } };
+  if (!open) return { word: "CLOSED", about: {} };
+  if (openRound !== null)
+    return { word: "ROUND_OPEN", about: { round: openRound } };
+  if (source === null) return null;
+  if (!source.ran)
+    return { word: "SOURCE_UNRUN", about: { source: source.number } };
   // Nothing to pick and nothing picked are two different moves: sort first,
   // or tap a pile.
-  if (take !== null && piles === 0) return { word: "NO_PILES", about: {} };
-  if (take !== null && picks === 0)
-    return { word: "NOTHING_PICKED", about: {} };
+  if (piles === 0) return { word: "NO_PILES", about: {} };
+  if (picks === 0) return { word: "NOTHING_PICKED", about: {} };
   return null;
+}
+
+/**
+ * Why Open is out, printed only when nothing else on screen says it: the Close
+ * button says a round is open, and while the wall it takes from is still being
+ * sorted, the sorting line is why no pile stands or is picked yet.
+ */
+export function printedRefusal(
+  refusal: Refusal | null,
+  sorting: boolean,
+): string | null {
+  if (refusal === null || refusal.word === "ROUND_OPEN") return null;
+  if (
+    sorting &&
+    (refusal.word === "NO_PILES" || refusal.word === "NOTHING_PICKED")
+  )
+    return null;
+  return refusalSentence(refusal.word, refusal.about);
+}
+
+/** What the Open line says while the wall a round takes from is still being sorted. */
+export function stillSorting({
+  round,
+  unplaced,
+  pending,
+}: {
+  round: number;
+  /** Cards on that wall not on a pile yet. */
+  unplaced: number;
+  /** An ask about that wall is still out. */
+  pending: boolean;
+}): string | null {
+  if (!pending || unplaced === 0) return null;
+  const cards = unplaced === 1 ? "1 card is" : `${unplaced} cards are`;
+  return `Round ${round} is still being sorted: ${cards} not on a pile yet.`;
+}
+
+/** The picked piles in the order the closed wall shows them. */
+export function shownPicks(wall: Pick<WallShape, "piles">): string[] {
+  return pilesByCount(wall.piles.filter(isPicked)).map((pile) => pile.pile);
+}
+
+/**
+ * What a press of Open that lost a race says, from the run read after it: the
+ * run closed, the round asked for stands or already ran, or another round is
+ * open or opening. Anything else is said as the category.
+ */
+export function standingAfterRace(
+  run: Pick<RelayRun, "open" | "openRound" | "opening" | "rounds">,
+  leg: string,
+): Refusal | typeof AS_ASKED | null {
+  if (!run.open) return { word: "CLOSED", about: {} };
+  const asked = run.rounds.find((round) => round.leg === leg) ?? null;
+  if (asked?.round != null) {
+    if (asked.round === run.openRound || asked.round === run.opening)
+      return AS_ASKED;
+    if (roundStanding(run, asked) === "done")
+      return { word: "ROUND_DONE", about: { round: asked.number } };
+  }
+  const standing = run.openRound ?? run.opening;
+  const other =
+    standing === null
+      ? null
+      : (run.rounds.find((round) => round.round === standing) ?? null);
+  return other === null
+    ? null
+    : { word: "ROUND_OPEN", about: { round: other.number } };
+}
+
+/**
+ * What a press of Close round that did not land says, from the run read after
+ * it: nothing more once the round has closed as asked, and the failure's own
+ * sentence while the round is still open or opening, which leaves Close
+ * offered. The round is said closed only when the server refused to close a
+ * round already closed and the run read cannot show it.
+ */
+export function standingAfterClose(
+  error: string,
+  run: Pick<RelayRun, "open" | "openRound" | "opening" | "rounds"> | null,
+  round: string,
+  number: number,
+): Refusal | typeof AS_ASKED | null {
+  if (run !== null && !run.open) return { word: "CLOSED", about: {} };
+  const asked = run?.rounds.find((one) => one.round === round) ?? null;
+  if (asked?.figure.open === false) return AS_ASKED;
+  const stillOpen =
+    asked !== null || run?.openRound === round || run?.opening === round;
+  if (stillOpen || error !== "CONFLICT") return null;
+  return { word: "ROUND_CLOSED", about: { round: number } };
+}
+
+/** The wall's place while the wall asked for is still being read. */
+export const READING_WALL = "reading";
+
+/**
+ * What stands in the wall's place when there is no wall to show: the round
+ * asked for, when it closed before it opened; the wall, while it is still
+ * being read; and with no round asked for, that none has opened, unless one
+ * is opening, which the Open line already says.
+ */
+export function wallPlace({
+  shown,
+  none,
+  opening,
+}: {
+  /** The round whose wall is asked for: its number, and whether it has closed. */
+  shown: { number: number | null; closed: boolean } | null;
+  /** The read of that wall answered that there is none. */
+  none: boolean;
+  /** A round of the run is opening. */
+  opening: boolean;
+}): string | typeof READING_WALL | null {
+  if (shown === null) return opening ? null : "No round has opened yet.";
+  if (none && shown.closed && shown.number !== null)
+    return `Round ${shown.number} closed before it opened.`;
+  return READING_WALL;
 }
 
 function PileGuidance({ piles }: { piles: WallShape["piles"] }) {

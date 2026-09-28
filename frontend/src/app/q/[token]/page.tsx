@@ -27,7 +27,9 @@ import { refusalSentence, saidRefusal } from "@/components/live/refusals";
 import { RoundStrip, RoundToken } from "@/components/live/round-token";
 import {
   choicesOf,
-  standingOf,
+  openEntryOf,
+  roundOnScreen,
+  standingInRun,
   trayOf,
   type Wall as WallShape,
 } from "@/components/live/rounds";
@@ -42,11 +44,14 @@ import {
   api,
   isApiError,
   type Output,
+  partingApi,
   publicErrorMessage,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import {
   adrift,
+  type CheckIn,
+  checkInDue,
   NO_CONNECTION,
   outOfReach,
   PHONE_STALE_MS,
@@ -154,6 +159,9 @@ function beginRefusal(error: string): string {
   return error === "NOT_FOUND" ? "Couldn't join." : publicErrorMessage(error);
 }
 
+/** The identifier a page without storage keeps for as long as it stays open. */
+let unkept: string | null = null;
+
 /** A device identifier that survives reloads; secure-context APIs may be absent on lecture-hall LANs. */
 function deviceId(): string {
   const key = "commons-live-device";
@@ -167,7 +175,8 @@ function deviceId(): string {
     window.localStorage.setItem(key, fresh);
     return fresh;
   } catch {
-    return `d-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    unkept ??= `d-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    return unkept;
   }
 }
 
@@ -304,6 +313,8 @@ function ParticipantContent() {
   const [missing, setMissing] = useState(false);
   /** When any request last got through; nothing has yet while null. */
   const [heardAt, setHeardAt] = useState<number | null>(null);
+  /** When an arrive last got through; wall reads and writes say nothing about the next round. */
+  const [arrivedAt, setArrivedAt] = useState<number | null>(null);
   /** The last arrive was out of reach; nothing on the screen yet says so after ten seconds. */
   const [lost, setLost] = useState(false);
   /** A pressed action's own word, said at once and taken away by the next answer. */
@@ -417,10 +428,8 @@ function ParticipantContent() {
     setSaid(word);
   }, []);
 
-  // A poll gives up on an arrive nobody answers; a one-off read carries no
-  // deadline of its own and waits on the server's.
   const loadFace = useCallback(
-    async (call?: { timeoutMs: number }): Promise<FaceRead> => {
+    async (call = { timeoutMs: POLL_DEADLINE_MS }): Promise<FaceRead> => {
       try {
         const result = await api["/live/p/arrive"]({ token }, call);
         // Out of reach says nothing about the token: what is on the screen —
@@ -429,6 +438,7 @@ function ParticipantContent() {
           setLost(true);
           return { reached: false };
         }
+        setArrivedAt(Date.now());
         heard();
         if (isApiError(result)) {
           setMissing(true);
@@ -485,14 +495,85 @@ function ParticipantContent() {
   const { now, resumedAt } = useClock(
     reaching || watching || scoring,
     ROUND_POLL_MS,
-    [dueAt(heardAt, PHONE_STALE_MS), dueAt(openedAt, STALE_MS)],
+    [
+      dueAt(heardAt, PHONE_STALE_MS),
+      dueAt(arrivedAt, PHONE_STALE_MS),
+      dueAt(openedAt, STALE_MS),
+    ],
   );
   const { latest, before } = useHeard(heardAt, resumedAt);
+  const arrivalHeard = useHeard(arrivedAt, resumedAt);
   const silent =
-    (arrived || relaying) && adrift(latest, before, now, PHONE_STALE_MS);
+    (arrived || relaying) &&
+    (adrift(latest, before, now, PHONE_STALE_MS) ||
+      (watching &&
+        adrift(arrivalHeard.latest, arrivalHeard.before, now, PHONE_STALE_MS)));
   const openingFailed = lost && now - Math.max(openedAt, resumedAt) >= STALE_MS;
   const stripUp = said !== null || silent;
   const hurry = useHurry(stripUp);
+
+  /** The last check-in that landed, and the latest one due or still out. */
+  const checkedIn = useRef<CheckIn | null>(null);
+  const checkingIn = useRef<CheckIn | null>(null);
+  /** The open round whose question or receipt the relay phone has on its screen, or "". */
+  const [showing, setShowing] = useState("");
+  const scattered = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // The page tells the run's room which open round it has on the screen, or
+  // nothing while it has none. A room's phones learn of a round together, so
+  // each check-in goes out a scattered moment after it falls due, up to one
+  // poll, behind the room's joins. Nothing on the screen waits on it; one that
+  // fails goes again with the next answer, and only the latest one due counts.
+  useEffect(() => {
+    if (relay === null) return;
+    const holding =
+      relay.openRound !== null && showing === relay.openRound ? showing : "";
+    if (!checkInDue(holding, Date.now(), checkedIn.current, checkingIn.current))
+      return;
+    const due = { holding, at: Date.now() };
+    checkingIn.current = due;
+    if (scattered.current !== null) clearTimeout(scattered.current);
+    scattered.current = setTimeout(() => {
+      scattered.current = null;
+      if (checkingIn.current !== due) return;
+      const sent = { holding, at: Date.now() };
+      checkingIn.current = sent;
+      void api["/live/p/attend"](
+        { token, device: deviceId(), holding },
+        { timeoutMs: POLL_DEADLINE_MS },
+      )
+        .then(
+          (result) => !isApiError(result),
+          () => false,
+        )
+        .then((landed) => {
+          if (checkingIn.current !== sent) return;
+          checkingIn.current = null;
+          if (landed) checkedIn.current = sent;
+        });
+    }, Math.random() * ROUND_POLL_MS);
+  }, [relay, showing, token]);
+
+  useEffect(
+    () => () => {
+      if (scattered.current !== null) clearTimeout(scattered.current);
+    },
+    [],
+  );
+
+  // A page closing on a relay run leaves its room. The answer lands on a page
+  // that is gone, so nothing reads it; a page shown again checks in afresh.
+  useEffect(() => {
+    if (!relaying) return;
+    const leave = () => {
+      checkedIn.current = null;
+      void partingApi["/live/p/leave"]({ token, device: deviceId() }).catch(
+        () => undefined,
+      );
+    };
+    window.addEventListener("pagehide", leave);
+    return () => window.removeEventListener("pagehide", leave);
+  }, [relaying, token]);
 
   useEffect(() => {
     if (!watching) return;
@@ -868,6 +949,7 @@ function ParticipantContent() {
         onEnded={onEnded}
         onHeard={heard}
         onFailed={failed}
+        onShowing={setShowing}
         refresh={loadFace}
       />
     );
@@ -1087,7 +1169,7 @@ function waitingLine(relay: Relay): string {
   if (!relay.open) return "Relay finished. Thank you for taking part.";
   if (
     relay.rounds.length > 0 &&
-    relay.rounds.every((round) => round.round !== null)
+    relay.rounds.every((round) => standingInRun(relay, round) === "done")
   )
     return refusalSentence("ROUNDS_RUN");
   return "You’re joined. Waiting for the next round.";
@@ -1135,6 +1217,7 @@ function RelayPhone({
   onEnded,
   onHeard,
   onFailed,
+  onShowing,
   refresh,
 }: {
   token: string;
@@ -1157,6 +1240,8 @@ function RelayPhone({
   onHeard: () => void;
   /** A pressed action went out of reach, with the word the strip says for it. */
   onFailed: (word: string) => void;
+  /** The open round this phone has on its screen, its question or its receipt, or "" while it has none. */
+  onShowing: (round: string) => void;
   refresh: () => Promise<FaceRead>;
 }) {
   const round = relay.openRound;
@@ -1165,6 +1250,8 @@ function RelayPhone({
   const [response, setResponse] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  /** The round the response, answers and hand-in belong to; a new round sets it with them. */
+  const [inHand, setInHand] = useState<string | null>(null);
   /** The round whose begin was refused as handed in, kept only while that round stands. */
   const [refusedRound, setRefusedRound] = useState<string | null>(null);
   /** The word begin was refused with, when it was not the handed-in word. */
@@ -1196,6 +1283,7 @@ function RelayPhone({
     const slot = roundSlot(participant, round);
     const stored = readProgress(token, slot);
 
+    setInHand(round);
     setResponse(stored?.response ?? null);
     setAnswers(stored?.answers ?? {});
     setSubmitted(stored?.submitted ?? false);
@@ -1224,8 +1312,14 @@ function RelayPhone({
       let result: Output<"/live/p/begin"> | ApiError | null = null;
       try {
         result = signedIn
-          ? await api["/live/p/begin-signed"]({ token })
-          : await api["/live/p/begin"]({ token, device: deviceId() });
+          ? await api["/live/p/begin-signed"](
+              { token },
+              { timeoutMs: POLL_DEADLINE_MS },
+            )
+          : await api["/live/p/begin"](
+              { token, device: deviceId() },
+              { timeoutMs: POLL_DEADLINE_MS },
+            );
       } catch {
         result = null;
       }
@@ -1290,18 +1384,19 @@ function RelayPhone({
     hurry,
   ]);
 
-  // A closed run opens no round, so a phone that reloads into one has nothing
-  // to begin: it reads the last round it handed in off the device and keeps
-  // that wall under the closed line. A round it never handed in has no wall.
+  // With no round open, a closed run or a run between rounds, a phone that
+  // reloads has nothing to begin: it reads the last round it handed in off
+  // the device and keeps that wall under the line, as it stood before the
+  // reload. A round it never handed in has no wall.
   useEffect(() => {
-    if (runOpen || round !== null || response !== null) return;
+    if (round !== null || response !== null) return;
     const kept = lastHandedIn(token, participant, relay);
     if (kept === null) return;
-    /* eslint-disable react-hooks/set-state-in-effect -- the device says which response the closed run left */
+    /* eslint-disable react-hooks/set-state-in-effect -- the device says which response the phone last handed in */
     setResponse(kept);
     setSubmitted(true);
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [runOpen, round, response, token, participant, relay]);
+  }, [round, response, token, participant, relay]);
 
   // Two tabs of one phone share the round's slot on the device. What one tab
   // writes there — an answer, a hand-in — the other reads on the storage event.
@@ -1572,15 +1667,26 @@ function RelayPhone({
     signedIn,
   ]);
 
-  const openRound = relay.rounds.find(
-    (candidate) => candidate.round !== null && candidate.open === true,
+  const openRound = openEntryOf(relay);
+  const nextRound = relay.rounds.find(
+    (candidate) => standingInRun(relay, candidate) === "next",
   );
-  const nextRound = relay.rounds.find((candidate) => candidate.round === null);
   const questions = relay.questions;
   // Begin answers the same response over again; it refuses only a participant
   // already handed in. Refused against a round still open, it says: you are in.
   const handedIn =
     submitted || (refusedRound !== null && refusedRound === round);
+  const showing = roundOnScreen({
+    round,
+    runOpen,
+    inHand,
+    joined: response !== null,
+    handedIn,
+  });
+  useEffect(() => {
+    onShowing(showing);
+  }, [showing, onShowing]);
+  useEffect(() => () => onShowing(""), [onShowing]);
   // A phone whose sign-in ended keeps its answers and its footer on the
   // screen; the hand-in bar says why it is out, and nothing is sent until it
   // is signed in again.
@@ -1659,7 +1765,7 @@ function RelayPhone({
           >
             {relay.title}
           </h1>
-          {openRound === undefined ? (
+          {openRound === null ? (
             // Numbers alone, then the round to come named apart from them. A
             // title set among the discs read as one run of digits with a
             // sentence caught in the middle; on its own line it cost the top
@@ -1670,7 +1776,7 @@ function RelayPhone({
                 rounds={relay.rounds.map((candidate) => ({
                   number: candidate.number,
                   title: candidate.title,
-                  standing: standingOf(candidate),
+                  standing: standingInRun(relay, candidate),
                 }))}
               />
               {relay.open && nextRound !== undefined ? (

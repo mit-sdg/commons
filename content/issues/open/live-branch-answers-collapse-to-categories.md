@@ -40,6 +40,8 @@ each distinction, and the words and their sentences live in
 `frontend/src/components/live/refusals.ts`. The questionnaire cases named
 above follow the same route.
 
+Changed for `/live/relays/open-round` on 2026-09-23: a declined opening answers its word as designed data (`{ declined: WORD }` with the reason's facts), and the dashboard says that word's sentence ([opening a round](../done/opening-a-round-is-commissioned.md)). Only a press that loses a race at Publishing's guard still arrives as `CONFLICT`, and the dashboard then reads the run for what stands. The other endpoints keep the route above.
+
 ## Acceptance condition
 
 Either the participation endpoints answer these cases as designed data whose

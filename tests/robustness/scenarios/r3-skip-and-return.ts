@@ -1,12 +1,13 @@
 /**
  * R3, skip and return, every refusal named. A three-round relay: round two
  * takes context from round one, round three takes nothing, so the staff member
- * may skip ahead and come back. Every refusal the open-round path can give is
- * asked for in turn — the source that has not run, the round already open, the
- * round that already ran, nothing picked, the closed run — beside the sentence
- * the screen says for it, with a screenshot of each. Twenty scripted phones and
- * one real one; the phone's own refusals — handed in already, answered after
- * the close, arriving at a closed run — are asked the same way.
+ * may skip ahead and come back. Every word the open-round path can decline
+ * with is asked for in turn — the source that has not run, the source still
+ * open, the round that already ran, nothing picked, the closed run — beside
+ * the sentence the screen says for it, with a screenshot of each; pressing Open
+ * again for the round already open answers that round. Twenty scripted phones
+ * and one real one; the phone's own refusals — handed in already, answered
+ * after the close, arriving at a closed run — are asked the same way.
  *
  *   bun tests/robustness/scenarios/r3-skip-and-return.ts [arm-name]
  */
@@ -18,6 +19,7 @@ import {
   invite,
   launch,
   Log,
+  type Opened,
   openFace,
   outDir,
   pages,
@@ -93,6 +95,43 @@ async function build(): Promise<{ relay: string; legs: string[] }> {
 }
 
 /**
+ * Presses Open through the edge for one declined word and records it beside
+ * the sentence the screen says. An answer that opens a round is broken; any
+ * other answer, or the right word with other facts, is refused wrongly.
+ */
+async function declined(
+  step: string,
+  expected: { declined: string; round?: number; source?: number },
+  screen: string,
+  ask: () => Promise<Reply<Opened>>,
+): Promise<Reply<Opened>> {
+  const reply = await ask();
+  const word =
+    reply.declined !== undefined ? `declined ${reply.declined}` : (reply.error ?? "(not declined)");
+  said.push({ step, edge: word, screen });
+  log.note(`${step}: the edge answers ${JSON.stringify(reply)}; the screen says “${screen}”`);
+  if (reply.declined === undefined && reply.error === undefined) {
+    log.finding({
+      kind: "broken",
+      title: `${step} was not declined`,
+      steps: step,
+      evidence: JSON.stringify(reply),
+    });
+  } else if (
+    reply.declined !== expected.declined ||
+    reply.round !== expected.round ||
+    reply.source !== expected.source
+  ) {
+    log.refused(
+      `${step} answered ${JSON.stringify(reply)}, not ${JSON.stringify(expected)}`,
+      step,
+      reply,
+    );
+  }
+  return reply;
+}
+
+/**
  * Asks the edge for one refusal and records it beside the sentence the screen
  * says. An answer that is not refused at all is broken; a refusal in a
  * category the step did not expect is refused wrongly.
@@ -158,8 +197,11 @@ try {
   await atBoard();
   const beforeAny = await board(dashboard);
   log.note(`with nothing run the dashboard offers “${beforeAny.label}”; line ${beforeAny.line}`);
-  await refusal("open round 2 before round 1 ran", ["CONFLICT"], SAYS.SOURCE_UNRUN(1), () =>
-    host.call("/live/relays/open-round", { run, leg: two }),
+  await declined(
+    "open round 2 before round 1 ran",
+    { declined: "SOURCE_UNRUN", source: 1 },
+    SAYS.SOURCE_UNRUN(1),
+    () => host.call<Opened>("/live/relays/open-round", { run, leg: two, picked: [] }),
   );
   said.push({
     step: "…as the dashboard stands then",
@@ -167,28 +209,18 @@ try {
     screen: `Open button “${beforeAny.label}”, ${beforeAny.line}`,
   });
   await snap(dashboard, log, "DashboardNothingRun", STAFF);
-  log.finding({
-    kind: "unclear",
-    title:
-      "an unrun source and an open one are the same refusal, and only the screen tells them apart",
-    steps:
-      "Launch with nothing run; POST /live/relays/open-round for round two, which takes from round one",
-    evidence:
-      "OpenRoundRefused answers SOURCE_OPEN — “Close round 1 first. This one takes from it.” — because legHasAnOpenSource holds for a source with no closed round at all, run or not. The dashboard reads SOURCE_UNRUN instead — “Run round 1 first.” — from what it can see, so the sentence a staff member reads is right only because the screen looked again.",
-    screenshot: "DashboardNothingRun@1440.png",
-  });
 
   // 2. Round three, which takes nothing, opens whatever its number.
   const skipped = await log.timed("open round 3 first", () =>
-    host.call<{ round: string }>("/live/relays/open-round", { run, leg: three }),
+    host.call<Opened>("/live/relays/open-round", { run, leg: three, picked: [] }),
   );
-  if (skipped.error) {
+  if (skipped.error || skipped.declined !== undefined) {
     log.refused(
       "round 3, which takes nothing, would not open before round 1",
       "POST /live/relays/open-round for the third leg with nothing run",
       skipped,
     );
-    throw new Error(`round three would not open: ${skipped.error}`);
+    throw new Error(`round three would not open: ${JSON.stringify(skipped)}`);
   }
   const aside = await openFace(host, token);
   log.note(`round 3 open as ${aside.round}; prompt ${JSON.stringify(aside.question.prompt)}`);
@@ -245,12 +277,27 @@ try {
   });
   const first = await openFace(host, token, aside.round);
   log.note(`round 1 open as ${first.round}`);
-  await refusal("open round 2 while round 1 is open", ["CONFLICT"], SAYS.ROUND_OPEN(1), () =>
-    host.call("/live/relays/open-round", { run, leg: two }),
+  await declined(
+    "open round 2 while round 1, which it takes from, is open",
+    { declined: "SOURCE_OPEN", source: 1 },
+    SAYS.SOURCE_OPEN(1),
+    () => host.call<Opened>("/live/relays/open-round", { run, leg: two, picked: [] }),
   );
-  await refusal("open round 1 again while it is open", ["CONFLICT"], SAYS.ROUND_OPEN(1), () =>
-    host.call("/live/relays/open-round", { run, leg: one }),
-  );
+  // Open is safe to press again: the round already open is the answer.
+  const again = await host.call<Opened>("/live/relays/open-round", { run, leg: one, picked: [] });
+  said.push({
+    step: "open round 1 again while it is open",
+    edge:
+      again.round === first.round ? "(not refused: answers the open round)" : JSON.stringify(again),
+    screen: "(the dashboard offers Close)",
+  });
+  if (again.round !== first.round) {
+    log.refused(
+      "pressing Open again for the round already open did not answer that round",
+      "POST /live/relays/open-round for round one while it is open",
+      again,
+    );
+  }
   await atBoard();
   const whileOpen = await board(dashboard);
   log.note(
@@ -411,8 +458,11 @@ try {
       screenshot: "DashboardNothingPicked@1440.png",
     });
   }
-  await refusal("open round 2 with nothing picked", ["CONFLICT"], SAYS.NOTHING_PICKED, () =>
-    host.call("/live/relays/open-round", { run, leg: two }),
+  await declined(
+    "open round 2 with nothing picked",
+    { declined: "NOTHING_PICKED" },
+    SAYS.NOTHING_PICKED,
+    () => host.call<Opened>("/live/relays/open-round", { run, leg: two, picked: [] }),
   );
 
   // Two piles picked by hand, and round two opens on them.
@@ -463,8 +513,11 @@ try {
   });
 
   // 5. Every round has run; then the run closes and everything is refused.
-  await refusal("open round 3 again after it ran", ["CONFLICT"], SAYS.ROUND_DONE(3), () =>
-    host.call("/live/relays/open-round", { run, leg: three }),
+  await declined(
+    "open round 3 again after it ran",
+    { declined: "ROUND_DONE", round: 3 },
+    SAYS.ROUND_DONE(3),
+    () => host.call<Opened>("/live/relays/open-round", { run, leg: three, picked: [] }),
   );
   await sleep(2500);
   await atBoard();
@@ -495,8 +548,8 @@ try {
       20,
     );
   });
-  await refusal("open a round in a closed run", ["CONFLICT"], SAYS.CLOSED, () =>
-    host.call("/live/relays/open-round", { run, leg: one }),
+  await declined("open a round in a closed run", { declined: "CLOSED" }, SAYS.CLOSED, () =>
+    host.call<Opened>("/live/relays/open-round", { run, leg: one, picked: [] }),
   );
   await refusal("invite a model seat into a closed run", ["CONFLICT"], SAYS.CLOSED, async () => {
     const replies = await invite(host, run, 1);
@@ -526,17 +579,23 @@ try {
     });
   }
 
-  // The boundary answers a category, never the word, so no screen and no
-  // scenario can tell one refusal of a path from another by what it is sent.
-  const categories = new Set(said.map((row) => row.edge));
+  // Opening a round is declined with its word; the phone's and the seats'
+  // refusals still arrive as a category, so only the screen that sent them
+  // can say which word stands behind it.
+  const categories = new Set(
+    said
+      .map((row) => row.edge)
+      .filter((edge) => !edge.startsWith("(") && !edge.startsWith("declined ")),
+  );
   log.note(`refusals asked: ${JSON.stringify(said, null, 2)}`);
-  log.finding({
-    kind: "unclear",
-    title: `the edge answers ${[...categories].filter((word) => !word.startsWith("(")).join(", ")} for every relay refusal, never the word`,
-    steps:
-      "Ask the edge for each open-round and phone refusal in turn; read the error each answers",
-    evidence: JSON.stringify(said),
-  });
+  if (categories.size > 0) {
+    log.finding({
+      kind: "unclear",
+      title: `the edge answers ${[...categories].join(", ")} for the phone's and the seats' refusals, never the word`,
+      steps: "Ask the edge for each phone and seat refusal in turn; read the error each answers",
+      evidence: JSON.stringify(said.filter((row) => categories.has(row.edge))),
+    });
+  }
 
   const standing = await readRun(host, run);
   log.note(

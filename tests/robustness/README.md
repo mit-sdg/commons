@@ -5,6 +5,27 @@ complement the automated tests under `tests/app`, `tests/concepts`, and `tests/e
 `bun run test` does not run the scenario scripts. It does run `drive.test.ts`,
 which checks the scenario helper's completion and failure reporting.
 
+## Automated participant liveness checks
+
+`tests/e2e/mobile-relay-liveness.spec.ts` runs in the existing Chromium and
+Firefox browser CI jobs. It checks early waiting, a committed join with a hung
+reply, a failed round poll alongside healthy wall reads, and twelve independent
+browser phones across two rounds with two dashboards and reconnects. Every phone
+must submit; a healthy host screen alone is not a pass.
+
+Run the production frontend version locally with:
+
+```sh
+COMMONS_E2E_STANDALONE=1 bun run e2e tests/e2e/mobile-relay-liveness.spec.ts
+```
+
+`tests/app/relay-aged-run.test.ts`, included in `bun run test`, also checks 2,400
+waiting-room requests while advancing the application clock by two hours. These
+accelerated cases do not replace a real hosted soak or physical phone sleep test.
+The participant waits these checks do not yet bound are open issues in
+`content/issues/open/` (`participant-writes-wait-without-a-bound`,
+`a-join-names-no-round`, `staff-screens-drop-their-view-on-some-faults`).
+
 ## Run against a disposable local stack
 
 Use Node 24, the repository's Bun version, installed root/frontend dependencies,
@@ -16,8 +37,7 @@ REASONER=scripted bun dev
 
 This creates temporary MongoDB and seeded demo accounts. Use a checkout without
 `.env` overrides and unset external MongoDB/deployment variables first.
-Do not point the stack at a classroom database: scenarios create and change data,
-and the stranded-lock scenario deliberately inserts a lock directly into MongoDB.
+Do not point the stack at a classroom database: scenarios create and change data.
 Stop the stack with Ctrl-C when finished.
 
 In another terminal, run a scenario with a unique output name:
@@ -31,7 +51,7 @@ The defaults are `EDGE=http://127.0.0.1:4000`, `WEB=http://127.0.0.1:3000`,
 and the seeded `mara` account. Set EDGE and WEB when using other ports.
 For database inspection, set `MONGO_URL` to the temporary URI printed by the
 stack. This harness variable differs from the application's `MONGODB_URL`.
-`stranded-check.ts` requires it; other scripts use it only where documented.
+Scripts use it only where documented.
 R1 fresh-load and strip-tap require an existing run ID before the output name.
 Phase 0 accepts an output directory instead; its default is `test-results/robustness/phase0`.
 

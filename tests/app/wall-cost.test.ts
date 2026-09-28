@@ -300,7 +300,7 @@ test("a cold arrive on a three-round run costs a bounded number of commands", as
     );
     // The reads the arrive path keys on are served by indexes the concepts own.
     for (const [collection, key] of [
-      ["linking.links", { targets: 1 }],
+      ["publishing.editions", { whole: 1 }],
       ["relaying.legs", { material: 1 }],
       ["relaying.legs", { relay: 1, position: 1 }],
       ["sharing.shares", { token: 1 }],

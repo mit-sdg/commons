@@ -1,5 +1,5 @@
 import { MongoLockingConcept } from "../../src/concepts/locking/locking.mongo.ts";
-import { MongoLinkingConcept } from "../../src/concepts/linking/linking.mongo.ts";
+import { MongoPublishingConcept } from "../../src/concepts/publishing/publishing.mongo.ts";
 import { MongoSuggestingConcept } from "../../src/concepts/suggesting/suggesting.mongo.ts";
 import { afterAll, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
@@ -89,17 +89,17 @@ class PausedPinning extends MongoPinningConcept {
   }
 }
 
-class PausedLinking extends MongoLinkingConcept {
+class PausedPublishing extends MongoPublishingConcept {
   armed = false;
   readonly entered = Promise.withResolvers<void>();
   readonly release = Promise.withResolvers<void>();
-  async setLinks(input: Parameters<MongoLinkingConcept["setLinks"]>[0]) {
+  async publishWithin(input: Parameters<MongoPublishingConcept["publishWithin"]>[0]) {
     if (this.armed) {
       this.armed = false;
       this.entered.resolve();
       await this.release.promise;
     }
-    return super.setLinks(input);
+    return super.publishWithin(input);
   }
 }
 
@@ -139,7 +139,7 @@ async function fixture(carry = false) {
   const responding = new PausedResponding(database);
   const categorizing = new PausedCategorizing(database);
   const locking = new PausedLocking(database);
-  const linking = new PausedLinking(database);
+  const publishing = new PausedPublishing(database);
   const suggesting = new PausedSuggesting(database);
   const pinning = new PausedPinning(database);
   const edge = createEdge({
@@ -147,7 +147,7 @@ async function fixture(carry = false) {
     Responding: responding,
     Categorizing: categorizing,
     Pinning: pinning,
-    Linking: linking,
+    Publishing: publishing,
     Locking: locking,
     Suggesting: suggesting,
   });
@@ -224,7 +224,7 @@ async function fixture(carry = false) {
     card,
     user,
     pinning,
-    linking,
+    publishing,
     locking,
     suggesting,
     token,
@@ -346,24 +346,22 @@ test("an admitted hand-in finishes across closure and stays immutable on retry",
   ]);
 });
 
-test("opening answers when a source gains its first pick after the no-picks observation", async () => {
+test("opening opens on the piles the request picks, whatever the source's pins say", async () => {
   const f = await fixture(true);
   await f.call("/live/relays/close-round", { round: f.round });
-  f.pinning.armed = true;
-  const result = await resumeAfter(
-    f.edge.gateway.invoke(
-      "/live/relays/open-round",
-      { session: f.session, run: f.run, leg: f.nextLeg },
-      { timeoutMs: 1500 },
-    ),
-    f.pinning.entered.promise,
-    () => f.pinning.release.resolve(),
-    () => f.call("/live/walls/pick", { round: f.round, pile: f.category }),
+  expect(await f.call("/live/relays/open-round", { run: f.run, leg: f.nextLeg })).toEqual({
+    declined: "NOTHING_PICKED",
+  });
+  const result = await f.edge.gateway.invoke(
+    "/live/relays/open-round",
+    { session: f.session, run: f.run, leg: f.nextLeg, picked: [f.category] },
+    { timeoutMs: 1500 },
   );
-  expect(result.ok || (!result.ok && result.error.kind === "domain"), JSON.stringify(result)).toBe(
-    true,
-  );
-  expect(await f.c.Locking._isLocked({ target: f.run })).toEqual({ locked: result.ok });
+  expect(result).toMatchObject({ ok: true });
+  if (!result.ok) throw new Error(JSON.stringify(result));
+  const round = (result.value as { round: string }).round;
+  const [captured] = await f.c.RunSnapshotting._snapshot({ subject: round });
+  expect(captured.value).toMatchObject({ questions: [{ choices: ["Synthetic"] }] });
 });
 
 for (const path of ["/live/p/answer", "/live/p/submit"]) {
@@ -379,19 +377,19 @@ for (const path of ["/live/p/answer", "/live/p/submit"]) {
   });
 }
 
-test("an admitted round keeps its picked material when the source changes before linking", async () => {
+test("an admitted round keeps the request's picks when the source's pins change before it is published", async () => {
   const f = await fixture(true);
   await f.call("/live/relays/close-round", { round: f.round });
   await f.call("/live/walls/pick", { round: f.round, pile: f.category });
-  f.linking.armed = true;
+  f.publishing.armed = true;
   const result = await resumeAfter(
     f.edge.gateway.invoke(
       "/live/relays/open-round",
-      { session: f.session, run: f.run, leg: f.nextLeg },
+      { session: f.session, run: f.run, leg: f.nextLeg, picked: [f.category] },
       { timeoutMs: 1500 },
     ),
-    f.linking.entered.promise,
-    () => f.linking.release.resolve(),
+    f.publishing.entered.promise,
+    () => f.publishing.release.resolve(),
     () => f.call("/live/walls/unpick", { round: f.round, pile: f.category }),
   );
   expect(result).toMatchObject({ ok: true });
