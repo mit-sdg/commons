@@ -52,16 +52,10 @@ async function register(edge: Edge, person: Person, hosts: boolean) {
   return login.headers.get("Set-Cookie")?.split(";")[0] as string;
 }
 
-async function until<Value>(
-  read: () => Promise<Value>,
-  done: (value: Value) => boolean,
-): Promise<Value> {
-  let value = await read();
-  for (let attempt = 0; attempt < 40 && !done(value); attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    value = await read();
-  }
-  return value;
+/** Reads once every flow the edge accepted has settled, so a reaction's chain is not raced. */
+async function settled<Value>(edge: Edge, read: () => Promise<Value>): Promise<Value> {
+  await edge.application.whenIdle();
+  return read();
 }
 
 interface Sample {
@@ -108,7 +102,7 @@ describe("sampling a round in the editor", () => {
     const mind = scriptedMind();
     for (let pass = 0; pass < 4; pass += 1) {
       if ((await serveOnePass(edge.application.concepts.Reasoning, mind)) === 0) break;
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await edge.application.whenIdle();
     }
   };
 
@@ -116,10 +110,10 @@ describe("sampling a round in the editor", () => {
   const sampleAndServe = async (leg: string) => {
     expect((await askFor(leg)).asked).toBe(true);
     await serveReasoner();
-    return await until(
-      async () => await readSample(leg),
-      (reading) => reading.pending === false && reading.sample !== null,
-    );
+    const reading = await settled(edge, () => readSample(leg));
+    expect(reading.pending).toBe(false);
+    expect(reading.sample).not.toBe(null);
+    return reading;
   };
 
   /** The piles a sample names, each once, in the order they are first placed in. */
@@ -237,10 +231,7 @@ describe("sampling a round in the editor", () => {
 
   test("the served sample is twelve answers on piles the round already stands on", async () => {
     await serveReasoner();
-    const reading = await until(
-      async () => await readSample(write),
-      (found) => found.pending === false && found.sample !== null,
-    );
+    const reading = await settled(edge, () => readSample(write));
     expect(reading.pending).toBe(false);
     expect(reading.failure).toBe(null);
     const sample = reading.sample!;
@@ -297,10 +288,8 @@ describe("sampling a round in the editor", () => {
     expect(passage).toContain(source.answers[0]!.value);
 
     await serveReasoner();
-    const reading = await until(
-      async () => await readSample(taking),
-      (found) => found.pending === false && found.sample !== null,
-    );
+    const reading = await settled(edge, () => readSample(taking));
+    expect(reading.pending).toBe(false);
     const sample = reading.sample!;
     expect(sample.standing).toBe("fresh");
     expect(sample.answers.length).toBe(12);

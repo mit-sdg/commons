@@ -800,7 +800,7 @@ test("dropping the actor's own staff seat returns one response and keeps their c
   expect(await send("/roster/drop", { session: staff.session, seat })).toEqual({
     seat: expect.objectContaining({ _id: seat, status: "DROPPED" }),
   });
-  await new Promise((resolve) => setTimeout(resolve, 20));
+  await app.whenIdle();
   const responses = inspectAssembly(app)
     .occurrences.slice(before)
     .filter((event) => event.concept === "RequestBoundary" && event.action === "respond");

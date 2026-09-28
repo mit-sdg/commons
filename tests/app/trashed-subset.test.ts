@@ -49,12 +49,9 @@ async function registerHost(edge: Edge) {
   };
 }
 
-async function until<Value>(read: () => Promise<Value>, done: (value: Value) => boolean) {
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    const value = await read();
-    if (done(value)) return value;
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
+/** Reads once every flow the edge accepted has settled, so a reaction's chain is not raced. */
+async function settled<Value>(edge: Edge, read: () => PromiseLike<Value>) {
+  await edge.application.whenIdle();
   return read();
 }
 
@@ -84,28 +81,30 @@ test("the round's trashed subset writes the same brief as the whole trash", asyn
   const token = launched.token as string;
 
   const handIn = async (value: string) => {
-    const face = await until(
+    const face = await settled(
+      edge,
       async () =>
         (await json(await post(edge, "/live/p/arrive", { token }))).relay as unknown as {
           openRound: string | null;
           questions: { question: string }[];
         },
-      (found) => found.openRound !== null && found.questions.length > 0,
     );
+    expect(face.openRound).not.toBeNull();
     const { response } = await call("/live/p/begin", { token, device: `phone-${value}` });
     await call("/live/p/answer", { response, question: face.questions[0]!.question, value });
     await call("/live/p/submit", { response });
   };
-  const wallOf = async (round: string, count: number) =>
-    (
-      await until(
-        async () =>
-          (await call("/live/walls/read", { round })).wall as unknown as {
-            cards: { card: string }[];
-          },
-        (wall) => wall.cards.length === count,
-      )
-    ).cards;
+  const wallOf = async (round: string, count: number) => {
+    const wall = await settled(
+      edge,
+      async () =>
+        (await call("/live/walls/read", { round })).wall as unknown as {
+          cards: { card: string }[];
+        },
+    );
+    expect(wall.cards).toHaveLength(count);
+    return wall.cards;
+  };
 
   const round = (await call("/live/relays/open-round", { run, leg: legs[0]! })).round as string;
   for (const value of ["keep", "share", "send"]) await handIn(value);

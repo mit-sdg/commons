@@ -71,20 +71,14 @@ async function serveReasoner(edge: Edge, rounds = 4) {
   for (let round = 0; round < rounds; round += 1) {
     const served = await serveOnePass(edge.application.concepts.Reasoning, mind);
     if (served === 0) break;
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await edge.application.whenIdle();
   }
 }
 
-async function until<Value>(
-  read: () => Promise<Value>,
-  done: (value: Value) => boolean,
-): Promise<Value> {
-  let value = await read();
-  for (let attempt = 0; attempt < 40 && !done(value); attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    value = await read();
-  }
-  return value;
+/** Reads once every flow the edge accepted has settled, so a reaction's chain is not raced. */
+async function settled<Value>(edge: Edge, read: () => PromiseLike<Value>) {
+  await edge.application.whenIdle();
+  return read();
 }
 
 interface Board {
@@ -202,25 +196,18 @@ describe("a seat on a questionnaire run", () => {
     }
 
     // Each seat began a response to the run itself, and each begin asked the mind.
-    const begun = await until(
-      async () => await edge.application.concepts.Responding._responsesFor({ subject: run }),
-      (responses) => responses.length === 2,
+    const begun = await settled(edge, () =>
+      edge.application.concepts.Responding._responsesFor({ subject: run }),
     );
     expect(begun.map((response) => response.participant)).toEqual(["seat-1", "seat-2"]);
 
-    const asked = await until(
-      async () => await edge.application.concepts.Reasoning._pending(),
-      (pending) => pending.length === 2,
-    );
+    const asked = await edge.application.concepts.Reasoning._pending();
     expect(asked.length).toBe(2);
     await serveReasoner(edge);
 
     expect(await serveParticipantsOnce(edge.application.concepts, later)).toBe(2);
 
-    const board = await until(
-      async () => await readBoard(run),
-      (read) => read.handedIn === 2,
-    );
+    const board = await settled(edge, () => readBoard(run));
     expect(board.started).toBe(2);
     expect(board.handedIn).toBe(2);
 
@@ -256,14 +243,12 @@ describe("a seat on a questionnaire run", () => {
     const token = launch.token as string;
 
     await post(edge, "/live/runs/invite", { run, device: "seat-q" }, cookie);
-    const [seated] = await until(
-      async () => await edge.application.concepts.Responding._responsesFor({ subject: run }),
-      (responses) => responses.length === 1,
+    const seats = await settled(edge, () =>
+      edge.application.concepts.Responding._responsesFor({ subject: run }),
     );
-    await until(
-      async () => await edge.application.concepts.Reasoning._pending(),
-      (pending) => pending.length === 1,
-    );
+    expect(seats).toHaveLength(1);
+    const [seated] = seats;
+    expect(await edge.application.concepts.Reasoning._pending()).toHaveLength(1);
     await serveReasoner(edge);
     expect(await serveParticipantsOnce(edge.application.concepts, later)).toBe(1);
 
@@ -271,7 +256,7 @@ describe("a seat on a questionnaire run", () => {
       const body = await json(await post(edge, "/live/runs/results", { run }, cookie));
       return body.scores as unknown as Scores;
     };
-    const graded = await until(readScores, (scores) => scores.results.length === 1);
+    const graded = await settled(edge, readScores);
     expect(graded.results.length).toBe(1);
     expect(graded.results[0]?.submission).toBe(seated!.response);
     expect(graded.results[0]?.model).toBe(true);
@@ -292,7 +277,8 @@ describe("a seat on a questionnaire run", () => {
     }
     expect((await post(edge, "/live/p/submit", { response })).status).toBe(200);
 
-    const both = await until(readScores, (scores) => scores.results.length === 2);
+    const both = await settled(edge, readScores);
+    expect(both.results).toHaveLength(2);
     const room = both.results.find((row) => row.submission === response);
     expect(room?.model).toBe(false);
     expect(both.results.find((row) => row.submission === seated!.response)?.model).toBe(true);
@@ -306,20 +292,16 @@ describe("a seat on a questionnaire run", () => {
     const run = launch.run as string;
 
     await post(edge, "/live/runs/invite", { run, device: "seat-d" }, cookie);
-    const [seated] = await until(
-      async () => await edge.application.concepts.Responding._responsesFor({ subject: run }),
-      (responses) => responses.length === 1,
+    const seats = await settled(edge, () =>
+      edge.application.concepts.Responding._responsesFor({ subject: run }),
     );
-    await until(
-      async () => await edge.application.concepts.Reasoning._pending(),
-      (pending) => pending.length === 1,
-    );
+    expect(seats).toHaveLength(1);
+    const [seated] = seats;
+    expect(await edge.application.concepts.Reasoning._pending()).toHaveLength(1);
     await serveReasoner(edge);
     expect(await serveParticipantsOnce(edge.application.concepts, later)).toBe(1);
-    const handedIn = await until(
-      async () => await readBoard(run),
-      (board) => board.handedIn === 1,
-    );
+    const handedIn = await settled(edge, () => readBoard(run));
+    expect(handedIn.handedIn).toBe(1);
     expect(handedIn.seats.map((seat) => seat.participant)).toEqual(["seat-d"]);
 
     expect(

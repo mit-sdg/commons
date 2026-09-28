@@ -47,16 +47,10 @@ async function registerHost(edge: Edge) {
   return login.headers.get("Set-Cookie")?.split(";")[0] as string;
 }
 
-async function until<Value>(
-  read: () => Promise<Value>,
-  done: (value: Value) => boolean,
-): Promise<Value> {
-  let value = await read();
-  for (let attempt = 0; attempt < 40 && !done(value); attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    value = await read();
-  }
-  return value;
+/** Reads once every flow the edge accepted has settled, so a reaction's chain is not raced. */
+async function settled<Value>(edge: Edge, read: () => PromiseLike<Value>): Promise<Value> {
+  await edge.application.whenIdle();
+  return read();
 }
 
 interface Wall {
@@ -81,14 +75,15 @@ interface Round {
 
 /** A phone answers the open round with one value and hands in. */
 async function handIn(edge: Edge, token: string, value: string) {
-  const face = await until(
+  const face = await settled(
+    edge,
     async () =>
       (await json(await post(edge, "/live/p/arrive", { token }))).relay as {
         openRound: string | null;
         questions: { question: string }[];
       },
-    (found) => found.openRound !== null && found.questions.length > 0,
   );
+  expect(face.openRound).not.toBeNull();
   const begun = await json(
     await post(edge, "/live/p/begin", { token, device: `phone-${Math.random()}` }),
   );
@@ -212,7 +207,7 @@ describe("what a round carries besides its question", () => {
       (await json(await post(edge, "/live/walls/read", { round }, cookie))).wall as Wall;
 
     // Standing definitions guide sorting; empty piles have no result summary.
-    const seeded = await until(readWall, (wall) => wall.piles.length === 2);
+    const seeded = await settled(edge, readWall);
     expect(seeded.piles.map((pile) => [pile.name, pile.definition, pile.count])).toEqual([
       ["Pace", "It was too slow to use.", 0],
       ["Crashes", "It stopped working.", 0],
@@ -261,7 +256,7 @@ describe("what a round carries besides its question", () => {
       await post(edge, "/live/walls/open-pile", { round, name: "Confusing" }, cookie),
     );
     expect(again.pile).toBe(empty.pile);
-    const three = await until(readWall, (wall) => wall.piles.length === 3);
+    const three = await settled(edge, readWall);
     expect(three.piles[2]).toMatchObject({ name: "Confusing", count: 0 });
     const noCard = await post(
       edge,
@@ -273,7 +268,8 @@ describe("what a round carries besides its question", () => {
 
     await handIn(edge, token, "it froze");
     await handIn(edge, token, "took forever to load");
-    const full = await until(readWall, (wall) => wall.cards.length === 2);
+    const full = await settled(edge, readWall);
+    expect(full.cards).toHaveLength(2);
 
     // The passage carries the piles with their sentences and the note as it now stands.
     const asked = await json(await post(edge, "/live/walls/sort-now", { round }, cookie));
@@ -303,7 +299,7 @@ describe("what a round carries besides its question", () => {
       }),
       at: new Date(),
     });
-    const sorted = await until(readWall, (wall) => wall.cards.every((card) => card.pile !== null));
+    const sorted = await settled(edge, readWall);
     expect(sorted.piles.map((pile) => [pile.name, pile.count])).toEqual([
       ["Pace", 1],
       ["Crashes", 1],
@@ -318,7 +314,7 @@ describe("what a round carries besides its question", () => {
     await post(edge, "/live/walls/pick", { round, pile: sorted.piles[0]!.pile }, cookie);
     const emptied = await json(await post(edge, "/live/walls/empty-piles", { round }, cookie));
     expect(emptied.emptied).toBe(true);
-    const tray = await until(readWall, (wall) => wall.cards.every((card) => card.pile === null));
+    const tray = await settled(edge, readWall);
     expect(tray.piles.map((pile) => [pile.name, pile.definition, pile.count])).toEqual([
       ["Pace", "It was too slow to use.", 0],
       ["Crashes", "It stopped working.", 0],

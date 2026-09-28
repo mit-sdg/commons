@@ -66,16 +66,10 @@ async function register(edge: Edge, person: Person, hosts: boolean) {
   return login.headers.get("Set-Cookie")?.split(";")[0] as string;
 }
 
-async function until<Value>(
-  read: () => Promise<Value>,
-  done: (value: Value) => boolean,
-): Promise<Value> {
-  let value = await read();
-  for (let attempt = 0; attempt < 40 && !done(value); attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    value = await read();
-  }
-  return value;
+/** Reads once every flow the edge accepted has settled, so a reaction's chain is not raced. */
+async function settled<Value>(edge: Edge, read: () => PromiseLike<Value>): Promise<Value> {
+  await edge.application.whenIdle();
+  return read();
 }
 
 interface Document {
@@ -338,10 +332,7 @@ describe("the background the drafter reads", () => {
       ),
     );
     const brief = described.brief as unknown as string;
-    const quiz = await until(
-      () => passageAbout(brief),
-      (found) => found !== "",
-    );
+    const quiz = await settled(edge, () => passageAbout(brief));
     expect(quiz).toContain(
       `\n\n${BACKGROUND_OPENS}\n=== Syllabus ===\n${syllabusBody}\n${BACKGROUND_CLOSES}\n\n`,
     );
@@ -360,14 +351,15 @@ describe("the background the drafter reads", () => {
     );
     const round = opened.round as unknown as string;
     const token = launched.token as unknown as string;
-    const face = await until(
+    const face = await settled(
+      edge,
       async () =>
         (await json(await post(edge, "/live/p/arrive", { token }))).relay as unknown as {
           openRound: string | null;
           questions: { question: string }[];
         },
-      (found) => found.openRound !== null && found.questions.length > 0,
     );
+    expect(face.openRound).not.toBeNull();
     const begun = await json(await post(edge, "/live/p/begin", { token, device: "phone-one" }));
     const response = begun.response as unknown as string;
     await post(edge, "/live/p/answer", {
@@ -410,10 +402,7 @@ describe("the background the drafter reads", () => {
       ),
     );
     const brief = described.brief as unknown as string;
-    const passage = await until(
-      () => passageAbout(brief),
-      (value) => value !== "",
-    );
+    const passage = await settled(edge, () => passageAbout(brief));
     expect(passage).toContain("Create a survey.");
     expect(passage).toContain("REFERENCE_SENTINEL");
     await remove({ document: removed.document });
@@ -423,15 +412,13 @@ describe("the background the drafter reads", () => {
       material: [{ prompt: "What stood out?", choices: [], expected: "", explanation: "" }],
     });
     await post(edge, "/live/drafts/adopt", { candidate }, cookie);
-    const links = await until(
-      async () => edge.application.concepts.AdoptLinking._getLinks({ source: brief }),
-      (value) => value.length > 0,
+    const links = await settled(edge, async () =>
+      edge.application.concepts.AdoptLinking._getLinks({ source: brief }),
     );
+    expect(links).toHaveLength(1);
     const questionnaire = links[0]!.target;
-    const selected = await until(
-      async () =>
-        edge.application.concepts.Guiding._selection({ subject: questionnaire, use: "drafting" }),
-      (value) => value.guidances.length > 0,
+    const selected = await settled(edge, async () =>
+      edge.application.concepts.Guiding._selection({ subject: questionnaire, use: "drafting" }),
     );
     expect(selected.guidances).toEqual([library.document]);
     const refined = await json(await post(edge, "/live/drafts/refine", { questionnaire }, cookie));
@@ -466,10 +453,11 @@ describe("the background the drafter reads", () => {
     const ensure = (name: string) =>
       Categorizing.ensureCategory({ scope: round, name, description: "" });
     const reserved = await ensure("Starting");
-    await until(
-      async () => Pinning._isPinned({ item: reserved.category, scope: "live-reserved-piles" }),
-      ({ pinned }) => pinned,
-    );
+    expect(
+      await settled(edge, async () =>
+        Pinning._isPinned({ item: reserved.category, scope: "live-reserved-piles" }),
+      ),
+    ).toEqual({ pinned: true });
     await post(
       edge,
       "/live/walls/rename-pile",
@@ -484,9 +472,8 @@ describe("the background the drafter reads", () => {
       cookie,
     );
     expect(
-      await until(
-        async () => Pinning._isPinned({ item: target.category, scope: "live-reserved-piles" }),
-        ({ pinned }) => pinned,
+      await settled(edge, async () =>
+        Pinning._isPinned({ item: target.category, scope: "live-reserved-piles" }),
       ),
     ).toEqual({ pinned: true });
     // Legacy runs with no identity reservation still retain their authored name.

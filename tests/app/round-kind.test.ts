@@ -80,13 +80,9 @@ interface Wall {
 let edge: Edge;
 let cookie: string;
 
-/** Poll a read until it settles; the capture and the seeding land after the response. */
-async function until<Value>(read: () => Promise<Value>, done: (value: Value) => boolean) {
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    const value = await read();
-    if (done(value)) return value;
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
+/** Reads once the edge's flows have settled; the capture and the seeding land after the response. */
+async function settled<Value>(read: () => PromiseLike<Value>) {
+  await edge.application.whenIdle();
   return read();
 }
 
@@ -153,21 +149,17 @@ const closeRound = (round: string) => post(edge, "/live/relays/close-round", { r
 
 /** What the phone meets: the captured presentation of the round now open. */
 const presented = async (token: string, round: string): Promise<Presented> => {
-  const face = await until(
+  const face = await settled(
     async () => (await json(await post(edge, "/live/p/arrive", { token }))).relay as Face,
-    (value) => value.openRound === round && value.questions.length > 0,
   );
+  expect(face.openRound).toBe(round);
   return face.questions[0];
 };
 
-/** How long the seeding has to land before a wall is read as carrying no pile of its own. */
-const settle = () => new Promise((resolve) => setTimeout(resolve, 500));
-
 const wallOf = async (round: string): Promise<Wall> =>
-  (await until(
+  (await settled(
     async () =>
       (await json(await post(edge, "/live/walls/read", { round }, cookie))).wall as Wall | null,
-    (value) => value !== null && value.questions.length > 0,
   )) as Wall;
 
 const setKind = async (leg: string, kind: string) => {
@@ -348,8 +340,6 @@ describe("the kind a round is to its planner", () => {
       parts: [],
       cap: 0,
     });
-    await wallOf(voteRound);
-    await settle();
     expect((await wallOf(voteRound)).piles).toEqual([]);
     expect(
       (await rounds(relay)).find((round) => round.leg === voting)?.piles.map((pile) => pile.name),

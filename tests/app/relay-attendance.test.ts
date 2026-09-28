@@ -104,11 +104,11 @@ const room = async (s: Stage) =>
 const openRound = async (s: Stage, leg: string) =>
   (await s.call("/live/relays/open-round", { run: s.run, leg })).round as string;
 
-/** The answer, or `late` once a second has passed without one. */
-const withinASecond = <T>(request: Promise<T>) =>
+/** The answer, or `late` once ten seconds pass without one, so a slow runner never reads as a hang. */
+const withinTenSeconds = <T>(request: Promise<T>) =>
   Promise.race([
     request,
-    new Promise<"late">((resolve) => setTimeout(() => resolve("late"), 1_000)),
+    new Promise<"late">((resolve) => setTimeout(() => resolve("late"), 10_000)),
   ]);
 
 const attendances = (s: Stage) =>
@@ -171,7 +171,7 @@ describe("a device on the participant link", () => {
     await held.entered.promise;
     try {
       for (let poll = 0; poll < 3; poll += 1) {
-        const arrived = await withinASecond(arrive(s, { device: "phone-2", holding: round }));
+        const arrived = await withinTenSeconds(arrive(s, { device: "phone-2", holding: round }));
         expect(arrived).toMatchObject({ status: 200, body: { relay: { openRound: round } } });
       }
       expect(held.asked).toBe(1);

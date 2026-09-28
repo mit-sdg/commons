@@ -46,7 +46,7 @@ async function expectOneAnswer(
   const before = inspectAssembly(app).occurrences.length;
   const result = await app.invoker.invoke(path as never, body as never);
   expect(publicResult(result)).toEqual(expected);
-  await new Promise((resolve) => setTimeout(resolve, 20));
+  await app.whenIdle();
   const responses = inspectAssembly(app)
     .occurrences.slice(before)
     .filter((event) => event.concept === "RequestBoundary" && event.action === "respond");
@@ -76,7 +76,7 @@ describe("boundary partitions", () => {
       content: "Answer",
     } as never);
     expect(reply.ok).toBe(true);
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await app.whenIdle();
     const replyResponses = inspectAssembly(app)
       .occurrences.slice(beforeReply)
       .filter((event) => event.concept === "RequestBoundary" && event.action === "respond");
@@ -161,7 +161,7 @@ describe("boundary partitions", () => {
     } as never);
 
     expect(publicResult(result)).toEqual({ error: "NOT_FOUND" });
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await app.whenIdle();
     const responses = inspectAssembly(app)
       .occurrences.slice(before)
       .filter((event) => event.concept === "RequestBoundary" && event.action === "respond");

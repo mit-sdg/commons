@@ -106,8 +106,6 @@ const publishedAssignment = async (edge: ReturnType<typeof createEdge>, cookie: 
   return assignment;
 };
 
-const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
-
 const floorCases: [string, () => Promise<CommonsImplementations>][] = [
   ["on MongoDB", async () => mongoImplementations(await testDb())],
 ];
@@ -141,7 +139,7 @@ for (const [floor, makeFloor] of floorCases) {
         { rows: [{ email: "ana@example.edu", kind: "STUDENT" }] },
         admin.cookie,
       );
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      await app.whenIdle();
       const reinvites = inspectAssembly(app)
         .occurrences.slice(before)
         .filter((event) => event.concept === "Inviting" && event.action === "invite");
@@ -176,7 +174,7 @@ for (const [floor, makeFloor] of floorCases) {
       expect(accepted.status).toBe(200);
       const user = accepted.body.user as string;
 
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      await app.whenIdle();
 
       // No manual link step: the seat is active and held by the new account.
       expect(await app.concepts.Rostering._getSeatByUser({ user })).toEqual([
@@ -208,7 +206,7 @@ for (const [floor, makeFloor] of floorCases) {
       });
       expect(accepted.status).toBe(200);
 
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      await app.whenIdle();
       expect(
         await app.concepts.Rostering._getSeatByUser({
           user: accepted.body.user as string,
@@ -231,7 +229,7 @@ for (const [floor, makeFloor] of floorCases) {
         admin.cookie,
       );
       expect(imported.status).toBe(200);
-      await settle();
+      await app.whenIdle();
 
       // Nobody invites somebody who already has an account.
       expect(
@@ -267,7 +265,7 @@ for (const [floor, makeFloor] of floorCases) {
           )
         ).status,
       ).toBe(200);
-      await settle();
+      await app.whenIdle();
 
       expect(
         await app.concepts.Inviting._getInvitationByAddress({
@@ -299,7 +297,7 @@ for (const [floor, makeFloor] of floorCases) {
           )
         ).status,
       ).toBe(200);
-      await settle();
+      await app.whenIdle();
 
       // Inviting would be pointless and claiming would make an active member of
       // somebody who can never sign in, so the seat waits in the pending roster.
@@ -324,7 +322,7 @@ for (const [floor, makeFloor] of floorCases) {
         { rows: [{ email: "pia@example.edu", kind: "STUDENT" }] },
         admin.cookie,
       );
-      await settle();
+      await app.whenIdle();
       expect(await app.concepts.Rostering._getSeatByUser({ user: pia.user })).toEqual([
         expect.objectContaining({ status: "ACTIVE", user: pia.user }),
       ]);
@@ -341,7 +339,7 @@ for (const [floor, makeFloor] of floorCases) {
         { rows: [{ email: "quinn@example.edu", kind: "STUDENT" }] },
         admin.cookie,
       );
-      await settle();
+      await app.whenIdle();
       expect(await app.concepts.Rostering._getUnclaimedSeats({})).toHaveLength(1);
 
       // Quinn registers by some other route than the invitation.
@@ -354,7 +352,7 @@ for (const [floor, makeFloor] of floorCases) {
         { rows: [{ email: "rhea@example.edu", kind: "STUDENT" }] },
         admin.cookie,
       );
-      await settle();
+      await app.whenIdle();
       expect(await app.concepts.Rostering._getSeatByUser({ user: quinn.user })).toEqual([
         expect.objectContaining({ email: "quinn@example.edu", status: "ACTIVE" }),
       ]);
@@ -411,7 +409,7 @@ for (const [floor, makeFloor] of floorCases) {
         { rows: [{ email: "tara@example.edu", kind: "STUDENT" }] },
         admin.cookie,
       );
-      await settle();
+      await app.whenIdle();
       const [seated] = await app.concepts.Rostering._getSeatByUser({ user: tara.user });
       expect(seated).toEqual(expect.objectContaining({ status: "ACTIVE" }));
 
@@ -521,7 +519,7 @@ for (const [floor, makeFloor] of floorCases) {
       // The endpoint answers which address it freed, because no read can report
       // it once the seat is gone.
       expect(removed.body.email).toBe("tara@example.edu");
-      await settle();
+      await app.whenIdle();
 
       // The seat is gone in every state it could be read from.
       expect(await app.concepts.Rostering._getSeatByUser({ user: tara.user })).toEqual([]);
@@ -559,7 +557,7 @@ for (const [floor, makeFloor] of floorCases) {
         { rows: [{ email: "tara@example.edu", kind: "STUDENT" }] },
         admin.cookie,
       );
-      await settle();
+      await app.whenIdle();
       const [again] = await app.concepts.Rostering._getSeatByUser({ user: tara.user });
       expect(again).toEqual(expect.objectContaining({ status: "ACTIVE" }));
       expect(again.seat).not.toBe(seated.seat);
@@ -599,7 +597,7 @@ for (const [floor, makeFloor] of floorCases) {
         { rows: [{ email: "ula@example.edu", kind: "STUDENT" }] },
         admin.cookie,
       );
-      await settle();
+      await app.whenIdle();
       const [pending] = await app.concepts.Rostering._getUnclaimedSeats({});
 
       expect(

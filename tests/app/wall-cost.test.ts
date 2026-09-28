@@ -66,13 +66,10 @@ async function registerHost(edge: Edge) {
   return login.headers.get("Set-Cookie")?.split(";")[0] as string;
 }
 
-async function until<Value>(read: () => Promise<Value>, done: (value: Value) => boolean) {
-  let value = await read();
-  for (let attempt = 0; attempt < 60 && !done(value); attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    value = await read();
-  }
-  return value;
+/** Reads once every flow the edge accepted has settled, so a reaction's chain is not raced. */
+async function settled<Value>(edge: Edge, read: () => Promise<Value>) {
+  await edge.application.whenIdle();
+  return read();
 }
 
 afterAll(stopTestDb);
@@ -99,14 +96,15 @@ async function stageRoom() {
   const token = launched.token as string;
   const { round } = await call("/live/relays/open-round", { run, leg });
   for (const seat of ["seat-1", "seat-2"]) await call("/live/runs/invite", { run, device: seat });
-  const arrived = await until(
+  const arrived = await settled(
+    edge,
     async () =>
       (await json(await post(edge, "/live/p/arrive", { token }))).relay as unknown as {
         openRound: string | null;
         questions: { question: string }[];
       },
-    (found) => found.openRound !== null && found.questions.length > 0,
   );
+  expect(arrived.openRound).not.toBeNull();
   const question = arrived.questions[0]!.question;
   const devices = [...Array.from({ length: 43 }, (_, seat) => `phone-${seat}`), "seat-1", "seat-2"];
   for (const [index, device] of devices.entries()) {
@@ -118,7 +116,8 @@ async function stageRoom() {
     (await call("/live/walls/read", { round })).wall as unknown as {
       cards: { card: string }[];
     };
-  const cards = (await until(readWall, (wall) => wall.cards.length === 45)).cards;
+  const cards = (await settled(edge, readWall)).cards;
+  expect(cards).toHaveLength(45);
   const piles: string[] = [];
   for (let index = 0; index < 8; index += 1) {
     const opened = await call("/live/walls/open-pile", {
@@ -140,6 +139,7 @@ async function stageRoom() {
     });
   }
   await call("/live/walls/remove-card", { round, card: cards[41]!.card });
+  await edge.application.whenIdle();
   return { db, edge, call, run, round, cards, piles };
 }
 
