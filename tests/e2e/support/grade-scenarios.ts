@@ -1292,27 +1292,40 @@ async function points(api: Api) {
   ]);
 }
 
+/** The large class's questions: the shared three, then three nearly everyone aces. */
+export const LARGE_POINT_CRITERIA = [
+  ...POINT_CRITERIA,
+  { name: "Q3(a) Tests pass", maxPoints: 10 },
+  { name: "Q3(b) Deploys", maxPoints: 10 },
+  { name: "Q4 Submits the repository", maxPoints: 5 },
+];
+
 async function largePoints(api: Api) {
   const plans = pointPlans(50, 3, "large-points", []);
   // Scores bunch at full marks, as a real class's do; the third grader reads
-  // 1.5 lower and scores in half points.
+  // 1.5 lower and scores in half points. Nearly everyone aces the last three.
   const next = random("large-points-marks");
   for (const plan of plans)
-    plan.marks = [0, 1, 2].map(() => {
+    plan.marks = LARGE_POINT_CRITERIA.map(({ maxPoints }, index) => {
+      if (index >= POINT_CRITERIA.length) {
+        const slip = next() < 0.08;
+        if (!slip) return maxPoints;
+        return plan.grader === 2 ? maxPoints - 0.5 : maxPoints - 1 - Math.floor(next() * 2);
+      }
       const lost = next() ** 4 * 5;
       return plan.grader === 2
         ? Math.max(0, 8.5 - Math.round(lost * 2) / 2)
         : 10 - Math.round(lost);
     });
   const stage = await scaffold(api, "large-points", plans.length, 3);
-  const setup = await pointsSetup(api, stage.admin, stage.assignment, 0, POINT_CRITERIA);
+  const setup = await pointsSetup(api, stage.admin, stage.assignment, 0, LARGE_POINT_CRITERIA);
   await publish(stage);
   await submitAll(stage, plans);
   await delegateAll(stage, plans);
   await gradeAll(stage, plans, setup);
   return finish(stage, plans, [
-    "Points, three criteria out of 10, 50 learners over three graders, every paper released.",
-    "Scores bunch at full marks; the third grader scores 1.5 lower, in half points.",
+    "Points, 50 learners over three graders, every paper released. Q1(a) to Q2 are out of 10 and bunch at full marks; the third grader scores 1.5 lower, in half points.",
+    "Q3(a), Q3(b), and Q4 have nearly everyone at full marks.",
   ]);
 }
 

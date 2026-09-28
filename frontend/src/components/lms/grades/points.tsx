@@ -20,11 +20,12 @@ import { EACH_PAPER, NO_GRADER, RING, ROW_GRID, score } from "./common";
 import { hoverable } from "./hover";
 import type { Naming } from "./names";
 import { PaperCard } from "./paper";
+import { acrossOf, ceilingOf, layoutOf, leftOf, pilesOf } from "./piles";
 
-/** The most dots a column stacks before folding the rest into a count. */
-const TALLEST = 15;
-/** The height of a column's folded count. */
+/** The height of a pile's folded count. */
 const COUNT = 14;
+/** The folded papers a count lists when pointed at. */
+const FOLDED_LISTED = 8;
 
 export function maxOf(row: PointsRow | TotalRow) {
   return row.kind === "TOTAL" ? row.outOf : row.maxPoints;
@@ -115,42 +116,53 @@ function useWidth() {
   return [width, measure] as const;
 }
 
-/**
- * A row's papers as columns of dots. Each score is its own column while the
- * scores sit at least a dot apart; closer than that, they share columns a dot
- * wide, so no two dots overlap.
- */
-function columnsOf(
-  papers: readonly PointPaper[],
-  max: number,
-  width: number,
-  pitch: number,
-) {
-  const sorted = [...papers].sort((left, right) => left.score - right.score);
-  const values = [...new Set(sorted.map((paper) => paper.score))];
-  const apart = values.every(
-    (value, index) =>
-      index === 0 ||
-      ((value - (values[index - 1] as number)) / max) * width >= pitch,
+/** The papers a pile folds away, for pointing at its count. */
+function FoldedCard({
+  papers,
+  max,
+  names,
+  heading,
+}: {
+  papers: readonly PointPaper[];
+  max: number;
+  names: Naming;
+  heading: string;
+}) {
+  const listed = papers.slice(0, FOLDED_LISTED);
+  return (
+    <>
+      <span className="font-semibold">{heading}</span>
+      <ul className="grid gap-1">
+        {listed.map((paper) => (
+          <li
+            key={paper.learner}
+            className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3"
+          >
+            <span className="truncate text-muted-foreground">
+              {names.student(paper) ?? names.grader(paper.grader)}
+            </span>
+            <span className="tabular-nums">
+              {score(paper.score)} of {score(max)}
+            </span>
+            <span className="col-span-2 line-clamp-1">
+              {paper.feedback.trim() || "No feedback"}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {papers.length > listed.length ? (
+        <span className="text-muted-foreground">
+          {papers.length - listed.length} more in Submissions
+        </span>
+      ) : null}
+    </>
   );
-  const slots = Math.max(1, Math.floor(width / pitch));
-  const place = (value: number) =>
-    max <= 0
-      ? 0
-      : width <= 0 || apart
-        ? value / max
-        : Math.round((value / max) * slots) / slots;
-  const columns = new Map<number, PointPaper[]>();
-  for (const paper of sorted) {
-    const x = place(paper.score);
-    columns.set(x, [...(columns.get(x) ?? []), paper]);
-  }
-  return [...columns.entries()];
 }
 
 /**
  * A row's papers on its axis, a dot per paper, each showing its feedback and
- * opening its paper. A column taller than `TALLEST` folds its highest scores
+ * opening its paper. A pile stacks up to the row's ceiling and spreads
+ * sideways past it, and a pile past `MOST_LAYERS` folds its highest scores
  * into a count that opens those learners.
  */
 export function Scores({
@@ -160,7 +172,7 @@ export function Scores({
   names,
   onPaper,
   onLearners,
-  many = papers.length > EACH_PAPER,
+  among = papers,
 }: {
   papers: readonly PointPaper[];
   max: number;
@@ -168,23 +180,37 @@ export function Scores({
   names: Naming;
   onPaper: (submission: string) => void;
   onLearners: (learners: string[], lowest: number, highest: number) => void;
-  /** Whether dots are small; a grader's row follows its class row. */
-  many?: boolean;
+  /** The papers that size the dots and piles; a grader's row follows its class row. */
+  among?: readonly PointPaper[];
 }) {
   const [width, measure] = useWidth();
+  const many = among.length > EACH_PAPER;
   const dot = many ? 6 : 10;
   const pitch = many ? 8 : 12;
-  const columns = columnsOf(papers, max, width, pitch);
-  const tallest = Math.max(1, ...columns.map(([, own]) => own.length));
-  const height =
-    tallest > TALLEST
-      ? (TALLEST - 1) * pitch + COUNT + 4
-      : Math.max(24, tallest * pitch + 4);
+  const reference = pilesOf(among, max, width, pitch);
+  const across = acrossOf(reference, width, pitch);
+  const ceiling = ceilingOf(reference, across);
+  const piles = pilesOf(papers, max, width, pitch, among).map((pile) => ({
+    ...pile,
+    ...layoutOf(pile.papers, ceiling, across),
+  }));
+  const layers = Math.max(
+    1,
+    ...piles.map(({ shown, wide }) => Math.ceil(shown.length / wide)),
+  );
+  const folds = piles.some(({ folded }) => folded.length > 0);
+  const place = (x: number, wide: number) =>
+    width > 0
+      ? { left: leftOf(x, wide, width, pitch) }
+      : { left: `${x * 100}%`, transform: "translateX(-50%)" };
   return (
-    <Plot max={max} height={height} mark={mark} measure={measure}>
-      {columns.map(([x, own]) => {
-        const shown = own.length > TALLEST ? own.slice(0, TALLEST - 1) : own;
-        const folded = own.slice(shown.length);
+    <Plot
+      max={max}
+      height={Math.max(24, layers * pitch + (folds ? COUNT : 0) + 4)}
+      mark={mark}
+      measure={measure}
+    >
+      {piles.map(({ x, shown, folded, wide }) => {
         const lowest = folded[0]?.score ?? 0;
         const highest = folded.at(-1)?.score ?? 0;
         const range =
@@ -194,43 +220,44 @@ export function Scores({
         return (
           <span
             key={x}
-            className="absolute bottom-0.5 flex -translate-x-1/2 flex-col-reverse items-center"
-            style={{ left: `${x * 100}%` }}
+            className="absolute bottom-0.5 flex flex-col-reverse items-center"
+            style={{ width: wide * pitch, ...place(x, wide) }}
           >
-            {shown.map((paper) => (
-              <button
-                key={paper.learner}
-                type="button"
-                data-grader={paper.grader ?? NO_GRADER}
-                data-dot
-                aria-label={`${names.grader(paper.grader)}, ${score(paper.score)} of ${score(max)}`}
-                onClick={() => onPaper(paper.submission)}
-                className={cn(
-                  "group flex shrink-0 items-center justify-center rounded-full",
-                  RING,
-                )}
-                style={{ width: pitch, height: pitch }}
-                {...hoverable(() => (
-                  <PaperCard
-                    paper={paper}
-                    names={names}
-                    heading={`${score(paper.score)} of ${score(max)}`}
-                    label="Overall feedback"
+            <span className="flex w-full flex-wrap-reverse justify-center">
+              {shown.map((paper) => (
+                <button
+                  key={paper.learner}
+                  type="button"
+                  data-grader={paper.grader ?? NO_GRADER}
+                  data-dot
+                  aria-label={`${names.grader(paper.grader)}, ${score(paper.score)} of ${score(max)}`}
+                  onClick={() => onPaper(paper.submission)}
+                  className={cn(
+                    "group flex shrink-0 items-center justify-center rounded-full",
+                    RING,
+                  )}
+                  style={{ width: pitch, height: pitch }}
+                  {...hoverable(() => (
+                    <PaperCard
+                      paper={paper}
+                      names={names}
+                      heading={`${score(paper.score)} of ${score(max)}`}
+                      label="Overall feedback"
+                    />
+                  ))}
+                >
+                  <span
+                    className="rounded-full bg-foreground/75 group-hover:bg-foreground group-focus-visible:bg-foreground"
+                    style={{ width: dot, height: dot }}
                   />
-                ))}
-              >
-                <span
-                  className="rounded-full bg-foreground/75 group-hover:bg-foreground group-focus-visible:bg-foreground"
-                  style={{ width: dot, height: dot }}
-                />
-              </button>
-            ))}
+                </button>
+              ))}
+            </span>
             {folded.length > 0 ? (
               <button
                 type="button"
                 data-more
                 aria-label={`${folded.length} more at ${range}`}
-                title={`${folded.length} more at ${range}`}
                 onClick={() =>
                   onLearners(
                     folded.map((paper) => paper.learner),
@@ -243,6 +270,14 @@ export function Scores({
                   RING,
                 )}
                 style={{ height: COUNT }}
+                {...hoverable(() => (
+                  <FoldedCard
+                    papers={folded}
+                    max={max}
+                    names={names}
+                    heading={`${folded.length} more at ${range}`}
+                  />
+                ))}
               >
                 +{folded.length}
               </button>
@@ -330,8 +365,8 @@ export function StatisticText({
 }
 
 /**
- * By grader under a points row: each grader's papers on the row's axis, at
- * the class row's dot size, with their statistic.
+ * By grader under a points row: each grader's papers on the row's axis, with
+ * the class row's dots and pile width, and their statistic.
  */
 export function GraderScores({
   row,
@@ -352,7 +387,6 @@ export function GraderScores({
   ) => void;
 }) {
   const max = maxOf(row);
-  const many = row.papers.length > EACH_PAPER;
   return (
     <div className="space-y-1.5 pt-2">
       {row.byGrader.map((own) => {
@@ -385,7 +419,7 @@ export function GraderScores({
               onLearners={(learners, lowest, highest) =>
                 onLearners(learners, lowest, highest, grader)
               }
-              many={many}
+              among={row.papers}
             />
             <span>
               <StatisticText statistic={statistic} scores={own} />
