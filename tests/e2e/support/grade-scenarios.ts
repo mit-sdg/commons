@@ -1293,13 +1293,17 @@ async function points(api: Api) {
 }
 
 async function largePoints(api: Api) {
-  const plans = pointPlans(60, 3, "large-points", []);
-  // The third grader reads harder, so By grader shows a difference.
+  const plans = pointPlans(50, 3, "large-points", []);
+  // Scores bunch at full marks, as a real class's do; the third grader reads
+  // 1.5 lower and scores in half points.
+  const next = random("large-points-marks");
   for (const plan of plans)
-    if (plan.grader === 2)
-      plan.marks = plan.marks?.map((mark) =>
-        typeof mark === "number" ? Math.max(0, mark - 3) : mark,
-      );
+    plan.marks = [0, 1, 2].map(() => {
+      const lost = next() ** 4 * 5;
+      return plan.grader === 2
+        ? Math.max(0, 8.5 - Math.round(lost * 2) / 2)
+        : 10 - Math.round(lost);
+    });
   const stage = await scaffold(api, "large-points", plans.length, 3);
   const setup = await pointsSetup(api, stage.admin, stage.assignment, 0, POINT_CRITERIA);
   await publish(stage);
@@ -1307,8 +1311,8 @@ async function largePoints(api: Api) {
   await delegateAll(stage, plans);
   await gradeAll(stage, plans, setup);
   return finish(stage, plans, [
-    "Points, three criteria out of 10, 60 learners over three graders, every paper released.",
-    "The third grader scores 3 lower on every criterion.",
+    "Points, three criteria out of 10, 50 learners over three graders, every paper released.",
+    "Scores bunch at full marks; the third grader scores 1.5 lower, in half points.",
   ]);
 }
 

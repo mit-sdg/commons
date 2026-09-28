@@ -39,6 +39,7 @@ const LEVEL_NAMES: Record<Rating, string> = {
 };
 const LEVELS: Level[] = ["DEFICIENT", "EMERGENT", "COMPETENT", "EXPERT"];
 const EACH_PAPER = 40;
+const TALLEST = 15;
 const FRESH_MS = 10_000;
 const NEAR_B = "Cites the interview data but does not use it to argue why the design works.";
 const NAMES_LABEL = /^(Anonymous|Grader names|Student names|Names shown)$/;
@@ -308,6 +309,12 @@ function scoresOf(line: PointsLine, grader?: string | null) {
   return line.papers
     .filter((paper) => grader === undefined || paper.learner.grader === grader)
     .map((paper) => paper.score);
+}
+
+function countsOf(scores: readonly number[]) {
+  const counts = new Map<number, number>();
+  for (const value of scores) counts.set(value, (counts.get(value) ?? 0) + 1);
+  return counts;
 }
 
 function pointsName(line: PointsLine) {
@@ -1972,47 +1979,82 @@ test("By grader puts each grader's papers under every points row on its axis, wi
     await expect(row(page, pointsName(line)).locator("[data-grader][data-lights]")).toHaveCount(0);
 });
 
-test("By grader in a large points class gives each grader a bar per score, each opening their learners", async ({
+test("a large points class keeps a dot per paper, no two overlapping, and folds a pile past fifteen into a count that opens its learners", async ({
   page,
 }) => {
   test.setTimeout(240_000);
   const large = await largePointsScenario();
-  const question = pointsLines(large)[0] as PointsLine;
+  const lines = pointsLines(large);
+  const question = lines[0] as PointsLine;
   expect(question.papers.length).toBeGreaterThan(EACH_PAPER);
+  const folds = [...countsOf(scoresOf(question))].filter(([, count]) => count > TALLEST);
+  expect(folds.length).toBeGreaterThan(0);
+  expect(scoresOf(question).some((value) => !Number.isInteger(value))).toBe(true);
   await openAs(page);
-  await openGrades(page, "?tab=grades&by=grader", large);
+  await openGrades(page, "", large);
+
+  for (const line of lines) {
+    const scope = row(page, pointsName(line));
+    const folded = [...countsOf(scoresOf(line))].reduce(
+      (sum, [, count]) => sum + (count > TALLEST ? count - TALLEST + 1 : 0),
+      0,
+    );
+    await expect(scope.locator("button[data-dot]")).toHaveCount(line.papers.length - folded);
+    const boxes = await scope.locator("button[data-dot] > span").evaluateAll((all) =>
+      all.map((dot) => {
+        const { left, right, top, bottom } = dot.getBoundingClientRect();
+        return { left, right, top, bottom };
+      }),
+    );
+    for (const [index, box] of boxes.entries())
+      for (const other of boxes.slice(index + 1))
+        expect(
+          box.right <= other.left ||
+            other.right <= box.left ||
+            box.bottom <= other.top ||
+            other.bottom <= box.top,
+          `${line.name}: two dots overlap`,
+        ).toBe(true);
+  }
 
   const scope = row(page, pointsName(question));
-  await expect(scope.locator("button[data-dot]")).toHaveCount(0);
+  for (const [value, count] of folds)
+    await expect(
+      scope.getByRole("button", { name: `${count - TALLEST + 1} more at ${value}`, exact: true }),
+    ).toBeVisible();
+  const half = question.papers.find((paper) => !Number.isInteger(paper.score));
+  if (!half) throw new Error("large-points has no half point on the first question");
+  const shown = await pointAt(
+    page,
+    scope
+      .getByRole("button", {
+        name: `${labelOf(half.learner.grader, large)}, ${half.score} of ${question.max}`,
+      })
+      .first(),
+  );
+  await expect(shown).toContainText(`${half.score} of ${question.max}`);
+
+  await viewButton(page, "By grader").click();
   const graders = [...letters(large).keys()];
   await expect(scope.locator("[data-grader][data-lights]")).toHaveCount(graders.length);
   for (const grader of graders) {
     const strip = scope.locator(`[data-grader="${grader}"][data-lights]`);
     const scores = scoresOf(question, grader);
-    const counts = new Map<number, number>();
-    for (const value of scores) counts.set(value, (counts.get(value) ?? 0) + 1);
-    await expect(strip.getByRole("button", { name: / at \d+$/ })).toHaveCount(counts.size);
-    for (const [value, count] of counts)
-      await expect(
-        strip.getByRole("button", { name: `${count} at ${value}`, exact: true }),
-      ).toBeVisible();
+    await expect(strip.locator("button[data-dot]")).toHaveCount(scores.length);
     await expect(strip.locator("span[tabindex='0']")).toHaveText(
       `median ${statText("median", scores)}`,
     );
   }
 
-  const [grader] = graders as [string];
-  const scores = scoresOf(question, grader);
-  const value = Math.max(...scores);
-  const count = scores.filter((own) => own === value).length;
+  await viewButton(page, "Class").click();
+  const [value, count] = folds[0] as [number, number];
   await scope
-    .locator(`[data-grader="${grader}"][data-lights]`)
-    .getByRole("button", { name: `${count} at ${value}`, exact: true })
+    .getByRole("button", { name: `${count - TALLEST + 1} more at ${value}`, exact: true })
     .click();
   await expect(page).toHaveURL(/[?&]tab=submissions(&|$)/);
   await expect(
     submissionsPanel(page).getByText(
-      `${count} scored ${value} on ${question.name}, graded by ${labelOf(grader, large)} from Grades`,
+      `${count - TALLEST + 1} scored ${value} on ${question.name} from Grades`,
       { exact: true },
     ),
   ).toBeVisible();

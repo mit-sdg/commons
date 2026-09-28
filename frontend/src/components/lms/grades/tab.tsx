@@ -199,7 +199,8 @@ export function GradesTab({
   function openScored(
     row: CriterionRow,
     learners: string[],
-    value: number,
+    lowest: number,
+    highest: number,
     grader?: string | null,
   ) {
     const on =
@@ -210,9 +211,13 @@ export function GradesTab({
           : "";
     const by =
       grader === undefined ? "" : `, graded by ${names.grader(grader)}`;
+    const range =
+      lowest === highest
+        ? score(lowest)
+        : `${score(lowest)} to ${score(highest)}`;
     onOpenLearners(
       learners,
-      `${learners.length} scored ${score(value)} on ${on}${by}`,
+      `${learners.length} scored ${range} on ${on}${by}`,
     );
   }
 
@@ -405,8 +410,8 @@ export function GradesTab({
                           mark={row.scores[statistic]}
                           names={names}
                           onPaper={readPaper}
-                          onLearners={(learners, value) =>
-                            openScored(row, learners, value)
+                          onLearners={(learners, lowest, highest) =>
+                            openScored(row, learners, lowest, highest)
                           }
                         />
                       )}
@@ -487,8 +492,8 @@ export function GradesTab({
                         statistic={statistic}
                         names={names}
                         onPaper={readPaper}
-                        onLearners={(learners, value, grader) =>
-                          openScored(row, learners, value, grader)
+                        onLearners={(learners, lowest, highest, grader) =>
+                          openScored(row, learners, lowest, highest, grader)
                         }
                       />
                     ) : null}
