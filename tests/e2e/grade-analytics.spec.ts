@@ -17,6 +17,8 @@ import {
   type Rating,
   SEPARATION,
   type SeededLearner,
+  retireGradeScenarios,
+  type ScenarioName,
   type SeededScenario,
   seedGradeScenario,
 } from "./support/grade-scenarios.ts";
@@ -44,10 +46,27 @@ const NAMES_LABEL = /^(Anonymous|Grader names|Student names|Names shown)$/;
 let seeded: SeededScenario;
 let origin: string;
 
+const seedings: Promise<SeededScenario>[] = [];
+
+function seed(name: ScenarioName) {
+  const seeding = seedGradeScenario(origin, name);
+  seedings.push(seeding);
+  return seeding;
+}
+
 test.beforeAll(async ({ browserName: _browserName }, testInfo) => {
   test.setTimeout(180_000);
   origin = String(testInfo.project.use.baseURL);
-  seeded = await seedGradeScenario(origin, "small-mixed");
+  seeded = await seed("small-mixed");
+});
+
+test.afterAll(async () => {
+  test.setTimeout(180_000);
+  const settled = await Promise.allSettled(seedings);
+  await retireGradeScenarios(
+    origin,
+    settled.flatMap((result) => (result.status === "fulfilled" ? [result.value] : [])),
+  );
 });
 
 let largeSeeded: Promise<SeededScenario> | undefined;
@@ -55,17 +74,17 @@ let pointsSeeded: Promise<SeededScenario> | undefined;
 let largePointsSeeded: Promise<SeededScenario> | undefined;
 
 function largeScenario() {
-  largeSeeded ??= seedGradeScenario(origin, "large");
+  largeSeeded ??= seed("large");
   return largeSeeded;
 }
 
 function pointsScenario() {
-  pointsSeeded ??= seedGradeScenario(origin, "points");
+  pointsSeeded ??= seed("points");
   return pointsSeeded;
 }
 
 function largePointsScenario() {
-  largePointsSeeded ??= seedGradeScenario(origin, "large-points");
+  largePointsSeeded ??= seed("large-points");
   return largePointsSeeded;
 }
 
@@ -2208,7 +2227,7 @@ test("an assignment whose method changed shows the rows of the method assessed f
   page,
 }) => {
   test.setTimeout(180_000);
-  const scenario = await seedGradeScenario(origin, "method-switch");
+  const scenario = await seed("method-switch");
   const rows = setupRows(scenario);
   const headings = headingsOf(rows);
   expect(headings).toHaveLength(2);
@@ -2245,7 +2264,7 @@ test("a revised standard reads as one criterion per edition, each named by its e
   page,
 }) => {
   test.setTimeout(180_000);
-  const scenario = await seedGradeScenario(origin, "setup-edited-rubric");
+  const scenario = await seed("setup-edited-rubric");
   const rows = setupRows(scenario);
   const editions = rows.filter((line) => line.label !== line.name);
   expect(editions).toHaveLength(2);
@@ -2276,7 +2295,7 @@ test("a points criterion whose maximum changed reads as one row per maximum, and
   page,
 }) => {
   test.setTimeout(180_000);
-  const scenario = await seedGradeScenario(origin, "setup-edited-points");
+  const scenario = await seed("setup-edited-points");
   const rows = setupRows(scenario);
   const names = rows.filter((line) => line.kind === "POINTS").map((line) => line.name);
   expect(new Set(names).size).toBeLessThan(names.length);
@@ -2296,7 +2315,7 @@ test("a grader with nothing submitted yet still finds their own row, and zero pa
   page,
 }) => {
   test.setTimeout(180_000);
-  const idle = await seedGradeScenario(origin, "idle-grader");
+  const idle = await seed("idle-grader");
   const grader = idle.graders.find(
     (entry) =>
       entry.delegated > 0 &&
