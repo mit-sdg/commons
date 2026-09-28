@@ -1636,3 +1636,27 @@ export async function seedGradeScenario(
 ): Promise<SeededScenario> {
   return BUILDERS[name](new Api(origin.replace(/\/$/, "")));
 }
+
+/**
+ * Take seeded scenarios back out of the shared course, so a later spec finds
+ * the learners and graders it put there itself.
+ */
+export async function retireGradeScenarios(
+  origin: string,
+  scenarios: readonly SeededScenario[],
+): Promise<void> {
+  const api = new Api(origin.replace(/\/$/, ""));
+  const admin = await api.login("mara");
+  const learners = new Set(scenarios.flatMap((scenario) => scenario.learners.map(({ id }) => id)));
+  const { members } = await api.call<{ members: { seat: string; user: string | null }[] }>(
+    admin,
+    "/roster/list",
+    {},
+  );
+  const seated = members.filter((member) => member.user !== null && learners.has(member.user));
+  await pool(seated, CONCURRENCY, ({ seat }) => api.call(admin, "/roster/drop", { seat }));
+  const graders = new Set(scenarios.flatMap((scenario) => scenario.graders.map(({ id }) => id)));
+  await pool([...graders], CONCURRENCY, (user) =>
+    api.call(admin, "/roles/revoke", { context: "commons", user }),
+  );
+}
