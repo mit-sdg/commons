@@ -323,6 +323,21 @@ describe("grading delegation HTTP boundary", () => {
     ).toMatchObject({ status: 200 });
   });
 
+  test("a grader reads each assignee's seat standing, and a dropped assignee reads DROPPED", async () => {
+    const { edge, noah, priya, omar, assignment } = await classroom();
+    const [{ seat }] = await edge.application.concepts.Rostering._getSeatByUser({
+      user: omar.user,
+    });
+    await edge.application.concepts.Rostering.dropSeat({ seat });
+    await edge.application.whenIdle();
+
+    const read = await post(edge, "/submissions/for-assignment", { assignment }, noah.cookie);
+    expect(read.status).toBe(200);
+    const assigned = read.body.assigned as { assignee: string; enrolment: string | null }[];
+    expect(assigned.find((entry) => entry.assignee === omar.user)?.enrolment).toBe("DROPPED");
+    expect(assigned.find((entry) => entry.assignee === priya.user)?.enrolment).toBe("ACTIVE");
+  });
+
   test("delegation survives resubmission and does not constrain grading access", async () => {
     const { edge, mara, noah, priya, assignment } = await classroom();
     await post(

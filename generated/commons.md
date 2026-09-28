@@ -4446,17 +4446,18 @@ Authored path: `Course.submissions.theAssignedPopulationForAssignment`.
 - Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
 
 ```former
-Former "the assigned population for (assignment)" — inputs (assignment); bindings (assignee, displayName, username, email, section, release, dueOverride, releaseStatus); promises exactly one record — forms:
+Former "the assigned population for (assignment)" — inputs (assignment); bindings (assignee, displayName, username, email, section, enrolment, release, dueOverride, releaseStatus); promises exactly one record — forms:
   each Assigning._getAssignees (assignment) has (assignee)
     where whether Profiling._getProfileFields (user: assignee) has (displayName)
     where whether Authenticating._getById (user: assignee) has (username)
-    where whether Rostering._getSeatByUser (user: assignee) has (email, section)
+    where whether Rostering._getSeatByUser (user: assignee) has (email, section, status: enrolment)
     where Assigning._getAssigned (assignee) has (assignment, dueOverride, release, status: releaseStatus)
     form a record of
       assignee
       displayName
       dueOverride
       email
+      enrolment
       release
       section
       status: releaseStatus

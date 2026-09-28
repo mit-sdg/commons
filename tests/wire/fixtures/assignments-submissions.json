@@ -1034,6 +1034,7 @@
             "username": "as_alice",
             "email": "alice@example.com",
             "section": "uuid#5",
+            "enrolment": "ACTIVE",
             "release": "uuid#19",
             "dueOverride": null,
             "status": "ASSIGNED"
@@ -1044,6 +1045,7 @@
             "username": "as_bob",
             "email": "bob@example.com",
             "section": "uuid#6",
+            "enrolment": "ACTIVE",
             "release": "uuid#21",
             "dueOverride": null,
             "status": "ASSIGNED"
@@ -1054,6 +1056,7 @@
             "username": "as_eve",
             "email": "eve@example.com",
             "section": "uuid#5",
+            "enrolment": "ACTIVE",
             "release": "uuid#25",
             "dueOverride": null,
             "status": "ASSIGNED"
