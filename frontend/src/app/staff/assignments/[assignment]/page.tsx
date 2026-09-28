@@ -1,8 +1,16 @@
 "use client";
 
 import { AlertTriangle, Archive, Eye, Send } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { use, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  memo,
+  type ReactNode,
+  Suspense,
+  use,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Fact, Facts } from "@/components/facts";
@@ -15,6 +23,7 @@ import {
 } from "@/components/lms/assignment-reading";
 import { AssessmentInput } from "@/components/lms/grade-input";
 import { GradeSetup } from "@/components/lms/grade-setup";
+import { GradesTab, type GradesView } from "@/components/lms/grades/tab";
 import { GradingDataNotice } from "@/components/lms/grading-data-notice";
 import {
   type GraderFilter,
@@ -54,6 +63,7 @@ import {
   learnerMatchesGraderFilter,
 } from "@/lib/delegation-filter";
 import { dueTime, fromZonedInput, toZonedInput } from "@/lib/format";
+import { analyzeGrades, learnerState } from "@/lib/grade-analysis";
 import type { Assessment, GradingSetup } from "@/lib/grading";
 import {
   loadDelegationForItem,
@@ -71,6 +81,25 @@ import {
 
 /** The evidence menu needs a value for "no attempt"; a submission id never looks like this. */
 const EXCUSAL = "excusal";
+
+/**
+ * Submissions holds one card per learner, so it mounts the first time it is
+ * shown and, while another tab shows, keeps its state without re-rendering.
+ */
+const WhileShown = memo(
+  function WhileShown({
+    shown,
+    children,
+  }: {
+    shown: boolean;
+    children: ReactNode;
+  }) {
+    const [seen, setSeen] = useState(shown);
+    if (shown && !seen) setSeen(true);
+    return seen || shown ? children : null;
+  },
+  (_, next) => !next.shown,
+);
 
 function DueDateOverride({
   assignment,
@@ -180,11 +209,15 @@ function StaffAssignmentDetailPageContent({
   } | null>(null);
   const [pendingEdit, setPendingEdit] = useState(false);
   const [pendingLeave, setPendingLeave] = useState<string | null>(null);
-  const [tab, setTab] = useState("overview");
+  const searchParams = useSearchParams();
   const [pendingAttemptHash, setPendingAttemptHash] = useState<string | null>(
     null,
   );
   const [graderFilter, setGraderFilter] = useState<GraderFilter>(ALL_GRADERS);
+  const [fromGrades, setFromGrades] = useState<{
+    learners: ReadonlySet<string>;
+    said: string;
+  } | null>(null);
   const [exporting, setExporting] = useState(false);
 
   const {
@@ -207,6 +240,7 @@ function StaffAssignmentDetailPageContent({
     error: submissionsError,
     refused: submissionsRefused,
     refetch: refetchSubmissions,
+    answeredAt: submissionsAnsweredAt,
   } = useQuery(
     session && canGrade ? () => loadSubmissionsForAssignment(assignment) : null,
     [session, assignment],
@@ -214,6 +248,9 @@ function StaffAssignmentDetailPageContent({
   );
 
   const submissions = subsData?.submissions ?? [];
+  const artifactKey = submissions
+    .flatMap((submission) => submission.artifacts)
+    .join(" ");
   const { data: artifactData } = useQuery<Record<string, string>>(
     submissions.length > 0
       ? async () => {
@@ -239,7 +276,8 @@ function StaffAssignmentDetailPageContent({
           return Object.fromEntries(entries);
         }
       : null,
-    [subsData],
+    [assignment],
+    { refreshOn: [artifactKey] },
   );
 
   const gradesQuery = useQuery(
@@ -304,6 +342,23 @@ function StaffAssignmentDetailPageContent({
     refetchGrades();
   }
 
+  /** The tab and the Grades view live in the URL, so Back keeps the place and a link reopens it. */
+  function navigate(
+    changes: Record<string, string | null>,
+    mode: "push" | "replace",
+    hash = "",
+  ) {
+    const next = new URLSearchParams(window.location.search);
+    for (const [key, value] of Object.entries(changes)) {
+      if (value === null) next.delete(key);
+      else next.set(key, value);
+    }
+    const query = next.toString();
+    const url = `${window.location.pathname}${query ? `?${query}` : ""}${hash}`;
+    if (mode === "push") window.history.pushState(null, "", url);
+    else window.history.replaceState(null, "", url);
+  }
+
   function openAssessment(learner: string, evidence: string | null) {
     if (
       gradingDirty &&
@@ -337,7 +392,10 @@ function StaffAssignmentDetailPageContent({
     const revealFrame = requestAnimationFrame(() => {
       const target = document.getElementById(pendingAttemptHash);
       if (!(target instanceof HTMLDetailsElement)) return;
-      setTab("submissions");
+      if (
+        new URLSearchParams(window.location.search).get("tab") !== "submissions"
+      )
+        navigate({ tab: "submissions" }, "replace", window.location.hash);
       target.open = true;
       scrollFrame = requestAnimationFrame(() => {
         target.scrollIntoView();
@@ -369,13 +427,15 @@ function StaffAssignmentDetailPageContent({
     ),
   );
   const learnerIds = assigned.map((learner) => String(learner.assignee));
-  const visibleAssigned = assigned.filter((learner) =>
-    learnerMatchesGraderFilter(
-      String(learner.assignee),
-      graderFilter,
-      byLearner,
-      me?.user ?? null,
-    ),
+  const visibleAssigned = assigned.filter(
+    (learner) =>
+      (!fromGrades || fromGrades.learners.has(String(learner.assignee))) &&
+      learnerMatchesGraderFilter(
+        String(learner.assignee),
+        graderFilter,
+        byLearner,
+        me?.user ?? null,
+      ),
   );
   const visibleLearnerIds = visibleAssigned.map((learner) =>
     String(learner.assignee),
@@ -420,6 +480,53 @@ function StaffAssignmentDetailPageContent({
     gradersQuery.refetch();
   }
 
+  function refreshGrades() {
+    refetchSubmissions();
+    refetchGrades();
+    delegationQuery.refetch();
+  }
+
+  function selectTab(value: string) {
+    setPendingAttemptHash(null);
+    navigate({ tab: value === "overview" ? null : value }, "push");
+    if (value === "preview") gradingSetup.refetch();
+  }
+
+  const gradesView: GradesView = {
+    byGrader: searchParams.get("by") === "grader",
+    criterion: searchParams.get("criterion"),
+    grader: searchParams.get("criterion") ? searchParams.get("grader") : null,
+  };
+
+  function showGradesView(view: GradesView, mode: "push" | "replace") {
+    navigate(
+      {
+        by: view.byGrader ? "grader" : null,
+        criterion: view.criterion,
+        grader: view.criterion ? view.grader : null,
+      },
+      mode,
+    );
+  }
+
+  function openLearners(learners: string[], said: string) {
+    setFromGrades({ learners: new Set(learners), said });
+    setGraderFilter(ALL_GRADERS);
+    selectTab("submissions");
+  }
+
+  function openPaper(submission: string) {
+    const learner = submissions.find(
+      (attempt) => String(attempt.submission) === submission,
+    )?.submitter;
+    if (learner && !visibleLearnerSet.has(String(learner))) {
+      setFromGrades(null);
+      setGraderFilter(ALL_GRADERS);
+    }
+    navigate({ tab: "submissions" }, "push", `#attempt-${submission}`);
+    setPendingAttemptHash(`attempt-${submission}`);
+  }
+
   async function exportCurrentView() {
     if (!session || !me || !detail) return;
     setExporting(true);
@@ -448,13 +555,15 @@ function StaffAssignmentDetailPageContent({
           (row) => [String(row.learner), String(row.grader)] as const,
         ),
       );
-      const scopedLearners = freshSubmissions.assigned.filter((learner) =>
-        learnerMatchesGraderFilter(
-          String(learner.assignee),
-          graderFilter,
-          freshByLearner,
-          me.user,
-        ),
+      const scopedLearners = freshSubmissions.assigned.filter(
+        (learner) =>
+          (!fromGrades || fromGrades.learners.has(String(learner.assignee))) &&
+          learnerMatchesGraderFilter(
+            String(learner.assignee),
+            graderFilter,
+            freshByLearner,
+            me.user,
+          ),
       );
       if (scopedLearners.length === 0) {
         toast.info(
@@ -565,6 +674,27 @@ function StaffAssignmentDetailPageContent({
     }
   }
 
+  const gradesOnScreen = searchParams.get("tab") === "grades";
+  const gradeAnalysis = useMemo(
+    () =>
+      gradesOnScreen && subsData && gradesQuery.data && delegationQuery.data
+        ? analyzeGrades({
+            assigned: subsData.assigned,
+            submissions: subsData.submissions,
+            grades: gradesQuery.data.grades,
+            delegations: delegationQuery.data.delegations,
+            graders: gradersQuery.data?.graders ?? [],
+          })
+        : null,
+    [
+      gradesOnScreen,
+      subsData,
+      gradesQuery.data,
+      delegationQuery.data,
+      gradersQuery.data,
+    ],
+  );
+
   if (loading && !detail)
     return (
       <PageContainer>
@@ -584,6 +714,23 @@ function StaffAssignmentDetailPageContent({
       </PageContainer>
     );
 
+  const gradesTabShown = canGrade && detail.status !== "DRAFT";
+  const requestedTab = searchParams.get("tab") ?? "overview";
+  const tab =
+    requestedTab === "preview" ||
+    ((requestedTab === "submissions" || requestedTab === "grades") &&
+      gradesTabShown)
+      ? requestedTab
+      : "overview";
+  const gradesLoadedAt = [
+    submissionsAnsweredAt,
+    gradesQuery.answeredAt,
+    delegationQuery.answeredAt,
+  ].reduce<number | null>(
+    (oldest, at) =>
+      at === null ? oldest : oldest === null ? at : Math.min(oldest, at),
+    null,
+  );
   const totalAssigned = assigned.length;
   const totalSubmitted = submittedIds.size;
   const totalMissing = Math.max(0, totalAssigned - totalSubmitted);
@@ -707,20 +854,13 @@ function StaffAssignmentDetailPageContent({
         </div>
       ) : null}
 
-      <Tabs
-        value={tab}
-        className="gap-6"
-        onValueChange={(value) => {
-          setPendingAttemptHash(null);
-          setTab(value);
-          if (value === "preview") gradingSetup.refetch();
-        }}
-      >
+      <Tabs value={tab} className="gap-6" onValueChange={selectTab}>
         <TabsList variant="line">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          {canGrade && detail.status !== "DRAFT" && (
+          {gradesTabShown && (
             <TabsTrigger value="submissions">Submissions</TabsTrigger>
           )}
+          {gradesTabShown && <TabsTrigger value="grades">Grades</TabsTrigger>}
           <TabsTrigger value="preview">Student preview</TabsTrigger>
         </TabsList>
         <TabsContent
@@ -845,6 +985,52 @@ function StaffAssignmentDetailPageContent({
             </aside>
           </div>
         </TabsContent>
+        {gradesTabShown && (
+          <TabsContent value="grades" className="space-y-6">
+            {gradeAnalysis ? (
+              <GradesTab
+                analysis={gradeAnalysis}
+                viewer={me?.user ?? null}
+                view={gradesView}
+                onView={showGradesView}
+                loadedAt={gradesLoadedAt}
+                onRefresh={refreshGrades}
+                onOpenLearners={openLearners}
+                onOpenPaper={openPaper}
+                hasSetup={Boolean(currentSetup?.criteria.length)}
+                refreshError={Boolean(
+                  submissionsError ??
+                    gradesQuery.error ??
+                    delegationQuery.error,
+                )}
+                paperText={(submission) => {
+                  const attempt = submissions.find(
+                    (entry) => String(entry.submission) === submission,
+                  );
+                  if (!attempt || !artifactData) return null;
+                  return attempt.artifacts.map(
+                    (artifact) => artifactData[artifact] ?? "",
+                  );
+                }}
+              />
+            ) : (submissionsError && !subsData) ||
+              (gradesQuery.error && !gradesQuery.data) ||
+              (delegationError && !delegationQuery.data) ? (
+              <ErrorState
+                message={
+                  submissionsError ??
+                  gradesQuery.error ??
+                  delegationError ??
+                  "Grades are unavailable."
+                }
+                refused={submissionsRefused ?? gradesQuery.refused}
+                onRetry={refreshSubmissionWorkspace}
+              />
+            ) : (
+              <LoadingState label="Loading grades…" />
+            )}
+          </TabsContent>
+        )}
         {canGrade && (
           <TabsContent
             value="submissions"
@@ -852,426 +1038,470 @@ function StaffAssignmentDetailPageContent({
             hidden={tab !== "submissions"}
             className="space-y-6"
           >
-            <Facts className="text-sm">
-              <Fact.Count n={totalAssigned} noun="assigned" plural="assigned" />
-              <Fact.Count
-                n={totalSubmitted}
-                noun="submitted"
-                plural="submitted"
+            <WhileShown
+              shown={tab === "submissions" || pendingAttemptHash !== null}
+            >
+              <Facts className="text-sm">
+                <Fact.Count
+                  n={totalAssigned}
+                  noun="assigned"
+                  plural="assigned"
+                />
+                <Fact.Count
+                  n={totalSubmitted}
+                  noun="submitted"
+                  plural="submitted"
+                />
+                <Fact.Count n={totalMissing} noun="missing" plural="missing" />
+              </Facts>
+              {fromGrades ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-border bg-muted px-3 py-1 text-sm tabular-nums">
+                    {fromGrades.said}{" "}
+                    <span className="text-muted-foreground">from Grades</span>
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setFromGrades(null)}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              ) : null}
+              <GradingDelegationToolbar
+                item={assignment}
+                filter={graderFilter}
+                onFilter={setGraderFilter}
+                graders={graders}
+                delegations={delegations}
+                allLearners={learnerIds}
+                visibleLearners={visibleLearnerIds}
+                visibleSubmitted={visibleSubmitted}
+                byLearner={byLearner}
+                loading={delegationLoading}
+                error={delegationError}
+                refreshing={refreshing}
+                exporting={exporting}
+                onRetry={() => {
+                  delegationQuery.refetch();
+                  gradersQuery.refetch();
+                }}
+                onChanged={delegationQuery.refetch}
+                onRefresh={refreshSubmissionWorkspace}
+                onExport={exportCurrentView}
               />
-              <Fact.Count n={totalMissing} noun="missing" plural="missing" />
-            </Facts>
-            <GradingDelegationToolbar
-              item={assignment}
-              filter={graderFilter}
-              onFilter={setGraderFilter}
-              graders={graders}
-              delegations={delegations}
-              allLearners={learnerIds}
-              visibleLearners={visibleLearnerIds}
-              visibleSubmitted={visibleSubmitted}
-              byLearner={byLearner}
-              loading={delegationLoading}
-              error={delegationError}
-              refreshing={refreshing}
-              exporting={exporting}
-              onRetry={() => {
-                delegationQuery.refetch();
-                gradersQuery.refetch();
-              }}
-              onChanged={delegationQuery.refetch}
-              onRefresh={refreshSubmissionWorkspace}
-              onExport={exportCurrentView}
-            />
-            {canGrade && (
-              <Card>
-                <CardHeader className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <CardTitle className="text-base">
-                      Learner work and grades
-                    </CardTitle>
-                  </div>
-                  <ConfirmAction
-                    title="Release all complete assessment drafts for this assignment?"
-                    description={`This applies across the full assignment, not only the current grader scope.${hiddenDraftCount > 0 ? ` ${hiddenDraftCount} draft${hiddenDraftCount === 1 ? " is" : "s are"} outside the current scope.` : ""} Complete assessment drafts become visible to learners; incomplete or concurrently changed drafts are skipped and reported.`}
-                    confirmLabel="Release all assignment drafts"
-                    confirmDisabled={gradingDataUnavailable || draftCount === 0}
-                    onConfirm={releaseAll}
-                    trigger={
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-full sm:w-auto"
-                        disabled={gradingDataUnavailable || draftCount === 0}
-                      >
-                        <Send className="size-4" /> Release all drafts
-                        {gradingDataReady ? ` (${draftCount})` : ""}
-                      </Button>
-                    }
-                  />
-                </CardHeader>
-                <CardContent>
-                  {submissionsLoading && !subsData ? (
-                    <LoadingState label="Loading learner work…" />
-                  ) : submissionsError && !subsData ? (
-                    <ErrorState
-                      message={submissionsError}
-                      refused={submissionsRefused}
-                      onRetry={refetchSubmissions}
-                    />
-                  ) : !gradingDataReady ? (
-                    gradingDataLoading ? (
-                      <LoadingState label="Loading grading data…" />
-                    ) : (
-                      <ErrorState
-                        message={
-                          gradingDataError ?? "Grading data is unavailable."
-                        }
-                        refused={gradingDataRefused}
-                        onRetry={refetchGradingData}
-                      />
-                    )
-                  ) : assigned.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No learners are assigned yet.
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {submissionsError ? (
-                        <div
-                          role="alert"
-                          className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm"
+              {canGrade && (
+                <Card>
+                  <CardHeader className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <CardTitle className="text-base">
+                        Learner work and grades
+                      </CardTitle>
+                    </div>
+                    <ConfirmAction
+                      title="Release all complete assessment drafts for this assignment?"
+                      description={`This applies across the full assignment, not only the current grader scope.${hiddenDraftCount > 0 ? ` ${hiddenDraftCount} draft${hiddenDraftCount === 1 ? " is" : "s are"} outside the current scope.` : ""} Complete assessment drafts become visible to learners; incomplete or concurrently changed drafts are skipped and reported.`}
+                      confirmLabel="Release all assignment drafts"
+                      confirmDisabled={
+                        gradingDataUnavailable || draftCount === 0
+                      }
+                      onConfirm={releaseAll}
+                      trigger={
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full sm:w-auto"
+                          disabled={gradingDataUnavailable || draftCount === 0}
                         >
-                          <p className="min-w-0 flex-1">
-                            Learner work could not be refreshed. Last loaded
-                            work and unsaved grading input are retained. Retry
-                            before making grade changes.
-                          </p>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={submissionsLoading}
-                            onClick={refetchSubmissions}
-                          >
-                            {submissionsLoading
-                              ? "Retrying…"
-                              : "Retry learner work"}
-                          </Button>
-                        </div>
-                      ) : null}
-                      {visibleAssigned.length === 0 ? (
-                        <div className="space-y-3 py-6 text-center">
-                          <p className="text-sm text-muted-foreground">
-                            No learners match this grader scope.
-                          </p>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setGraderFilter(ALL_GRADERS)}
-                          >
-                            Show all learners
-                          </Button>
-                        </div>
-                      ) : null}
-                      <GradingDataNotice
-                        loading={gradingDataLoading}
-                        error={gradingDataError}
-                        onRetry={refetchGradingData}
+                          <Send className="size-4" /> Release all drafts
+                          {gradingDataReady ? ` (${draftCount})` : ""}
+                        </Button>
+                      }
+                    />
+                  </CardHeader>
+                  <CardContent>
+                    {submissionsLoading && !subsData ? (
+                      <LoadingState label="Loading learner work…" />
+                    ) : submissionsError && !subsData ? (
+                      <ErrorState
+                        message={submissionsError}
+                        refused={submissionsRefused}
+                        onRetry={refetchSubmissions}
                       />
-                      {workspaceAssigned.map((learner) => {
-                        const learnerId = String(learner.assignee);
-                        const learnerLabel =
-                          learner.displayName ??
-                          learner.username ??
-                          learner.email ??
-                          learnerId;
-                        const attempts = submissions
-                          .filter(
-                            (submission) => submission.submitter === learnerId,
-                          )
-                          .sort((left, right) => left.number - right.number);
-                        const latest = selectSubmissionAttempt(attempts);
-                        const learnerGrades = grades.filter(
-                          (grade) =>
-                            grade.learner === learnerId &&
-                            grade.item === assignment,
-                        );
-                        const visibleAssessment = selectExportAssessment(
-                          learnerGrades,
-                          latest,
-                        ).record;
-                        const newAttemptNeedsReview = Boolean(
-                          latest?.status === "SUBMITTED" && !visibleAssessment,
-                        );
-                        const lateDays = lateMap.get(learnerId) ?? 0;
-                        const isGrading = gradingUser === learnerId;
-                        const selectedAssessment = learnerGrades.find(
-                          (grade) => grade.evidence === (gradingEvidence ?? ""),
-                        );
-
-                        return (
+                    ) : !gradingDataReady ? (
+                      gradingDataLoading ? (
+                        <LoadingState label="Loading grading data…" />
+                      ) : (
+                        <ErrorState
+                          message={
+                            gradingDataError ?? "Grading data is unavailable."
+                          }
+                          refused={gradingDataRefused}
+                          onRetry={refetchGradingData}
+                        />
+                      )
+                    ) : assigned.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No learners are assigned yet.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {submissionsError ? (
                           <div
-                            key={learnerId}
-                            hidden={!visibleLearnerSet.has(learnerId)}
-                            className="space-y-3 rounded-lg border border-border p-3"
+                            role="alert"
+                            className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm"
                           >
-                            <div className="flex flex-wrap items-start justify-between gap-3">
-                              <div>
-                                <p className="font-medium">{learnerLabel}</p>
-                                <Facts className="text-muted-foreground text-xs">
-                                  {latest ? (
-                                    <Fact.Count
-                                      n={attempts.length}
-                                      noun="attempt"
-                                    />
-                                  ) : (
-                                    <span>No submission yet</span>
-                                  )}
-                                  {latest?.status === "WITHDRAWN" ? (
-                                    <Fact.Status status="WITHDRAWN" />
-                                  ) : null}
-                                  {lateDays > 0 ? (
-                                    <Fact.Count n={lateDays} noun="late day" />
-                                  ) : null}
-                                  {latest ? (
-                                    <Fact.When
-                                      verb="Latest"
-                                      at={latest.submittedAt}
-                                    />
-                                  ) : null}
-                                </Facts>
-                                {attempts.length > 0 ? (
-                                  <div className="mt-2 space-y-2">
-                                    {attempts.map((attempt) => (
-                                      <details
-                                        key={attempt.submission}
-                                        id={`attempt-${attempt.submission}`}
-                                        className="rounded-md border border-border px-2 py-1.5 text-xs"
-                                      >
-                                        <summary className="cursor-pointer font-medium">
-                                          <Facts
-                                            as="span"
-                                            className="inline-flex"
-                                          >
-                                            <span>
-                                              Attempt #{attempt.number}
-                                            </span>
-                                            <Fact.When
-                                              form="absolute"
-                                              at={attempt.submittedAt}
-                                            />
-                                            <Fact.Status
-                                              status={attempt.status.toUpperCase()}
-                                            />
-                                          </Facts>
-                                        </summary>
-                                        <div className="mt-2 space-y-2 border-t border-border pt-2 text-sm">
-                                          {attempt.artifacts.map((artifact) =>
-                                            artifactData?.[artifact] ? (
-                                              <RenderedMarkdown
-                                                key={artifact}
-                                                html={artifactData[artifact]}
-                                              />
-                                            ) : (
-                                              <p
-                                                key={artifact}
-                                                className="text-muted-foreground"
-                                              >
-                                                Submission content is
-                                                unavailable.
-                                              </p>
-                                            ),
-                                          )}
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            disabled={
-                                              gradingDataUnavailable ||
-                                              (attempt.status !== "SUBMITTED" &&
-                                                !learnerGrades.some(
-                                                  (g) =>
-                                                    g.evidence ===
-                                                    attempt.submission,
-                                                ))
-                                            }
-                                            onClick={() =>
-                                              openAssessment(
-                                                learnerId,
-                                                attempt.submission,
-                                              )
-                                            }
-                                          >
-                                            Assess this attempt
-                                          </Button>
-                                        </div>
-                                      </details>
-                                    ))}
-                                  </div>
-                                ) : null}
-                              </div>
-                              <div className="flex flex-wrap items-end gap-4">
-                                <GraderSelect
-                                  item={assignment}
-                                  learner={learnerId}
-                                  learnerLabel={learnerLabel}
-                                  graders={graders}
-                                  current={
-                                    delegationByLearner.get(learnerId) ?? null
-                                  }
-                                  disabled={
-                                    delegationLoading ||
-                                    Boolean(delegationError)
-                                  }
-                                  onChanged={delegationQuery.refetch}
-                                />
-                                <div className="space-y-1 pb-2 text-right text-sm">
-                                  <div className="flex items-center justify-end gap-2">
-                                    {visibleAssessment ? (
-                                      <StatusBadge
-                                        status={visibleAssessment.status}
+                            <p className="min-w-0 flex-1">
+                              Learner work could not be refreshed. Last loaded
+                              work and unsaved grading input are retained. Retry
+                              before making grade changes.
+                            </p>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={submissionsLoading}
+                              onClick={refetchSubmissions}
+                            >
+                              {submissionsLoading
+                                ? "Retrying…"
+                                : "Retry learner work"}
+                            </Button>
+                          </div>
+                        ) : null}
+                        {visibleAssigned.length === 0 ? (
+                          <div className="space-y-3 py-6 text-center">
+                            <p className="text-sm text-muted-foreground">
+                              No learners match.
+                            </p>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setFromGrades(null);
+                                setGraderFilter(ALL_GRADERS);
+                              }}
+                            >
+                              Show all learners
+                            </Button>
+                          </div>
+                        ) : null}
+                        <GradingDataNotice
+                          loading={gradingDataLoading}
+                          error={gradingDataError}
+                          onRetry={refetchGradingData}
+                        />
+                        {workspaceAssigned.map((learner) => {
+                          const learnerId = String(learner.assignee);
+                          const learnerLabel =
+                            learner.displayName ??
+                            learner.username ??
+                            learner.email ??
+                            learnerId;
+                          const attempts = submissions
+                            .filter(
+                              (submission) =>
+                                submission.submitter === learnerId,
+                            )
+                            .sort((left, right) => left.number - right.number);
+                          const latest = selectSubmissionAttempt(attempts);
+                          const learnerGrades = grades.filter(
+                            (grade) =>
+                              grade.learner === learnerId &&
+                              grade.item === assignment,
+                          );
+                          const visibleAssessment = selectExportAssessment(
+                            learnerGrades,
+                            latest,
+                          ).record;
+                          const newAttemptNeedsReview =
+                            learnerState(attempts, learnerGrades)?.state ===
+                            "new-attempt";
+                          const lateDays = lateMap.get(learnerId) ?? 0;
+                          const isGrading = gradingUser === learnerId;
+                          const selectedAssessment = learnerGrades.find(
+                            (grade) =>
+                              grade.evidence === (gradingEvidence ?? ""),
+                          );
+
+                          return (
+                            <div
+                              key={learnerId}
+                              hidden={!visibleLearnerSet.has(learnerId)}
+                              className="space-y-3 rounded-lg border border-border p-3"
+                            >
+                              <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                  <p className="flex items-center gap-2 font-medium">
+                                    {learnerLabel}
+                                    {learner.enrolment === "DROPPED" ? (
+                                      <StatusBadge status="DROPPED" />
+                                    ) : null}
+                                  </p>
+                                  <Facts className="text-muted-foreground text-xs">
+                                    {latest ? (
+                                      <Fact.Count
+                                        n={attempts.length}
+                                        noun="attempt"
+                                      />
+                                    ) : (
+                                      <span>No submission yet</span>
+                                    )}
+                                    {latest?.status === "WITHDRAWN" ? (
+                                      <Fact.Status status="WITHDRAWN" />
+                                    ) : null}
+                                    {lateDays > 0 ? (
+                                      <Fact.Count
+                                        n={lateDays}
+                                        noun="late day"
                                       />
                                     ) : null}
-                                    <span className="text-muted-foreground tabular-nums">
-                                      {!visibleAssessment
-                                        ? "Not assessed"
-                                        : visibleAssessment.status === "EXCUSED"
-                                          ? visibleAssessment.evidence
-                                            ? "Attempt excused"
-                                            : "Assignment excused"
-                                          : visibleAssessment.method ===
-                                                "POINTS" &&
-                                              visibleAssessment.scored
-                                            ? `${visibleAssessment.score} / ${visibleAssessment.outOf}`
-                                            : `${learnerGrades.length} assessment${learnerGrades.length === 1 ? "" : "s"}`}
-                                    </span>
+                                    {latest ? (
+                                      <Fact.When
+                                        verb="Latest"
+                                        at={latest.submittedAt}
+                                      />
+                                    ) : null}
+                                  </Facts>
+                                  {attempts.length > 0 ? (
+                                    <div className="mt-2 space-y-2">
+                                      {attempts.map((attempt) => (
+                                        <details
+                                          key={attempt.submission}
+                                          id={`attempt-${attempt.submission}`}
+                                          className="rounded-md border border-border px-2 py-1.5 text-xs"
+                                        >
+                                          <summary className="cursor-pointer font-medium">
+                                            <Facts
+                                              as="span"
+                                              className="inline-flex"
+                                            >
+                                              <span>
+                                                Attempt #{attempt.number}
+                                              </span>
+                                              <Fact.When
+                                                form="absolute"
+                                                at={attempt.submittedAt}
+                                              />
+                                              <Fact.Status
+                                                status={attempt.status.toUpperCase()}
+                                              />
+                                            </Facts>
+                                          </summary>
+                                          <div className="mt-2 space-y-2 border-t border-border pt-2 text-sm">
+                                            {attempt.artifacts.map(
+                                              (artifact) =>
+                                                artifactData?.[artifact] ? (
+                                                  <RenderedMarkdown
+                                                    key={artifact}
+                                                    html={
+                                                      artifactData[artifact]
+                                                    }
+                                                  />
+                                                ) : (
+                                                  <p
+                                                    key={artifact}
+                                                    className="text-muted-foreground"
+                                                  >
+                                                    Submission content is
+                                                    unavailable.
+                                                  </p>
+                                                ),
+                                            )}
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              disabled={
+                                                gradingDataUnavailable ||
+                                                (attempt.status !==
+                                                  "SUBMITTED" &&
+                                                  !learnerGrades.some(
+                                                    (g) =>
+                                                      g.evidence ===
+                                                      attempt.submission,
+                                                  ))
+                                              }
+                                              onClick={() =>
+                                                openAssessment(
+                                                  learnerId,
+                                                  attempt.submission,
+                                                )
+                                              }
+                                            >
+                                              Assess this attempt
+                                            </Button>
+                                          </div>
+                                        </details>
+                                      ))}
+                                    </div>
+                                  ) : null}
+                                </div>
+                                <div className="flex flex-wrap items-end gap-4">
+                                  <GraderSelect
+                                    item={assignment}
+                                    learner={learnerId}
+                                    learnerLabel={learnerLabel}
+                                    graders={graders}
+                                    current={
+                                      delegationByLearner.get(learnerId) ?? null
+                                    }
+                                    disabled={
+                                      delegationLoading ||
+                                      Boolean(delegationError)
+                                    }
+                                    onChanged={delegationQuery.refetch}
+                                  />
+                                  <div className="space-y-1 pb-2 text-right text-sm">
+                                    <div className="flex items-center justify-end gap-2">
+                                      {visibleAssessment ? (
+                                        <StatusBadge
+                                          status={visibleAssessment.status}
+                                        />
+                                      ) : null}
+                                      <span className="text-muted-foreground tabular-nums">
+                                        {!visibleAssessment
+                                          ? "Not started"
+                                          : visibleAssessment.status ===
+                                              "EXCUSED"
+                                            ? visibleAssessment.evidence
+                                              ? "Attempt excused"
+                                              : "Assignment excused"
+                                            : visibleAssessment.method ===
+                                                  "POINTS" &&
+                                                visibleAssessment.scored
+                                              ? `${visibleAssessment.score} / ${visibleAssessment.outOf}`
+                                              : `${learnerGrades.length} assessment${learnerGrades.length === 1 ? "" : "s"}`}
+                                      </span>
+                                    </div>
+                                    {visibleAssessment?.attempt ? (
+                                      <p className="text-xs text-muted-foreground">
+                                        Assessed attempt #
+                                        {visibleAssessment.attempt}
+                                      </p>
+                                    ) : null}
+                                    {newAttemptNeedsReview ? (
+                                      <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                                        New attempt needs review
+                                      </p>
+                                    ) : null}
                                   </div>
-                                  {visibleAssessment?.attempt ? (
-                                    <p className="text-xs text-muted-foreground">
-                                      Assessed attempt #
-                                      {visibleAssessment.attempt}
-                                    </p>
-                                  ) : null}
-                                  {newAttemptNeedsReview ? (
-                                    <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                                      New attempt needs review
-                                    </p>
-                                  ) : null}
                                 </div>
                               </div>
-                            </div>
 
-                            {canManage && (
-                              <details className="text-sm">
-                                <summary className="cursor-pointer text-muted-foreground">
-                                  Adjust deadline
-                                </summary>
-                                <div className="pt-3">
-                                  <DueDateOverride
-                                    assignment={assignment}
-                                    assignee={learnerId}
-                                    learnerName={
-                                      learner.displayName ?? learner.assignee
+                              {canManage && (
+                                <details className="text-sm">
+                                  <summary className="cursor-pointer text-muted-foreground">
+                                    Adjust deadline
+                                  </summary>
+                                  <div className="pt-3">
+                                    <DueDateOverride
+                                      assignment={assignment}
+                                      assignee={learnerId}
+                                      learnerName={
+                                        learner.displayName ?? learner.assignee
+                                      }
+                                      courseDueAt={detail.dueAt}
+                                      currentDueAt={learner.dueOverride}
+                                      onUpdate={refetchSubmissions}
+                                    />
+                                  </div>
+                                </details>
+                              )}
+
+                              {isGrading && (
+                                <div className="space-y-2">
+                                  <Label htmlFor={`evidence-${learnerId}`}>
+                                    Evidence being assessed
+                                  </Label>
+                                  <Select
+                                    value={gradingEvidence ?? EXCUSAL}
+                                    disabled={gradingDataUnavailable}
+                                    onValueChange={(value) =>
+                                      openAssessment(
+                                        learnerId,
+                                        value === EXCUSAL ? null : value,
+                                      )
                                     }
-                                    courseDueAt={detail.dueAt}
-                                    currentDueAt={learner.dueOverride}
-                                    onUpdate={refetchSubmissions}
-                                  />
+                                  >
+                                    <SelectTrigger
+                                      id={`evidence-${learnerId}`}
+                                      className="w-full"
+                                    >
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value={EXCUSAL}>
+                                        Assignment excusal (no attempt)
+                                      </SelectItem>
+                                      {attempts
+                                        .filter(
+                                          (a) =>
+                                            a.status === "SUBMITTED" ||
+                                            learnerGrades.some(
+                                              (g) =>
+                                                g.evidence === a.submission,
+                                            ),
+                                        )
+                                        .map((a) => (
+                                          <SelectItem
+                                            key={a.submission}
+                                            value={a.submission}
+                                          >
+                                            Attempt {a.number} (
+                                            {a.status.toLowerCase()})
+                                          </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                  </Select>
                                 </div>
-                              </details>
-                            )}
-
-                            {isGrading && (
-                              <div className="space-y-2">
-                                <Label htmlFor={`evidence-${learnerId}`}>
-                                  Evidence being assessed
-                                </Label>
-                                <Select
-                                  value={gradingEvidence ?? EXCUSAL}
+                              )}
+                              {isGrading && currentSetup ? (
+                                <AssessmentInput
+                                  key={`${learnerId}-${gradingEvidence ?? "assignment"}`}
+                                  learner={learnerId}
+                                  learnerLabel={
+                                    learner.displayName ?? learner.assignee
+                                  }
+                                  item={assignment}
+                                  itemLabel={detail.title}
+                                  evidence={gradingEvidence ?? ""}
+                                  recordVersion={selectedAssessment?.version}
                                   disabled={gradingDataUnavailable}
-                                  onValueChange={(value) =>
+                                  onDirtyChange={setGradingDirty}
+                                  onSaved={refetchGrades}
+                                />
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={gradingDataUnavailable}
+                                  onClick={() =>
                                     openAssessment(
                                       learnerId,
-                                      value === EXCUSAL ? null : value,
+                                      latest &&
+                                        (latest.status === "SUBMITTED" ||
+                                          learnerGrades.some(
+                                            (grade) =>
+                                              grade.evidence ===
+                                              latest.submission,
+                                          ))
+                                        ? latest.submission
+                                        : null,
                                     )
                                   }
                                 >
-                                  <SelectTrigger
-                                    id={`evidence-${learnerId}`}
-                                    className="w-full"
-                                  >
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value={EXCUSAL}>
-                                      Assignment excusal (no attempt)
-                                    </SelectItem>
-                                    {attempts
-                                      .filter(
-                                        (a) =>
-                                          a.status === "SUBMITTED" ||
-                                          learnerGrades.some(
-                                            (g) => g.evidence === a.submission,
-                                          ),
-                                      )
-                                      .map((a) => (
-                                        <SelectItem
-                                          key={a.submission}
-                                          value={a.submission}
-                                        >
-                                          Attempt {a.number} (
-                                          {a.status.toLowerCase()})
-                                        </SelectItem>
-                                      ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            )}
-                            {isGrading && currentSetup ? (
-                              <AssessmentInput
-                                key={`${learnerId}-${gradingEvidence ?? "assignment"}`}
-                                learner={learnerId}
-                                learnerLabel={
-                                  learner.displayName ?? learner.assignee
-                                }
-                                item={assignment}
-                                itemLabel={detail.title}
-                                evidence={gradingEvidence ?? ""}
-                                recordVersion={selectedAssessment?.version}
-                                disabled={gradingDataUnavailable}
-                                onDirtyChange={setGradingDirty}
-                                onSaved={refetchGrades}
-                              />
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={gradingDataUnavailable}
-                                onClick={() =>
-                                  openAssessment(
-                                    learnerId,
-                                    latest &&
-                                      (latest.status === "SUBMITTED" ||
-                                        learnerGrades.some(
-                                          (grade) =>
-                                            grade.evidence ===
-                                            latest.submission,
-                                        ))
-                                      ? latest.submission
-                                      : null,
-                                  )
-                                }
-                              >
-                                Review assessments
-                              </Button>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+                                  Review assessments
+                                </Button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </WhileShown>
           </TabsContent>
         )}
       </Tabs>
@@ -1330,7 +1560,15 @@ export default function StaffAssignmentDetailPage(props: {
 }) {
   return (
     <RequireCapability capability={["course:manage", "grade"]}>
-      <StaffAssignmentDetailPageContent {...props} />
+      <Suspense
+        fallback={
+          <PageContainer>
+            <LoadingState label="Loading assignment…" />
+          </PageContainer>
+        }
+      >
+        <StaffAssignmentDetailPageContent {...props} />
+      </Suspense>
     </RequireCapability>
   );
 }

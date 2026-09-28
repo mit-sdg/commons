@@ -49,6 +49,12 @@
   --chart-4: oklch(0.55 0.12 320);
   --chart-5: oklch(0.6 0.13 250);
 
+  /* Rating levels: two orange steps below the Competent line, two blue above, strongest at the ends. */
+  --level-deficient: oklch(0.52 0.14 38);
+  --level-emergent: oklch(0.65 0.13 62);
+  --level-competent: oklch(0.64 0.1 226);
+  --level-expert: oklch(0.47 0.11 244);
+
   --sidebar: oklch(0.975 0.008 82);
   --sidebar-foreground: oklch(0.248 0.012 62);
   --sidebar-primary: oklch(0.585 0.158 46);
@@ -94,6 +100,11 @@
   --chart-4: oklch(0.65 0.12 320);
   --chart-5: oklch(0.68 0.13 250);
 
+  --level-deficient: oklch(0.6 0.15 40);
+  --level-emergent: oklch(0.83 0.1 68);
+  --level-competent: oklch(0.83 0.07 222);
+  --level-expert: oklch(0.6 0.13 246);
+
   --sidebar: oklch(0.205 0.009 62);
   --sidebar-foreground: oklch(0.922 0.01 84);
   --sidebar-primary: oklch(0.66 0.15 47);
@@ -136,6 +147,11 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
+  --color-level-deficient: var(--level-deficient);
+  --color-level-emergent: var(--level-emergent);
+  --color-level-competent: var(--level-competent);
+  --color-level-expert: var(--level-expert);
 
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);

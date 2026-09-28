@@ -86,18 +86,30 @@ export const theSubmissionsForAssignment = former(
       }),
 );
 
-/** Who was assigned this assignment, with the identity fields a staff export needs? */
+/** Who was assigned this assignment, with their seat's standing and the identity fields a staff export needs? */
 export const theAssignedPopulationForAssignment = former(
   "the assigned population for (assignment)",
   (
     { assignment },
-    { assignee, displayName, username, email, section, release, dueOverride, releaseStatus },
+    {
+      assignee,
+      displayName,
+      username,
+      email,
+      section,
+      enrolment,
+      release,
+      dueOverride,
+      releaseStatus,
+    },
   ) =>
     each(Assigning._getAssignees({ assignment }).is({ assignee }))
       .where(
         whether(Profiling._getProfileFields({ user: assignee }).is({ displayName })),
         whether(Authenticating._getById({ user: assignee }).is({ username })),
-        whether(Rostering._getSeatByUser({ user: assignee }).is({ email, section })),
+        whether(
+          Rostering._getSeatByUser({ user: assignee }).is({ email, section, status: enrolment }),
+        ),
         Assigning._getAssigned({ assignee }).is({
           assignment,
           release,
@@ -111,6 +123,7 @@ export const theAssignedPopulationForAssignment = former(
         username,
         email,
         section,
+        enrolment,
         release,
         dueOverride,
         status: releaseStatus,

@@ -131,7 +131,7 @@ for (const method of ["POINTS", "COMPETENCY"] as const) {
     const f = await fixture(page, browser, baseURL!, method);
     await f.openDraft();
     await f.filterBy("Assigned to me");
-    await expect(page.getByText("No learners match this grader scope.")).toBeVisible();
+    await expect(page.getByText("No learners match.")).toBeVisible();
     await expect(f.feedback).toBeHidden();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await f.filterBy("All learners");
@@ -192,7 +192,7 @@ for (const method of ["POINTS", "COMPETENCY"] as const) {
     await page.getByRole("button", { name: "Refresh", exact: true }).click();
     await expect(page.getByRole("button", { name: "Try again", exact: true })).toBeVisible();
     await f.expectDraft();
-    await expect(page.getByText("No learners match this grader scope.")).toHaveCount(0);
+    await expect(page.getByText("No learners match.")).toHaveCount(0);
     await page.getByRole("button", { name: "Try again", exact: true }).click();
     await expect(page.getByRole("button", { name: "Try again", exact: true })).toHaveCount(0);
     await f.expectDraft();
