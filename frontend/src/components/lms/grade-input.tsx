@@ -172,6 +172,7 @@ export function AssessmentInput({
         <AssessmentEditor
           key={`${assessment.grade}-${assessment.version}`}
           assessment={assessment}
+          currentMethod={currentSetup?.method}
           disabled={unavailable}
           onDirtyChange={onDirtyChange}
           onSaved={() => {
@@ -196,13 +197,17 @@ export function AssessmentInput({
 }
 export const GradeInput = AssessmentInput;
 
+const METHOD_LABELS = { COMPETENCY: "competency", POINTS: "points" } as const;
+
 function AssessmentEditor({
   assessment: a,
+  currentMethod,
   onSaved,
   disabled,
   onDirtyChange,
 }: {
   assessment: Assessment;
+  currentMethod?: Assessment["method"];
   onSaved: () => void;
   disabled: boolean;
   onDirtyChange?: (dirty: boolean) => void;
@@ -220,7 +225,10 @@ function AssessmentEditor({
     ),
   );
   const [busy, setBusy] = useState(false);
-  const [preview, setPreview] = useState<"release" | "excuse" | null>(null);
+  const [preview, setPreview] = useState<
+    "release" | "excuse" | "discard" | null
+  >(null);
+  const discardable = a.history.length === 0;
   const points = pointCriteria(a.criteria);
   const rubrics = competencyCriteria(a.criteria);
   const pointValuesValid = points.every((criterion) => {
@@ -290,7 +298,13 @@ function AssessmentEditor({
     });
   }
   async function action(
-    kind: "save" | "release" | "retract" | "restore-excused" | "excuse",
+    kind:
+      | "save"
+      | "release"
+      | "retract"
+      | "restore-excused"
+      | "excuse"
+      | "discard",
   ) {
     setBusy(true);
     try {
@@ -308,7 +322,9 @@ function AssessmentEditor({
                 version: a.version,
                 feedback,
               })
-            : await api.grades[kind]({ grade: a.grade, version: a.version });
+            : kind === "discard"
+              ? await api.grades.discard({ grade: a.grade, version: a.version })
+              : await api.grades[kind]({ grade: a.grade, version: a.version });
       if ("error" in result) {
         if (isClientErrorCode(result.error)) {
           toast.error(
@@ -329,7 +345,9 @@ function AssessmentEditor({
             ? "Assessment released"
             : kind === "save"
               ? "Draft saved"
-              : "Assessment updated",
+              : kind === "discard"
+                ? "Draft discarded"
+                : "Assessment updated",
         );
         onSaved();
       }
@@ -368,6 +386,12 @@ function AssessmentEditor({
         <span className="text-muted-foreground">Visible only to staff</span>
         <span>{a.attempt ? `Attempt ${a.attempt}` : "Assignment excusal"}</span>
       </Facts>
+      {a.evidence && currentMethod && currentMethod !== a.method && (
+        <p role="status" className="text-sm">
+          This draft uses {METHOD_LABELS[a.method]}. The assignment now uses{" "}
+          {METHOD_LABELS[currentMethod]}.
+        </p>
+      )}
       {a.evidence && a.criteria.length === 0 && (
         <p role="alert" className="text-sm">
           No criteria were saved when this assessment started. Update the
@@ -543,13 +567,36 @@ function AssessmentEditor({
         >
           Excuse {a.evidence ? "this assessment" : "assignment"}
         </Button>
+        {discardable && (
+          <Button
+            variant="outline"
+            disabled={busy || disabled}
+            onClick={() => setPreview(preview === "discard" ? null : "discard")}
+          >
+            Discard draft
+          </Button>
+        )}
       </div>
       {dirty && a.evidence && (
         <p className="text-xs text-muted-foreground">
           Save your changes before reviewing the release.
         </p>
       )}
-      {preview && (preview === "excuse" || !dirty) && (
+      {preview === "discard" && (
+        <div className="space-y-3 border-t border-border pt-4">
+          <p className="font-medium">
+            This deletes the draft and everything saved in it.
+          </p>
+          <Button
+            variant="destructive"
+            disabled={busy || disabled}
+            onClick={() => action("discard")}
+          >
+            Confirm discard
+          </Button>
+        </div>
+      )}
+      {(preview === "excuse" || (preview === "release" && !dirty)) && (
         <div className="space-y-3 border-t border-border pt-4">
           <p className="font-medium">
             {preview === "excuse"

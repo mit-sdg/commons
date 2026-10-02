@@ -27,7 +27,8 @@ evidence govern first creation; an existing assessment can still be corrected
 after archival. The authenticated session supplies the grader on every write.
 
 Both methods use the same draft, feedback, version, release, retract, correction,
-excusal, and history actions. Point drafts may omit judgments, while entered zero
+excusal, discard, and history actions. A draft that was never released or excused
+can be discarded, and the next start for its attempt captures the current setup. Point drafts may omit judgments, while entered zero
 is a real judgment. Release requires every immutable criterion to be complete.
 Point totals and denominators derive from the snapshot and are finite. Excused
 public rows hide private draft judgments and scores. Learners see only their own
@@ -76,6 +77,8 @@ attempts.
 
 [Restore an excusal to its private draft values](reaction:Course.grades.GradesRestoreExcused).
 
+[Discard a never-released draft so the attempt can start again from the current setup](reaction:Course.grades.GradesDiscard).
+
 [Release an explicit excusal without exposing private draft values](reaction:Course.grades.GradesExcuse).
 
 [Release complete drafts across stored methods and snapshots while reporting skips and uncertain writes](reaction:Course.grades.GradesReleaseItem).
@@ -107,6 +110,7 @@ Course.grades.GradesSave at /grades/save
 Course.grades.GradesRelease at /grades/release
 Course.grades.GradesRetract at /grades/retract
 Course.grades.GradesRestoreExcused at /grades/restore-excused
+Course.grades.GradesDiscard at /grades/discard
 Course.grades.GradesExcuse at /grades/excuse
 Course.grades.GradesReleaseItem at /grades/release-item
 Course.grades.GradesItem at /grades/item

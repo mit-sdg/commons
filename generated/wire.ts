@@ -706,6 +706,17 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
   };
+  "/grades/discard": {
+    input: {
+      "grade": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["discard"]>[0], ["grade"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+      "version": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["discard"]>[0], ["version"]>>;
+    };
+    output: {
+      "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["discard"]>>, ["grade"]>>;
+    };
+    error: { error: AppWideError | "FORBIDDEN" | "GRADE_CONFLICT" | "GRADE_NOT_FOUND" | "INVALID_INPUT" };
+  };
   "/grades/excuse": {
     input: {
       "feedback": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["excuse"]>[0], ["feedback"]>>;
@@ -5582,6 +5593,16 @@ export type CommonsWireHttp = {
       })[];
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/grades/discard": {
+    input: {
+      "grade": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["discard"]>[0], ["grade"]>>;
+      "version": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["discard"]>[0], ["version"]>>;
+    };
+    output: {
+      "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["discard"]>>, ["grade"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/grades/excuse": {
     input: {

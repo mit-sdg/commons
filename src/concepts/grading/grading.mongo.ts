@@ -451,6 +451,21 @@ export class MongoGradingConcept {
     return this.#change(doc, { status: "DRAFT", grader, releasedAt: null, updatedAt: at });
   }
 
+  async discard({ grade, version }: { grade: string; version: number }) {
+    await this.#get(grade);
+    const result = await this.records.deleteOne({
+      _id: grade,
+      version,
+      status: "DRAFT",
+      history: { $size: 0 },
+    });
+    if (!result.deletedCount)
+      throw new GradeConflict(
+        "This assessment changed or was released before. Reload before editing.",
+      );
+    return { grade };
+  }
+
   async excuse({
     grade,
     version,

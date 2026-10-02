@@ -5,7 +5,12 @@ import {
   type PointCriterion,
   MongoGradingConcept,
 } from "../../src/concepts/grading/grading.mongo.ts";
-import { GradeIncomplete, InvalidJudgments } from "../../src/concepts/grading/errors.ts";
+import {
+  GradeConflict,
+  GradeIncomplete,
+  GradeNotFound,
+  InvalidJudgments,
+} from "../../src/concepts/grading/errors.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 
 afterAll(stopTestDb);
@@ -224,6 +229,57 @@ test("excusal masks private draft values and restoration recovers them", async (
     score: 8,
     scored: true,
   });
+});
+
+test("a never-released draft can be discarded and started again under a new setup", async () => {
+  const grading = new MongoGradingConcept(await testDb());
+  let wrong = await start(grading);
+  wrong = await grading.save({
+    ...wrong,
+    ...actor,
+    judgments: competencyJudgments,
+    feedback: "Started under the wrong setup",
+  });
+  await expect(grading.discard({ grade: wrong.grade, version: 1 })).rejects.toBeInstanceOf(
+    GradeConflict,
+  );
+  expect(await grading.discard(wrong)).toEqual({ grade: wrong.grade });
+  expect(await grading._getGrade({ grade: wrong.grade })).toEqual([]);
+  await expect(grading.discard(wrong)).rejects.toBeInstanceOf(GradeNotFound);
+
+  const restarted = await start(grading, { method: "POINTS", setupRevision: 2 });
+  expect(restarted.grade).not.toBe(wrong.grade);
+  expect((await grading._getGrade({ grade: restarted.grade }))[0]).toMatchObject({
+    method: "POINTS",
+    setupRevision: 2,
+    criteria: pointCriteria,
+    judgments: [],
+    feedback: "",
+  });
+});
+
+test("discarding refuses anything that was ever released or excused", async () => {
+  const grading = new MongoGradingConcept(await testDb());
+  let released = await start(grading);
+  released = await grading.save({
+    ...released,
+    ...actor,
+    judgments: competencyJudgments,
+    feedback: "",
+  });
+  released = await grading.release({ ...released, ...actor });
+  await expect(grading.discard(released)).rejects.toBeInstanceOf(GradeConflict);
+  released = await grading.retract({ ...released, ...actor });
+  await expect(grading.discard(released)).rejects.toBeInstanceOf(GradeConflict);
+
+  let excused = await start(grading, { evidence: "attempt-2" });
+  excused = await grading.excuse({ ...excused, ...actor, feedback: "Excused" });
+  await expect(grading.discard(excused)).rejects.toBeInstanceOf(GradeConflict);
+  excused = await grading.restoreExcused({ ...excused, ...actor });
+  await expect(grading.discard(excused)).rejects.toBeInstanceOf(GradeConflict);
+
+  expect((await grading._getGrade({ grade: released.grade }))[0]!.history).toHaveLength(1);
+  expect((await grading._getGrade({ grade: excused.grade }))[0]!.history).toHaveLength(1);
 });
 
 test("concurrent starts are idempotent and version checks prevent lost writes", async () => {

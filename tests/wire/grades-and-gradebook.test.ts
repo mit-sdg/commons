@@ -327,3 +327,64 @@ test("draft setup is staff-only, survives publication, and is retained when a dr
   });
   expect(await app.concepts.Itemizing._getItem({ item: nonAccepting.assignment })).toHaveLength(1);
 });
+
+test("a draft started under the wrong method is discarded and restarted under the current setup", async () => {
+  const { call, staff, maya, item, revision, evidence } = await setup();
+  const wrong = await call("/grades/record", {
+    session: staff.session,
+    learner: maya.user,
+    item,
+    evidence,
+    revision,
+  });
+  if ("error" in wrong) throw new Error(String(wrong.error));
+  expect(wrong.method).toBe("COMPETENCY");
+  const points = await call("/grades/configure-setup", {
+    session: staff.session,
+    item,
+    method: "POINTS",
+    revision,
+    criteria: [{ kind: "POINTS", name: "Analysis", maxPoints: 10, position: 0 }],
+  });
+  if ("error" in points) throw new Error(String(points.error));
+  const reopened = await call("/grades/record", {
+    session: staff.session,
+    learner: maya.user,
+    item,
+    evidence,
+    revision: points.revision,
+  });
+  expect(reopened).toEqual(wrong);
+
+  expect(await call("/grades/discard", { session: maya.session, ...wrong })).toEqual({
+    error: "FORBIDDEN",
+  });
+  expect(await call("/grades/discard", { session: staff.session, ...wrong })).toEqual({
+    grade: wrong.grade,
+  });
+  const restarted = await call("/grades/record", {
+    session: staff.session,
+    learner: maya.user,
+    item,
+    evidence,
+    revision: points.revision,
+  });
+  if ("error" in restarted) throw new Error(String(restarted.error));
+  expect(restarted.grade).not.toBe(wrong.grade);
+  expect(restarted.method).toBe("POINTS");
+
+  const scored = await call("/grades/save", {
+    session: staff.session,
+    ...restarted,
+    judgments: [{ kind: "POINTS", criterion: points.criteria[0]!.criterion, score: 7 }],
+    feedback: "",
+  });
+  if ("error" in scored) throw new Error(String(scored.error));
+  const released = await call("/grades/release", { session: staff.session, ...scored });
+  if ("error" in released) throw new Error(String(released.error));
+  const retracted = await call("/grades/retract", { session: staff.session, ...released });
+  if ("error" in retracted) throw new Error(String(retracted.error));
+  expect(await call("/grades/discard", { session: staff.session, ...retracted })).toEqual({
+    error: "GRADE_CONFLICT",
+  });
+});
