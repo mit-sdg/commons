@@ -237,3 +237,30 @@ export function commonsHttpPolicy(publicOrigin: string) {
     },
   });
 }
+
+/** Resolve the wildcard to an exact origin for the HTTP package's CORS policy. */
+export function externalAuthenticationHttpPolicy(
+  origin: string | null,
+  allowedDomain: string | undefined,
+) {
+  let origins: string[] = [];
+  if (origin !== null && allowedDomain !== undefined) {
+    try {
+      const url = new URL(origin);
+      if (
+        (url.protocol === "http:" || url.protocol === "https:") &&
+        url.origin === origin &&
+        url.hostname.endsWith(`.${allowedDomain}`)
+      ) {
+        origins = [origin];
+      }
+    } catch {
+      // Malformed and opaque origins receive no CORS access.
+    }
+  }
+  return httpPolicy({
+    basePath: "/api",
+    publicErrors: commonsPublicErrors,
+    browser: { origins },
+  });
+}

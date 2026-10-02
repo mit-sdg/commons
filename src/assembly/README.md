@@ -41,6 +41,55 @@ removes both from the browser response and issues the cookie. Successful
 `/auth/logout` and `/auth/changePassword` calls clear it. An unauthorized result
 on a protected route clears that route's cookie binding.
 
+External clients can check credentials with `POST /api/auth/authenticate`:
+
+```js
+const response = await fetch("https://commons.mit-sdg.dev/api/auth/authenticate", {
+  method: "POST",
+  credentials: "omit",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ username, password }),
+});
+const result = await response.json();
+// On 200, result contains user, username, displayName, and email.
+```
+
+Both fields must be strings, with username at most 32 characters and password at
+most 128; extra fields are rejected. Credentials are matched exactly as sent.
+Invalid credentials return `401 { error: "UNAUTHORIZED" }`; an archived account
+with the correct password returns `403 { error: "FORBIDDEN" }`; malformed input
+returns `400 { error: "INVALID_REQUEST" }`. This endpoint creates no Commons
+session and neither issues nor clears a cookie, even on failure. The external
+client creates and manages its own session from the returned identity.
+
+A successful response contains the authenticated account's stable `user` ID,
+canonical `username`, account `email`, and current profile `displayName`. If the
+account has no profile, `displayName` falls back to its username. For example:
+
+```json
+{
+  "user": "<stable Commons user ID>",
+  "username": "alice",
+  "displayName": "Alice Example",
+  "email": "alice@example.edu"
+}
+```
+
+Set `EXTERNAL_AUTH_ALLOWED_DOMAIN=mit-sdg.dev` in the backend environment to
+allow browser authentication from that hostname's subdomains. The value must be
+a hostname without a scheme, wildcard, port or path. It is read at backend
+startup; restart the backend after changing it. Unset or empty disables browser
+CORS access. Only this path uses a separate cookie-free HTTP policy allowing
+CORS from HTTP or HTTPS origins below the configured hostname, including nested
+subdomains and explicit ports. The bare hostname and other domains receive no
+CORS access. The edge resolves the suffix to an exact request origin, and the HTTP
+package supplies preflight handling, CORS on successes and errors, and `Vary`.
+Preflight permits `POST` and `Content-Type`; credentialed CORS is disabled.
+Every response on this path has `Cache-Control: no-store`. Calls from a server
+need no `Origin`; CORS controls browser access, not server authentication.
+Commons password changes and account archiving do not revoke sessions managed
+by an external client.
+
 `http-policy.ts` explicitly maps the domain refusal codes that may cross HTTP.
 Unmapped refusals and unexpected failures remain opaque `INTERNAL_ERROR`
 responses. The same immutable policy is passed to the runtime handler and the
