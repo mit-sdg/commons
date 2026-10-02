@@ -297,3 +297,29 @@ test("withdrawn-only work uses the same saved attempt assessment and excusal sco
   expect(excusedCsv).toContain(`Attempt 1,EXCUSED,${f.grade.grade}`);
   expect(excusedCsv).toContain(",,10,http://");
 });
+
+test("a draft started under the wrong method is discarded and restarted with points", async ({
+  page,
+  browser,
+  baseURL,
+}) => {
+  const f = await fixture(page, browser, baseURL!, "COMPETENCY");
+  await call(page, f.cookie, "/grades/configure-setup", {
+    item: f.assignment,
+    method: "POINTS",
+    revision: f.setup.revision,
+    criteria: [{ kind: "POINTS", name: "Overall", maxPoints: 10, position: 0 }],
+  });
+  await page.goto(`/staff/assignments/${f.assignment}#attempt-${f.submission}`);
+  await page.getByRole("button", { name: "Assess this attempt", exact: true }).click();
+  await expect(
+    page.getByText("This draft uses competency. The assignment now uses points."),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Discard draft", exact: true }).click();
+  if (process.env.DISCARD_SHOT)
+    await page.screenshot({ path: process.env.DISCARD_SHOT, fullPage: true });
+  await page.getByRole("button", { name: "Confirm discard", exact: true }).click();
+  await page.getByRole("button", { name: "Start assessment", exact: true }).click();
+  await expect(page.getByRole("spinbutton", { name: "Score / 10" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Discard draft", exact: true })).toBeVisible();
+});

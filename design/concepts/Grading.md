@@ -14,7 +14,9 @@ releases it, retracts it for correction, and releases a second revision; both
 releases remain. Maya's second attempt is a separate assessment. For another
 paper Elena captures two point criteria, including an entered zero. Changing the
 current paper setup later affects only assessments that have not yet started, so
-an 8 out of 10 assessment remains 8 out of 10 and can still be corrected.
+an 8 out of 10 assessment remains 8 out of 10 and can still be corrected. When
+Elena starts a third paper under the wrong setup, she discards that draft before
+it is ever released, and her next start captures the current setup.
 
 ## Types
 
@@ -64,6 +66,7 @@ Rule: assessment feedback is at most 20000 characters.
 Rule: every mutation compares the supplied version and required status atomically and increments version on success.
 Rule: release requires nonempty evidence and one valid disposition for every stored criterion.
 Rule: release and excusal append immutable history; retracting and restoring never erase history or the private draft judgments.
+Rule: only a draft with no history can be discarded, so discarding never removes a release or an excusal.
 Rule: exposed excused grades omit private judgments and scored values while retaining the denominator and excusal feedback.
 ```
 
@@ -142,6 +145,18 @@ restoreExcused(grade: Grade, version: Number, grader: Grader, at: Date) : return
   where grade is not excused at version
   then
     refuse GRADE_CONFLICT "This assessment changed or is locked. Reload before editing."
+
+discard(grade: Grade, version: Number) : return (grade: Grade)
+  where grade is draft at version and has no history
+  then
+    remove the grade, so the next record for its learner, item, and evidence creates a new draft
+    return grade
+  where grade does not exist
+  then
+    refuse GRADE_NOT_FOUND "There is no assessment."
+  where grade is not draft at version or has history
+  then
+    refuse GRADE_CONFLICT "This assessment changed or was released before. Reload before editing."
 
 excuse(grade: Grade, version: Number, grader: Grader, feedback: String, at: Date) : return (grade: Grade, version: Number)
   where grade is draft at version and feedback is valid

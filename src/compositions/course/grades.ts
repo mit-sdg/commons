@@ -796,6 +796,20 @@ export const GradesRestoreExcused = endpoint(
     ),
 );
 
+export const GradesDiscard = endpoint(
+  "/grades/discard",
+  ({ session, grade, version, user, discarded }) =>
+    receive({ session, grade, version }).then(
+      where(activeUser({ session }).is({ user }), mayGrade({ user }))
+        .then(Grading.discard({ grade, version }).responds({ grade: discarded }))
+        .then(respond({ grade: discarded }))
+        .named("success"),
+      where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+    ),
+);
+
 export const GradesExcuse = endpoint(
   "/grades/excuse",
   ({ session, grade, version, feedback, user, at, saved, savedVersion }) =>

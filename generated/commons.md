@@ -455,6 +455,9 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 - `restoreExcused(grade: Grade, version: Number, grader: Grader, at: Date) : return (grade: Grade, version: Number)`
   - Refuses `GRADE_NOT_FOUND`: There is no assessment.
   - Refuses `GRADE_CONFLICT`: This assessment changed or is locked. Reload before editing.
+- `discard(grade: Grade, version: Number) : return (grade: Grade)`
+  - Refuses `GRADE_NOT_FOUND`: There is no assessment.
+  - Refuses `GRADE_CONFLICT`: This assessment changed or was released before. Reload before editing.
 - `excuse(grade: Grade, version: Number, grader: Grader, feedback: String, at: Date) : return (grade: Grade, version: Number)`
   - Refuses `GRADE_NOT_FOUND`: There is no assessment.
   - Refuses `GRADE_CONFLICT`: This assessment changed or is locked. Reload before editing.
@@ -1717,7 +1720,7 @@ Concrete types:
 - `clearablePiles(categories: Json, standing?: Json, picked: Seq, reserved: Seq) : Seq` — [The wall](../design/compositions/live/walls.md), line 53.
 - `commissionAccount(outcome: String, failure: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 69.
 - `commissionOutcome(reply: String|Null, failure: String|Null, insistence: String|Null, categories: Json, values: Json, removed: Json, successors: Number) : String` — [The wall](../design/compositions/live/walls.md), line 66.
-- `competencyEditionIds(criteria: Json) : Strings` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 124.
+- `competencyEditionIds(criteria: Json) : Strings` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 128.
 - `completeAddressing(user: String, holders: Strings, admitted: Number) : Bool` — [Commons application](../design/application.md), line 485.
 - `currentAddressing(user: String, holders: Strings, known: Bool, activePeople: Strings, staffPeople: Strings, trashed: Bool, groups: Bool, sections: Bool, ownSection: Any) : Bool` — [Commons application](../design/application.md), line 467.
 - `currentAudienceMembership(user: String, holders: Strings, groupMember: Bool, activeSections: Bool, section: Any, seatStatus: Any, activeStudent: Bool, capabilities: Any) : Bool` — [Commons application](../design/application.md), line 494.
@@ -1756,7 +1759,7 @@ Concrete types:
 - `forumNotificationMailHtml(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 542.
 - `forumNotificationMailText(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 539.
 - `forumNotificationUrl(conversation: String, post: String) : String` — [Commons application](../design/application.md), line 521.
-- `gradingRevisionMatches(left: Number, right: Number) : Bool` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 128.
+- `gradingRevisionMatches(left: Number, right: Number) : Bool` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 132.
 - `guideScope(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 173.
 - `guideUse(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 171.
 - `hasStoredPosts(posts: Rows) : Bool` — [Commons application](../design/application.md), line 446.
@@ -1822,7 +1825,7 @@ Concrete types:
 - `relayEditLines(reply: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 63.
 - `relayGiven(relay: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 143.
 - `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 636.
-- `resolveGradingCriteria(criteria: Json, editions: Json) : Json` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 126.
+- `resolveGradingCriteria(criteria: Json, editions: Json) : Json` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 130.
 - `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 626.
 - `roomBegun(responses: Json) : Number` — [The wall](../design/compositions/live/walls.md), line 114.
 - `roomHandedIn(responses: Json) : Number` — [The wall](../design/compositions/live/walls.md), line 117.
@@ -2192,7 +2195,7 @@ Authored path: `Forum.threads.intact`.
 ### (learner) may start assessment on (item) using (evidence)
 
 Authored path: `Course.grades.mayStartAssessment`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 45.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 46.
 
 ```view
 (learner) may start assessment on (item) using (evidence) — inputs (learner, item, evidence); outputs (); bindings ()
@@ -3193,7 +3196,7 @@ Authored path: `Course.submissions.mayReadSubmissionArtifact`.
 ### (user) may read assessment (grade)
 
 Authored path: `Course.grades.mayReadAssessment`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 43.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 44.
 
 ```view
 (user) may read assessment (grade) — inputs (user, grade); outputs (); bindings (status)
@@ -3207,7 +3210,7 @@ Authored path: `Course.grades.mayReadAssessment`.
 ### (user) may read assessment item (item)
 
 Authored path: `Course.grades.mayReadItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 41.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 42.
 
 ```view
 (user) may read assessment item (item) — inputs (user, item); outputs (); bindings ()
@@ -4338,7 +4341,7 @@ Former "the artifact (artifact) of (assignment) by (submitter) for (user)" — i
 ### the assessment (grade)
 
 Authored path: `Course.grades.theAssessment`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 55.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 56.
 
 ```former
 Former "the assessment (grade)" — inputs (grade); bindings (learner, item, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
@@ -4373,7 +4376,7 @@ Former "the assessment (grade)" — inputs (grade); bindings (learner, item, evi
 ### the assessments of (learner)
 
 Authored path: `Course.grades.theGradesOf`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 51.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 52.
 
 ```former
 Former "the assessments of (learner)" — inputs (learner); bindings (grade, item, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
@@ -4408,7 +4411,7 @@ Former "the assessments of (learner)" — inputs (learner); bindings (grade, ite
 ### the assessments on (item)
 
 Authored path: `Course.grades.theGradesOn`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 53.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 54.
 
 ```former
 Former "the assessments on (item)" — inputs (item); bindings (grade, learner, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history, displayName, submittedAt, number); promises exactly one record — forms:
@@ -4797,7 +4800,7 @@ Former "the current mail eligibility of (recipient) for (post) at (queued)" — 
 ### the current standards ()
 
 Authored path: `Course.grades.theStandards`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 61.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 62.
 
 ```former
 Former "the current standards ()" — inputs (); bindings (standard, edition, number, name, description, deficient, emergent, competent, expert, referenceUrl); promises exactly one record — forms:
@@ -5140,7 +5143,7 @@ Former "the forward links of (source) for (reader)" — inputs (source, reader);
 ### the gradebook learners ()
 
 Authored path: `Course.grades.theGradebookLearners`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 57.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 58.
 
 ```former
 Former "the gradebook learners ()" — inputs (); bindings (user, seat, section, email, displayName); promises exactly one record — forms:
@@ -5158,7 +5161,7 @@ Former "the gradebook learners ()" — inputs (); bindings (user, seat, section,
 ### the gradebook ()
 
 Authored path: `Course.grades.theGradebook`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 59.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 60.
 
 ```former
 Former "the gradebook ()" — inputs (); bindings (item, label, method, revision, maxPoints); promises exactly one record — forms:
@@ -5975,7 +5978,7 @@ Former "the relays" — inputs (); bindings (relay, title, createdAt, leg, mater
 ### the released assessments of (learner)
 
 Authored path: `Course.grades.theReleasedGradesOf`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 49.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 50.
 
 ```former
 Former "the released assessments of (learner)" — inputs (learner); bindings (grade, item, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
@@ -6025,7 +6028,7 @@ Former "the resolution of (question) for (reader)" — inputs (question, reader)
 ### the resolved grading setup of (item)
 
 Authored path: `Course.grades.theSetupOf`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 47.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 48.
 
 ```former
 Former "the resolved grading setup of (item)" — inputs (item); bindings (label, status, method, revision, storedCriteria, maxPoints, editions, criteria); promises exactly one record — forms:
@@ -9968,8 +9971,8 @@ then
 ### Course.grades.GradesConfigureItem:forbidden
 
 Authored path: `Course.grades.GradesConfigureItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 67.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 104.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 68.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 107.
 
 ```reaction
 when RequestBoundary.request (item, label, path: "/grades/configure-item", requestId, session)
@@ -9983,8 +9986,8 @@ then
 ### Course.grades.GradesConfigureItem:missing
 
 Authored path: `Course.grades.GradesConfigureItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 67.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 104.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 68.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 107.
 
 ```reaction
 when RequestBoundary.request (item, label, path: "/grades/configure-item", requestId, session)
@@ -9999,8 +10002,8 @@ then
 ### Course.grades.GradesConfigureItem:success
 
 Authored path: `Course.grades.GradesConfigureItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 67.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 104.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 68.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 107.
 
 ```reaction
 when RequestBoundary.request (item, label, path: "/grades/configure-item", requestId, session)
@@ -10015,8 +10018,8 @@ then
 ### Course.grades.GradesConfigureItem:success#2
 
 Authored path: `Course.grades.GradesConfigureItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 67.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 104.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 68.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 107.
 
 ```reaction
 when Itemizing.configureItem (item, label, gradeItem), asked by Course.grades.GradesConfigureItem:success
@@ -10029,8 +10032,8 @@ then
 ### Course.grades.GradesConfigureSetup:forbidden
 
 Authored path: `Course.grades.GradesConfigureSetup`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 69.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 105.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 70.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 108.
 
 ```reaction
 when RequestBoundary.request (criteria, item, method, path: "/grades/configure-setup", requestId, revision, session)
@@ -10044,8 +10047,8 @@ then
 ### Course.grades.GradesConfigureSetup:invalid-edition
 
 Authored path: `Course.grades.GradesConfigureSetup`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 69.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 105.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 70.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 108.
 
 ```reaction
 when RequestBoundary.request (criteria, item, method, path: "/grades/configure-setup", requestId, revision, session)
@@ -10062,8 +10065,8 @@ then
 ### Course.grades.GradesConfigureSetup:missing
 
 Authored path: `Course.grades.GradesConfigureSetup`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 69.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 105.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 70.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 108.
 
 ```reaction
 when RequestBoundary.request (criteria, item, method, path: "/grades/configure-setup", requestId, revision, session)
@@ -10078,8 +10081,8 @@ then
 ### Course.grades.GradesConfigureSetup:success
 
 Authored path: `Course.grades.GradesConfigureSetup`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 69.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 105.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 70.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 108.
 
 ```reaction
 when RequestBoundary.request (criteria, item, method, path: "/grades/configure-setup", requestId, revision, session)
@@ -10098,8 +10101,8 @@ then
 ### Course.grades.GradesConfigureSetup:success#2
 
 Authored path: `Course.grades.GradesConfigureSetup`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 69.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 105.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 70.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 108.
 
 ```reaction
 when Itemizing.configureSetup (criteria, item, method, resolvedCriteria, revision, result.criteria: savedCriteria, gradeItem, label, maxPoints, result.method: savedMethod, result.revision: savedRevision, status), asked by Course.grades.GradesConfigureSetup:success
@@ -10112,8 +10115,8 @@ then
 ### Course.grades.GradesDefineStandard:forbidden
 
 Authored path: `Course.grades.GradesDefineStandard`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 63.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 102.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 64.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 105.
 
 ```reaction
 when RequestBoundary.request (competent, deficient, description, emergent, expert, name, path: "/grades/define-standard", referenceUrl, requestId, session)
@@ -10127,8 +10130,8 @@ then
 ### Course.grades.GradesDefineStandard:success
 
 Authored path: `Course.grades.GradesDefineStandard`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 63.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 102.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 64.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 105.
 
 ```reaction
 when RequestBoundary.request (competent, deficient, description, emergent, expert, name, path: "/grades/define-standard", referenceUrl, requestId, session)
@@ -10143,8 +10146,8 @@ then
 ### Course.grades.GradesDefineStandard:success#2
 
 Authored path: `Course.grades.GradesDefineStandard`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 63.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 102.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 64.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 105.
 
 ```reaction
 when StandardSetting.define (competent, deficient, description, emergent, expert, name, referenceUrl, edition, standard), asked by Course.grades.GradesDefineStandard:success
@@ -10157,8 +10160,8 @@ then
 ### Course.grades.GradesDetail:hidden
 
 Authored path: `Course.grades.GradesDetail`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 85.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 113.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 88.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 117.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/detail", requestId, session)
@@ -10172,8 +10175,8 @@ then
 ### Course.grades.GradesDetail:missing
 
 Authored path: `Course.grades.GradesDetail`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 85.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 113.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 88.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 117.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/detail", requestId, session)
@@ -10188,8 +10191,8 @@ then
 ### Course.grades.GradesDetail:success
 
 Authored path: `Course.grades.GradesDetail`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 85.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 113.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 88.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 117.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/detail", requestId, session)
@@ -10201,11 +10204,55 @@ then
   RequestBoundary.respond (assessments: former "the assessment (grade)" with (grade), requestId)
 ```
 
+### Course.grades.GradesDiscard:forbidden
+
+Authored path: `Course.grades.GradesDiscard`.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 80.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 113.
+
+```reaction
+when RequestBoundary.request (grade, path: "/grades/discard", requestId, session, version)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not grade" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.grades.GradesDiscard:success
+
+Authored path: `Course.grades.GradesDiscard`.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 80.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 113.
+
+```reaction
+when RequestBoundary.request (grade, path: "/grades/discard", requestId, session, version)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may grade" with (user)
+then
+  Grading.discard (grade, version)
+```
+
+### Course.grades.GradesDiscard:success#2
+
+Authored path: `Course.grades.GradesDiscard`.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 80.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 113.
+
+```reaction
+when Grading.discard (grade, version, result.grade: discarded), asked by Course.grades.GradesDiscard:success
+where
+  earlier, RequestBoundary.request (grade, path: "/grades/discard", requestId, session, version)
+then
+  RequestBoundary.respond (grade: discarded, requestId)
+```
+
 ### Course.grades.GradesExcuse:forbidden
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 79.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 110.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 82.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, path: "/grades/excuse", requestId, session, version)
@@ -10219,8 +10266,8 @@ then
 ### Course.grades.GradesExcuse:success
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 79.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 110.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 82.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, path: "/grades/excuse", requestId, session, version)
@@ -10235,8 +10282,8 @@ then
 ### Course.grades.GradesExcuse:success#2
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 79.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 110.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 82.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
 
 ```reaction
 when Grading.excuse (at, feedback, grade, grader: user, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesExcuse:success
@@ -10249,8 +10296,8 @@ then
 ### Course.grades.GradesExport:forbidden
 
 Authored path: `Course.grades.GradesExport`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 99.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 120.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 102.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 124.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -10264,8 +10311,8 @@ then
 ### Course.grades.GradesExport:success
 
 Authored path: `Course.grades.GradesExport`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 99.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 120.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 102.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 124.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -10279,8 +10326,8 @@ then
 ### Course.grades.GradesForItem:forbidden
 
 Authored path: `Course.grades.GradesForItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 95.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 118.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 98.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 122.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
@@ -10294,8 +10341,8 @@ then
 ### Course.grades.GradesForItem:success
 
 Authored path: `Course.grades.GradesForItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 95.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 118.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 98.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 122.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
@@ -10309,8 +10356,8 @@ then
 ### Course.grades.GradesForMe:not-student
 
 Authored path: `Course.grades.GradesForMe`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 89.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 115.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 92.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 119.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
@@ -10324,8 +10371,8 @@ then
 ### Course.grades.GradesForMe:success
 
 Authored path: `Course.grades.GradesForMe`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 89.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 115.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 92.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 119.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
@@ -10339,8 +10386,8 @@ then
 ### Course.grades.GradesForStudent:forbidden
 
 Authored path: `Course.grades.GradesForStudent`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 93.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 117.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 96.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 121.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
@@ -10354,8 +10401,8 @@ then
 ### Course.grades.GradesForStudent:success
 
 Authored path: `Course.grades.GradesForStudent`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 93.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 117.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 96.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 121.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
@@ -10369,8 +10416,8 @@ then
 ### Course.grades.GradesGradebook:forbidden
 
 Authored path: `Course.grades.GradesGradebook`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 97.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 119.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 100.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 123.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
@@ -10384,8 +10431,8 @@ then
 ### Course.grades.GradesGradebook:success
 
 Authored path: `Course.grades.GradesGradebook`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 97.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 119.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 100.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 123.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
@@ -10399,8 +10446,8 @@ then
 ### Course.grades.GradesItem:hidden
 
 Authored path: `Course.grades.GradesItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 83.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 112.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 86.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 116.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -10414,8 +10461,8 @@ then
 ### Course.grades.GradesItem:missing
 
 Authored path: `Course.grades.GradesItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 83.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 112.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 86.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 116.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -10430,8 +10477,8 @@ then
 ### Course.grades.GradesItem:success
 
 Authored path: `Course.grades.GradesItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 83.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 112.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 86.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 116.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -10448,8 +10495,8 @@ then
 ### Course.grades.GradesRecord:created
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 87.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 90.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 118.
 
 ```reaction
 when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
@@ -10471,8 +10518,8 @@ then
 ### Course.grades.GradesRecord:created#2
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 87.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 90.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 118.
 
 ```reaction
 when Grading.record (at, criteria, evidence, grader: user, item, learner, method, setupRevision: currentRevision, grade, version), asked by Course.grades.GradesRecord:created
@@ -10485,8 +10532,8 @@ then
 ### Course.grades.GradesRecord:existing
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 87.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 90.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 118.
 
 ```reaction
 when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
@@ -10502,8 +10549,8 @@ then
 ### Course.grades.GradesRecord:forbidden
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 87.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 90.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 118.
 
 ```reaction
 when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
@@ -10517,8 +10564,8 @@ then
 ### Course.grades.GradesRecord:invalid-evidence
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 87.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 90.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 118.
 
 ```reaction
 when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
@@ -10534,8 +10581,8 @@ then
 ### Course.grades.GradesRecord:stale-setup
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 87.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 90.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 118.
 
 ```reaction
 when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
@@ -10554,8 +10601,8 @@ then
 ### Course.grades.GradesRelease:forbidden
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 73.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 107.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 74.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 110.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/release", requestId, session, version)
@@ -10569,8 +10616,8 @@ then
 ### Course.grades.GradesRelease:success
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 73.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 107.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 74.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 110.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/release", requestId, session, version)
@@ -10585,8 +10632,8 @@ then
 ### Course.grades.GradesRelease:success#2
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 73.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 107.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 74.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 110.
 
 ```reaction
 when Grading.release (at, grade, grader: user, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesRelease:success
@@ -10599,8 +10646,8 @@ then
 ### Course.grades.GradesReleaseItem:forbidden
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 81.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 111.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 84.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 115.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
@@ -10614,8 +10661,8 @@ then
 ### Course.grades.GradesReleaseItem:success
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 81.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 111.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 84.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 115.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
@@ -10630,8 +10677,8 @@ then
 ### Course.grades.GradesReleaseItem:success#2
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 81.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 111.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 84.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 115.
 
 ```reaction
 when Grading.releaseItem (at, grader: user, item, released, skipped, unconfirmed), asked by Course.grades.GradesReleaseItem:success
@@ -10644,8 +10691,8 @@ then
 ### Course.grades.GradesRestoreExcused:forbidden
 
 Authored path: `Course.grades.GradesRestoreExcused`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 77.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 109.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 78.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 112.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/restore-excused", requestId, session, version)
@@ -10659,8 +10706,8 @@ then
 ### Course.grades.GradesRestoreExcused:success
 
 Authored path: `Course.grades.GradesRestoreExcused`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 77.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 109.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 78.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 112.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/restore-excused", requestId, session, version)
@@ -10675,8 +10722,8 @@ then
 ### Course.grades.GradesRestoreExcused:success#2
 
 Authored path: `Course.grades.GradesRestoreExcused`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 77.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 109.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 78.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 112.
 
 ```reaction
 when Grading.restoreExcused (at, grade, grader: user, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesRestoreExcused:success
@@ -10689,8 +10736,8 @@ then
 ### Course.grades.GradesRetract:forbidden
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 75.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 108.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 76.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 111.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/retract", requestId, session, version)
@@ -10704,8 +10751,8 @@ then
 ### Course.grades.GradesRetract:success
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 75.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 108.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 76.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 111.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/retract", requestId, session, version)
@@ -10720,8 +10767,8 @@ then
 ### Course.grades.GradesRetract:success#2
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 75.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 108.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 76.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 111.
 
 ```reaction
 when Grading.retract (at, grade, grader: user, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesRetract:success
@@ -10734,8 +10781,8 @@ then
 ### Course.grades.GradesReviseStandard:forbidden
 
 Authored path: `Course.grades.GradesReviseStandard`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 65.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 103.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 66.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 106.
 
 ```reaction
 when RequestBoundary.request (competent, deficient, description, emergent, expectedEdition, expert, name, path: "/grades/revise-standard", referenceUrl, requestId, session, standard)
@@ -10749,8 +10796,8 @@ then
 ### Course.grades.GradesReviseStandard:success
 
 Authored path: `Course.grades.GradesReviseStandard`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 65.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 103.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 66.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 106.
 
 ```reaction
 when RequestBoundary.request (competent, deficient, description, emergent, expectedEdition, expert, name, path: "/grades/revise-standard", referenceUrl, requestId, session, standard)
@@ -10765,8 +10812,8 @@ then
 ### Course.grades.GradesReviseStandard:success#2
 
 Authored path: `Course.grades.GradesReviseStandard`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 65.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 103.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 66.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 106.
 
 ```reaction
 when StandardSetting.revise (competent, deficient, description, emergent, expectedEdition, expert, name, referenceUrl, standard, edition), asked by Course.grades.GradesReviseStandard:success
@@ -10779,8 +10826,8 @@ then
 ### Course.grades.GradesSave:forbidden
 
 Authored path: `Course.grades.GradesSave`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 71.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 106.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 72.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 109.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, judgments, path: "/grades/save", requestId, session, version)
@@ -10794,8 +10841,8 @@ then
 ### Course.grades.GradesSave:success
 
 Authored path: `Course.grades.GradesSave`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 71.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 106.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 72.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 109.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, judgments, path: "/grades/save", requestId, session, version)
@@ -10810,8 +10857,8 @@ then
 ### Course.grades.GradesSave:success#2
 
 Authored path: `Course.grades.GradesSave`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 71.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 106.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 72.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 109.
 
 ```reaction
 when Grading.save (at, feedback, grade, grader: user, judgments, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesSave:success
@@ -10824,8 +10871,8 @@ then
 ### Course.grades.GradesStandards:forbidden
 
 Authored path: `Course.grades.GradesStandards`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 91.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 116.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 94.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 120.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/standards", requestId, session)
@@ -10839,8 +10886,8 @@ then
 ### Course.grades.GradesStandards:success
 
 Authored path: `Course.grades.GradesStandards`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 91.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 116.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 94.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 120.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/standards", requestId, session)
@@ -29991,6 +30038,7 @@ not listed here have no explicit input contract.
 - `/grades/configure-setup` — requires `criteria`, `item`, `method`, `revision`, `session`
 - `/grades/define-standard` — requires `competent`, `deficient`, `description`, `emergent`, `expert`, `name`, `referenceUrl`, `session`
 - `/grades/detail` — requires `grade`, `session`
+- `/grades/discard` — requires `grade`, `session`, `version`
 - `/grades/excuse` — requires `feedback`, `grade`, `session`, `version`
 - `/grades/export` — requires `session`
 - `/grades/for-item` — requires `item`, `session`
