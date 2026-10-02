@@ -401,16 +401,10 @@ async function registerHost(edge: Edge) {
   return login.headers.get("Set-Cookie")?.split(";")[0] as string;
 }
 
-async function until<Value>(
-  read: () => Promise<Value>,
-  done: (value: Value) => boolean,
-): Promise<Value> {
-  let value = await read();
-  for (let attempt = 0; attempt < 40 && !done(value); attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    value = await read();
-  }
-  return value;
+/** Reads once every flow the edge accepted has settled, so a reaction's chain is not raced. */
+async function settled<Value>(edge: Edge, read: () => PromiseLike<Value>) {
+  await edge.application.whenIdle();
+  return read();
 }
 
 describe("the participant worker on the floor", () => {
@@ -475,10 +469,8 @@ describe("the participant worker on the floor", () => {
     const round = await openRound(run, leg);
 
     await serveParticipantsOnce(edge.application.concepts);
-    const begun = await until(
-      () => begunOn(round),
-      (seats) => everyAsked(seats, 1),
-    );
+    const begun = await settled(edge, () => begunOn(round));
+    expect(everyAsked(begun, 1)).toBe(true);
     expect(Object.keys(begun)).toEqual(["seat-early"]);
     expect(begun["seat-early"]).toBeGreaterThan(0);
 
@@ -494,10 +486,8 @@ describe("the participant worker on the floor", () => {
     await invite(run, "seat-late");
 
     await serveParticipantsOnce(edge.application.concepts);
-    const begun = await until(
-      () => begunOn(round),
-      (seats) => everyAsked(seats, 1),
-    );
+    const begun = await settled(edge, () => begunOn(round));
+    expect(everyAsked(begun, 1)).toBe(true);
     expect(Object.keys(begun)).toEqual(["seat-late"]);
     await close(run);
   });
@@ -521,10 +511,8 @@ describe("the participant worker on the floor", () => {
       value: presentation,
     });
     await serveParticipantsOnce(edge.application.concepts);
-    const begun = await until(
-      () => begunOn(round),
-      (seats) => everyAsked(seats, 1),
-    );
+    const begun = await settled(edge, () => begunOn(round));
+    expect(everyAsked(begun, 1)).toBe(true);
     expect(Object.keys(begun)).toEqual(["seat-waiting"]);
     await close(run);
   });
@@ -540,15 +528,12 @@ describe("the participant worker on the floor", () => {
     const round = await openRound(run, leg);
 
     await serveParticipantsOnce(edge.application.concepts);
-    await until(
-      () => begunOn(round),
-      (seats) => everyAsked(seats, 1),
-    );
+    expect(everyAsked(await settled(edge, () => begunOn(round)), 1)).toBe(true);
     const mind = scriptedMind();
-    await until(
-      async () => await serveOnePass(edge.application.concepts.Reasoning, mind),
-      (served) => served === 0,
-    );
+    for (let pass = 0; pass < 40; pass += 1) {
+      if ((await serveOnePass(edge.application.concepts.Reasoning, mind)) === 0) break;
+      await edge.application.whenIdle();
+    }
     const later = () => new Date(Date.now() + 60_000);
     await serveParticipantsOnce(edge.application.concepts, later);
 
@@ -605,10 +590,8 @@ describe("the participant worker on the floor", () => {
       console.error = original;
     }
     await serveParticipantsOnce(floor);
-    const begun = await until(
-      () => begunOn(round),
-      (seats) => everyAsked(seats, 2),
-    );
+    const begun = await settled(edge, () => begunOn(round));
+    expect(everyAsked(begun, 2)).toBe(true);
     expect(Object.keys(begun).sort()).toEqual(["seat-lost", "seat-steady"]);
     expect(lost).toBeLessThanOrEqual(1);
     await close(run);

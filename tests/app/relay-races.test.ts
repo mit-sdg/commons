@@ -78,14 +78,10 @@ const sort = async (round: string) => json(await post(edge, "/live/walls/sort", 
 
 const isLocked = (target: string) => edge.application.concepts.Locking._isLocked({ target });
 
-/** Polls a read until it settles, so a reaction's chain is not raced. */
-async function until<Value>(read: () => PromiseLike<Value>, done: (value: Value) => boolean) {
-  let value = await read();
-  for (let attempt = 0; attempt < 40 && !done(value); attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    value = await read();
-  }
-  return value;
+/** Reads once every flow the edge accepted has settled, so a reaction's chain is not raced. */
+async function settled<Value>(read: () => PromiseLike<Value>) {
+  await edge.application.whenIdle();
+  return read();
 }
 
 /** One phone hands the open round in, so a card waits in the tray. */
@@ -222,9 +218,8 @@ describe("two dashboards opening rounds in one instant", () => {
     // Exercise the parent-close event itself, as when the Close endpoint read
     // the run before a round was published within it.
     await edge.application.concepts.Publishing.close({ edition: run, at: new Date() });
-    const edition = await until(
-      () => edge.application.concepts.Publishing._edition({ edition: round }),
-      (rows) => rows[0]?.open === false,
+    const edition = await settled(() =>
+      edge.application.concepts.Publishing._edition({ edition: round }),
     );
     expect(edition[0].open).toBe(false);
   });
@@ -273,12 +268,7 @@ describe("dashboards ticking the sort together", () => {
       reply: JSON.stringify({ kind: "placed", placements: [{ card: "c1", pile: "Words" }] }),
       at: new Date(),
     });
-    expect(
-      await until(
-        () => isLocked(round),
-        (lock) => !lock.locked,
-      ),
-    ).toEqual({ locked: false });
+    expect(await settled(() => isLocked(round))).toEqual({ locked: false });
     await post(edge, "/live/relays/close", { run }, cookie);
   });
 });
@@ -323,7 +313,7 @@ describe("a classroom reconnects and hands in", () => {
       (await json(await post(edge, "/live/walls/read", { round }, cookie))).wall as unknown as {
         cards: { value: string }[];
       };
-    const wall = await until(read, (wall) => wall.cards.length === 50);
+    const wall = await settled(read);
     expect(wall.cards).toHaveLength(50);
     expect(new Set(wall.cards.map((card) => card.value)).size).toBe(50);
     await post(edge, "/live/relays/close-round", { round }, cookie);

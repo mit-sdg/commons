@@ -68,8 +68,6 @@ const invitationFor = async (edge: ReturnType<typeof createEdge>, address: strin
   return issued.invitation;
 };
 
-const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
-
 describe("the invitation a registration form arrives holding", () => {
   test("answers the invited address with the name the roster holds for it", async () => {
     const edge = createEdge(mongoImplementations(await testDb()));
@@ -87,7 +85,7 @@ describe("the invitation a registration form arrives holding", () => {
       admin.cookie,
     );
     expect(imported.status).toBe(200);
-    await settle();
+    await edge.application.whenIdle();
 
     const named = await invitationFor(edge, "nina@example.edu");
     expect(await readDetails(edge, named, invitationCredential(named))).toEqual({
@@ -136,7 +134,7 @@ describe("the invitation a registration form arrives holding", () => {
       },
       admin.cookie,
     );
-    await settle();
+    await edge.application.whenIdle();
 
     const rosa = await invitationFor(edge, "rosa@example.edu");
     const sam = await invitationFor(edge, "sam@example.edu");
@@ -158,7 +156,7 @@ describe("the invitation a registration form arrives holding", () => {
       { rows: [{ email: "tom@example.edu", kind: "STUDENT", displayName: "Tom Ray" }] },
       admin.cookie,
     );
-    await settle();
+    await edge.application.whenIdle();
     const invitation = await invitationFor(edge, "tom@example.edu");
     const credential = invitationCredential(invitation);
 
@@ -190,7 +188,7 @@ describe("the invitation a registration form arrives holding", () => {
       { rows: [{ email: "una@example.edu", kind: "STUDENT", displayName: "Una Vale" }] },
       admin.cookie,
     );
-    await settle();
+    await edge.application.whenIdle();
     const invitation = await invitationFor(edge, "una@example.edu");
 
     // The invitation identifier travels in the link; the credential does not.

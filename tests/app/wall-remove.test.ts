@@ -47,16 +47,10 @@ async function registerHost(edge: Edge) {
   return login.headers.get("Set-Cookie")?.split(";")[0] as string;
 }
 
-async function until<Value>(
-  read: () => Promise<Value>,
-  done: (value: Value) => boolean,
-): Promise<Value> {
-  let value = await read();
-  for (let attempt = 0; attempt < 40 && !done(value); attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    value = await read();
-  }
-  return value;
+/** Reads once every flow the edge accepted has settled, so a reaction's chain is not raced. */
+async function settled<Value>(edge: Edge, read: () => Promise<Value>): Promise<Value> {
+  await edge.application.whenIdle();
+  return read();
 }
 
 interface Wall {
@@ -67,14 +61,15 @@ interface Wall {
 
 /** A phone answers the open round with one value and hands in. */
 async function handIn(edge: Edge, token: string, value: string) {
-  const face = await until(
+  const face = await settled(
+    edge,
     async () =>
       (await json(await post(edge, "/live/p/arrive", { token }))).relay as {
         openRound: string | null;
         questions: { question: string }[];
       },
-    (found) => found.openRound !== null && found.questions.length > 0,
   );
+  expect(face.openRound).not.toBeNull();
   const begun = await json(
     await post(edge, "/live/p/begin", { token, device: `phone-${Math.random()}` }),
   );
@@ -124,7 +119,8 @@ describe("removing a card from the wall", () => {
     await handIn(edge, token, "kindness");
     await handIn(edge, token, "something the room should not read");
     await handIn(edge, token, "patience");
-    const full = await until(readWall, (wall) => wall.cards.length === 3);
+    const full = await settled(edge, readWall);
+    expect(full.cards).toHaveLength(3);
     const offending = full.cards.find((card) => card.value.startsWith("something"))!;
 
     // The card in the tray is removed: gone from the wall, the hand-in counted still.
@@ -132,7 +128,7 @@ describe("removing a card from the wall", () => {
       await post(edge, "/live/walls/remove-card", { round, card: offending.card }, cookie),
     );
     expect(removed.card).toBe(offending.card);
-    const without = await until(readWall, (wall) => wall.cards.length === 2);
+    const without = await settled(edge, readWall);
     expect(without.cards.map((card) => card.value).sort()).toEqual(["kindness", "patience"]);
     expect(without.handedIn).toBe(3);
 
@@ -173,16 +169,11 @@ describe("removing a card from the wall", () => {
     );
     const pile = piled.pile as string;
     await post(edge, "/live/walls/move-card", { card: patience.card, pile }, cookie);
-    const two = await until(
-      readWall,
-      (wall) => wall.piles.find((entry) => entry.pile === pile)?.count === 2,
-    );
+    const two = await settled(edge, readWall);
     expect(two.piles.find((entry) => entry.pile === pile)?.count).toBe(2);
     await post(edge, "/live/walls/remove-card", { round, card: patience.card }, cookie);
-    const one = await until(
-      readWall,
-      (wall) => wall.piles.find((entry) => entry.pile === pile)?.count === 1,
-    );
+    const one = await settled(edge, readWall);
+    expect(one.piles.find((entry) => entry.pile === pile)?.count).toBe(1);
     expect(one.cards.map((card) => card.value)).toEqual(["kindness"]);
     expect(
       await edge.application.concepts.Categorizing._getCategory({ item: patience.card }),

@@ -47,13 +47,9 @@ async function registerHost(edge: Edge) {
   return login.headers.get("Set-Cookie")?.split(";")[0] as string;
 }
 
-/** Poll a read until it settles; reactions land after the response. */
-async function until<Value>(read: () => Promise<Value>, done: (value: Value) => boolean) {
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    const value = await read();
-    if (done(value)) return value;
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
+/** Reads once every flow the edge accepted has settled; reactions land after the response. */
+async function settled<Value>(edge: Edge, read: () => PromiseLike<Value>) {
+  await edge.application.whenIdle();
   return read();
 }
 
@@ -71,14 +67,15 @@ interface Wall {
 
 /** A phone answers the open round with the values given, one per item, and hands in. */
 async function handIn(edge: Edge, token: string, values: string[]) {
-  const face = await until(
+  const face = await settled(
+    edge,
     async () =>
       (await json(await post(edge, "/live/p/arrive", { token }))).relay as {
         openRound: string | null;
         questions: { question: string; parts: string[]; cap: number }[];
       },
-    (value) => value.openRound !== null && value.questions.length > 0,
   );
+  expect(face.openRound).not.toBeNull();
   const begun = await json(
     await post(edge, "/live/p/begin", { token, device: `phone-${Math.random()}` }),
   );
@@ -245,11 +242,11 @@ describe("what a round carries from an earlier one", () => {
     const shown = await json(
       await post(edge, "/live/relays/open-round", { run, leg: stranger, picked }, cookie),
     );
-    const strangerWall = await until(
+    const strangerWall = await settled(
+      edge,
       async () =>
         (await json(await post(edge, "/live/walls/read", { round: shown.round }, cookie)))
           .wall as Wall | null,
-      (value) => value !== null && value.questions.length > 0,
     );
     expect(strangerWall?.questions[0]).toMatchObject({
       prompt: "Stranger?",
@@ -266,11 +263,11 @@ describe("what a round carries from an earlier one", () => {
     const boxed = await json(
       await post(edge, "/live/relays/open-round", { run, leg: each, picked }, cookie),
     );
-    const eachWall = await until(
+    const eachWall = await settled(
+      edge,
       async () =>
         (await json(await post(edge, "/live/walls/read", { round: boxed.round }, cookie)))
           .wall as Wall | null,
-      (value) => value !== null && value.questions.length > 0,
     );
     expect(eachWall?.questions[0]).toMatchObject({
       parts: ["keeping", "sending"],
@@ -286,20 +283,15 @@ describe("what a round carries from an earlier one", () => {
     const voting = await json(
       await post(edge, "/live/relays/open-round", { run, leg: vote, picked }, cookie),
     );
-    await until(
-      async () =>
-        (await json(await post(edge, "/live/walls/read", { round: voting.round }, cookie)))
-          .wall as Wall | null,
-      (value) => value !== null && value.questions.length > 0,
-    );
+    await edge.application.whenIdle();
     await handIn(edge, token, ["keeping"]);
     await handIn(edge, token, ["keeping"]);
     await handIn(edge, token, ["sending"]);
-    const voteWall = await until(
+    const voteWall = await settled(
+      edge,
       async () =>
         (await json(await post(edge, "/live/walls/read", { round: voting.round }, cookie)))
           .wall as Wall,
-      (value) => value.cards.length === 3 && value.cards.every((card) => card.pile !== null),
     );
     expect(voteWall.questions[0].choices).toEqual(["keeping", "sending"]);
     expect(
@@ -318,11 +310,11 @@ describe("what a round carries from an earlier one", () => {
     const after = await json(
       await post(edge, "/live/relays/open-round", { run, leg: runoff, picked: [won] }, cookie),
     );
-    const runoffWall = await until(
+    const runoffWall = await settled(
+      edge,
       async () =>
         (await json(await post(edge, "/live/walls/read", { round: after.round }, cookie)))
           .wall as Wall | null,
-      (value) => value !== null && value.questions.length > 0,
     );
     expect(runoffWall?.questions[0].context).toEqual([
       { name: "keeping", cards: ["save", "keep"] },
@@ -373,11 +365,7 @@ describe("what a round carries from an earlier one", () => {
       );
       expect(result.error).toBeUndefined();
       const round = result.round as string;
-      await until(
-        async () =>
-          (await json(await post(edge, "/live/walls/read", { round }, cookie))).wall as Wall | null,
-        (wall) => wall !== null && wall.questions.length > 0,
-      );
+      await edge.application.whenIdle();
       return round;
     };
     const read = async (round: string) =>
@@ -427,10 +415,7 @@ describe("what a round carries from an earlier one", () => {
     await handIn(edge, token, ["Wrong time zone"]);
     await handIn(edge, token, ["Wrong time zone"]);
     await handIn(edge, token, ["Lost edits"]);
-    const ballots = await until(
-      () => read(voteRound),
-      (wall) => wall.cards.length === 3 && wall.cards.every((card) => card.pile !== null),
-    );
+    const ballots = await settled(edge, () => read(voteRound));
     const time = ballots.piles.find((pile) => pile.name === "Wrong time zone")?.pile;
     const edits = ballots.piles.find((pile) => pile.name === "Lost edits")?.pile;
     await post(edge, "/live/walls/rename-pile", { pile: time, name: "Missed meeting" }, cookie);
@@ -442,7 +427,7 @@ describe("what a round carries from an earlier one", () => {
       context: [{ name: "Missed meeting", cards: [stories[0]] }],
     });
     await handIn(edge, token, ["A refined account with a clearer triggering event and cost."]);
-    const listWall = await read(listRound);
+    const listWall = await settled(edge, () => read(listRound));
     const refinement = await json(
       await post(
         edge,
@@ -523,16 +508,12 @@ describe("what a round carries from an earlier one", () => {
       await post(edge, "/live/relays/open-round", { run, leg: poll }, cookie),
     );
     const round = opened.round as string;
-    await until(
-      async () =>
-        (await json(await post(edge, "/live/walls/read", { round }, cookie))).wall as Wall | null,
-      (value) => value !== null && value.questions.length > 0,
-    );
+    await edge.application.whenIdle();
     await handIn(edge, token, ["yes"]);
-    const wall = await until(
+    const wall = await settled(
+      edge,
       async () =>
         (await json(await post(edge, "/live/walls/read", { round }, cookie))).wall as Wall,
-      (value) => value.piles.length === 1,
     );
     // Only the choice that was chosen has a pile; the other two have none.
     expect(wall.piles.map((pile) => pile.name)).toEqual(["yes"]);
@@ -582,11 +563,11 @@ describe("what a round carries from an earlier one", () => {
         cookie,
       ),
     );
-    const afterWall = await until(
+    const afterWall = await settled(
+      edge,
       async () =>
         (await json(await post(edge, "/live/walls/read", { round: asked.round }, cookie)))
           .wall as Wall | null,
-      (value) => value !== null && value.questions.length > 0,
     );
     expect(afterWall?.questions[0].context).toEqual([
       { name: "yes", cards: [] },

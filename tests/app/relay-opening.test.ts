@@ -99,11 +99,11 @@ const face = async (edge: Edge, token: string) =>
     rounds: { number: number; round: string | null; open: boolean | null }[];
   };
 
-/** The answer, or `late` once a second has passed without one. */
-const withinASecond = <T>(request: Promise<T>) =>
+/** The answer, or `late` once ten seconds have passed without one: a held press never answers, a slow one still does. */
+const withinTenSeconds = <T>(request: Promise<T>) =>
   Promise.race([
     request,
-    new Promise<"late">((resolve) => setTimeout(() => resolve("late"), 1_000)),
+    new Promise<"late">((resolve) => setTimeout(() => resolve("late"), 10_000)),
   ]);
 
 const runRead = async (stage: Stage) =>
@@ -198,20 +198,35 @@ class HeldPublishing extends MongoPublishingConcept {
 }
 
 /**
- * Lets no admission read of a run's open part answer until two have been
- * asked, so two presses both find the run between rounds and both reach
- * Publishing's guard.
+ * Puts two presses in the order a race needs: the first is held at its write,
+ * having found the run between rounds; the second is sent only then, so it
+ * finds the run between rounds too. On two engines both writes are held until
+ * both have come, so they meet at Publishing's guard together. One engine runs
+ * one Publishing action at a time, so there the first write is let go once the
+ * second press has read, and the second write waits in line behind it.
  */
 class Gate {
-  private waiting = 0;
-  private readonly open = Promise.withResolvers<void>();
-  constructor() {
-    setTimeout(() => this.open.resolve(), 3_000);
+  readonly firstWrite = Promise.withResolvers<void>();
+  private readonly released = Promise.withResolvers<void>();
+  private writes = 0;
+  private sent = false;
+  constructor(private readonly engines: 1 | 2) {}
+  /** The second press is on its way; its read, or its write, is what the first awaits. */
+  second(): void {
+    this.sent = true;
   }
-  async pass(): Promise<void> {
-    this.waiting += 1;
-    if (this.waiting >= 2) this.open.resolve();
-    await this.open.promise;
+  read(): void {
+    if (this.sent && this.engines === 1) this.release();
+  }
+  async write(): Promise<void> {
+    this.writes += 1;
+    this.firstWrite.resolve();
+    if (this.writes >= 2) this.release();
+    await this.released.promise;
+  }
+  /** Also called once either press is answered, so a press that never came to write holds nothing. */
+  release(): void {
+    this.released.resolve();
   }
 }
 
@@ -219,8 +234,12 @@ class GatedPublishing extends MongoPublishingConcept {
   gate: Gate | undefined;
   override async _openPart(input: { whole: string }) {
     const answered = await super._openPart(input);
-    await this.gate?.pass();
+    this.gate?.read();
     return answered;
+  }
+  override async publishWithin(input: Parameters<MongoPublishingConcept["publishWithin"]>[0]) {
+    await this.gate?.write();
+    return super.publishWithin(input);
   }
 }
 
@@ -312,7 +331,7 @@ describe("pressing Open again", () => {
     const first = press();
     await snapshotting.entered.promise;
     snapshotting.straddling = true;
-    const second = await withinASecond(press());
+    const second = await withinTenSeconds(press());
     snapshotting.release.resolve();
     if (second === "late") expect.fail("the second press went unanswered");
     expect([{ round: expect.any(String) }, { error: "CONFLICT" }]).toContainEqual(second.body);
@@ -389,7 +408,7 @@ describe("closing the run", () => {
     await s.call("/live/relays/open-round", { run: s.run, leg: s.legs[0]!.leg });
     expect(await s.call("/live/relays/close", { run: s.run })).toEqual({ run: s.run });
 
-    const again = await withinASecond(
+    const again = await withinTenSeconds(
       post(edge, "/live/relays/close", { run: s.run }, s.cookie).then(answer),
     );
     expect(again).toEqual({ status: 200, body: { run: s.run } });
@@ -502,7 +521,7 @@ describe("a round between its publication and its presentation", () => {
  */
 describe("two presses that race to Publishing's guard", () => {
   const race = async (database: Db, engines: 1 | 2, legs: [number, number]) => {
-    const gate = new Gate();
+    const gate = new Gate(engines);
     const gated = () => {
       const publishing = new GatedPublishing(database);
       return {
@@ -515,16 +534,23 @@ describe("two presses that race to Publishing's guard", () => {
     const s = await stage(first.edge, `host-${engines}-${legs.join("")}`);
     first.publishing.gate = gate;
     second.publishing.gate = gate;
-    const answers = await Promise.all(
-      [first.edge, second.edge].map((edge, index) =>
-        post(
-          edge,
-          "/live/relays/open-round",
-          { run: s.run, leg: s.legs[legs[index]!]!.leg },
-          s.cookie,
-        ).then(answer),
-      ),
-    );
+    const press = (edge: Edge, index: number) => {
+      const answered = post(
+        edge,
+        "/live/relays/open-round",
+        { run: s.run, leg: s.legs[legs[index]!]!.leg },
+        s.cookie,
+      ).then(answer);
+      void answered.then(
+        () => gate.release(),
+        () => gate.release(),
+      );
+      return answered;
+    };
+    const opening = press(first.edge, 0);
+    await Promise.race([gate.firstWrite.promise, opening]);
+    gate.second();
+    const answers = await Promise.all([opening, press(second.edge, 1)]);
     first.publishing.gate = undefined;
     second.publishing.gate = undefined;
     return { s, answers };

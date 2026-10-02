@@ -56,8 +56,8 @@ async function serveReasoner(edge: Edge, rounds = 4) {
   for (let round = 0; round < rounds; round += 1) {
     const served = await serveOnePass(edge.application.concepts.Reasoning, mind);
     if (served === 0) break;
-    // A served reply may itself queue another ask (the repair loop); poll again.
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // A served reply may itself queue another ask (the repair loop); serve again once it settles.
+    await edge.application.whenIdle();
   }
 }
 
@@ -98,17 +98,10 @@ async function buildQuiz(edge: Edge, cookie: string, disclosure: string) {
   return questionnaire;
 }
 
-/** Poll a read until it settles into the expected shape; reactions land after the response. */
-async function until<Value>(
-  read: () => Promise<Value>,
-  done: (value: Value) => boolean,
-): Promise<Value> {
-  let value = await read();
-  for (let attempt = 0; attempt < 40 && !done(value); attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    value = await read();
-  }
-  return value;
+/** Reads once every flow the edge accepted has settled; reactions land after the response. */
+async function settled<Value>(edge: Edge, read: () => PromiseLike<Value>) {
+  await edge.application.whenIdle();
+  return read();
 }
 
 describe("the live quiz loop", () => {
@@ -212,14 +205,10 @@ describe("the live quiz loop", () => {
     const reBegin = await post(edge, "/live/p/begin", { token, device: "phone-1" });
     expect(reBegin.status).toBeGreaterThanOrEqual(400);
 
-    // Grading lands through the reaction; the outcome polls until it does.
-    let outcome: Record<string, never> = {};
-    for (let attempt = 0; attempt < 40; attempt += 1) {
-      outcome = await json(await post(edge, "/live/p/outcome", { response }));
-      const formed = outcome.outcome as { score: number | null } | undefined;
-      if (formed?.score !== null && formed?.score !== undefined) break;
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
+    // Grading lands through the reaction; the outcome is read once it has settled.
+    const outcome = await settled(edge, async () =>
+      json(await post(edge, "/live/p/outcome", { response })),
+    );
     const formed = outcome.outcome as {
       disclosure: string;
       score: number;
@@ -596,15 +585,11 @@ describe("the live quiz loop", () => {
         value: "chloroplast",
       });
       await post(edge, "/live/p/submit", { response });
-      const settled = await until(
-        async () => json(await post(edge, "/live/p/outcome", { response })),
-        (read) => {
-          const formed = read.outcome as { score: number | null } | undefined;
-          return formed !== undefined && formed.score !== null;
-        },
+      const outcome = await settled(edge, async () =>
+        json(await post(edge, "/live/p/outcome", { response })),
       );
       await post(edge, "/live/runs/close", { run: launch.run }, cookie);
-      return settled.outcome as {
+      return outcome.outcome as {
         score: number;
         outOf: number;
         receipt?: {
@@ -740,10 +725,7 @@ describe("the drafting loop with a scripted reasoner", () => {
 
     // Adopt the revision; the line answers the questionnaire it composed.
     await post(edge, "/live/drafts/adopt", { candidate: line[1].candidate }, cookie);
-    line = await until(
-      () => lineOf(brief),
-      (steps) => steps[1]?.composed !== null,
-    );
+    line = await settled(edge, () => lineOf(brief));
     const composed = line[1].composed as string;
     const listed = await json(await post(edge, "/live/quizzes/list", {}, cookie));
     expect(
@@ -854,7 +836,7 @@ describe("the drafting loop with a scripted reasoner", () => {
     for (let round = 0; round < 6; round += 1) {
       const served = await serveOnePass(edge.application.concepts.Reasoning, hopelessMind);
       if (served === 0) break;
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await edge.application.whenIdle();
     }
     const line = await lineOf(brief);
     expect(line[0].stalled).toBe(true);
@@ -868,7 +850,7 @@ describe("the drafting loop with a scripted reasoner", () => {
     const brief = described.brief as string;
     const unreachableMind = () => Promise.reject(new Error("The reasoner answered HTTP 503."));
     await serveOnePass(edge.application.concepts.Reasoning, unreachableMind);
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await edge.application.whenIdle();
     const line = await lineOf(brief);
     expect(line[0].stalled).toBe(true);
   });
@@ -933,15 +915,13 @@ describe("the drafting loop with a scripted reasoner", () => {
     );
     const root = described.brief as string;
     await serveOnePass(edge.application.concepts.Reasoning, () => Promise.resolve("not json"));
-    await until(
-      async () => await edge.application.concepts.Insisting._unsettledFor({ aim: root }),
-      (rows) => rows.length === 1,
-    );
+    expect(
+      await settled(edge, () => edge.application.concepts.Insisting._unsettledFor({ aim: root })),
+    ).toHaveLength(1);
 
     await post(edge, "/live/drafts/abandon", { brief: root }, cookie);
-    const unsettled = await until(
-      async () => await edge.application.concepts.Insisting._unsettledFor({ aim: root }),
-      (rows) => rows.length === 0,
+    const unsettled = await settled(edge, () =>
+      edge.application.concepts.Insisting._unsettledFor({ aim: root }),
     );
     expect(unsettled).toEqual([]);
   });
@@ -1009,10 +989,7 @@ describe("questions stand contiguously", () => {
     expect(questions.map((entry) => entry.position)).toEqual([1, 2, 3]);
 
     await post(edge, "/live/quizzes/remove-question", { question: questions[1].question }, cookie);
-    questions = await until(
-      () => questionsOf(questionnaire),
-      (rows) => rows.length === 2 && rows[1].position === 2,
-    );
+    questions = await settled(edge, () => questionsOf(questionnaire));
     expect(questions.map((entry) => entry.position)).toEqual([1, 2]);
     expect(questions.map((entry) => entry.prompt)).toEqual([
       "Which gas do plants take in?",
@@ -1164,11 +1141,9 @@ describe("the refining line with a scripted reasoner", () => {
       cookie,
     );
     expect(adopted.status).toBe(200);
-    const after = await until(
-      () => questionsOf(questionnaire),
-      (rows) => rows.length === 2 && rows[0].prompt.includes("Corrected quiz"),
-    );
+    const after = await settled(edge, () => questionsOf(questionnaire));
     expect(after).toHaveLength(2);
+    expect(after[0].prompt).toContain("Corrected quiz");
     expect(after[0].question).toBe(before[0].question);
     expect(after[1].question).toBe(before[1].question);
     expect(after.map((entry) => entry.position)).toEqual([1, 2]);
@@ -1203,10 +1178,7 @@ describe("the refining line with a scripted reasoner", () => {
     await serveReasoner(edge);
     line = await lineOf(refined.brief as string);
     await post(edge, "/live/drafts/adopt", { candidate: line[1].candidate }, cookie);
-    const after = await until(
-      () => questionsOf(questionnaire),
-      (rows) => rows.length === 2,
-    );
+    const after = await settled(edge, () => questionsOf(questionnaire));
     expect(after[0].question).toBe(before[0].question);
     expect(after.map((entry) => entry.position)).toEqual([1, 2]);
   });
@@ -1243,10 +1215,7 @@ describe("the refining line with a scripted reasoner", () => {
       cookie,
     );
     expect(adopted.status).toBe(200);
-    const after = await until(
-      () => questionsOf(questionnaire),
-      (rows) => rows.length === 2,
-    );
+    const after = await settled(edge, () => questionsOf(questionnaire));
     expect(after.map((entry) => entry.position)).toEqual([1, 2]);
   });
 
@@ -1375,7 +1344,8 @@ describe("a line left can be found again", () => {
 
     const step = await candidateOf(described.brief as string);
     await post(edge, "/live/drafts/adopt", { candidate: step.candidate }, cookie);
-    lines = await until(linesOf, (rows) => rows[1]?.composed !== null);
+    lines = await settled(edge, linesOf);
+    expect(lines[1].composed).not.toBeNull();
     expect(lines[1]).toMatchObject({
       adopted: true,
       composedTitle: "AI-generated quiz",
@@ -1391,19 +1361,14 @@ describe("a line left can be found again", () => {
     for (let round = 0; round < 6; round += 1) {
       const served = await serveOnePass(edge.application.concepts.Reasoning, hopelessMind);
       if (served === 0) break;
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await edge.application.whenIdle();
     }
     const asking = await json(
       await post(edge, "/live/drafts/describe", { request: "Something ambiguous here" }, cookie),
     );
     await serveReasoner(edge);
 
-    const lines = await until(
-      linesOf,
-      (rows) =>
-        rows.find((row) => row.brief === stalling.brief)?.stalled === true &&
-        rows.find((row) => row.brief === asking.brief)?.clarifying === true,
-    );
+    const lines = await settled(edge, linesOf);
     expect(lines.find((row) => row.brief === stalling.brief)).toMatchObject({
       stalled: true,
       adopted: false,
@@ -1444,10 +1409,8 @@ describe("a line left can be found again", () => {
     await serveReasoner(edge);
     const step = await candidateOf(described.brief as string);
     await post(edge, "/live/drafts/adopt", { candidate: step.candidate }, cookie);
-    const adopted = await until(
-      () => candidateOf(described.brief as string),
-      (row) => row.composed !== null,
-    );
+    const adopted = await settled(edge, () => candidateOf(described.brief as string));
+    expect(adopted.composed).not.toBeNull();
     const questionnaire = adopted.composed as string;
 
     const refined = await json(await post(edge, "/live/drafts/refine", { questionnaire }, cookie));
@@ -1521,16 +1484,14 @@ describe("many participants at once", () => {
     expect(outcomes.every((entry) => entry.submitted === 200)).toBe(true);
     expect(new Set(outcomes.map((entry) => entry.response)).size).toBe(40);
 
-    const results = await until(
-      async () => {
-        const read = await json(await post(edge, "/live/runs/results", { run }, cookie));
-        return {
-          board: read.board as { started: number; handedIn: number },
-          scores: read.scores as { results: { score: number }[] } | undefined,
-        };
-      },
-      (read) => (read.scores?.results.length ?? 0) === 40,
-    );
+    const results = await settled(edge, async () => {
+      const read = await json(await post(edge, "/live/runs/results", { run }, cookie));
+      return {
+        board: read.board as { started: number; handedIn: number },
+        scores: read.scores as { results: { score: number }[] } | undefined,
+      };
+    });
+    expect(results.scores?.results).toHaveLength(40);
     expect(results.board.started).toBe(40);
     expect(results.board.handedIn).toBe(40);
     const scores = (results.scores as { results: { score: number }[] }).results.map(

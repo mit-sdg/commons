@@ -57,20 +57,14 @@ async function serveReasoner(edge: Edge, rounds = 4) {
   for (let round = 0; round < rounds; round += 1) {
     const served = await serveOnePass(edge.application.concepts.Reasoning, mind);
     if (served === 0) break;
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await edge.application.whenIdle();
   }
 }
 
-async function until<Value>(
-  read: () => Promise<Value>,
-  done: (value: Value) => boolean,
-): Promise<Value> {
-  let value = await read();
-  for (let attempt = 0; attempt < 40 && !done(value); attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    value = await read();
-  }
-  return value;
+/** Reads once every flow the edge accepted has settled, so a reaction's chain is not raced. */
+async function settled<Value>(edge: Edge, read: () => PromiseLike<Value>) {
+  await edge.application.whenIdle();
+  return read();
 }
 
 interface Wall {
@@ -146,17 +140,15 @@ describe("the model participant and the wall", () => {
       await post(edge, "/live/runs/invite", { run, device: "seat-1" }, cookie),
     );
     expect(invited.participant).toBe("seat-1");
-    const [seated] = await until(
-      async () => await edge.application.concepts.Responding._responsesFor({ subject: round }),
-      (responses) => responses.length === 1,
+    const seatedAll = await settled(edge, () =>
+      edge.application.concepts.Responding._responsesFor({ subject: round }),
     );
+    expect(seatedAll.length).toBe(1);
+    const [seated] = seatedAll;
     const response = seated!.response;
 
     // Inviting the model raised an ask; the reasoner answers it.
-    const asked = await until(
-      async () => await edge.application.concepts.Reasoning._pending(),
-      (pending) => pending.length > 0,
-    );
+    const asked = await settled(edge, () => edge.application.concepts.Reasoning._pending());
     expect(asked.length).toBe(1);
     await serveReasoner(edge);
     const replies = await edge.application.concepts.Reasoning._repliesAbout({
@@ -175,7 +167,8 @@ describe("the model participant and the wall", () => {
       return body.wall as unknown as Wall;
     };
 
-    const handedIn = await until(readWall, (wall) => wall?.handedIn === 1);
+    const handedIn = await settled(edge, readWall);
+    expect(handedIn.handedIn).toBe(1);
     expect(handedIn.number).toBe(1);
     expect(handedIn.title).toBe("What would help");
     expect(handedIn.open).toBe(true);
@@ -201,16 +194,16 @@ describe("the model participant and the wall", () => {
     expect(sorted.asked).toBe(true);
     await serveReasoner(edge);
 
-    const piled = await until(readWall, (wall) => wall.cards.every((card) => card.pile !== null));
+    const piled = await settled(edge, readWall);
     expect(piled.piles.length).toBeGreaterThan(0);
     expect(piled.piles.reduce((total, pile) => total + pile.count, 0)).toBe(2);
     expect(piled.cards.every((card) => card.pile !== null)).toBe(true);
 
     // An unusable reply is stood upon once, and the retry settles the insistence.
-    const insisted = await until(
-      async () => await edge.application.concepts.Insisting._for({ aim: round }),
-      (rows) => rows.every((row) => row.settled),
+    const insisted = await settled(edge, () =>
+      edge.application.concepts.Insisting._for({ aim: round }),
     );
+    expect(insisted.every((row) => row.settled)).toBe(true);
     expect(insisted.every((row) => row.satisfied)).toBe(true);
 
     // Nothing is left in the tray, so the next tick asks for nothing.
@@ -222,35 +215,27 @@ describe("the model participant and the wall", () => {
     const summarized = await json(await post(edge, "/live/walls/summarize", { pile }, cookie));
     expect(summarized.asked).toBe(true);
     await serveReasoner(edge);
-    const lidded = await until(
-      readWall,
-      (wall) => (wall.piles.find((entry) => entry.pile === pile)?.description ?? "") !== "",
-    );
+    const lidded = await settled(edge, readWall);
     expect(lidded.piles.find((entry) => entry.pile === pile)?.description).toContain(
       "These answers all say something about",
     );
 
     await post(edge, "/live/walls/pick", { round, pile }, cookie);
-    const picked = await until(readWall, (wall) =>
-      wall.piles.some((entry) => entry.picked !== null),
-    );
+    const picked = await settled(edge, readWall);
     expect(picked.piles.find((entry) => entry.pile === pile)?.picked).toBe(pile);
 
     // Sorting by hand: a card goes back to the tray and into a pile of its own.
     const card = picked.cards[0]!.card;
     await post(edge, "/live/walls/to-tray", { card }, cookie);
-    const trayed = await until(readWall, (wall) =>
-      wall.cards.some((entry) => entry.card === card && entry.pile === null),
-    );
+    const trayed = await settled(edge, readWall);
     expect(trayed.cards.find((entry) => entry.card === card)?.pile).toBe(null);
 
     const openedPile = await json(
       await post(edge, "/live/walls/open-pile", { round, name: "By hand", card }, cookie),
     );
     const byHand = openedPile.pile as string;
-    const rehomed = await until(readWall, (wall) =>
-      wall.cards.some((entry) => entry.card === card && entry.pile === byHand),
-    );
+    const rehomed = await settled(edge, readWall);
+    expect(rehomed.cards.find((entry) => entry.card === card)?.pile).toBe(byHand);
     expect(rehomed.piles.some((entry) => entry.name === "By hand")).toBe(true);
 
     // A closed round of an open run is where staff pick, so its wall still takes writes.
@@ -323,20 +308,15 @@ describe("the model participant and the wall", () => {
     const later = () => new Date(Date.now() + 60_000);
     const playRound = async (round: string, seats: number) => {
       await serveParticipantsOnce(edge.application.concepts);
-      await until(
-        async () => await edge.application.concepts.Responding._responsesFor({ subject: round }),
-        (responses) => responses.length === seats,
-      );
-      await until(
-        async () => await edge.application.concepts.Reasoning._pending(),
-        (pending) => pending.length === seats,
-      );
+      expect(
+        await settled(edge, () =>
+          edge.application.concepts.Responding._responsesFor({ subject: round }),
+        ),
+      ).toHaveLength(seats);
+      expect(await edge.application.concepts.Reasoning._pending()).toHaveLength(seats);
       await serveReasoner(edge);
       await serveParticipantsOnce(edge.application.concepts, later);
-      return await until(
-        async () => await handedInOn(round),
-        (count) => count === seats,
-      );
+      return await settled(edge, () => handedInOn(round));
     };
 
     // A seat taken before any round opens waits for the first; the worker's pass
@@ -436,9 +416,8 @@ describe("the model participant and the wall", () => {
     const first = await json(await post(edge, "/live/walls/sort", { round }, cookie));
     expect(first.asked).toBe(true);
     await serveOnePass(edge.application.concepts.Reasoning, scriptedMind());
-    const insisting = await until(
-      async () => await edge.application.concepts.Insisting._unsettledFor({ aim: round }),
-      (rows) => rows.length > 0,
+    const insisting = await settled(edge, () =>
+      edge.application.concepts.Insisting._unsettledFor({ aim: round }),
     );
     expect(insisting.length).toBe(1);
 
@@ -460,11 +439,10 @@ describe("the model participant and the wall", () => {
     await serveOnePass(edge.application.concepts.Reasoning, scriptedMind());
 
     // Nothing was offered, nothing is stood upon, and no insistence stands.
-    const settled = await until(
-      async () => await edge.application.concepts.Insisting._unsettledFor({ aim: round }),
-      (rows) => rows.length === 0,
+    const standing = await settled(edge, () =>
+      edge.application.concepts.Insisting._unsettledFor({ aim: round }),
     );
-    expect(settled).toEqual([]);
+    expect(standing).toEqual([]);
     expect(await edge.application.concepts.Reasoning._pending()).toEqual([]);
     const after = await readWall();
     expect(after.cards.every((card) => card.pile !== null)).toBe(true);
@@ -506,9 +484,8 @@ describe("the model participant and the wall", () => {
     const first = await json(await post(edge, "/live/walls/sort", { round }, cookie));
     expect(first.asked).toBe(true);
     await serveOnePass(edge.application.concepts.Reasoning, scriptedMind());
-    const insisting = await until(
-      async () => await edge.application.concepts.Insisting._unsettledFor({ aim: round }),
-      (rows) => rows.length > 0,
+    const insisting = await settled(edge, () =>
+      edge.application.concepts.Insisting._unsettledFor({ aim: round }),
     );
     expect(insisting.length).toBe(1);
     const outWithRetry = await json(await post(edge, "/live/walls/sort", { round }, cookie));

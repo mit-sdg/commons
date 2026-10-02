@@ -58,13 +58,10 @@ async function register(edge: Edge, username: string, host = false) {
   };
 }
 
-async function until<Value>(read: () => Promise<Value>, done: (value: Value) => boolean) {
-  let value = await read();
-  for (let attempt = 0; attempt < 60 && !done(value); attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    value = await read();
-  }
-  return value;
+/** Reads once every flow the edge accepted has settled, so a reaction's chain is not raced. */
+async function settled<Value>(read: () => Promise<Value>) {
+  await edge.application.whenIdle();
+  return read();
 }
 
 interface Wall {
@@ -133,14 +130,15 @@ async function openRound(title: string, parts: string[]) {
 }
 
 async function face(token: string) {
-  return until(
+  const found = await settled(
     async () =>
       (await json(await post(edge, "/live/p/arrive", { token }))).relay as unknown as {
         openRound: string | null;
         questions: { question: string }[];
       },
-    (found) => found.openRound !== null && found.questions.length > 0,
   );
+  expect(found.openRound).not.toBeNull();
+  return found;
 }
 
 async function handIn(token: string, device: string, value: string) {
@@ -226,12 +224,7 @@ test("the wall's digest on a fixed room matches the golden line for line", async
   for (const seat of ["seat-1", "seat-2"]) {
     responses.push(await handIn(token, seat, `a seat's answer from ${seat}`));
   }
-  const cards = (
-    await until(
-      () => readWall(round),
-      (wall) => wall.cards.length === 12,
-    )
-  ).cards;
+  const cards = (await settled(() => readWall(round))).cards;
   expect(cards).toHaveLength(12);
 
   // Three piles, nine cards placed, the tenth and the seats' two left in the tray.
@@ -277,11 +270,10 @@ test("the wall's digest on a fixed room matches the golden line for line", async
     account: "no reasoner",
     at: new Date(),
   });
-  await until(
-    () => readWall(round),
-    (wall) => !wall.sortPending && wall.asksOut === 0,
-  );
-  await read("failed, staff", "/live/walls/read", { round });
+  await edge.application.whenIdle();
+  const failed = await read("failed, staff", "/live/walls/read", { round });
+  expect(failed.sortPending).toBe(false);
+  expect(failed.asksOut).toBe(0);
 
   // Closed, with two piles picked to carry forward, the third pile first.
   await call("/live/relays/close-round", { round });
@@ -316,12 +308,8 @@ test("the wall's digest on a fixed room matches the golden line for line", async
     await call("/live/p/submit-signed", { response: begun.response }, student.cookie);
     signedResponses.push(begun.response as string);
   }
-  const signedCards = (
-    await until(
-      () => readWall(signedRound),
-      (wall) => wall.cards.length === 4,
-    )
-  ).cards;
+  const signedCards = (await settled(() => readWall(signedRound))).cards;
+  expect(signedCards).toHaveLength(4);
   await call("/live/walls/open-pile", {
     round: signedRound,
     name: "ideas",

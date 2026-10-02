@@ -59,21 +59,14 @@ async function serveReasoner(edge: Edge, rounds = 4) {
   for (let round = 0; round < rounds; round += 1) {
     const served = await serveOnePass(edge.application.concepts.Reasoning, mind);
     if (served === 0) break;
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await edge.application.whenIdle();
   }
 }
 
-/** Poll a read until it settles into the expected shape; reactions land after the response. */
-async function until<Value>(
-  read: () => Promise<Value>,
-  done: (value: Value) => boolean,
-): Promise<Value> {
-  let value = await read();
-  for (let attempt = 0; attempt < 40 && !done(value); attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    value = await read();
-  }
-  return value;
+/** Reads once every flow the edge accepted has settled; reactions land after the response. */
+async function settled<Value>(edge: Edge, read: () => PromiseLike<Value>): Promise<Value> {
+  await edge.application.whenIdle();
+  return read();
 }
 
 interface Line {
@@ -130,10 +123,7 @@ async function draft(
   const asked = await json(await post(edge, "/live/edits/draft", { relay, request }, cookie));
   expect(typeof asked.asking).toBe("string");
   await serveReasoner(edge);
-  const offered = await until(
-    () => offerings(edge, cookie, relay),
-    (all) => all.length > standing,
-  );
+  const offered = await settled(edge, () => offerings(edge, cookie, relay));
   expect(offered.length).toBe(standing + 1);
   return offered[0];
 }
@@ -305,10 +295,8 @@ describe("the relay editing loop", () => {
         ],
       }),
     });
-    const all = await until(
-      () => offerings(edge, cookie, relay),
-      (value) => value.length > 0,
-    );
+    const all = await settled(edge, () => offerings(edge, cookie, relay));
+    expect(all).toHaveLength(1);
     for (const line of all[0].lines) {
       const applied = await json(
         await post(edge, "/live/edits/take", { suggestion: line.suggestion }, cookie),
@@ -365,12 +353,10 @@ describe("the relay editing loop", () => {
     await post(edge, "/live/edits/draft", { relay, request: brief }, cookie);
     for (let attempt = 0; attempt < 4; attempt++) {
       await serveOnePass(edge.application.concepts.Reasoning, repairMind);
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await edge.application.whenIdle();
     }
-    const offered = await until(
-      () => offerings(edge, cookie, relay),
-      (all) => all.length === 1,
-    );
+    const offered = await settled(edge, () => offerings(edge, cookie, relay));
+    expect(offered).toHaveLength(1);
     expect(passages).toHaveLength(2);
     expect(passages[1]).toContain(passages[0]);
     expect(passages[1]).toContain("earlier position in the delivered relay");
@@ -523,9 +509,7 @@ describe("the relay editing loop", () => {
       );
       expect(taken.error).toBeUndefined();
       expect(taken.applied).toBe(true);
-      const notes = await until(read, (rows) =>
-        value === "" ? rows.length === 0 : rows.length === 1 && rows[0].body === value,
-      );
+      const notes = await settled(edge, read);
       expect(notes.map((note) => note.body)).toEqual(value === "" ? [] : [value]);
     }
   });
@@ -565,10 +549,7 @@ describe("the relay editing loop", () => {
       );
       expect(taken.applied).toBe(true);
     }
-    const built = await until(
-      () => rounds(edge, cookie, relay),
-      (all) => all.length === 2 && all[1].takes.length === 1,
-    );
+    const built = await settled(edge, () => rounds(edge, cookie, relay));
     expect(built.map((round) => round.title)).toEqual(["Three verbs", "The stranger"]);
     expect(built.map((round) => round.number)).toEqual([1, 2]);
     expect(built[0].parts).toEqual(["one", "two", "three"]);
@@ -576,11 +557,8 @@ describe("the relay editing loop", () => {
     expect(built[1].parts).toEqual([]);
     expect(built[1].takes).toEqual([{ source: built[0].leg, sourceNumber: 1, use: "context" }]);
 
-    const settled = await until(
-      () => offerings(edge, cookie, relay),
-      (all) => all[0].lines.every((line) => line.standing === "taken"),
-    );
-    expect(settled[0].lines.every((line) => line.standing === "taken")).toBe(true);
+    const answered = await settled(edge, () => offerings(edge, cookie, relay));
+    expect(answered[0].lines.every((line) => line.standing === "taken")).toBe(true);
 
     // Drafted again unchanged, the relay as it stands is offered as one keep line.
     const second = await draft(
@@ -603,10 +581,7 @@ describe("the relay editing loop", () => {
     for (const line of third.lines) {
       await post(edge, "/live/edits/take", { suggestion: line.suggestion }, cookie);
     }
-    const swapped = await until(
-      () => rounds(edge, cookie, relay),
-      (all) => all[0].title === "The stranger",
-    );
+    const swapped = await settled(edge, () => rounds(edge, cookie, relay));
     expect(swapped.map((round) => [round.leg, round.number])).toEqual([
       [built[1].leg, 1],
       [built[0].leg, 2],
@@ -639,20 +614,14 @@ describe("the relay editing loop", () => {
 
     await post(edge, "/live/edits/decline", { suggestion: offering.lines[0].suggestion }, cookie);
     await post(edge, "/live/edits/take", { suggestion: offering.lines[1].suggestion }, cookie);
-    const revised = await until(
-      () => rounds(edge, cookie, relay),
-      (all) => all[0].prompt !== standing.prompt,
-    );
+    const revised = await settled(edge, () => rounds(edge, cookie, relay));
     expect(revised.length).toBe(1);
     expect(revised[0].leg).toBe(standing.leg);
     expect(revised[0].title).toBe("Pace");
     expect(revised[0].prompt).toBe("In one word, how is the pace so far?");
 
-    const settled = await until(
-      () => offerings(edge, cookie, relay),
-      (all) => all[0].lines.every((line) => line.standing !== "pending"),
-    );
-    expect(settled[0].lines.map((line) => line.standing)).toEqual(["declined", "taken"]);
+    const answered = await settled(edge, () => offerings(edge, cookie, relay));
+    expect(answered[0].lines.map((line) => line.standing)).toEqual(["declined", "taken"]);
   });
 
   test("a reply that cannot be read is stood upon once, and the second reply is offered", async () => {
@@ -683,10 +652,7 @@ describe("the relay editing loop", () => {
       notes: "Group by what went wrong, not by which app it happened in.",
     });
     await post(edge, "/live/edits/take", { suggestion: offering.lines[0].suggestion }, cookie);
-    const built = await until(
-      () => rounds(edge, cookie, relay),
-      (all) => all.length === 1 && all[0].piles.length === 2 && all[0].notes !== "",
-    );
+    const built = await settled(edge, () => rounds(edge, cookie, relay));
     expect(built[0].piles.map((pile) => [pile.name, pile.description])).toEqual([
       ["Pace", "It was too slow to use."],
       ["Crashes", "It stopped working outright."],
@@ -718,10 +684,7 @@ describe("the relay editing loop", () => {
     for (const line of again.lines) {
       await post(edge, "/live/edits/take", { suggestion: line.suggestion }, cookie);
     }
-    const revised = await until(
-      () => rounds(edge, cookie, relay),
-      (all) => all[0].piles.map((pile) => pile.name).join() === "Pace,Crashes",
-    );
+    const revised = await settled(edge, () => rounds(edge, cookie, relay));
     expect(revised[0].piles.map((pile) => pile.name)).toEqual(["Pace", "Crashes"]);
     expect(revised[0].notes).toBe("Group by what went wrong, not by which app it happened in.");
   }, 60_000);
