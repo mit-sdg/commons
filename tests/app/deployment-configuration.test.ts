@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vite-plus/test";
-import { configuredMongodbUrl, validateDeploymentConfiguration } from "../../src/deployment.ts";
+import {
+  configuredExternalAuthAllowedDomain,
+  configuredMongodbUrl,
+  validateDeploymentConfiguration,
+} from "../../src/deployment.ts";
 
 const productionEnvironment = (overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv => ({
   NODE_ENV: "production",
@@ -7,6 +11,43 @@ const productionEnvironment = (overrides: NodeJS.ProcessEnv = {}): NodeJS.Proces
   INVITATION_SECRET: "test-invitation-secret-0123456789abcdef",
   VOUCHER_SECRET: "test-voucher-secret-0123456789abcdef",
   ...overrides,
+});
+
+describe("external authentication domain configuration", () => {
+  test("normalizes hostnames and treats unset and blank values as disabled", () => {
+    expect(configuredExternalAuthAllowedDomain({})).toBeUndefined();
+    expect(
+      configuredExternalAuthAllowedDomain({ EXTERNAL_AUTH_ALLOWED_DOMAIN: "  " }),
+    ).toBeUndefined();
+    expect(
+      configuredExternalAuthAllowedDomain({
+        EXTERNAL_AUTH_ALLOWED_DOMAIN: "  CLIENTS.Example.edu  ",
+      }),
+    ).toBe("clients.example.edu");
+  });
+
+  test("refuses invalid domains during startup validation", () => {
+    for (const domain of [
+      "*.example.edu",
+      ".example.edu",
+      "https://example.edu",
+      "example.edu:8080",
+      "example.edu/path",
+      "example.edu?query",
+      "example.edu#fragment",
+      "user@example.edu",
+      "example.edu,another.edu",
+      "example..edu",
+      "-example.edu",
+      "example-.edu",
+      "example.edu.",
+      `${"x".repeat(64)}.edu`,
+    ]) {
+      expect(() =>
+        validateDeploymentConfiguration({ EXTERNAL_AUTH_ALLOWED_DOMAIN: domain }),
+      ).toThrow("EXTERNAL_AUTH_ALLOWED_DOMAIN must be a hostname");
+    }
+  });
 });
 
 describe("deployment MongoDB configuration", () => {

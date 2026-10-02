@@ -5,6 +5,11 @@ cross-concept reactions, current-state views, and response formers. The HTTP edg
 web frontend, command-line scenario, and generated client contract all run the same
 sync-engine assembly.
 
+External applications can verify Commons username/password credentials through
+`POST /api/auth/authenticate` and manage their own sessions. This endpoint allows
+CORS from subdomains of `EXTERNAL_AUTH_ALLOWED_DOMAIN`. See the [HTTP integration guide](src/assembly/README.md#http-policy)
+for the request, response, and error contract.
+
 ## Run Commons locally
 
 Commons uses Bun 1.3.14 and Node.js 24. Volta users automatically use the
