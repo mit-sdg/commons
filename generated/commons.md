@@ -1666,6 +1666,8 @@ Defined in [Vouching](../design/concepts/Vouching.md), line 1.
 
 #### Instances
 
+- `ConnectVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 346.
+  - `Subject` is `Connecting.Connection` — [Commons application](../design/application.md), line 347.
 - `PasswordResetVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 343.
   - `Subject` is `Authenticating.User` — [Commons application](../design/application.md), line 344.
 
@@ -1685,8 +1687,8 @@ Defined in [Wording](../design/concepts/Wording.md), line 1.
 
 #### Instances
 
-- `Wording` — instance of `Wording` — [Commons application](../design/application.md), line 346.
-  - `Place` is `MailPlace` — [Commons application](../design/application.md), line 347.
+- `Wording` — instance of `Wording` — [Commons application](../design/application.md), line 349.
+  - `Place` is `MailPlace` — [Commons application](../design/application.md), line 350.
 
 ## Application types
 
@@ -1718,23 +1720,23 @@ Concrete types:
 
 ## Computations
 
-- `addressingPeople(user: String, holders: Strings) : Strings` — [Commons application](../design/application.md), line 473.
-- `allChosenAdmitted(chosen: Strings, admitted: Strings) : Bool` — [Commons application](../design/application.md), line 434.
+- `addressingPeople(user: String, holders: Strings) : Strings` — [Commons application](../design/application.md), line 479.
+- `allChosenAdmitted(chosen: Strings, admitted: Strings) : Bool` — [Commons application](../design/application.md), line 440.
 - `answerKind(value: Json, answer: String) : String` — [The wall](../design/compositions/live/walls.md), line 186.
 - `answerReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 147.
-- `assignmentNotificationMailHtml(kind: String, title: String, url: String, author: String, due: String) : String` — [Commons application](../design/application.md), line 554.
-- `assignmentNotificationMailText(kind: String, title: String, url: String, author: String, due: String) : String` — [Commons application](../design/application.md), line 551.
-- `assignmentNotificationUrl(assignment: String) : String` — [Commons application](../design/application.md), line 527.
-- `audienceLabel(kind: String, identity: String, name: Any) : String` — [Commons application](../design/application.md), line 479.
+- `assignmentNotificationMailHtml(kind: String, title: String, url: String, author: String, due: String) : String` — [Commons application](../design/application.md), line 560.
+- `assignmentNotificationMailText(kind: String, title: String, url: String, author: String, due: String) : String` — [Commons application](../design/application.md), line 557.
+- `assignmentNotificationUrl(assignment: String) : String` — [Commons application](../design/application.md), line 533.
+- `audienceLabel(kind: String, identity: String, name: Any) : String` — [Commons application](../design/application.md), line 485.
 - `boardQuestions(value: LiveRunSnapshot, values: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 143.
 - `briefStanding(request: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 32.
-- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 560.
+- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 566.
 - `cardGiven(card: String) : String` — [The wall](../design/compositions/live/walls.md), line 147.
 - `cardId(response: String, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 86.
 - `cardStanding(card: String, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 78.
-- `carriesAdminister(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 564.
+- `carriesAdminister(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 570.
 - `carryUses() : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 92.
-- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 634.
+- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 674.
 - `cleanupAdmission(authorized: Json, openRun: Json, unlocked: Json, applied: Json, standing: Json) : String` — [The wall](../design/compositions/live/walls.md), line 40.
 - `cleanupBrief(account: String, candidates: Seq) : String` — [The wall](../design/compositions/live/walls.md), line 43.
 - `cleanupCategories(brief: String) : Seq` — [The wall](../design/compositions/live/walls.md), line 46.
@@ -1742,16 +1744,24 @@ Concrete types:
 - `commissionAccount(outcome: String, failure: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 69.
 - `commissionOutcome(reply: String|Null, failure: String|Null, insistence: String|Null, categories: Json, values: Json, removed: Json, successors: Number) : String` — [The wall](../design/compositions/live/walls.md), line 66.
 - `competencyEditionIds(criteria: Json) : Strings` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 128.
-- `completeAddressing(user: String, holders: Strings, admitted: Number) : Bool` — [Commons application](../design/application.md), line 488.
-- `currentAddressing(user: String, holders: Strings, known: Bool, activePeople: Strings, staffPeople: Strings, trashed: Bool, groups: Bool, sections: Bool, ownSection: Any) : Bool` — [Commons application](../design/application.md), line 470.
-- `currentAudienceMembership(user: String, holders: Strings, groupMember: Bool, activeSections: Bool, section: Any, seatStatus: Any, activeStudent: Bool, capabilities: Any) : Bool` — [Commons application](../design/application.md), line 497.
+- `completeAddressing(user: String, holders: Strings, admitted: Number) : Bool` — [Commons application](../design/application.md), line 494.
+- `connectAppAccepted(app: String) : Bool` — [Commons application](../design/application.md), line 595.
+- `connectAppHost(app: String) : String` — [Commons application](../design/application.md), line 602.
+- `connectCallback(app: String) : String` — [Commons application](../design/application.md), line 605.
+- `connectCode(voucher: String, credential: String) : String` — [Commons application](../design/application.md), line 612.
+- `connectCodeCredential(code: String) : String` — [Commons application](../design/application.md), line 620.
+- `connectCodeExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 609.
+- `connectCodeVoucher(code: String) : String` — [Commons application](../design/application.md), line 616.
+- `connectDisplayName(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 624.
+- `currentAddressing(user: String, holders: Strings, known: Bool, activePeople: Strings, staffPeople: Strings, trashed: Bool, groups: Bool, sections: Bool, ownSection: Any) : Bool` — [Commons application](../design/application.md), line 476.
+- `currentAudienceMembership(user: String, holders: Strings, groupMember: Bool, activeSections: Bool, section: Any, seatStatus: Any, activeStudent: Bool, capabilities: Any) : Bool` — [Commons application](../design/application.md), line 503.
 - `definedSortingPiles(categories: Json, texts: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 241.
 - `draftContext(references: Strings, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 134.
 - `draftReferences(context: String) : Strings` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 137.
 - `draftRequest(request: String, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 140.
-- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 620.
-- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 624.
-- `dueWallTime(dueAt: Any, detail: Any) : String` — [Commons application](../design/application.md), line 548.
+- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 660.
+- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 664.
+- `dueWallTime(dueAt: Any, detail: Any) : String` — [Commons application](../design/application.md), line 554.
 - `editApplied(kind: String, target: String, value: String, title: Json, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Boolean` — [Edits the model proposes](../design/compositions/live/edits.md), line 69.
 - `editCap(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 121.
 - `editChoices(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 124.
@@ -1772,25 +1782,25 @@ Concrete types:
 - `editRoundTakesUse(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 96.
 - `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 103.
 - `editUse(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 130.
-- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 570.
+- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 576.
 - `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 150.
 - `failureStanding(failedAt: Date, at: Date) : String` — [The wall](../design/compositions/live/walls.md), line 73.
 - `forumMailKey(notification: String, recipient: String, post: String) : String` — [Notifications](../design/compositions/forum/notifications.md), line 81.
-- `forumNotificationMailBody(content: String, post: String, opening: Any) : String` — [Commons application](../design/application.md), line 539.
-- `forumNotificationMailHtml(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 545.
-- `forumNotificationMailText(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 542.
-- `forumNotificationUrl(conversation: String, post: String) : String` — [Commons application](../design/application.md), line 524.
+- `forumNotificationMailBody(content: String, post: String, opening: Any) : String` — [Commons application](../design/application.md), line 545.
+- `forumNotificationMailHtml(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 551.
+- `forumNotificationMailText(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 548.
+- `forumNotificationUrl(conversation: String, post: String) : String` — [Commons application](../design/application.md), line 530.
 - `gradingRevisionMatches(left: Number, right: Number) : Bool` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 132.
 - `guideScope(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 173.
 - `guideUse(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 171.
-- `hasStoredPosts(posts: Rows) : Bool` — [Commons application](../design/application.md), line 449.
-- `holderCode(kind: String, identity: String) : String` — [Commons application](../design/application.md), line 491.
-- `holderKind(holder: String) : String` — [Commons application](../design/application.md), line 485.
-- `holderSubject(holder: String) : String` — [Commons application](../design/application.md), line 482.
-- `invitationMailHtml(invitation: String, credential: String, body: String) : String` — [Commons application](../design/application.md), line 515.
-- `invitationMailText(invitation: String, credential: String, body: String) : String` — [Commons application](../design/application.md), line 512.
-- `invitationTemplateBody(body: Any) : String` — [Commons application](../design/application.md), line 509.
-- `invitationTemplateSubject(subject: Any) : String` — [Commons application](../design/application.md), line 506.
+- `hasStoredPosts(posts: Rows) : Bool` — [Commons application](../design/application.md), line 455.
+- `holderCode(kind: String, identity: String) : String` — [Commons application](../design/application.md), line 497.
+- `holderKind(holder: String) : String` — [Commons application](../design/application.md), line 491.
+- `holderSubject(holder: String) : String` — [Commons application](../design/application.md), line 488.
+- `invitationMailHtml(invitation: String, credential: String, body: String) : String` — [Commons application](../design/application.md), line 521.
+- `invitationMailText(invitation: String, credential: String, body: String) : String` — [Commons application](../design/application.md), line 518.
+- `invitationTemplateBody(body: Any) : String` — [Commons application](../design/application.md), line 515.
+- `invitationTemplateSubject(subject: Any) : String` — [Commons application](../design/application.md), line 512.
 - `isSame(left: String, right: String) : Bool` — [The wall](../design/compositions/live/walls.md), line 90.
 - `kindCap(kind: String, cap: Number) : Number` — [Relays and their runs](../design/compositions/live/relays.md), line 88.
 - `kindChoices(kind: String, choices: Strings) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 80.
@@ -1803,29 +1813,29 @@ Concrete types:
 - `liveAccessHolders(requireSignIn: Boolean) : Seq` — [Live runs](../design/compositions/live/runs.md), line 113.
 - `liveAccessMode(holders: Json, retired: Boolean) : String` — [Live runs](../design/compositions/live/runs.md), line 116.
 - `liveRequiresSignIn(mode: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 119.
-- `mailPreviewText(text: String) : String` — [Commons application](../design/application.md), line 518.
+- `mailPreviewText(text: String) : String` — [Commons application](../design/application.md), line 524.
 - `metadataOpeningAuthor(item: String, posts: Seq) : Any` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 38.
 - `modelBegun(responses: Json, subscribers: Seq) : Number` — [The wall](../design/compositions/live/walls.md), line 120.
 - `modelHandedIn(responses: Json, subscribers: Seq) : Number` — [The wall](../design/compositions/live/walls.md), line 123.
-- `noticeRecord(content: String, author: String, by: String, at: Date) : Json` — [Commons application](../design/application.md), line 557.
-- `notificationActorLabel(username: Any, displayName: Any) : String` — [Commons application](../design/application.md), line 536.
-- `notificationAuthorLabel(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 533.
-- `notificationDiscussionTitle(content: Any) : String` — [Commons application](../design/application.md), line 521.
-- `notificationMailSubject(kind: String, title: String) : String` — [Commons application](../design/application.md), line 530.
+- `noticeRecord(content: String, author: String, by: String, at: Date) : Json` — [Commons application](../design/application.md), line 563.
+- `notificationActorLabel(username: Any, displayName: Any) : String` — [Commons application](../design/application.md), line 542.
+- `notificationAuthorLabel(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 539.
+- `notificationDiscussionTitle(content: Any) : String` — [Commons application](../design/application.md), line 527.
+- `notificationMailSubject(kind: String, title: String) : String` — [Commons application](../design/application.md), line 536.
 - `openingGroups(picked: Strings, categories: Json, values: Json, value: Json) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 71.
 - `ownsTaskScope(user: String, scope: String) : Boolean` — [Tasks](../design/compositions/tasks/tasks.md), line 116.
-- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 644.
-- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 648.
-- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 651.
-- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 655.
-- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 659.
+- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 684.
+- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 688.
+- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 691.
+- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 695.
+- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 699.
 - `participantAnswers(reply: String, value: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 182.
 - `participantPassage(value: Json, participant: String) : String` — [The wall](../design/compositions/live/walls.md), line 175.
 - `participantQuestions(value: LiveRunSnapshot) : Seq` — [Live runs](../design/compositions/live/runs.md), line 139.
-- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 575.
-- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 580.
-- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 586.
-- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 583.
+- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 581.
+- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 586.
+- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 592.
+- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 589.
 - `pickPriority(count: Number) : Number` — [The wall](../design/compositions/live/walls.md), line 82.
 - `pickStanding(picked: Strings, categories: Json) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 67.
 - `pileCards(pile: String, categories: Json, values: Json, value: Json) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 111.
@@ -1834,20 +1844,20 @@ Concrete types:
 - `placingReading(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 151.
 - `placingReason(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 162.
 - `placingRepairPassage(value: Json, categories: Json, values: Json, removed: Json, notes: String, offering: String, account: String) : String` — [The wall](../design/compositions/live/walls.md), line 143.
-- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 667.
-- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 672.
+- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 707.
+- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 712.
 - `postPreview(content: String) : Record` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 40.
-- `previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings` — [Commons application](../design/application.md), line 467.
-- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 676.
+- `previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings` — [Commons application](../design/application.md), line 473.
+- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 716.
 - `relayDraftPassage(request: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json, classDocuments: Json, relayDocuments: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 36.
 - `relayDraftReading(reply: String, passage: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 54.
 - `relayDraftReason(reply: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 59.
 - `relayDraftRepairPassage(passage: String, offering: String, account: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 50.
 - `relayEditLines(reply: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 63.
 - `relayGiven(relay: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 143.
-- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 639.
+- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 679.
 - `resolveGradingCriteria(criteria: Json, editions: Json) : Json` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 130.
-- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 629.
+- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 669.
 - `roomBegun(responses: Json) : Number` — [The wall](../design/compositions/live/walls.md), line 114.
 - `roomHandedIn(responses: Json) : Number` — [The wall](../design/compositions/live/walls.md), line 117.
 - `roomSince(at: Date) : Date` — [Relays and their runs](../design/compositions/live/relays.md), line 107.
@@ -1863,46 +1873,46 @@ Concrete types:
 - `samplingResolvedPassage(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 50.
 - `samplingResolvedPreview(resolution: Json) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 60.
 - `samplingResolvedStanding(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 53.
-- `selectedIdentities(holders: Strings, kind: String) : Strings` — [Commons application](../design/application.md), line 476.
-- `selectedSection(section: Any) : Strings` — [Commons application](../design/application.md), line 500.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 589.
-- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 592.
+- `selectedIdentities(holders: Strings, kind: String) : Strings` — [Commons application](../design/application.md), line 482.
+- `selectedSection(section: Any) : Strings` — [Commons application](../design/application.md), line 506.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 629.
+- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 632.
 - `snapshotForm(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 125.
 - `snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 128.
 - `snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 135.
 - `snapshotRequirements(value: Json) : Seq` — [Live runs](../design/compositions/live/runs.md), line 132.
 - `snapshotTitle(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 122.
-- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 663.
+- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 703.
 - `sorterNotes(relay: String, run: String) : String` — [The wall](../design/compositions/live/walls.md), line 126.
 - `sortingAdmission(mode: String, authorized: Boolean|Null, live: Boolean|Null, openRun: Boolean|Null, waiting: Boolean|Null, unlocked: Boolean|Null, answered: Boolean|Null, applied: Boolean|Null, ready: Boolean|Null, value: Json) : String` — [The wall](../design/compositions/live/walls.md), line 60.
 - `sortingBrief(account: String, value: Json, categories: Json, values: Json, removed: Json, notes: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 63.
 - `sortingObservationPresent() : Boolean` — [The wall](../design/compositions/live/walls.md), line 57.
 - `sortingPileSubjects(categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 238.
-- `staffCapabilities(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 494.
+- `staffCapabilities(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 500.
 - `staffQuestion(holders: Seq, nonStaffAuthor: Any) : Boolean` — [Feeds and thread context](../design/compositions/forum/feed.md), line 32.
-- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 598.
-- `submissionAllowed(detail: Json, section: String, at: Date) : Bool` — [Commons application](../design/application.md), line 443.
+- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 638.
+- `submissionAllowed(detail: Json, section: String, at: Date) : Bool` — [Commons application](../design/application.md), line 449.
 - `summaryAdmission(items: Number) : String` — [The wall](../design/compositions/live/walls.md), line 50.
-- `taskListMailHtml(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 608.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 602.
-- `taskListMailText(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 605.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 617.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 611.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 614.
-- `threadLastActivity(posts: Rows) : Any` — [Commons application](../design/application.md), line 461.
-- `threadParticipants(posts: Rows) : Strings` — [Commons application](../design/application.md), line 464.
-- `threadPostIds(nodes: Rows) : Strings` — [Commons application](../design/application.md), line 452.
-- `threadReplyCount(posts: Rows) : Number` — [Commons application](../design/application.md), line 458.
+- `taskListMailHtml(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 648.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 642.
+- `taskListMailText(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 645.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 657.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 651.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 654.
+- `threadLastActivity(posts: Rows) : Any` — [Commons application](../design/application.md), line 467.
+- `threadParticipants(posts: Rows) : Strings` — [Commons application](../design/application.md), line 470.
+- `threadPostIds(nodes: Rows) : Strings` — [Commons application](../design/application.md), line 458.
+- `threadReplyCount(posts: Rows) : Number` — [Commons application](../design/application.md), line 464.
 - `trayHoldsACard(values: Json, categories: Json, removed: Seq) : Bool` — [The wall](../design/compositions/live/walls.md), line 97.
 - `useFit(use: String, kind: String, choices: Strings, parts: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 101.
-- `validDelegationIdentityInput(item: String, learner?: String, grader?: String) : Bool` — [Commons application](../design/application.md), line 440.
-- `validDelegationSpreadInput(item: String, learners: Strings, graders: Strings, replace: Bool) : Bool` — [Commons application](../design/application.md), line 437.
+- `validDelegationIdentityInput(item: String, learner?: String, grader?: String) : Bool` — [Commons application](../design/application.md), line 446.
+- `validDelegationSpreadInput(item: String, learners: Strings, graders: Strings, replace: Bool) : Bool` — [Commons application](../design/application.md), line 443.
 - `validFeedOrder(order: String) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 34.
 - `validPostControlSelection(posts: Seq) : Boolean` — [Selected post controls](../design/compositions/forum/post-controls.md), line 33.
-- `validProfileSelection(users: Strings) : Bool` — [Commons application](../design/application.md), line 446.
+- `validProfileSelection(users: Strings) : Bool` — [Commons application](../design/application.md), line 452.
 - `validThreadSelection(conversations: Seq) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 36.
-- `visibleAnswer(answer: Any) : Bool` — [Commons application](../design/application.md), line 503.
-- `visibleThreadPosts(nodes: Any, posts: Any, trashed: Any) : Rows` — [Commons application](../design/application.md), line 455.
+- `visibleAnswer(answer: Any) : Bool` — [Commons application](../design/application.md), line 509.
+- `visibleThreadPosts(nodes: Any, posts: Any, trashed: Any) : Rows` — [Commons application](../design/application.md), line 461.
 - `voteStanding(kind: String, choices: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 96.
 - `wallCardIds(values: Json, categories: Json) : Seq` — [The wall](../design/compositions/live/walls.md), line 93.
 - `wallCards(values: Json, categories: Json, trashed: Seq, subscribers: Seq, presentation: Json, viewer: String) : Json` — [The wall](../design/compositions/live/walls.md), line 101.
@@ -4728,6 +4738,20 @@ Former "the category of (item) for (reader)" — inputs (item, reader); bindings
       category
       description
       name
+```
+
+### the connections of (user)
+
+Authored path: `Access.connect.theConnectionsOf`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 87.
+
+```former
+Former "the connections of (user)" — inputs (user); bindings (connection, app, approvedAt); promises exactly one record — forms:
+  each Connecting._getConnections (user) has (app, approvedAt, connection)
+    form a record of
+      app
+      approvedAt
+      connection
 ```
 
 ### the reaction controls on (post) for (reader)
@@ -7557,6 +7581,249 @@ where
   earlier, RequestBoundary.request (path: "/users/restore", requestId, session, user)
 then
   RequestBoundary.respond (requestId, user)
+```
+
+### Access.connect.ApproveApp
+
+Authored path: `Access.connect.ApproveApp`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 32.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 103.
+
+```reaction
+when RequestBoundary.request (app, path: "/connect/approve", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  accepted is connectAppAccepted (app)
+  accepted is among [true]
+  at is the current flow's instant
+  expiresAt is connectCodeExpiry (at)
+then
+  Connecting.approve (app, at, user)
+```
+
+### Access.connect.ApproveApp#2
+
+Authored path: `Access.connect.ApproveApp`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 32.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 103.
+
+```reaction
+when Connecting.approve (app, at, user, connection), asked by Access.connect.ApproveApp
+where
+  expiresAt is connectCodeExpiry (at)
+then
+  ConnectVouching.issue (at, expiresAt, subject: connection)
+```
+
+### Access.connect.ApproveApp#3
+
+Authored path: `Access.connect.ApproveApp`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 32.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 103.
+
+```reaction
+when ConnectVouching.issue (at, expiresAt, subject: connection, credential, voucher), asked by Access.connect.ApproveApp#2
+where
+  code is connectCode (credential, voucher)
+  earlier, Connecting.approve (app, at, user, connection), asked by Access.connect.ApproveApp
+  callback is connectCallback (app)
+  earlier, RequestBoundary.request (app, path: "/connect/approve", requestId, session)
+then
+  RequestBoundary.respond (callback, code, requestId)
+```
+
+### Access.connect.ApproveAppRefused
+
+Authored path: `Access.connect.ApproveAppRefused`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 33.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 104.
+
+```reaction
+when RequestBoundary.request (app, path: "/connect/approve", requestId, session)
+where
+  view "the active user of (session)" with (session)
+  accepted is connectAppAccepted (app)
+  accepted is among [false]
+then
+  RequestBoundary.respond (error: "CONNECT_APP_INVALID", requestId)
+```
+
+### Access.connect.DescribeApp:approved
+
+Authored path: `Access.connect.DescribeApp`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 25.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 105.
+
+```reaction
+when RequestBoundary.request (app, path: "/connect/describe", requestId, session)
+where
+  accepted is connectAppAccepted (app)
+  view "the active user of (session)" with (session) has (user)
+  accepted is among [true]
+  host is connectAppHost (app)
+  callback is connectCallback (app)
+  Connecting._getApproval (app, user)
+then
+  RequestBoundary.respond (app, approved: true, callback, host, requestId)
+```
+
+### Access.connect.DescribeApp:refused
+
+Authored path: `Access.connect.DescribeApp`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 25.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 105.
+
+```reaction
+when RequestBoundary.request (app, path: "/connect/describe", requestId, session)
+where
+  accepted is connectAppAccepted (app)
+  view "the active user of (session)" with (session)
+  accepted is among [false]
+then
+  RequestBoundary.respond (error: "CONNECT_APP_INVALID", requestId)
+```
+
+### Access.connect.DescribeApp:unapproved
+
+Authored path: `Access.connect.DescribeApp`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 25.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 105.
+
+```reaction
+when RequestBoundary.request (app, path: "/connect/describe", requestId, session)
+where
+  accepted is connectAppAccepted (app)
+  view "the active user of (session)" with (session) has (user)
+  accepted is among [true]
+  host is connectAppHost (app)
+  callback is connectCallback (app)
+  no Connecting._getApproval (app, user)
+then
+  RequestBoundary.respond (app, approved: false, callback, host, requestId)
+```
+
+### Access.connect.ListConnections
+
+Authored path: `Access.connect.ListConnections`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 86.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 106.
+
+```reaction
+when RequestBoundary.request (path: "/connect/list", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+then
+  RequestBoundary.respond (connections: former "the connections of (user)" with (user), requestId)
+```
+
+### Access.connect.RedeemCode
+
+Authored path: `Access.connect.RedeemCode`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 55.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 107.
+
+```reaction
+when RequestBoundary.request (app, code, path: "/connect/redeem", requestId)
+where
+  at is the current flow's instant
+  voucher is connectCodeVoucher (code)
+  credential is connectCodeCredential (code)
+then
+  ConnectVouching.redeem (at, credential, voucher)
+```
+
+### Access.connect.RedeemCode:archived#2
+
+Authored path: `Access.connect.RedeemCode`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 55.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 107.
+
+```reaction
+when ConnectVouching.redeem (at, credential, voucher, subject: connection), asked by Access.connect.RedeemCode
+where
+  Connecting._getConnection (connection) has (app, user)
+  view "(user) is archived" with (user)
+  earlier, RequestBoundary.request (app, code, path: "/connect/redeem", requestId)
+then
+  RequestBoundary.respond (error: "CONNECT_CODE_INVALID", requestId)
+```
+
+### Access.connect.RedeemCode:signed-in#2
+
+Authored path: `Access.connect.RedeemCode`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 55.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 107.
+
+```reaction
+when ConnectVouching.redeem (at, credential, voucher, subject: connection), asked by Access.connect.RedeemCode
+where
+  Connecting._getConnection (connection) has (app, user)
+  no view "(user) is archived" with (user)
+  Authenticating._getById (user) has (email, username)
+  whether Profiling._getProfileFields (user) has (displayName: profileName)
+  displayName is connectDisplayName (displayName: profileName, username)
+  earlier, RequestBoundary.request (app, code, path: "/connect/redeem", requestId)
+then
+  RequestBoundary.respond (displayName, email, requestId, user, username)
+```
+
+### Access.connect.RedeemCode:unapproved#2
+
+Authored path: `Access.connect.RedeemCode`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 55.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 107.
+
+```reaction
+when ConnectVouching.redeem (at, credential, voucher, subject: connection), asked by Access.connect.RedeemCode
+where
+  earlier, RequestBoundary.request (app, code, path: "/connect/redeem", requestId)
+  no Connecting._getConnection (connection) has (app)
+then
+  RequestBoundary.respond (error: "CONNECT_CODE_INVALID", requestId)
+```
+
+### Access.connect.WithdrawConnection:unknown
+
+Authored path: `Access.connect.WithdrawConnection`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 89.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 108.
+
+```reaction
+when RequestBoundary.request (connection, path: "/connect/withdraw", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  no Connecting._getConnection (connection) has (user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Access.connect.WithdrawConnection:withdrawn
+
+Authored path: `Access.connect.WithdrawConnection`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 89.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 108.
+
+```reaction
+when RequestBoundary.request (connection, path: "/connect/withdraw", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  Connecting._getConnection (connection) has (user)
+then
+  Connecting.withdraw (connection)
+```
+
+### Access.connect.WithdrawConnection:withdrawn#2
+
+Authored path: `Access.connect.WithdrawConnection`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 89.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 108.
+
+```reaction
+when Connecting.withdraw (connection), asked by Access.connect.WithdrawConnection:withdrawn
+where
+  earlier, RequestBoundary.request (connection, path: "/connect/withdraw", requestId, session)
+then
+  RequestBoundary.respond (connection, requestId)
 ```
 
 ### Access.invitations.EmailInvitationQueuesMail
@@ -29983,6 +30250,11 @@ not listed here have no explicit input contract.
 - `/categories/items` — requires `category`, `session`
 - `/categories/list` — requires `session`
 - `/categories/unassign` — requires `item`, `session`
+- `/connect/approve` — requires `session`, `app`
+- `/connect/describe` — requires `session`, `app`
+- `/connect/list` — requires `session`
+- `/connect/redeem` — requires `code`, `app`
+- `/connect/withdraw` — requires `session`, `connection`
 - `/delegation/clear` — requires `session`, `item`, `learner`
 - `/delegation/clear-item` — requires `session`, `item`
 - `/delegation/for-item` — requires `session`, `item`

@@ -27,17 +27,18 @@ replace the complete workload.
 Supply these runtime variables through the platform's secret and configuration
 facilities:
 
-| Variable                  | Requirement                                                                                                                 |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `MONGODB_URI`             | Required scoped MongoDB connection, including a database name and any required TLS options                                  |
-| `PUBLIC_ORIGIN`           | Required exact browser origin: `https://` and the host the room's phones reach, no trailing slash                           |
-| `INVITATION_SECRET`       | Required stable secret of at least 32 characters; startup refuses a shorter one                                             |
-| `VOUCHER_SECRET`          | Required stable secret of at least 32 characters, distinct from `INVITATION_SECRET`                                         |
-| `ADMIN_SETUP_SECRET_HASH` | Optional one-time initial-administrator verifier; remove it after setup                                                     |
-| `GEMINI_API_KEY`          | Required for the reasoner: sorting piles, summaries, drafting, and model seats in live runs. Without it the reasoner is off |
-| `GEMINI_MODEL`            | Optional model name; `gemini-3.7-flash` when unset                                                                          |
-| `REASONER`                | Optional; `gemini` is the default with a key. `scripted` is refused in production                                           |
-| `SMTP_*`                  | Optional existing SMTP configuration described below                                                                        |
+| Variable                  | Requirement                                                                                                                  |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `MONGODB_URI`             | Required scoped MongoDB connection, including a database name and any required TLS options                                   |
+| `PUBLIC_ORIGIN`           | Required exact browser origin: `https://` and the host the room's phones reach, no trailing slash                            |
+| `CONNECT_APP_DOMAIN`      | Optional domain whose apps may sign people in with Commons; `mit-sdg.dev` in production. Unset accepts only `localhost` apps |
+| `INVITATION_SECRET`       | Required stable secret of at least 32 characters; startup refuses a shorter one                                              |
+| `VOUCHER_SECRET`          | Required stable secret of at least 32 characters, distinct from `INVITATION_SECRET`                                          |
+| `ADMIN_SETUP_SECRET_HASH` | Optional one-time initial-administrator verifier; remove it after setup                                                      |
+| `GEMINI_API_KEY`          | Required for the reasoner: sorting piles, summaries, drafting, and model seats in live runs. Without it the reasoner is off  |
+| `GEMINI_MODEL`            | Optional model name; `gemini-3.7-flash` when unset                                                                           |
+| `REASONER`                | Optional; `gemini` is the default with a key. `scripted` is refused in production                                            |
+| `SMTP_*`                  | Optional existing SMTP configuration described below                                                                         |
 
 `MONGODB_URL` remains a supported legacy alias. If both MongoDB variables are
 nonempty, they must contain the same value. Commons refuses conflicting values
@@ -48,6 +49,51 @@ state to its local filesystem. It runs as a non-root user with a read-only root
 filesystem; MongoDB data, credential rotation, and backups remain platform
 responsibilities. Route public traffic only to the declared application port.
 The backend loopback port is internal and must not be published.
+
+## Sign in with Commons for course apps
+
+Course apps, the owner portal among them, sign people in with their Commons
+account without ever handling a Commons password. An app sends the browser to
+`/connect?app=<its origin>&state=<its own value>`, where `state` is 16 to 256
+letters, digits, or `._~-`; Commons shows an error and sends the browser
+nowhere when either is missing or invalid. Commons asks the signed-in person,
+once, whether that app may learn their name, username, and email, remembers the
+answer, and sends the browser to `<app>/auth/commons/callback` with a `code` and
+the app's `state`, or with `error=access_denied` and the `state` when the
+person cancels. The app checks `state`, and its server then redeems the code:
+
+```sh
+curl --request POST \
+  --header "Content-Type: application/json" \
+  --data '{"code":"<code>","app":"https://mit-sdg.dev"}' \
+  https://class.mit-sdg.dev/api/connect/redeem
+```
+
+A redeemed code returns HTTP `200` with the person's stable `user` ID,
+`username`, `displayName`, and `email`. A code works once, lapses sixty seconds
+after it was issued, and only for the app it was issued to; it also stops
+working when its person withdraws the app's approval or their account is
+archived. Every one of those refusals returns HTTP `400` with
+`{"error":"CONNECT_CODE_INVALID"}`, and a request of the wrong shape returns
+`{"error":"INVALID_REQUEST"}`. Redemption needs no Commons session, and Commons
+sends no CORS headers, so only an app's server, not a page in a browser, can
+redeem a code. Once an app has started its own session, a Commons password
+change or archive does not end it. People see and remove the apps they approved
+under **Settings > Connected apps**. The
+[Sign in with Commons explanation](design/compositions/access/connect.md)
+describes the flow and the reasons for each of these rules.
+
+`CONNECT_APP_DOMAIN` names the domain whose apps may ask. Production sets
+`CONNECT_APP_DOMAIN=mit-sdg.dev`, so Commons accepts `https://mit-sdg.dev`,
+where the owner portal runs, and `https://<name>.mit-sdg.dev` for each team's
+app. It refuses names two labels down, `http://`, explicit ports, any path or
+trailing slash, uppercase letters, and Commons' own origin. An app is always
+written as its exact origin, and its code always goes to that origin's
+`/auth/commons/callback`. `http://localhost:<port>` and
+`http://127.0.0.1:<port>` are accepted with or without the variable, so an app
+can be built against a local Commons; while the variable is unset they are the
+only apps accepted. Sign-in codes are derived from `VOUCHER_SECRET`, so
+rotating it voids the codes outstanding at that moment.
 
 ## Email delivery and invitation copy
 
@@ -132,9 +178,9 @@ The supervisor prints both processes' output to its own standard output,
 prefixed `[edge]` and `[web]`, so the platform's log for the workload holds
 the reason. Startup refuses, with a one-line message, on: a missing
 `MONGODB_URI`; conflicting `MONGODB_URI` and `MONGODB_URL`; a missing
-`PUBLIC_ORIGIN` or one with a trailing slash; an `INVITATION_SECRET` or
-`VOUCHER_SECRET` under 32 characters, or the two equal; and
-`REASONER=scripted` in production. A start that reaches the migrations and
+`PUBLIC_ORIGIN` or one with a trailing slash; a `CONNECT_APP_DOMAIN` that is
+not a bare hostname; an `INVITATION_SECRET` or `VOUCHER_SECRET` under 32
+characters, or the two equal; and `REASONER=scripted` in production. A start that reaches the migrations and
 stops there names the migration and its reason; follow that diagnostic and the
 migration guidance above before restarting or restoring a backup. A running
 stack whose `/health` answers `503` has a frontend up and a backend or

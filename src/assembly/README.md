@@ -47,6 +47,25 @@ responses. The same immutable policy is passed to the runtime handler and the
 `httpWire(...)` projection in `generated.config.ts`, so cookie-owned fields and
 HTTP error unions agree.
 
+Every protected route, the ones bound to the session cookie, also refuses a
+request whose `Origin` is not `PUBLIC_ORIGIN` with `403 { error: "FORBIDDEN" }`.
+The cookie is `SameSite=Strict`, but a course app on the platform domain is the
+same site as Commons and its requests carry the cookie, so this origin check is
+what keeps such a page from acting with a visitor's session. A request without
+`Origin` passes; browsers send one with every `POST`. Commons declares no
+browser policy, so no route answers with CORS headers.
+
+`/connect/redeem` is the route a course app's server calls. An app trades a Sign
+in with Commons code there for the person it names, holding no Commons session,
+so the edge lets the path through its session gate and answers it with
+`Cache-Control: no-store`. Every refusal of a code maps to `UNAUTHORIZED`, and
+the edge answers it as `400 { error: "CONNECT_CODE_INVALID" }`, the one refusal
+apps are written against, which the HTTP package's fixed categories cannot
+name. That is the single place the edge's answer differs from the generated
+browser wire, which still lists `UNAUTHORIZED` for the path; Commons' own pages
+never call it. The [Sign in with Commons explanation](../../design/compositions/access/connect.md)
+gives the flow.
+
 [`.env.example`](../../.env.example) defines process and origin settings. The
 sync-engine HTTP package documents cookie, origin, and handler guarantees; the
 host remains responsible for the listener, proxy, TLS, and shutdown.

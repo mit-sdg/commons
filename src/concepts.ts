@@ -108,6 +108,16 @@ import { vouching } from "./concepts/vouching/registry.ts";
 import { wording } from "./concepts/wording/registry.ts";
 import { setupSecretMatches } from "./computations/admin-setup.ts";
 import {
+  connectAppAccepted,
+  connectAppHost,
+  connectCallback,
+  connectCode,
+  connectCodeCredential,
+  connectCodeExpiry,
+  connectCodeVoucher,
+  connectDisplayName,
+} from "./computations/connect.ts";
+import {
   allChosenAdmitted,
   validDelegationIdentityInput,
   validDelegationSpreadInput,
@@ -285,6 +295,7 @@ const registrations = {
   Categorizing: categorizing,
   Commissioning: commissioning,
   Connecting: connecting,
+  ConnectVouching: vouching,
   Conversing: conversing,
   Delegating: delegating,
   Drafting: drafting,
@@ -382,6 +393,14 @@ export const learningConcepts = conceptSet(registrations, {
   capabilitiesAreKnown,
   carriesAdminister,
   cardId,
+  connectAppAccepted,
+  connectAppHost,
+  connectCallback,
+  connectCode,
+  connectCodeCredential,
+  connectCodeExpiry,
+  connectCodeVoucher,
+  connectDisplayName,
   clarifiedPassage,
   draftTitle,
   draftContext,

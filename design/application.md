@@ -343,19 +343,25 @@ instantiate Trashing with
 instantiate Vouching as PasswordResetVouching with
   Subject is Authenticating.User
 
+instantiate Vouching as ConnectVouching with
+  Subject is Connecting.Connection
+
 instantiate Wording with
   Place is MailPlace
 ```
 
 Authenticating owns the application's person identity. Rostering, profiles,
 sessions, roles, authored content, course records, and personal forum state all
-refer back to that account identity.
+refer back to that account identity. So do a person's Connecting connections,
+each of which records that the person allowed one outside app to learn who they
+are; the app is the origin the sign-in composition accepted, which Connecting
+keeps as opaque text.
 
 Assigning owns assignment identities. Grade items, grades, late-day uses, and
 submissions refer to an assignment rather than creating another copy of it.
 Rostering owns section identities; an assignment's target list contains those
 sections. A grade may cite a Submitting submission as evidence, and a submission
-uses a Posting post as its artifact. Invitation, notification, and password-reset workflows supply the concrete `MailKey` used to deduplicate queued email messages. PasswordResetVouching is the single registered instance of the generic Vouching concept; it binds its subject to the account identity, so one of its vouchers entitles its bearer to set that one account's password once. Naming the instance for its errand keeps a later second instance — an address confirmation, say — from inheriting the password-reset mail. Wording holds only the words an administrator put in a `MailPlace`; the words Commons falls back to when a place stands empty are the application's, kept in its computations rather than seeded into the concept.
+uses a Posting post as its artifact. Invitation, notification, and password-reset workflows supply the concrete `MailKey` used to deduplicate queued email messages. The generic Vouching concept has two registered instances, each named for its errand. PasswordResetVouching binds its subject to the account identity, so one of its vouchers entitles its bearer to set that one account's password once. ConnectVouching binds its subject to a Connecting connection, so one of its vouchers entitles the app that connection names to learn, once, who the person is; because issuing discards only the subject's earlier vouchers, a new sign-in code for one app retires that app's older code and no other. Naming each instance for its errand keeps the password-reset mail from following a sign-in code. Wording holds only the words an administrator put in a `MailPlace`; the words Commons falls back to when a place stands empty are the application's, kept in its computations rather than seeded into the concept.
 
 Posting owns post identities. Forum features attach their own state to a post
 without taking ownership of it. Conversing separately owns conversation
@@ -585,6 +591,40 @@ passwordResetMailText(voucher: String, credential: String, username: String) : S
 
 passwordResetMailHtml(voucher: String, credential: String, username: String) : String
   Uses the shared HTML layout to name the account, show the escaped reset code, retain the expiry and unsolicited-request warning, and link to password reset.
+
+connectAppAccepted(app: String) : Bool
+  Reports whether the text is exactly the origin of an app Commons signs people
+  in to: `https://` and the configured `CONNECT_APP_DOMAIN` or one DNS label
+  below it, or `http://localhost` or `http://127.0.0.1` at an explicit port. It
+  is written in lowercase with no path, query, fragment, credentials, or
+  trailing slash, and it is never Commons' own public origin.
+
+connectAppHost(app: String) : String
+  Answers the host an accepted app is shown by, with its port when it names one.
+
+connectCallback(app: String) : String
+  Answers the one address an app receives its code at, the app's
+  `/auth/commons/callback`.
+
+connectCodeExpiry(at: Date) : Date
+  Answers the instant sixty seconds after approval, when a sign-in code lapses.
+
+connectCode(voucher: String, credential: String) : String
+  Joins a ConnectVouching voucher and its credential into the one code an app
+  carries, separated by a dot.
+
+connectCodeVoucher(code: String) : String
+  Reads the voucher back out of a code, and answers an empty voucher, which no
+  voucher matches, for text that is not a code.
+
+connectCodeCredential(code: String) : String
+  Reads the credential back out of a code, and answers an empty credential for
+  text that is not a code.
+
+connectDisplayName(username: String, displayName: Any) : String
+  Answers the name an app is given for a person: the profile's display name,
+  cut to 256 characters, or the username when there is no profile or its name
+  is blank.
 
 setupSecretMatches(secret: String) : Bool
   Reports whether the candidate matches the configured setup-secret verifier.

@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vite-plus/test";
-import { configuredMongodbUrl, validateDeploymentConfiguration } from "../../src/deployment.ts";
+import {
+  configuredConnectAppDomain,
+  configuredMongodbUrl,
+  validateDeploymentConfiguration,
+} from "../../src/deployment.ts";
 
 const productionEnvironment = (overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv => ({
   NODE_ENV: "production",
@@ -7,6 +11,48 @@ const productionEnvironment = (overrides: NodeJS.ProcessEnv = {}): NodeJS.Proces
   INVITATION_SECRET: "test-invitation-secret-0123456789abcdef",
   VOUCHER_SECRET: "test-voucher-secret-0123456789abcdef",
   ...overrides,
+});
+
+describe("the domain whose apps may sign people in with Commons", () => {
+  test("is optional, and normalized to a lowercase hostname", () => {
+    expect(configuredConnectAppDomain({})).toBeUndefined();
+    expect(configuredConnectAppDomain({ CONNECT_APP_DOMAIN: "" })).toBeUndefined();
+    expect(configuredConnectAppDomain({ CONNECT_APP_DOMAIN: "  " })).toBeUndefined();
+    expect(configuredConnectAppDomain({ CONNECT_APP_DOMAIN: "  MIT-SDG.dev  " })).toBe(
+      "mit-sdg.dev",
+    );
+    expect(() =>
+      validateDeploymentConfiguration(
+        productionEnvironment({
+          CONNECT_APP_DOMAIN: "mit-sdg.dev",
+          MONGODB_URI: "mongodb://platform/class",
+        }),
+      ),
+    ).not.toThrow();
+  });
+
+  test("stops startup when it is not a bare hostname", () => {
+    for (const domain of [
+      "*.mit-sdg.dev",
+      ".mit-sdg.dev",
+      "https://mit-sdg.dev",
+      "mit-sdg.dev:443",
+      "mit-sdg.dev/",
+      "mit-sdg.dev?query",
+      "mit-sdg.dev#fragment",
+      "user@mit-sdg.dev",
+      "mit-sdg.dev,example.edu",
+      "mit..sdg.dev",
+      "-mit-sdg.dev",
+      "mit-sdg-.dev",
+      "mit-sdg.dev.",
+      `${"x".repeat(64)}.dev`,
+    ]) {
+      expect(() => validateDeploymentConfiguration({ CONNECT_APP_DOMAIN: domain }), domain).toThrow(
+        "CONNECT_APP_DOMAIN must be a hostname",
+      );
+    }
+  });
 });
 
 describe("deployment MongoDB configuration", () => {

@@ -7,8 +7,16 @@ import { slowRequestObserver } from "./assembly/slow-requests.ts";
 import { hasSafeKeys, hasTextWriteInputs } from "./assembly/security.ts";
 import { configuredPublicOrigin } from "./deployment.ts";
 
+/**
+ * Where a course app trades a sign-in code for the person it names. The app's
+ * server calls it, holding no Commons session, so it is public; Commons sends
+ * no CORS headers on any path, so no page on another site can read its answer.
+ */
+const CONNECT_REDEEM = "/connect/redeem";
+
 const PUBLIC_PATHS = new Set([
   "/auth/login",
+  CONNECT_REDEEM,
   "/live/p/answer",
   "/live/p/arrive",
   "/live/p/attend",
@@ -70,6 +78,23 @@ class RefreshLedger {
       if (at - last >= this.quantumMs) this.refreshedAt.delete(session);
     }
   }
+}
+
+/**
+ * An app learns only whether its code was good. The HTTP package names a
+ * refusal by its public category, and every refusal of a code is
+ * `UNAUTHORIZED`; it reaches the app as one `CONNECT_CODE_INVALID` at 400, the
+ * answer apps are written against, whatever check failed. No cache along the
+ * way may keep an identity or a refusal.
+ */
+function connectRedemption(response: Response): Response {
+  if (response.status === 401)
+    return Response.json(
+      { error: "CONNECT_CODE_INVALID" },
+      { status: 400, headers: { "Cache-Control": "no-store" } },
+    );
+  response.headers.set("Cache-Control", "no-store");
+  return response;
 }
 
 async function inspectRequestInput(request: Request, path: string): Promise<InputVerdict> {
@@ -162,6 +187,7 @@ export function createEdge(
       authorizedSession = session;
     }
     const response = await handler(request);
+    if (logicalPath === CONNECT_REDEEM) return connectRedemption(response);
     if (
       response.ok &&
       authorizedSession !== undefined &&

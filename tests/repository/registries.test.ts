@@ -194,6 +194,7 @@ describe("application-owned design integration", () => {
       "Subscribing.Target is Subscribable",
       "Tracking.Scope is Conversing.Conversation",
       "PasswordResetVouching.Subject is Authenticating.User",
+      "ConnectVouching.Subject is Connecting.Connection",
       "AdoptLinking.Source is Drafting.Brief",
       "AdoptLinking.Target is Questioning.Questionnaire",
       "Drafting.Author is Authenticating.User",

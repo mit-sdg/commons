@@ -24,6 +24,7 @@ export default {
     documents: [
       new URL("./design/application.md", import.meta.url),
       new URL("./design/compositions/access/auth.md", import.meta.url),
+      new URL("./design/compositions/access/connect.md", import.meta.url),
       new URL("./design/compositions/access/invitations.md", import.meta.url),
       new URL("./design/compositions/access/mail.md", import.meta.url),
       new URL("./design/compositions/access/recovery.md", import.meta.url),
