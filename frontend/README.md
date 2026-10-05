@@ -74,6 +74,18 @@ never over writing already in the box; posting and cancelling retire it, and
 `Discard draft` drops it on demand. An unfinished reply reopens its own
 composer when its discussion is opened again.
 
+## Signing in to course apps
+
+`/connect` is where a course app sends its person to sign in with Commons. The
+page reads the `app` and `state` the app put in its address, refuses a
+missing or malformed `state` itself, and asks Commons whether the app is one it
+signs people in to. It sends the browser only to the callback Commons answers
+for an accepted app, carrying the app's `state` back unchanged. A person who
+approved the app before passes straight through; anyone else is asked once,
+and Settings lists the apps a person approved so they can remove one. The page
+stands without the site header, may not be framed by another site, and keeps
+its address out of referrers; `next.config.ts` sets those headers.
+
 ## Application contract
 
 `src/lib/api.ts` is the UI's one Commons client boundary. Its `Input<P>` and

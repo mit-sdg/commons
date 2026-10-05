@@ -2,15 +2,20 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { ConfirmAction } from "@/components/confirm-action";
+import { Fact, Facts } from "@/components/facts";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireAuth } from "@/components/require-auth";
+import { Spinner } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
-import { api, publicErrorMessage } from "@/lib/api";
+import { useQuery } from "@/hooks/use-query";
+import { api, type Output, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { appHost } from "@/lib/connect";
 
 function ProfileSettings() {
   const { session, me, refresh } = useAuth();
@@ -153,6 +158,86 @@ function PasswordSettings() {
   );
 }
 
+/** The apps this person let sign them in with Commons, and a way to take each back. */
+function ConnectedApps() {
+  const { session } = useAuth();
+  const { data, error, loading, refetch } = useQuery<Output<"/connect/list">>(
+    session ? () => api.connect.list() : null,
+    [session],
+  );
+  const connections = data?.connections ?? [];
+
+  async function remove(connection: string, host: string) {
+    const result = await api.connect.withdraw({ connection });
+    if ("error" in result && result.error !== "NOT_FOUND") {
+      toast.error(publicErrorMessage(result.error));
+      return;
+    }
+    // NOT_FOUND is the approval already gone, which is what was asked for.
+    toast.success(`Removed ${host}`);
+    refetch();
+  }
+
+  return (
+    <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
+      <h2 className="mb-4 font-display text-xl font-semibold">
+        Connected apps
+      </h2>
+      {data === null && loading ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Spinner className="size-4" /> Loading connected apps…
+        </div>
+      ) : data === null && error ? (
+        <p className="text-sm text-destructive">{error}</p>
+      ) : connections.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No apps can sign you in yet.
+        </p>
+      ) : (
+        <ul className="divide-y divide-border">
+          {connections.map(({ connection, app, approvedAt }) => {
+            const host = appHost(app);
+            return (
+              <li
+                key={connection}
+                className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{host}</p>
+                  <Facts className="mt-0.5 text-xs">
+                    <span className="truncate font-mono text-muted-foreground">
+                      {app}
+                    </span>
+                    <Fact.When verb="Approved" at={approvedAt} />
+                  </Facts>
+                </div>
+                <ConfirmAction
+                  trigger={
+                    <Button variant="outline" size="sm">
+                      Remove
+                    </Button>
+                  }
+                  title={`Remove ${host}?`}
+                  description={
+                    <p>
+                      {host} will have to ask again before it can sign you in.
+                      Sessions it has already started are its own, and stay
+                      signed in until the app ends them.
+                    </p>
+                  }
+                  confirmLabel="Remove"
+                  destructive
+                  onConfirm={() => remove(connection, host)}
+                />
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 export default function SettingsPage() {
   return (
     <RequireAuth>
@@ -165,6 +250,7 @@ export default function SettingsPage() {
         <div className="space-y-6">
           <ProfileSettings />
           <PasswordSettings />
+          <ConnectedApps />
         </div>
       </PageContainer>
     </RequireAuth>

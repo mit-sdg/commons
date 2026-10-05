@@ -18,8 +18,8 @@ export async function logIn(page: Page, username = "mara") {
   return { user: result.user, cookie: cookie! };
 }
 
-export async function authenticate(page: Page) {
-  const session = await logIn(page);
+export async function authenticate(page: Page, username = "mara") {
+  const session = await logIn(page, username);
   // Forward the real session over the local HTTP test origin, including in
   // browsers that require HTTPS for Secure cookies. Responses are not mocked.
   await page.route("**/api/**", async (route) => {

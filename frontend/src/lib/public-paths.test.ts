@@ -23,4 +23,8 @@ describe("public frontend routes", () => {
     expect(isPublicPath("/admin")).toBe(false);
     expect(isPublicPath("/setup/other")).toBe(false);
   });
+
+  test("sends a signed-out person to sign in before an app may learn who they are", () => {
+    expect(isPublicPath("/connect")).toBe(false);
+  });
 });

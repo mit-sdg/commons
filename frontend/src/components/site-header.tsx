@@ -118,8 +118,14 @@ export function SiteHeader() {
 
   // A participant page reached from a scanned code stands alone: no product
   // chrome between the phone and the questions. The projected join page stands
-  // alone the same way — a wall shows the room only the invitation.
-  if (pathname === "/join" || pathname.startsWith("/q/")) return null;
+  // alone the same way — a wall shows the room only the invitation. So does
+  // the page an app sends its person to: it asks one question about that app.
+  if (
+    pathname === "/join" ||
+    pathname === "/connect" ||
+    pathname.startsWith("/q/")
+  )
+    return null;
   if (pathname.startsWith("/staff/live/run/") && pathname.endsWith("/project"))
     return null;
 
