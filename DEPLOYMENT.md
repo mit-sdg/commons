@@ -27,18 +27,17 @@ replace the complete workload.
 Supply these runtime variables through the platform's secret and configuration
 facilities:
 
-| Variable                       | Requirement                                                                                                                          |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `MONGODB_URI`                  | Required scoped MongoDB connection, including a database name and any required TLS options                                           |
-| `PUBLIC_ORIGIN`                | Required exact browser origin: `https://` and the host the room's phones reach, no trailing slash                                    |
-| `EXTERNAL_AUTH_ALLOWED_DOMAIN` | Optional hostname allowing subdomain CORS on `/api/auth/authenticate`; for example `mit-sdg.dev`. Unset disables browser CORS access |
-| `INVITATION_SECRET`            | Required stable secret of at least 32 characters; startup refuses a shorter one                                                      |
-| `VOUCHER_SECRET`               | Required stable secret of at least 32 characters, distinct from `INVITATION_SECRET`                                                  |
-| `ADMIN_SETUP_SECRET_HASH`      | Optional one-time initial-administrator verifier; remove it after setup                                                              |
-| `GEMINI_API_KEY`               | Required for the reasoner: sorting piles, summaries, drafting, and model seats in live runs. Without it the reasoner is off          |
-| `GEMINI_MODEL`                 | Optional model name; `gemini-3.7-flash` when unset                                                                                   |
-| `REASONER`                     | Optional; `gemini` is the default with a key. `scripted` is refused in production                                                    |
-| `SMTP_*`                       | Optional existing SMTP configuration described below                                                                                 |
+| Variable                  | Requirement                                                                                                                 |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `MONGODB_URI`             | Required scoped MongoDB connection, including a database name and any required TLS options                                  |
+| `PUBLIC_ORIGIN`           | Required exact browser origin: `https://` and the host the room's phones reach, no trailing slash                           |
+| `INVITATION_SECRET`       | Required stable secret of at least 32 characters; startup refuses a shorter one                                             |
+| `VOUCHER_SECRET`          | Required stable secret of at least 32 characters, distinct from `INVITATION_SECRET`                                         |
+| `ADMIN_SETUP_SECRET_HASH` | Optional one-time initial-administrator verifier; remove it after setup                                                     |
+| `GEMINI_API_KEY`          | Required for the reasoner: sorting piles, summaries, drafting, and model seats in live runs. Without it the reasoner is off |
+| `GEMINI_MODEL`            | Optional model name; `gemini-3.7-flash` when unset                                                                          |
+| `REASONER`                | Optional; `gemini` is the default with a key. `scripted` is refused in production                                           |
+| `SMTP_*`                  | Optional existing SMTP configuration described below                                                                        |
 
 `MONGODB_URL` remains a supported legacy alias. If both MongoDB variables are
 nonempty, they must contain the same value. Commons refuses conflicting values

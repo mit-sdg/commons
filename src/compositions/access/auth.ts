@@ -175,56 +175,6 @@ export const Login = endpoint(
     ),
 );
 
-function authenticationInput(value: unknown) {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) return { ok: false };
-  const input = value as Record<string, unknown>;
-  return {
-    ok:
-      Object.keys(input).length === 2 &&
-      typeof input.username === "string" &&
-      input.username.length <= 32 &&
-      typeof input.password === "string" &&
-      input.password.length <= 128,
-  };
-}
-
-export const Authenticate = endpoint(
-  "/auth/authenticate",
-  ({ username, password, user, registeredUsername, email, displayName }) =>
-    receive({ username, password })
-      .then(Authenticating.authenticate({ username, password }).responds({ user }))
-      .then(
-        where(isArchived({ user }))
-          .then(respond({ error: "FORBIDDEN" }))
-          .named("archived"),
-        where(
-          no(isArchived({ user })),
-          Authenticating._getById({ user }).is({ username: registeredUsername, email }),
-          Profiling._getProfileFields({ user }).is({ displayName }),
-        )
-          .then(respond({ user, username: registeredUsername, email, displayName }))
-          .named("success"),
-        where(
-          no(isArchived({ user })),
-          Authenticating._getById({ user }).is({ username: registeredUsername, email }),
-          no(Profiling._getProfileFields({ user })),
-        )
-          .then(
-            respond({
-              user,
-              username: registeredUsername,
-              email,
-              displayName: registeredUsername,
-            }),
-          )
-          .named("no-profile"),
-      ),
-  {
-    input: { required: ["username", "password"] },
-    validators: { input: authenticationInput },
-  },
-);
-
 export const Logout = endpoint("/auth/logout", ({ session }) =>
   receive({ session })
     .where(activeUser({ session }))

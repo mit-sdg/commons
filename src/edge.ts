@@ -2,14 +2,13 @@ import { createGateway } from "@mit-sdg/sync-engine/boundary";
 import { createHttpHandler } from "@mit-sdg/sync-engine-http/handler";
 import type { CommonsImplementations } from "./assembly/application.ts";
 import { assembleCommons } from "./assembly/application.ts";
-import { commonsHttpPolicy, externalAuthenticationHttpPolicy } from "./assembly/http-policy.ts";
+import { commonsHttpPolicy } from "./assembly/http-policy.ts";
 import { slowRequestObserver } from "./assembly/slow-requests.ts";
 import { hasSafeKeys, hasTextWriteInputs } from "./assembly/security.ts";
-import { configuredExternalAuthAllowedDomain, configuredPublicOrigin } from "./deployment.ts";
+import { configuredPublicOrigin } from "./deployment.ts";
 
 const PUBLIC_PATHS = new Set([
   "/auth/login",
-  "/auth/authenticate",
   "/live/p/answer",
   "/live/p/arrive",
   "/live/p/attend",
@@ -91,7 +90,6 @@ export function createEdge(
   origin: string = configuredPublicOrigin(),
   clock?: () => Date,
 ) {
-  const externalAuthAllowedDomain = configuredExternalAuthAllowedDomain();
   const application = assembleCommons(instances, clock);
   const gateway = createGateway({ application, observers: [slowRequestObserver()] });
   const policy = commonsHttpPolicy(origin);
@@ -106,22 +104,6 @@ export function createEdge(
   );
   const fetch = async (request: Request): Promise<Response> => {
     const path = new URL(request.url).pathname;
-    if (path === "/api/auth/authenticate") {
-      // This path checks submitted credentials; it never consumes a Commons cookie.
-      // The native handler bounds the body and the endpoint validates both strings,
-      // including rejecting extra fields, before any account lookup.
-      const authenticationHandler = createHttpHandler({
-        application,
-        gateway,
-        policy: externalAuthenticationHttpPolicy(
-          request.headers.get("Origin"),
-          externalAuthAllowedDomain,
-        ),
-      });
-      const response = await authenticationHandler(request);
-      response.headers.set("Cache-Control", "no-store");
-      return response;
-    }
     if (request.method === "GET" && path === "/health/live") {
       return Response.json({ status: "ok" }, { headers: { "Cache-Control": "no-store" } });
     }

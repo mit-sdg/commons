@@ -5861,7 +5861,7 @@ Former "the role face of (user) in (context)" — inputs (user, context); bindin
 ### the registered users ()
 
 Authored path: `Access.auth.theRegisteredUsers`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 165.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 137.
 
 ```former
 Former "the registered users ()" — inputs (); bindings (user, username, email, displayName, avatar, archived); promises exactly one record — forms:
@@ -6843,7 +6843,7 @@ Former "the watched threads of (user)" — inputs (user); bindings (target, subs
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 168.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 140.
 
 ```reaction
 when RequestBoundary.request (displayName, invitation, password, path: "/auth/accept-invitation", requestId, temporaryPassword, username)
@@ -6855,7 +6855,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 168.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 140.
 
 ```reaction
 when Inviting.verify (channel: "email", credential: temporaryPassword, invitation, address: email), asked by Access.auth.AcceptInvitation
@@ -6869,7 +6869,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 168.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 140.
 
 ```reaction
 when Authenticating.register (email, password, username, user), asked by Access.auth.AcceptInvitation#2
@@ -6883,7 +6883,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 168.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 140.
 
 ```reaction
 when Profiling.createProfile (displayName, user), asked by Access.auth.AcceptInvitation#3
@@ -6897,7 +6897,7 @@ then
 
 Authored path: `Access.auth.AcceptInvitation`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 7.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 168.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 140.
 
 ```reaction
 when Inviting.claim (credential: temporaryPassword, invitation, user), asked by Access.auth.AcceptInvitation#4
@@ -6910,8 +6910,8 @@ then
 ### Access.auth.ArchiveUser:forbidden
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 126.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 169.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 98.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 141.
 
 ```reaction
 when RequestBoundary.request (path: "/users/archive", requestId, session, user)
@@ -6926,8 +6926,8 @@ then
 ### Access.auth.ArchiveUser:last-administrator
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 126.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 169.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 98.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 141.
 
 ```reaction
 when RequestBoundary.request (path: "/users/archive", requestId, session, user)
@@ -6944,8 +6944,8 @@ then
 ### Access.auth.ArchiveUser:self
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 126.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 169.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 98.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 141.
 
 ```reaction
 when RequestBoundary.request (path: "/users/archive", requestId, session, user)
@@ -6961,8 +6961,8 @@ then
 ### Access.auth.ArchiveUser:success
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 126.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 169.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 98.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 141.
 
 ```reaction
 when RequestBoundary.request (path: "/users/archive", requestId, session, user)
@@ -6980,8 +6980,8 @@ then
 ### Access.auth.ArchiveUser:success#2
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 126.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 169.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 98.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 141.
 
 ```reaction
 when Roling.requireCapability (capability: "administer", context: "commons", user: actor), asked by Access.auth.ArchiveUser:success
@@ -6994,8 +6994,8 @@ then
 ### Access.auth.ArchiveUser:success#3
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 126.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 169.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 98.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 141.
 
 ```reaction
 when Roling.revoke (context: "commons", user), asked by Access.auth.ArchiveUser:success#2
@@ -7009,8 +7009,8 @@ then
 ### Access.auth.ArchiveUser:success#4
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 126.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 169.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 98.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 141.
 
 ```reaction
 when Archiving.trash (at, by: actor, item: user), asked by Access.auth.ArchiveUser:success#3
@@ -7021,8 +7021,8 @@ then
 ### Access.auth.ArchiveUser:success#5
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 126.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 169.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 98.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 141.
 
 ```reaction
 when Sessioning.endAllForUser (user), asked by Access.auth.ArchiveUser:success#4
@@ -7035,8 +7035,8 @@ then
 ### Access.auth.ArchiveUser:success-without-role
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 126.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 169.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 98.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 141.
 
 ```reaction
 when RequestBoundary.request (path: "/users/archive", requestId, session, user)
@@ -7054,8 +7054,8 @@ then
 ### Access.auth.ArchiveUser:success-without-role#2
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 126.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 169.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 98.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 141.
 
 ```reaction
 when Archiving.trash (at, by: actor, item: user), asked by Access.auth.ArchiveUser:success-without-role
@@ -7066,8 +7066,8 @@ then
 ### Access.auth.ArchiveUser:success-without-role#3
 
 Authored path: `Access.auth.ArchiveUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 126.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 169.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 98.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 141.
 
 ```reaction
 when Sessioning.endAllForUser (user), asked by Access.auth.ArchiveUser:success-without-role#2
@@ -7077,71 +7077,10 @@ then
   RequestBoundary.respond (requestId, user)
 ```
 
-### Access.auth.Authenticate
-
-Authored path: `Access.auth.Authenticate`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 66.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 170.
-
-```reaction
-when RequestBoundary.request (password, path: "/auth/authenticate", requestId, username)
-then
-  Authenticating.authenticate (password, username)
-```
-
-### Access.auth.Authenticate:archived#2
-
-Authored path: `Access.auth.Authenticate`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 66.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 170.
-
-```reaction
-when Authenticating.authenticate (password, username, user), asked by Access.auth.Authenticate
-where
-  view "(user) is archived" with (user)
-  earlier, RequestBoundary.request (password, path: "/auth/authenticate", requestId, username)
-then
-  RequestBoundary.respond (error: "FORBIDDEN", requestId)
-```
-
-### Access.auth.Authenticate:no-profile#2
-
-Authored path: `Access.auth.Authenticate`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 66.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 170.
-
-```reaction
-when Authenticating.authenticate (password, username, user), asked by Access.auth.Authenticate
-where
-  no view "(user) is archived" with (user)
-  Authenticating._getById (user) has (email, username: registeredUsername)
-  no Profiling._getProfileFields (user)
-  earlier, RequestBoundary.request (password, path: "/auth/authenticate", requestId, username)
-then
-  RequestBoundary.respond (displayName: registeredUsername, email, requestId, user, username: registeredUsername)
-```
-
-### Access.auth.Authenticate:success#2
-
-Authored path: `Access.auth.Authenticate`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 66.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 170.
-
-```reaction
-when Authenticating.authenticate (password, username, user), asked by Access.auth.Authenticate
-where
-  no view "(user) is archived" with (user)
-  Authenticating._getById (user) has (email, username: registeredUsername)
-  Profiling._getProfileFields (user) has (displayName)
-  earlier, RequestBoundary.request (password, path: "/auth/authenticate", requestId, username)
-then
-  RequestBoundary.respond (displayName, email, requestId, user, username: registeredUsername)
-```
-
 ### Access.auth.BootstrapAdminOnLogin
 
 Authored path: `Access.auth.BootstrapAdminOnLogin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 97.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 69.
 
 ```reaction
 when Authenticating.authenticate (user)
@@ -7155,7 +7094,7 @@ then
 ### Access.auth.BootstrapAdminOnLogin#2
 
 Authored path: `Access.auth.BootstrapAdminOnLogin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 97.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 69.
 
 ```reaction
 when Roling.ensureRole (capabilities: ["administer"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnLogin
@@ -7168,7 +7107,7 @@ then
 ### Access.auth.BootstrapAdminOnRegister
 
 Authored path: `Access.auth.BootstrapAdminOnRegister`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 95.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 67.
 
 ```reaction
 when Authenticating.register (user)
@@ -7182,7 +7121,7 @@ then
 ### Access.auth.BootstrapAdminOnRegister#2
 
 Authored path: `Access.auth.BootstrapAdminOnRegister`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 95.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 67.
 
 ```reaction
 when Roling.ensureRole (capabilities: ["administer"], name: "administrator", role), asked by Access.auth.BootstrapAdminOnRegister
@@ -7196,7 +7135,7 @@ then
 
 Authored path: `Access.auth.ChangePassword`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 61.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 171.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 142.
 
 ```reaction
 when RequestBoundary.request (newPassword, oldPassword, path: "/auth/changePassword", requestId, session)
@@ -7210,7 +7149,7 @@ then
 
 Authored path: `Access.auth.ChangePassword`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 61.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 171.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 142.
 
 ```reaction
 when Authenticating.changePassword (newPassword, oldPassword, user), asked by Access.auth.ChangePassword
@@ -7222,7 +7161,7 @@ then
 
 Authored path: `Access.auth.ChangePassword`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 61.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 171.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 142.
 
 ```reaction
 when Sessioning.endAllForUser (user), asked by Access.auth.ChangePassword#2
@@ -7236,7 +7175,7 @@ then
 
 Authored path: `Access.auth.InvitationDetails`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 21.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 172.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 143.
 
 ```reaction
 when RequestBoundary.request (invitation, path: "/auth/invitation", requestId, temporaryPassword)
@@ -7250,7 +7189,7 @@ then
 
 Authored path: `Access.auth.InvitationDetails`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 21.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 172.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 143.
 
 ```reaction
 when RequestBoundary.request (invitation, path: "/auth/invitation", requestId, temporaryPassword)
@@ -7265,7 +7204,7 @@ then
 
 Authored path: `Access.auth.InvitationDetails`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 21.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 172.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 143.
 
 ```reaction
 when RequestBoundary.request (invitation, path: "/auth/invitation", requestId, temporaryPassword)
@@ -7279,8 +7218,8 @@ then
 ### Access.auth.ListUsers:forbidden
 
 Authored path: `Access.auth.ListUsers`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 163.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 173.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 135.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 144.
 
 ```reaction
 when RequestBoundary.request (path: "/users/list", requestId, session)
@@ -7294,8 +7233,8 @@ then
 ### Access.auth.ListUsers:success
 
 Authored path: `Access.auth.ListUsers`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 163.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 173.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 135.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 144.
 
 ```reaction
 when RequestBoundary.request (path: "/users/list", requestId, session)
@@ -7310,7 +7249,7 @@ then
 
 Authored path: `Access.auth.Login`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 45.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 174.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 145.
 
 ```reaction
 when RequestBoundary.request (password, path: "/auth/login", requestId, username)
@@ -7324,7 +7263,7 @@ then
 
 Authored path: `Access.auth.Login`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 45.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 174.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 145.
 
 ```reaction
 when Authenticating.authenticate (password, username), asked by Access.auth.Login:archived
@@ -7338,7 +7277,7 @@ then
 
 Authored path: `Access.auth.Login`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 45.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 174.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 145.
 
 ```reaction
 when RequestBoundary.request (password, path: "/auth/login", requestId, username)
@@ -7353,7 +7292,7 @@ then
 
 Authored path: `Access.auth.Login`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 45.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 174.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 145.
 
 ```reaction
 when Authenticating.authenticate (password, username, user), asked by Access.auth.Login:success
@@ -7367,7 +7306,7 @@ then
 
 Authored path: `Access.auth.Login`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 45.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 174.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 145.
 
 ```reaction
 when Sessioning.start (at, user, absoluteExpiresAt: expiresAt, session), asked by Access.auth.Login:success#2
@@ -7381,7 +7320,7 @@ then
 
 Authored path: `Access.auth.Logout`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 52.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 176.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 147.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/logout", requestId, session)
@@ -7395,7 +7334,7 @@ then
 
 Authored path: `Access.auth.Logout`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 52.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 176.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 147.
 
 ```reaction
 when Sessioning.end (session), asked by Access.auth.Logout
@@ -7409,7 +7348,7 @@ then
 
 Authored path: `Access.auth.Me`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 53.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 177.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 148.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/me", requestId, session)
@@ -7424,8 +7363,8 @@ then
 ### Access.auth.Permissions:assigned
 
 Authored path: `Access.auth.Permissions`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 114.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 175.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 86.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 146.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/permissions", requestId, session)
@@ -7440,8 +7379,8 @@ then
 ### Access.auth.Permissions:none
 
 Authored path: `Access.auth.Permissions`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 114.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 175.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 86.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 146.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/permissions", requestId, session)
@@ -7455,8 +7394,8 @@ then
 ### Access.auth.RegisterInitialAdmin:initialized
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 102.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 178.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 74.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 149.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -7471,8 +7410,8 @@ then
 ### Access.auth.RegisterInitialAdmin:success
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 102.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 178.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 74.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 149.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -7487,8 +7426,8 @@ then
 ### Access.auth.RegisterInitialAdmin:success#2
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 102.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 178.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 74.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 149.
 
 ```reaction
 when Authenticating.register (email, password, username, user), asked by Access.auth.RegisterInitialAdmin:success
@@ -7501,8 +7440,8 @@ then
 ### Access.auth.RegisterInitialAdmin:success#3
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 102.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 178.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 74.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 149.
 
 ```reaction
 when Profiling.createProfile (displayName, user), asked by Access.auth.RegisterInitialAdmin:success#2
@@ -7515,8 +7454,8 @@ then
 ### Access.auth.RegisterInitialAdmin:unauthorized
 
 Authored path: `Access.auth.RegisterInitialAdmin`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 102.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 178.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 74.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 149.
 
 ```reaction
 when RequestBoundary.request (displayName, email, password, path: "/setup/register-admin", requestId, setupSecret, username)
@@ -7531,7 +7470,7 @@ then
 
 Authored path: `Access.auth.Resolve`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 58.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 179.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 150.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/resolve", requestId, username)
@@ -7545,7 +7484,7 @@ then
 
 Authored path: `Access.auth.Resolve`.
 - Covered by [Authentication](../design/compositions/access/auth.md), line 58.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 179.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 150.
 
 ```reaction
 when RequestBoundary.request (path: "/auth/resolve", requestId, username)
@@ -7558,8 +7497,8 @@ then
 ### Access.auth.RestoreUser:forbidden
 
 Authored path: `Access.auth.RestoreUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 148.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 180.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 120.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 151.
 
 ```reaction
 when RequestBoundary.request (path: "/users/restore", requestId, session, user)
@@ -7573,8 +7512,8 @@ then
 ### Access.auth.RestoreUser:success
 
 Authored path: `Access.auth.RestoreUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 148.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 180.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 120.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 151.
 
 ```reaction
 when RequestBoundary.request (path: "/users/restore", requestId, session, user)
@@ -7588,8 +7527,8 @@ then
 ### Access.auth.RestoreUser:success#2
 
 Authored path: `Access.auth.RestoreUser`.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 148.
-- Covered by [Authentication](../design/compositions/access/auth.md), line 180.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 120.
+- Covered by [Authentication](../design/compositions/access/auth.md), line 151.
 
 ```reaction
 when Archiving.restore (item: user), asked by Access.auth.RestoreUser:success
@@ -30001,7 +29940,6 @@ not listed here have no explicit input contract.
 - `/audiences/options` — requires `session`
 - `/audiences/preview` — requires `holders`, `session`
 - `/auth/accept-invitation` — requires `displayName`, `invitation`, `password`, `temporaryPassword`, `username`
-- `/auth/authenticate` — requires `username`, `password`
 - `/auth/changePassword` — requires `session`, `oldPassword`, `newPassword`
 - `/auth/invitation` — requires `invitation`, `temporaryPassword`
 - `/auth/login` — requires `password`, `username`
