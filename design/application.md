@@ -163,6 +163,9 @@ instantiate Categorizing with
   Scope is CategoryScope
   Item is Categorizable
 
+instantiate Connecting with
+  User is Authenticating.User
+
 instantiate Conversing with
   Item is Posting.Post
 

@@ -126,6 +126,7 @@ describe("application-owned design integration", () => {
       "Assigning.Assignee is Authenticating.User",
       "Banking.Learner is Authenticating.User",
       "Bookmarking.User is Authenticating.User",
+      "Connecting.User is Authenticating.User",
       "Flagging.User is Authenticating.User",
       "Grading.Grader is Authenticating.User",
       "Grading.Learner is Authenticating.User",

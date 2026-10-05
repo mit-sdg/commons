@@ -61,6 +61,7 @@ import { banking } from "./concepts/banking/registry.ts";
 import { bookmarking } from "./concepts/bookmarking/registry.ts";
 import { categorizing } from "./concepts/categorizing/registry.ts";
 import { commissioning } from "./concepts/commissioning/registry.ts";
+import { connecting } from "./concepts/connecting/registry.ts";
 import { conversing } from "./concepts/conversing/registry.ts";
 import { delegating } from "./concepts/delegating/registry.ts";
 import { drafting } from "./concepts/drafting/registry.ts";
@@ -283,6 +284,7 @@ const registrations = {
   Bookmarking: bookmarking,
   Categorizing: categorizing,
   Commissioning: commissioning,
+  Connecting: connecting,
   Conversing: conversing,
   Delegating: delegating,
   Drafting: drafting,
