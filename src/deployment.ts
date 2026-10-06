@@ -7,17 +7,21 @@ export function configuredPublicOrigin(env: NodeJS.ProcessEnv = process.env): st
   return (env.PUBLIC_ORIGIN ?? "http://127.0.0.1:3000").replace(/\/$/, "");
 }
 
-export function configuredExternalAuthAllowedDomain(
+/** One DNS label: lowercase letters, digits and inner hyphens, at most 63 characters. */
+export const HOSTNAME_LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+
+/**
+ * The domain whose apps may sign people in with Commons: the domain itself and
+ * every name one label below it. Unset, only an app on this machine may.
+ */
+export function configuredConnectAppDomain(
   env: NodeJS.ProcessEnv = process.env,
 ): string | undefined {
-  const domain = env.EXTERNAL_AUTH_ALLOWED_DOMAIN?.trim().toLowerCase();
+  const domain = env.CONNECT_APP_DOMAIN?.trim().toLowerCase();
   if (domain === undefined || domain === "") return undefined;
-  if (
-    domain.length > 253 ||
-    !domain.split(".").every((label) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label))
-  ) {
+  if (domain.length > 253 || !domain.split(".").every((label) => HOSTNAME_LABEL.test(label))) {
     throw new Error(
-      "commons: EXTERNAL_AUTH_ALLOWED_DOMAIN must be a hostname without a scheme, wildcard, port or path.",
+      "commons: CONNECT_APP_DOMAIN must be a hostname without a scheme, wildcard, port or path.",
     );
   }
   return domain;
@@ -61,7 +65,7 @@ function configuredDerivationSecret(env: NodeJS.ProcessEnv, name: string): strin
 
 export function validateDeploymentConfiguration(env: NodeJS.ProcessEnv = process.env): void {
   configuredAdminSetupSecretVerifier(env);
-  configuredExternalAuthAllowedDomain(env);
+  configuredConnectAppDomain(env);
   const mongodbUrl = configuredMongodbUrl(env);
   if (env.NODE_ENV !== "production") return;
   if (env.PUBLIC_ORIGIN === undefined) {

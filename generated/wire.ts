@@ -219,24 +219,6 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "ASSIGNMENT_NOT_FOUND" | "ASSIGNMENT_NOT_PUBLISHED" | "EMAIL_TAKEN" | "INVALID_BODY" | "INVALID_INPUT" | "INVITATION_INVALID" | "MAIL_RECIPIENT_INVALID" | "PASSWORD_INVALID_LENGTH" | "PROFILE_ALREADY_EXISTS" | "RELEASE_ALREADY_EXISTS" | "ROLE_NOT_FOUND" | "SEAT_ALREADY_ACTIVE" | "SEAT_NOT_FOUND" | "SEAT_NOT_PENDING" | "USERNAME_INVALID_CHARS" | "USERNAME_INVALID_LENGTH" | "USERNAME_TAKEN" };
   };
-  "/auth/authenticate": {
-    input: {
-      "password": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["password"]>>;
-      "username": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["username"]>>;
-    };
-    output: {
-      "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>>;
-      "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["email"]>>;
-      "user": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>>, ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>]>>;
-      "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>>;
-    } | {
-      "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>>;
-      "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["email"]>>;
-      "user": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>>, ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>]>>;
-      "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>>;
-    };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_CREDENTIALS" | "INVALID_INPUT" | "ROLE_NOT_FOUND" };
-  };
   "/auth/changePassword": {
     input: {
       "newPassword": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["changePassword"]>[0], ["newPassword"]>>;
@@ -501,6 +483,71 @@ export type CommonsWire = {
       "item": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["unassign"]>>, ["item"]>>;
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "ITEM_NOT_CATEGORIZED" | "NOT_FOUND" };
+  };
+  "/connect/approve": {
+    input: {
+      "app": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["approve"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>[0], ["app"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "callback": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>>, []>>;
+      "code": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectCode"]["fn"]>>, []>>;
+    };
+    error: { error: AppWideError | "CONNECT_APP_INVALID" | "INVALID_INPUT" | "VOUCHER_EXPIRY_INVALID" };
+  };
+  "/connect/describe": {
+    input: {
+      "app": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "app": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getApproval"]>[0], ["app"]>]>>;
+      "approved": true;
+      "callback": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>>, []>>;
+      "host": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>>, []>>;
+    } | {
+      "app": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getApproval"]>[0], ["app"]>]>>;
+      "approved": false;
+      "callback": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>>, []>>;
+      "host": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>>, []>>;
+    };
+    error: { error: AppWideError | "CONNECT_APP_INVALID" | "INVALID_INPUT" };
+  };
+  "/connect/list": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "connections": {
+        "app": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getConnections"]>>>, ["app"]>>;
+        "approvedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getConnections"]>>>, ["approvedAt"]>>;
+        "connection": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getConnections"]>>>, ["connection"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/connect/redeem": {
+    input: {
+      "app": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getConnection"]>>>, ["app"]>>;
+      "code": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCodeCredential"]["fn"]>[0], ["code"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCodeVoucher"]["fn"]>[0], ["code"]>]>>;
+    };
+    output: {
+      "displayName": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectDisplayName"]["fn"]>>, []>>;
+      "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["email"]>>;
+      "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getConnection"]>>>, ["user"]>]>>;
+      "username": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectDisplayName"]["fn"]>[0], ["username"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>]>>;
+    };
+    error: { error: AppWideError | "CONNECT_CODE_INVALID" | "INVALID_INPUT" | "VOUCHER_INVALID" };
+  };
+  "/connect/withdraw": {
+    input: {
+      "connection": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getConnection"]>[0], ["connection"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["withdraw"]>[0], ["connection"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
+    };
+    output: {
+      "connection": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["withdraw"]>[0], ["connection"]>>;
+    };
+    error: { error: AppWideError | "CONNECTION_NOT_FOUND" | "INVALID_INPUT" | "NOT_FOUND" };
   };
   "/delegation/clear": {
     input: {
@@ -5147,24 +5194,6 @@ export type CommonsWireHttp = {
     };
     error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
-  "/auth/authenticate": {
-    input: {
-      "password": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["password"]>>;
-      "username": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["username"]>>;
-    };
-    output: {
-      "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>>;
-      "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["email"]>>;
-      "user": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>>, ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>]>>;
-      "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>>;
-    } | {
-      "displayName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>>;
-      "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["email"]>>;
-      "user": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>>, ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>]>>;
-      "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>>;
-    };
-    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
-  };
   "/auth/changePassword": {
     input: {
       "newPassword": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["changePassword"]>[0], ["newPassword"]>>;
@@ -5405,6 +5434,66 @@ export type CommonsWireHttp = {
       "item": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Categorizing"]["unassign"]>>, ["item"]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/connect/approve": {
+    input: {
+      "app": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["approve"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>[0], ["app"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>]>>;
+    };
+    output: {
+      "callback": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>>, []>>;
+      "code": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectCode"]["fn"]>>, []>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/connect/describe": {
+    input: {
+      "app": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>>;
+    };
+    output: {
+      "app": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getApproval"]>[0], ["app"]>]>>;
+      "approved": true;
+      "callback": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>>, []>>;
+      "host": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>>, []>>;
+    } | {
+      "app": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getApproval"]>[0], ["app"]>]>>;
+      "approved": false;
+      "callback": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>>, []>>;
+      "host": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>>, []>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/connect/list": {
+    input: Record<string, never>;
+    output: {
+      "connections": {
+        "app": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getConnections"]>>>, ["app"]>>;
+        "approvedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getConnections"]>>>, ["approvedAt"]>>;
+        "connection": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getConnections"]>>>, ["connection"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/connect/redeem": {
+    input: {
+      "app": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getConnection"]>>>, ["app"]>>;
+      "code": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCodeCredential"]["fn"]>[0], ["code"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCodeVoucher"]["fn"]>[0], ["code"]>]>>;
+    };
+    output: {
+      "displayName": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectDisplayName"]["fn"]>>, []>>;
+      "email": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["email"]>>;
+      "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getConnection"]>>>, ["user"]>]>>;
+      "username": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectDisplayName"]["fn"]>[0], ["username"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_getById"]>>>, ["username"]>]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/connect/withdraw": {
+    input: {
+      "connection": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getConnection"]>[0], ["connection"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["withdraw"]>[0], ["connection"]>]>>;
+    };
+    output: {
+      "connection": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["withdraw"]>[0], ["connection"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/delegation/clear": {
     input: {

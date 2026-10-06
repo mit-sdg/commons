@@ -61,6 +61,7 @@ import { banking } from "./concepts/banking/registry.ts";
 import { bookmarking } from "./concepts/bookmarking/registry.ts";
 import { categorizing } from "./concepts/categorizing/registry.ts";
 import { commissioning } from "./concepts/commissioning/registry.ts";
+import { connecting } from "./concepts/connecting/registry.ts";
 import { conversing } from "./concepts/conversing/registry.ts";
 import { delegating } from "./concepts/delegating/registry.ts";
 import { drafting } from "./concepts/drafting/registry.ts";
@@ -106,6 +107,16 @@ import { trashing } from "./concepts/trashing/registry.ts";
 import { vouching } from "./concepts/vouching/registry.ts";
 import { wording } from "./concepts/wording/registry.ts";
 import { setupSecretMatches } from "./computations/admin-setup.ts";
+import {
+  connectAppAccepted,
+  connectAppHost,
+  connectCallback,
+  connectCode,
+  connectCodeCredential,
+  connectCodeExpiry,
+  connectCodeVoucher,
+  connectDisplayName,
+} from "./computations/connect.ts";
 import {
   allChosenAdmitted,
   validDelegationIdentityInput,
@@ -283,6 +294,8 @@ const registrations = {
   Bookmarking: bookmarking,
   Categorizing: categorizing,
   Commissioning: commissioning,
+  Connecting: connecting,
+  ConnectVouching: vouching,
   Conversing: conversing,
   Delegating: delegating,
   Drafting: drafting,
@@ -380,6 +393,14 @@ export const learningConcepts = conceptSet(registrations, {
   capabilitiesAreKnown,
   carriesAdminister,
   cardId,
+  connectAppAccepted,
+  connectAppHost,
+  connectCallback,
+  connectCode,
+  connectCodeCredential,
+  connectCodeExpiry,
+  connectCodeVoucher,
+  connectDisplayName,
   clarifiedPassage,
   draftTitle,
   draftContext,

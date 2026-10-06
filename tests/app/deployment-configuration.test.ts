@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 import {
-  configuredExternalAuthAllowedDomain,
+  configuredConnectAppDomain,
   configuredMongodbUrl,
   validateDeploymentConfiguration,
 } from "../../src/deployment.ts";
@@ -13,39 +13,44 @@ const productionEnvironment = (overrides: NodeJS.ProcessEnv = {}): NodeJS.Proces
   ...overrides,
 });
 
-describe("external authentication domain configuration", () => {
-  test("normalizes hostnames and treats unset and blank values as disabled", () => {
-    expect(configuredExternalAuthAllowedDomain({})).toBeUndefined();
-    expect(
-      configuredExternalAuthAllowedDomain({ EXTERNAL_AUTH_ALLOWED_DOMAIN: "  " }),
-    ).toBeUndefined();
-    expect(
-      configuredExternalAuthAllowedDomain({
-        EXTERNAL_AUTH_ALLOWED_DOMAIN: "  CLIENTS.Example.edu  ",
-      }),
-    ).toBe("clients.example.edu");
+describe("the domain whose apps may sign people in with Commons", () => {
+  test("is optional, and normalized to a lowercase hostname", () => {
+    expect(configuredConnectAppDomain({})).toBeUndefined();
+    expect(configuredConnectAppDomain({ CONNECT_APP_DOMAIN: "" })).toBeUndefined();
+    expect(configuredConnectAppDomain({ CONNECT_APP_DOMAIN: "  " })).toBeUndefined();
+    expect(configuredConnectAppDomain({ CONNECT_APP_DOMAIN: "  MIT-SDG.dev  " })).toBe(
+      "mit-sdg.dev",
+    );
+    expect(() =>
+      validateDeploymentConfiguration(
+        productionEnvironment({
+          CONNECT_APP_DOMAIN: "mit-sdg.dev",
+          MONGODB_URI: "mongodb://platform/class",
+        }),
+      ),
+    ).not.toThrow();
   });
 
-  test("refuses invalid domains during startup validation", () => {
+  test("stops startup when it is not a bare hostname", () => {
     for (const domain of [
-      "*.example.edu",
-      ".example.edu",
-      "https://example.edu",
-      "example.edu:8080",
-      "example.edu/path",
-      "example.edu?query",
-      "example.edu#fragment",
-      "user@example.edu",
-      "example.edu,another.edu",
-      "example..edu",
-      "-example.edu",
-      "example-.edu",
-      "example.edu.",
-      `${"x".repeat(64)}.edu`,
+      "*.mit-sdg.dev",
+      ".mit-sdg.dev",
+      "https://mit-sdg.dev",
+      "mit-sdg.dev:443",
+      "mit-sdg.dev/",
+      "mit-sdg.dev?query",
+      "mit-sdg.dev#fragment",
+      "user@mit-sdg.dev",
+      "mit-sdg.dev,example.edu",
+      "mit..sdg.dev",
+      "-mit-sdg.dev",
+      "mit-sdg-.dev",
+      "mit-sdg.dev.",
+      `${"x".repeat(64)}.dev`,
     ]) {
-      expect(() =>
-        validateDeploymentConfiguration({ EXTERNAL_AUTH_ALLOWED_DOMAIN: domain }),
-      ).toThrow("EXTERNAL_AUTH_ALLOWED_DOMAIN must be a hostname");
+      expect(() => validateDeploymentConfiguration({ CONNECT_APP_DOMAIN: domain }), domain).toThrow(
+        "CONNECT_APP_DOMAIN must be a hostname",
+      );
     }
   });
 });

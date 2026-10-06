@@ -2,14 +2,21 @@ import { createGateway } from "@mit-sdg/sync-engine/boundary";
 import { createHttpHandler } from "@mit-sdg/sync-engine-http/handler";
 import type { CommonsImplementations } from "./assembly/application.ts";
 import { assembleCommons } from "./assembly/application.ts";
-import { commonsHttpPolicy, externalAuthenticationHttpPolicy } from "./assembly/http-policy.ts";
+import { commonsHttpPolicy } from "./assembly/http-policy.ts";
 import { slowRequestObserver } from "./assembly/slow-requests.ts";
 import { hasSafeKeys, hasTextWriteInputs } from "./assembly/security.ts";
-import { configuredExternalAuthAllowedDomain, configuredPublicOrigin } from "./deployment.ts";
+import { configuredPublicOrigin } from "./deployment.ts";
+
+/**
+ * Where a course app trades a sign-in code for the person it names. The app's
+ * server calls it, holding no Commons session, so it is public; Commons sends
+ * no CORS headers on any path, so no page on another site can read its answer.
+ */
+const CONNECT_REDEEM = "/connect/redeem";
 
 const PUBLIC_PATHS = new Set([
   "/auth/login",
-  "/auth/authenticate",
+  CONNECT_REDEEM,
   "/live/p/answer",
   "/live/p/arrive",
   "/live/p/attend",
@@ -73,6 +80,23 @@ class RefreshLedger {
   }
 }
 
+/**
+ * An app learns only whether its code was good. The HTTP package names a
+ * refusal by its public category, and every refusal of a code is
+ * `UNAUTHORIZED`; it reaches the app as one `CONNECT_CODE_INVALID` at 400, the
+ * answer apps are written against, whatever check failed. No cache along the
+ * way may keep an identity or a refusal.
+ */
+function connectRedemption(response: Response): Response {
+  if (response.status === 401)
+    return Response.json(
+      { error: "CONNECT_CODE_INVALID" },
+      { status: 400, headers: { "Cache-Control": "no-store" } },
+    );
+  response.headers.set("Cache-Control", "no-store");
+  return response;
+}
+
 async function inspectRequestInput(request: Request, path: string): Promise<InputVerdict> {
   const declared = Number(request.headers.get("content-length"));
   if (Number.isFinite(declared) && declared > MAX_BODY_CHARS) return "too-large";
@@ -91,7 +115,6 @@ export function createEdge(
   origin: string = configuredPublicOrigin(),
   clock?: () => Date,
 ) {
-  const externalAuthAllowedDomain = configuredExternalAuthAllowedDomain();
   const application = assembleCommons(instances, clock);
   const gateway = createGateway({ application, observers: [slowRequestObserver()] });
   const policy = commonsHttpPolicy(origin);
@@ -106,22 +129,6 @@ export function createEdge(
   );
   const fetch = async (request: Request): Promise<Response> => {
     const path = new URL(request.url).pathname;
-    if (path === "/api/auth/authenticate") {
-      // This path checks submitted credentials; it never consumes a Commons cookie.
-      // The native handler bounds the body and the endpoint validates both strings,
-      // including rejecting extra fields, before any account lookup.
-      const authenticationHandler = createHttpHandler({
-        application,
-        gateway,
-        policy: externalAuthenticationHttpPolicy(
-          request.headers.get("Origin"),
-          externalAuthAllowedDomain,
-        ),
-      });
-      const response = await authenticationHandler(request);
-      response.headers.set("Cache-Control", "no-store");
-      return response;
-    }
     if (request.method === "GET" && path === "/health/live") {
       return Response.json({ status: "ok" }, { headers: { "Cache-Control": "no-store" } });
     }
@@ -180,6 +187,7 @@ export function createEdge(
       authorizedSession = session;
     }
     const response = await handler(request);
+    if (logicalPath === CONNECT_REDEEM) return connectRedemption(response);
     if (
       response.ok &&
       authorizedSession !== undefined &&

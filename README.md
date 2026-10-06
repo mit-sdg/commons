@@ -5,10 +5,13 @@ cross-concept reactions, current-state views, and response formers. The HTTP edg
 web frontend, command-line scenario, and generated client contract all run the same
 sync-engine assembly.
 
-External applications can verify Commons username/password credentials through
-`POST /api/auth/authenticate` and manage their own sessions. This endpoint allows
-CORS from subdomains of `EXTERNAL_AUTH_ALLOWED_DOMAIN`. See the [HTTP integration guide](src/assembly/README.md#http-policy)
-for the request, response, and error contract.
+Course apps sign people in with their Commons account without ever seeing a
+Commons password: an app sends the browser to Commons to ask the person, and
+its server redeems the short-lived code the browser brings back. The
+[deployment guide](DEPLOYMENT.md#sign-in-with-commons-for-course-apps) gives the
+contract an app implements, and the
+[Sign in with Commons explanation](design/compositions/access/connect.md) gives
+the behavior behind it.
 
 ## Run Commons locally
 

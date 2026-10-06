@@ -349,13 +349,15 @@ describe("invitations and email", () => {
     const edge = createEdge(mongoImplementations(await testDb()));
     expect([...edge.publicPaths].sort()).toEqual([
       "/auth/accept-invitation",
-      "/auth/authenticate",
       // The invited person has no account yet, so the read that hands their
       // display name to the registration form answers without a session.
       "/auth/invitation",
       "/auth/login",
       "/auth/request-password-reset",
       "/auth/reset-password",
+      // An app's server trades a sign-in code for the person it names; it
+      // holds no Commons session, and the code is the whole credential.
+      "/connect/redeem",
       // A participant reached a live run through a share token; the token is
       // the whole address, so the participation routes take no session.
       "/live/p/answer",

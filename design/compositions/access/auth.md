@@ -63,34 +63,6 @@ the verifier, then ends every session for that account, including the calling
 session. The person must log in again; a failure after the password change does
 not restore the old password.
 
-[Access.auth.Authenticate](reaction:Access.auth.Authenticate) checks a username and
-password for an external client that owns its own session. Both inputs are
-required strings, with username at most 32 characters and password at most 128;
-extra fields and malformed inputs are refused before account lookup. Credentials are used exactly
-as submitted, without trimming or case folding. Successful authentication returns
-the stable `user` identity, canonical `username`, account `email`, and profile
-`displayName`. If a profile is absent, `displayName` falls back to the canonical
-username. These fields are read for the authenticated account only; callers
-cannot select another account. Unknown usernames and incorrect passwords both
-return `INVALID_CREDENTIALS`; an archived account with the correct password returns
-`FORBIDDEN`, just as it does at Login. Authentication still triggers the existing
-sole-account administrator repair, but never starts, refreshes, or ends a Commons
-session and never issues or clears a cookie.
-
-The HTTP edge exposes this operation as `POST /api/auth/authenticate`, without a
-session requirement, and permits browser requests from HTTP or HTTPS origins
-below the hostname configured by `EXTERNAL_AUTH_ALLOWED_DOMAIN`, including nested
-subdomains, to this path alone. The value is a hostname without scheme, wildcard,
-port or path, normalized to lowercase and read at backend startup. An unset or
-empty value disables browser CORS access; malformed configuration stops startup.
-The bare configured hostname is excluded. Its CORS preflight permits `POST`
-with `Content-Type`; credentialed CORS is not enabled. Responses on this path,
-including failures, carry CORS headers for allowed origins and
-`Cache-Control: no-store`. Other paths retain their existing origin and
-session policy. The external client establishes its session after a successful
-credential check; a later Commons password change or archive does not revoke
-sessions held by that client.
-
 After any successful account registration,
 [Access.auth.BootstrapAdminOnRegister](reaction:Access.auth.BootstrapAdminOnRegister) checks whether this is the sole account
 and whether nobody yet holds `administer`; only when both conditions hold does it
@@ -167,7 +139,6 @@ session, verifies that the caller holds `administer`, and gives administrators
 ```endpoints
 Access.auth.AcceptInvitation at /auth/accept-invitation
 Access.auth.ArchiveUser at /users/archive
-Access.auth.Authenticate at /auth/authenticate
 Access.auth.ChangePassword at /auth/changePassword
 Access.auth.InvitationDetails at /auth/invitation
 Access.auth.ListUsers at /users/list

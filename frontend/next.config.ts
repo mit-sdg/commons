@@ -59,6 +59,18 @@ const nextConfig: NextConfig = {
           { key: "X-Robots-Tag", value: "noindex, nofollow" },
         ],
       },
+      // The page where a person lets an app sign them in. No other site may
+      // frame it to steer a click onto Allow, and its address, which carries
+      // the app's state, is not passed on as a referrer.
+      {
+        source: "/connect",
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      },
     ];
   },
   async rewrites() {

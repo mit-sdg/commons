@@ -36,6 +36,9 @@ export const commonsPublicErrors: Readonly<Record<string, HttpPublicErrorCategor
     INVITATION_NOT_FOUND: "NOT_FOUND",
     VOUCHER_INVALID: "UNAUTHORIZED",
     VOUCHER_EXPIRY_INVALID: "INVALID_REQUEST",
+    CONNECT_APP_INVALID: "INVALID_REQUEST",
+    CONNECT_CODE_INVALID: "UNAUTHORIZED",
+    CONNECTION_NOT_FOUND: "NOT_FOUND",
     MAIL_NOT_FOUND: "NOT_FOUND",
     LATE_DAYS_MUST_BE_POSITIVE: "INVALID_REQUEST",
     LATE_DAYS_EXCEED_MAX: "INVALID_REQUEST",
@@ -235,32 +238,5 @@ export function commonsHttpPolicy(publicOrigin: string) {
         clear: ["/auth/logout", "/auth/changePassword"],
       },
     },
-  });
-}
-
-/** Resolve the wildcard to an exact origin for the HTTP package's CORS policy. */
-export function externalAuthenticationHttpPolicy(
-  origin: string | null,
-  allowedDomain: string | undefined,
-) {
-  let origins: string[] = [];
-  if (origin !== null && allowedDomain !== undefined) {
-    try {
-      const url = new URL(origin);
-      if (
-        (url.protocol === "http:" || url.protocol === "https:") &&
-        url.origin === origin &&
-        url.hostname.endsWith(`.${allowedDomain}`)
-      ) {
-        origins = [origin];
-      }
-    } catch {
-      // Malformed and opaque origins receive no CORS access.
-    }
-  }
-  return httpPolicy({
-    basePath: "/api",
-    publicErrors: commonsPublicErrors,
-    browser: { origins },
   });
 }
