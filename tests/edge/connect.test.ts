@@ -1,4 +1,4 @@
-import { clearFixtureDb, refreshFixture } from "../support/fixtures.ts";
+import { clearFixtureDb, refreshFixture, refreshEdge } from "../support/fixtures.ts";
 import { afterAll, afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
@@ -22,11 +22,8 @@ async function buildFixture(domain: string) {
   // Keep the HTTP package's real-clock cookie validation independent of the test clock.
   const startedAt = new Date(Date.now() + 60_000);
   let now = startedAt;
-  const edge = createEdge(
-    mongoImplementations(db, () => now),
-    COMMONS,
-    () => now,
-  );
+  const instances = mongoImplementations(db, () => now);
+  const edge = createEdge(instances, COMMONS, () => now);
   const { Authenticating, Profiling } = edge.application.concepts;
 
   const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
@@ -69,6 +66,7 @@ async function buildFixture(domain: string) {
 
   return {
     db,
+    resetEdge: () => refreshEdge(edge, instances, COMMONS, () => now),
     edge,
     resetClock: () => {
       now = startedAt;
@@ -95,6 +93,7 @@ async function fixture({ domain = "mit-sdg.dev" }: { domain?: string } = {}) {
     await clearFixtureDb(world.db);
     world.resetClock();
     await refreshFixture(world.edge.application);
+    world.resetEdge();
   }
   return world;
 }

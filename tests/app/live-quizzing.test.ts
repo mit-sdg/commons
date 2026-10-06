@@ -1,8 +1,11 @@
 import { stopTestDb } from "../../src/concepts/testing.ts";
-import { pooledLiveEdge } from "../support/world-pool.ts";
+import { createCommonsFixture, emptyFixture } from "../support/fixtures.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 import { scriptedMind, serveOnePass } from "../../src/reasoning/worker.ts";
+
+const fileWorld = emptyFixture(createCommonsFixture);
+afterAll(stopTestDb);
 
 type Edge = ReturnType<typeof createEdge>;
 
@@ -109,11 +112,9 @@ describe("the live quiz loop", () => {
   let cookie: string;
 
   beforeAll(async () => {
-    edge = (await pooledLiveEdge()).edge;
+    edge = (await fileWorld()).edge;
     ({ cookie } = await registerHost(edge));
   });
-
-  afterAll(stopTestDb);
 
   test("a manual quiz runs end to end: author, launch, participate, grade, disclose, close", async () => {
     const questionnaire = await buildQuiz(edge, cookie, "answers");
@@ -671,11 +672,9 @@ describe("the drafting loop with a scripted reasoner", () => {
   let cookie: string;
 
   beforeAll(async () => {
-    edge = (await pooledLiveEdge()).edge;
+    edge = (await fileWorld()).edge;
     ({ cookie } = await registerHost(edge));
   });
-
-  afterAll(stopTestDb);
 
   const lineOf = async (brief: string) =>
     (await json(await post(edge, "/live/drafts/line", { brief }, cookie))).line as {
@@ -849,11 +848,9 @@ describe("questions stand contiguously", () => {
   let cookie: string;
 
   beforeAll(async () => {
-    edge = (await pooledLiveEdge()).edge;
+    edge = (await fileWorld()).edge;
     ({ cookie } = await registerHost(edge));
   });
-
-  afterAll(stopTestDb);
 
   const questionsOf = async (questionnaire: string) => {
     const whole = await json(await post(edge, "/live/quizzes/get", { questionnaire }, cookie));
@@ -964,11 +961,9 @@ describe("the refining line with a scripted reasoner", () => {
   let cookie: string;
 
   beforeAll(async () => {
-    edge = (await pooledLiveEdge()).edge;
+    edge = (await fileWorld()).edge;
     ({ cookie } = await registerHost(edge));
   });
-
-  afterAll(stopTestDb);
 
   const lineOf = async (brief: string) =>
     (await json(await post(edge, "/live/drafts/line", { brief }, cookie))).line as {
@@ -1125,11 +1120,9 @@ describe("a line left can be found again", () => {
   let user: string;
 
   beforeAll(async () => {
-    edge = (await pooledLiveEdge()).edge;
+    edge = (await fileWorld()).edge;
     ({ user, cookie } = await registerHost(edge));
   });
-
-  afterAll(stopTestDb);
 
   const candidateOf = async (brief: string) => {
     const line = (await json(await post(edge, "/live/drafts/line", { brief }, cookie))).line as {
@@ -1269,11 +1262,9 @@ describe("many participants at once", () => {
   let cookie: string;
 
   beforeAll(async () => {
-    edge = (await pooledLiveEdge()).edge;
+    edge = (await fileWorld()).edge;
     ({ cookie } = await registerHost(edge));
   });
-
-  afterAll(stopTestDb);
 
   test("four devices join, answer, and hand in concurrently; the board counts every one", async () => {
     const questionnaire = await buildQuiz(edge, cookie, "score");

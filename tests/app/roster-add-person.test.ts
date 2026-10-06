@@ -1,10 +1,9 @@
-import { pooledEdge } from "../support/world-pool.ts";
-import { emptyFixture } from "../support/fixtures.ts";
-import { afterAll, describe, expect, test } from "vite-plus/test";
+import { createCommonsFixture, emptyFixture } from "../support/fixtures.ts";
+import { beforeAll, afterAll, describe, expect, test } from "vite-plus/test";
 import { stopTestDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";
 
-const world = emptyFixture(() => pooledEdge());
+const world = emptyFixture(() => createCommonsFixture());
 async function freshEdge() {
   return (await world()).edge;
 }
@@ -317,4 +316,8 @@ describe("adding one person to the roster by hand", () => {
     expect(await pendingRoster(edge, admin.cookie)).toEqual([]);
     expect(await invitedAddresses(edge, admin.cookie)).toEqual([]);
   });
+});
+
+beforeAll(async () => {
+  await world();
 });

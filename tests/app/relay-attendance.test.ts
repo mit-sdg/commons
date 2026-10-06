@@ -1,7 +1,7 @@
-import { reusableFixture } from "../support/fixtures.ts";
-import { afterAll, describe, expect, test } from "vite-plus/test";
+import { reusableFixture, refreshEdge } from "../support/fixtures.ts";
+import { beforeAll, afterAll, describe, expect, test } from "vite-plus/test";
 import type { Db } from "mongodb";
-import { createLiveEdge as createEdge } from "../support/domain-world.ts";
+import { createEdge } from "../../src/edge.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoAttendingConcept } from "../../src/concepts/attending/attending.mongo.ts";
@@ -149,7 +149,14 @@ const ordinaryRoom = reusableFixture(
   async () => {
     const db = await testDb();
     const clock = new Clock();
-    return { db, clock, ...(await stage(edgeWith(db, clock), "host")) };
+    const instances = mongoImplementations(db, clock.now);
+    const edge = createEdge(instances, undefined, clock.now);
+    return {
+      db,
+      clock,
+      resetEdge: () => refreshEdge(edge, instances, undefined, clock.now),
+      ...(await stage(edge, "host")),
+    };
   },
   (value) => {
     value.clock.at = Date.now();
@@ -340,4 +347,8 @@ describe("the room on the run read", () => {
     expect(begun.map((response) => response.participant)).toContain("seat-1");
     expect(await room(s)).toEqual({ here: 1, onOpenRound: 1 });
   });
+});
+
+beforeAll(async () => {
+  await ordinaryRoom();
 });

@@ -1,4 +1,4 @@
-import { pooledEdge } from "../support/world-pool.ts";
+import { createCommonsFixture } from "../support/fixtures.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
@@ -54,7 +54,7 @@ const countResponses = async () =>
   (await edge.application.concepts.Responding._responsesFor({ subject: round })).length;
 
 beforeAll(async () => {
-  edge = (await pooledEdge()).edge;
+  edge = (await createCommonsFixture()).edge;
   host = await register(edge, "lee");
   const { role } = await edge.application.concepts.Roling.ensureRole({
     name: "live-host",

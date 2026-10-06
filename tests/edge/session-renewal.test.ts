@@ -1,5 +1,5 @@
-import { reusableFixture } from "../support/fixtures.ts";
-import { afterAll, afterEach, expect, test, vi } from "vite-plus/test";
+import { reusableFixture, refreshEdge } from "../support/fixtures.ts";
+import { beforeAll, afterAll, afterEach, expect, test, vi } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
@@ -41,6 +41,7 @@ async function buildWorld() {
     );
   return {
     db,
+    resetEdge: () => refreshEdge(edge, instances, "https://commons.test", () => now),
     edge,
     instances,
     realRefresh,
@@ -362,4 +363,8 @@ test("an archived account is rejected even when session cleanup did not run", as
       displayName: "Rejected",
     }),
   ).toMatchObject({ ok: false, error: { kind: "domain", value: "UNAUTHORIZED" } });
+});
+
+beforeAll(async () => {
+  await world();
 });

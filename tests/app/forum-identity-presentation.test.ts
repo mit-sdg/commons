@@ -1,12 +1,11 @@
-import { pooledApplication } from "../support/world-pool.ts";
-import { emptyApplication } from "../support/fixtures.ts";
+import { createCommonsApplication, emptyApplication } from "../support/fixtures.ts";
 import { stopTestDb } from "../../src/concepts/testing.ts";
-import { afterAll, describe, expect, test } from "vite-plus/test";
+import { beforeAll, afterAll, describe, expect, test } from "vite-plus/test";
 import { assembleCommons } from "../../src/assembly/application.ts";
 import { theInboxOf } from "../../src/compositions/forum/notifications.ts";
 import { theTargetsTaggedWithName } from "../../src/compositions/forum/tags.ts";
 
-const freshApp = emptyApplication(pooledApplication);
+const freshApp = emptyApplication(createCommonsApplication);
 
 async function send(
   app: ReturnType<typeof assembleCommons>,
@@ -173,3 +172,7 @@ describe("forum identity and lookup presentation", () => {
 });
 
 afterAll(stopTestDb);
+
+beforeAll(async () => {
+  await freshApp();
+});

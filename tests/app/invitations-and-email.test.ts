@@ -1,10 +1,9 @@
-import { pooledEdge } from "../support/world-pool.ts";
-import { emptyFixture } from "../support/fixtures.ts";
+import { createCommonsFixture, emptyFixture } from "../support/fixtures.ts";
 import { stopTestDb } from "../../src/concepts/testing.ts";
-import { afterAll, describe, expect, test } from "vite-plus/test";
+import { beforeAll, afterAll, describe, expect, test } from "vite-plus/test";
 import { deliverPendingMail, type MailSender } from "../../src/email/worker.ts";
 
-const world = emptyFixture(() => pooledEdge());
+const world = emptyFixture(() => createCommonsFixture());
 async function freshEdge() {
   return (await world()).edge;
 }
@@ -389,3 +388,7 @@ describe("invitations and email", () => {
 });
 
 afterAll(stopTestDb);
+
+beforeAll(async () => {
+  await world();
+});

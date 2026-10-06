@@ -1,107 +1,97 @@
-import { refreshFixtureEdge } from "./edge-fixture.ts";
 import type { Db, Document } from "mongodb";
+import { assembleCommons } from "../../src/assembly/application.ts";
+import { mongoImplementations } from "../../src/concepts.ts";
+import { testDb } from "../../src/concepts/testing.ts";
+import { createEdgeForApplication } from "../../src/edge.ts";
 
-type FixtureApplication = {
-  whenIdle(): Promise<void>;
-  invoker: {
-    invoke(
-      path: string,
-      input: Record<string, unknown>,
-    ): Promise<{ ok: boolean; error?: { kind: string; code?: string } }>;
-  };
+type Application = ReturnType<typeof assembleCommons>;
+type Edge = ReturnType<typeof createEdgeForApplication>;
+type World = {
+  db: Db;
+  edge: { application: Pick<Application, "whenIdle" | "invoker"> };
+  resetEdge?: () => void;
 };
 
-/** Admission refreshes query caches before refusing this missing input. */
-export async function refreshFixture(app: FixtureApplication) {
-  const result = await app.invoker.invoke("/auth/login", {});
-  if (result.ok || result.error?.kind !== "framework" || result.error.code !== "INVALID_INPUT") {
-    throw new Error("fixture cache refresh requires the native /auth/login input refusal");
-  }
+export async function createCommonsApplication(clock?: () => Date) {
+  const db = await testDb();
+  const instances = mongoImplementations(db);
+  return { db, instances, app: assembleCommons(instances, clock) };
 }
 
-/** Retain indexes while giving a reused application empty concept state. */
+/** Keep request closures' edge reference, but give it real, fresh HTTP state. */
+export function refreshEdge(
+  edge: Edge,
+  instances: Parameters<typeof createEdgeForApplication>[1],
+  origin?: string,
+  clock?: () => Date,
+) {
+  Object.assign(edge, createEdgeForApplication(edge.application, instances, origin, clock));
+}
+
+export async function createCommonsFixture(origin?: string, clock?: () => Date) {
+  const world = await createCommonsApplication(clock);
+  const edge = createEdgeForApplication(world.app, world.instances, origin, clock);
+  return { ...world, edge, resetEdge: () => refreshEdge(edge, world.instances, origin, clock) };
+}
+
+/** The real invoker clears query caches before refusing missing login inputs. */
+export async function refreshFixture(app: Pick<Application, "invoker">) {
+  const result = await app.invoker.invoke("/auth/login", {});
+  if (result.ok || result.error.kind !== "framework" || result.error.code !== "INVALID_INPUT")
+    throw new Error("fixture cache refresh requires the native /auth/login input refusal");
+}
+
 export async function clearFixtureDb(db: Db) {
   await Promise.all((await db.collections()).map((collection) => collection.deleteMany({})));
 }
 
-/** A fresh logical world on one real application, for non-trace scenarios. */
-export function emptyFixture<
-  Value extends {
-    db: Db;
-    edge: { application: FixtureApplication };
-  },
->(build: () => Promise<Value>) {
-  let value: Value | undefined;
-  return async () => {
-    if (value === undefined) value = await build();
-    else {
-      await value.edge.application.whenIdle();
-      await clearFixtureDb(value.db);
-      await refreshFixture(value.edge.application);
-      refreshFixtureEdge(value.edge);
-    }
-    return value;
-  };
-}
-
-export function emptyApplication<
-  Value extends {
-    db: Db;
-    app: FixtureApplication;
-  },
->(build: () => Promise<Value>) {
-  let value: Value | undefined;
-  return async (): Promise<Value["app"]> => {
-    if (value === undefined) value = await build();
-    else {
-      await value.app.whenIdle();
-      await clearFixtureDb(value.db);
-      await refreshFixture(value.app);
-    }
-    return value.app;
-  };
-}
-
-/**
- * Build an expensive world through real actions once, then restore its stored
- * state between scenarios. Callers reset any in-memory fault gates separately.
- * Trace/occurrence tests should continue to construct their own application.
- */
-export function reusableFixture<
-  Value extends {
-    db: Db;
-    edge: { application: FixtureApplication };
-  },
->(build: () => Promise<Value>, reset?: (value: Value) => void) {
-  let prepared: Promise<{ value: Value; rows: { name: string; docs: Document[] }[] }> | undefined;
+/** Per-file fixture: prepare once, then restore rows without dropping indexes. */
+export function reusableFixture<Value extends World>(
+  build: () => Promise<Value>,
+  reset?: (value: Value) => void,
+  seed = true,
+) {
+  let prepared: { value: Value; rows: { name: string; docs: Document[] }[] } | undefined;
   return async (): Promise<Value> => {
     if (prepared === undefined) {
-      prepared = (async () => {
-        const value = await build();
-        await value.edge.application.whenIdle();
-        const rows = await Promise.all(
-          (await value.db.collections()).map(async (collection) => ({
-            name: collection.collectionName,
-            docs: await collection.find({}).toArray(),
-          })),
-        );
-        await refreshFixture(value.edge.application);
-        refreshFixtureEdge(value.edge);
-        return { value, rows };
-      })();
-      return (await prepared).value;
+      const value = await build();
+      await value.edge.application.whenIdle();
+      const rows = seed
+        ? await Promise.all(
+            (await value.db.collections()).map(async (collection) => ({
+              name: collection.collectionName,
+              docs: await collection.find({}).toArray(),
+            })),
+          )
+        : [];
+      prepared = { value, rows };
+      return value;
+    } else {
+      await prepared.value.edge.application.whenIdle();
+      await clearFixtureDb(prepared.value.db);
+      await Promise.all(
+        prepared.rows
+          .filter(({ docs }) => docs.length)
+          .map(({ name, docs }) => prepared!.value.db.collection(name).insertMany(docs)),
+      );
     }
-    const { value, rows } = await prepared;
-    await value.edge.application.whenIdle();
-    await clearFixtureDb(value.db);
-    await Promise.all(
-      rows
-        .filter(({ docs }) => docs.length !== 0)
-        .map(({ name, docs }) => value.db.collection(name).insertMany(docs)),
-    );
-    reset?.(value);
-    await refreshFixture(value.edge.application);
-    refreshFixtureEdge(value.edge);
-    return value;
+    reset?.(prepared.value);
+    await refreshFixture(prepared.value.edge.application);
+    prepared.value.resetEdge?.();
+    return prepared.value;
   };
+}
+
+export function emptyFixture<Value extends World>(build: () => Promise<Value>) {
+  return reusableFixture(build, undefined, false);
+}
+
+export function emptyApplication<Value extends { db: Db; app: Application }>(
+  build: () => Promise<Value>,
+) {
+  const fixture = emptyFixture(async () => {
+    const value = await build();
+    return { ...value, edge: { application: value.app } };
+  });
+  return async (): Promise<Value["app"]> => (await fixture()).app;
 }

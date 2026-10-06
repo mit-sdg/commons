@@ -1,4 +1,4 @@
-import { pooledLiveEdge } from "../support/world-pool.ts";
+import { createCommonsFixture } from "../support/fixtures.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 import { stopTestDb } from "../../src/concepts/testing.ts";
@@ -180,7 +180,7 @@ const kindOf = async (relay: string, leg: string) =>
 /** The boundary answers a refusal's category, so KIND_BLANK arrives as INVALID_REQUEST. */
 describe("the kind a round is to its planner", () => {
   beforeAll(async () => {
-    edge = (await pooledLiveEdge()).edge;
+    edge = (await createCommonsFixture()).edge;
     cookie = await registerHost(edge);
   });
 

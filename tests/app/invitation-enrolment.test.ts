@@ -1,6 +1,6 @@
-import { clearFixtureDb, refreshFixture } from "../support/fixtures.ts";
+import { clearFixtureDb, refreshFixture, createCommonsFixture } from "../support/fixtures.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
-import { occurrences } from "../support/occurrences.ts";
+import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
 import { mongoImplementations } from "../../src/concepts.ts";
 import type { CommonsImplementations } from "../../src/assembly/application.ts";
 import { invitationCredential } from "../../src/concepts/inviting/credential.ts";
@@ -107,17 +107,15 @@ const publishedAssignment = async (edge: ReturnType<typeof createEdge>, cookie: 
   return assignment;
 };
 
-let world:
-  | { db: Awaited<ReturnType<typeof testDb>>; edge: ReturnType<typeof createEdge> }
-  | undefined;
+let world: Awaited<ReturnType<typeof createCommonsFixture>> | undefined;
 async function ordinaryEdge() {
   if (world === undefined) {
-    const db = await testDb();
-    world = { db, edge: createEdge(mongoImplementations(db)) };
+    world = await createCommonsFixture();
   } else {
     await world.edge.application.whenIdle();
     await clearFixtureDb(world.db);
     await refreshFixture(world.edge.application);
+    world.resetEdge();
   }
   return world.edge;
 }
@@ -148,7 +146,7 @@ for (const [floor, makeFloor] of floorCases) {
       expect(invited).toHaveLength(1);
 
       // A repeated import must not resend mail to somebody already invited.
-      const before = occurrences(app).length;
+      const before = inspectAssembly(app).occurrences.length;
       await post(
         edge,
         "/roster/import",
@@ -156,8 +154,8 @@ for (const [floor, makeFloor] of floorCases) {
         admin.cookie,
       );
       await app.whenIdle();
-      const reinvites = occurrences(app)
-        .slice(before)
+      const reinvites = inspectAssembly(app)
+        .occurrences.slice(before)
         .filter((event) => event.concept === "Inviting" && event.action === "invite");
       expect(reinvites).toHaveLength(0);
     });

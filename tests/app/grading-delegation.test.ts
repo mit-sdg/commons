@@ -1,6 +1,5 @@
-import { pooledEdge } from "../support/world-pool.ts";
-import { reusableFixture } from "../support/fixtures.ts";
-import { afterAll, describe, expect, test } from "vite-plus/test";
+import { createCommonsFixture, reusableFixture } from "../support/fixtures.ts";
+import { beforeAll, afterAll, describe, expect, test } from "vite-plus/test";
 import { stopTestDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";
 
@@ -56,7 +55,7 @@ const register = async (edge: Edge, username: string, displayName: string) => {
 };
 
 const buildClassroom = async () => {
-  const { db, edge } = await pooledEdge();
+  const { db, edge, resetEdge } = await createCommonsFixture();
   const mara = await register(edge, "mara", "Mara Adeyemi");
   const noah = await register(edge, "noah", "Noah Brandt");
   const priya = await register(edge, "priya", "Priya Raman");
@@ -131,7 +130,7 @@ const buildClassroom = async () => {
   );
   await post(edge, "/assignments/publish", { assignment }, mara.cookie);
   await edge.application.whenIdle();
-  return { db, edge, mara, noah, priya, omar, dana, assignment, section, graderRole };
+  return { db, edge, resetEdge, mara, noah, priya, omar, dana, assignment, section, graderRole };
 };
 
 const classroom = reusableFixture(buildClassroom);
@@ -366,4 +365,8 @@ describe("grading delegation HTTP boundary", () => {
       ],
     });
   });
+});
+
+beforeAll(async () => {
+  await classroom();
 });

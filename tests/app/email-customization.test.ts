@@ -1,13 +1,12 @@
-import { pooledEdge } from "../support/world-pool.ts";
-import { reusableFixture } from "../support/fixtures.ts";
-import { afterAll, describe, expect, test } from "vite-plus/test";
+import { createCommonsFixture, reusableFixture } from "../support/fixtures.ts";
+import { beforeAll, afterAll, describe, expect, test } from "vite-plus/test";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";
 import { passwordResetMailText } from "../../src/computations/password-reset.ts";
 
 async function buildsetup() {
-  const { db, edge } = await pooledEdge();
+  const { db, edge, resetEdge } = await createCommonsFixture();
   const app = edge.application;
   const admin = await app.concepts.Authenticating.register({
     username: "admin",
@@ -30,7 +29,7 @@ async function buildsetup() {
   ) {
     return edge.gateway.invoke(path, { session, ...input });
   }
-  return { db, edge, app, admin, member, adminSession, memberSession, call };
+  return { db, edge, resetEdge, app, admin, member, adminSession, memberSession, call };
 }
 const setup = reusableFixture(buildsetup);
 
@@ -347,4 +346,8 @@ describe("administrator email customization", () => {
     );
     expect(nextMail?.subject).toBe("Your answer was accepted: Discussion");
   });
+});
+
+beforeAll(async () => {
+  await setup();
 });

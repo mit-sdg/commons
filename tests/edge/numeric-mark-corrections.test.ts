@@ -1,5 +1,5 @@
-import { reusableFixture } from "../support/fixtures.ts";
-import { afterAll, expect, test } from "vite-plus/test";
+import { reusableFixture, refreshEdge } from "../support/fixtures.ts";
+import { beforeAll, afterAll, expect, test } from "vite-plus/test";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";
@@ -63,7 +63,8 @@ async function body<T>(response: Response): Promise<T> {
 async function buildFixture() {
   const name = "assessment";
   const db = await testDb();
-  const edge = createEdge(mongoImplementations(db), "http://127.0.0.1");
+  const instances = mongoImplementations(db);
+  const edge = createEdge(instances, "http://127.0.0.1");
   const concepts = edge.application.concepts;
   async function post(path: string, input: unknown, cookie = "") {
     return edge.fetch(
@@ -145,6 +146,7 @@ async function buildFixture() {
   });
   return {
     db,
+    resetEdge: () => refreshEdge(edge, instances, "http://127.0.0.1"),
     edge,
     concepts,
     post,
@@ -458,4 +460,8 @@ test("new creation rejects evidence owned by another learner without creating or
   const itemGrades = await post("/grades/for-item", { item }, staff.cookie);
   expect(itemGrades.status).toBe(200);
   expect(await body<unknown>(itemGrades)).toEqual({ grades: [] });
+});
+
+beforeAll(async () => {
+  await fixture();
 });

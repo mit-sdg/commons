@@ -1,12 +1,11 @@
-import { pooledForumApplication } from "../support/world-pool.ts";
-import { reusableFixture } from "../support/fixtures.ts";
-import { afterAll, expect, test } from "vite-plus/test";
+import { createCommonsApplication, reusableFixture } from "../support/fixtures.ts";
+import { beforeAll, afterAll, expect, test } from "vite-plus/test";
 import { stopTestDb } from "../../src/concepts/testing.ts";
 import { forumMailEligibility } from "../../src/email/forum-policy.ts";
 
 afterAll(stopTestDb);
 async function buildFixture() {
-  const { db, app, instances } = await pooledForumApplication();
+  const { db, app, instances } = await createCommonsApplication();
   const people = [];
   for (const username of ["author", "participant", "outsider"]) {
     const { user } = await instances.Authenticating.register({
@@ -249,4 +248,8 @@ test("reply trash and purge leave a removed position; thread trash, restore and 
   expect(await instances.Accessing._holders({ resource: root.conversation })).toEqual([]);
   expect(await call("/trash/list", a.session)).toEqual({ trashed: [] });
   expect(await call("/subscriptions/mine", b.session)).toEqual({ subscriptions: [] });
+});
+
+beforeAll(async () => {
+  await fixture();
 });

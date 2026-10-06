@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
-import { occurrences } from "../support/occurrences.ts";
-import { createLiveEdge as createEdge } from "../support/domain-world.ts";
+import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
+import { createEdge } from "../../src/edge.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { disabledMind, scriptedMind, serveOnePass } from "../../src/reasoning/worker.ts";
@@ -498,7 +498,7 @@ describe("the sorting controls the dashboard presses", () => {
     expect(done.asksOut).toBe(0);
     expect(done.sortPending).toBe(false);
     expect(done.cards.every((card) => card.pile !== null)).toBe(true);
-    const consequences = occurrences(edge.application);
+    const consequences = inspectAssembly(edge.application).occurrences;
     const categories = new Set(done.piles.map((pile) => pile.pile));
     const placements = consequences.flatMap((record, index) =>
       record.concept === "Categorizing" &&
@@ -538,7 +538,7 @@ describe("the sorting controls the dashboard presses", () => {
     await serveReasoner();
     // Match unique domain identities: the engine retains a bounded flow window,
     // so offsets into an earlier inspection can shift as old flows expire.
-    const records = occurrences(edge.application);
+    const records = inspectAssembly(edge.application).occurrences;
     const settledWall = await readWall(live.round);
     const categories = new Set(settledWall.piles.map((pile) => pile.pile));
     for (const ask of pending) {

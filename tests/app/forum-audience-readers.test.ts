@@ -1,10 +1,9 @@
-import { pooledForumApplication } from "../support/world-pool.ts";
-import { reusableFixture } from "../support/fixtures.ts";
-import { afterAll, expect, test } from "vite-plus/test";
+import { createCommonsApplication, reusableFixture } from "../support/fixtures.ts";
+import { beforeAll, afterAll, expect, test } from "vite-plus/test";
 import { stopTestDb } from "../../src/concepts/testing.ts";
 afterAll(stopTestDb);
 async function buildfixture() {
-  const { db, app, instances } = await pooledForumApplication();
+  const { db, app, instances } = await createCommonsApplication();
   const people = await Promise.all(
     ["author", "reader", "moderator"].map(async (username) => {
       const { user } = await instances.Authenticating.register({
@@ -335,4 +334,8 @@ test("resolution admission excludes the question itself and hides retained self-
   expect(await f.instances.Resolving._getResolution({ question })).toMatchObject([
     { answer: descendant.post },
   ]);
+});
+
+beforeAll(async () => {
+  await fixture();
 });

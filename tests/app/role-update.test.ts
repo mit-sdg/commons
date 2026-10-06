@@ -1,4 +1,4 @@
-import { pooledEdge } from "../support/world-pool.ts";
+import { createCommonsFixture } from "../support/fixtures.ts";
 import { afterAll, expect, test } from "vite-plus/test";
 import { stopTestDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";
@@ -41,7 +41,7 @@ const register = async (edge: ReturnType<typeof createEdge>, username: string) =
 };
 
 test("an administrator changes what a role carries and every holder gains it at once", async () => {
-  const edge = (await pooledEdge()).edge;
+  const edge = (await createCommonsFixture()).edge;
   const admin = await register(edge, "mara");
   const helper = await register(edge, "hana");
 

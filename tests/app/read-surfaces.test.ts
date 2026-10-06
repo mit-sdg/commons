@@ -1,13 +1,12 @@
-import { pooledApplication } from "../support/world-pool.ts";
-import { emptyApplication } from "../support/fixtures.ts";
+import { createCommonsApplication, emptyApplication } from "../support/fixtures.ts";
 import { stopTestDb } from "../../src/concepts/testing.ts";
-import { afterAll, describe, expect, test } from "vite-plus/test";
+import { beforeAll, afterAll, describe, expect, test } from "vite-plus/test";
 import { theAssignmentsOf } from "../../src/compositions/course/assignments.ts";
 import { theRoster } from "../../src/compositions/course/roster.ts";
 import { theHomeFeedByActivity, theThreadContext } from "../../src/compositions/forum/feed.ts";
 import { theModerationQueue } from "../../src/compositions/forum/moderation.ts";
 
-const freshApp = emptyApplication(pooledApplication);
+const freshApp = emptyApplication(createCommonsApplication);
 
 describe("composed application reads", () => {
   test("the assignments read returns each assigned learner release", async () => {
@@ -170,3 +169,7 @@ describe("composed application reads", () => {
 });
 
 afterAll(stopTestDb);
+
+beforeAll(async () => {
+  await freshApp();
+});

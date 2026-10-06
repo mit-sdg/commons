@@ -1,6 +1,5 @@
-import { pooledForumApplication } from "../support/world-pool.ts";
-import { reusableFixture } from "../support/fixtures.ts";
-import { afterAll, expect, test } from "vite-plus/test";
+import { createCommonsApplication, reusableFixture } from "../support/fixtures.ts";
+import { beforeAll, afterAll, expect, test } from "vite-plus/test";
 import { stopTestDb } from "../../src/concepts/testing.ts";
 
 afterAll(stopTestDb);
@@ -10,7 +9,7 @@ afterAll(stopTestDb);
  * outside every audience below, so a notice must never reach them.
  */
 async function buildfixture() {
-  const { db, app, instances } = await pooledForumApplication();
+  const { db, app, instances } = await createCommonsApplication();
   const people: { user: string; session: string; email: string; seat: string }[] = [];
   for (const username of ["student", "admin", "tutor", "outsider"]) {
     const email = `${username}@example.edu`;
@@ -291,4 +290,8 @@ test("a trashed post admits no notice, and its audience is read at the moment of
       (message) => message.recipient === admin!.email,
     ),
   ).toHaveLength(1);
+});
+
+beforeAll(async () => {
+  await fixture();
 });

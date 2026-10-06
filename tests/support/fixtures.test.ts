@@ -1,9 +1,9 @@
 import { createEdge } from "../../src/edge.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
-import { assembleLive } from "./domain-world.ts";
+import { assembleCommons } from "../../src/assembly/application.ts";
 import { afterAll, expect, test, vi } from "vite-plus/test";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { reusableFixture, refreshFixture } from "./fixtures.ts";
+import { reusableFixture, refreshFixture, refreshEdge } from "./fixtures.ts";
 
 afterAll(stopTestDb);
 
@@ -16,20 +16,8 @@ test("a restored world retains indexes and resets changed, deleted and newly cre
     await db
       .collection<{ _id: string; email: string; at?: Date }>("people")
       .insertOne({ _id: "seed", email: "seed@example.test", at: new Date(0) });
-    return {
-      db,
-      edge: {
-        application: {
-          whenIdle: async () => undefined,
-          invoker: {
-            invoke: async () => ({
-              ok: false,
-              error: { kind: "framework", code: "INVALID_INPUT" },
-            }),
-          },
-        },
-      },
-    };
+    const app = assembleCommons(mongoImplementations(db));
+    return { db, edge: { application: app } };
   });
   const first = await fixture();
   await first.db.collection<{ _id: string; email: string; at?: Date }>("people").deleteMany({});
@@ -84,7 +72,13 @@ test("restoring an HTTP fixture refreshes its transport ledger even for captured
           body: "{}",
         }),
       );
-    return { db, edge, refreshed, request };
+    return {
+      db,
+      edge,
+      resetEdge: () => refreshEdge(edge, instances, "https://commons.test"),
+      refreshed,
+      request,
+    };
   });
   const first = await fixture();
   expect((await first.request()).status).toBe(200);
@@ -98,7 +92,7 @@ test("restoring an HTTP fixture refreshes its transport ledger even for captured
 
 test("fixture refresh invalidates a constant-key template read before a direct invitation action", async () => {
   const db = await testDb();
-  const app = assembleLive(mongoImplementations(db));
+  const app = assembleCommons(mongoImplementations(db));
   await app.concepts.Wording.word({
     place: "invitation",
     heading: "Saved fixture copy",

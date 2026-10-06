@@ -1,6 +1,6 @@
-import { reusableFixture } from "../support/fixtures.ts";
+import { reusableFixture, refreshEdge } from "../support/fixtures.ts";
 import { MongoClient } from "mongodb";
-import { afterAll, expect, test } from "vite-plus/test";
+import { beforeAll, afterAll, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb, testDbUri } from "../../src/concepts/testing.ts";
@@ -78,7 +78,8 @@ afterAll(stopTestDb);
 /** A room of 22 cards: sixteen in eight piles, one removed, and five in the tray. */
 async function buildRoom() {
   const db = await testDb();
-  const edge = createEdge(mongoImplementations(db));
+  const instances = mongoImplementations(db);
+  const edge = createEdge(instances);
   const cookie = await registerHost(edge);
   const call = async (path: string, body: unknown, as = cookie) =>
     json(await post(edge, path, body, as));
@@ -148,7 +149,16 @@ async function buildRoom() {
   }
   await call("/live/walls/remove-card", { round, card: cards[16]!.card });
   await edge.application.whenIdle();
-  return { db, edge, call, run, round, cards, piles };
+  return {
+    db,
+    edge,
+    resetEdge: () => refreshEdge(edge, instances),
+    call,
+    run,
+    round,
+    cards,
+    piles,
+  };
 }
 
 const stageRoom = reusableFixture(buildRoom);
@@ -321,4 +331,8 @@ test("a cold arrive on a three-round run costs a bounded number of commands", as
   } finally {
     await close();
   }
+});
+
+beforeAll(async () => {
+  await stageRoom();
 });

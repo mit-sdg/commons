@@ -1,20 +1,19 @@
-import { clearFixtureDb, refreshFixture } from "../support/fixtures.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { mongoImplementations } from "../../src/concepts.ts";
+import { clearFixtureDb, refreshFixture, createCommonsFixture } from "../support/fixtures.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { derivePasswordVerifier } from "../../src/concepts/authenticating/password-verifier.ts";
 import { createEdge } from "../../src/edge.ts";
 
 type Edge = ReturnType<typeof createEdge>;
-let emptyWorld: { db: Awaited<ReturnType<typeof testDb>>; edge: Edge } | undefined;
+let emptyWorld: Awaited<ReturnType<typeof createCommonsFixture>> | undefined;
 async function freshEdge() {
   if (emptyWorld === undefined) {
-    const db = await testDb();
-    emptyWorld = { db, edge: createEdge(mongoImplementations(db)) };
+    emptyWorld = await createCommonsFixture();
   } else {
     await emptyWorld.edge.application.whenIdle();
     await clearFixtureDb(emptyWorld.db);
     await refreshFixture(emptyWorld.edge.application);
+    emptyWorld.resetEdge();
   }
   return emptyWorld.edge;
 }

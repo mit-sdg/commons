@@ -1,4 +1,4 @@
-import { pooledEdge } from "../support/world-pool.ts";
+import { createCommonsFixture } from "../support/fixtures.ts";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { afterAll, beforeAll, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
@@ -193,7 +193,7 @@ function digest(moment: string, wall: Wall): string[] {
 }
 
 beforeAll(async () => {
-  edge = (await pooledEdge()).edge;
+  edge = (await createCommonsFixture()).edge;
   cookie = (await register(edge, "omar", true)).cookie;
 });
 

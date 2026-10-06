@@ -1,4 +1,4 @@
-import { pooledLiveEdge } from "../support/world-pool.ts";
+import { createCommonsFixture } from "../support/fixtures.ts";
 import { stopTestDb } from "../../src/concepts/testing.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
@@ -172,7 +172,7 @@ describe("a seat on a questionnaire run", () => {
   let cookie: string;
 
   beforeAll(async () => {
-    edge = (await pooledLiveEdge()).edge;
+    edge = (await createCommonsFixture()).edge;
     cookie = await registerHost(edge);
   });
 

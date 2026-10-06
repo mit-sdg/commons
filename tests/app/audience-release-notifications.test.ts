@@ -1,13 +1,12 @@
-import { pooledForumApplication } from "../support/world-pool.ts";
-import { reusableFixture } from "../support/fixtures.ts";
-import { afterAll, expect, test } from "vite-plus/test";
+import { createCommonsApplication, reusableFixture } from "../support/fixtures.ts";
+import { beforeAll, afterAll, expect, test } from "vite-plus/test";
 import { stopTestDb } from "../../src/concepts/testing.ts";
 import { theMailEligibility } from "../../src/compositions/forum/notifications.ts";
 
 afterAll(stopTestDb);
 
 async function buildFixture() {
-  const { db, app, instances } = await pooledForumApplication();
+  const { db, app, instances } = await createCommonsApplication();
   const people = [];
   for (const username of ["student", "admin", "tutor", "other"]) {
     const { user } = await instances.Authenticating.register({
@@ -214,4 +213,8 @@ test("targeted releases notify only students in the selected section", async () 
     }),
   ).toMatchObject({ ok: false });
   expect(await app.concepts.Mailing._getPending({})).toHaveLength(1);
+});
+
+beforeAll(async () => {
+  await fixture();
 });

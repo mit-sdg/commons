@@ -1,5 +1,5 @@
-import { reusableFixture } from "../support/fixtures.ts";
-import { afterAll, expect, test } from "vite-plus/test";
+import { reusableFixture, refreshEdge } from "../support/fixtures.ts";
+import { beforeAll, afterAll, expect, test } from "vite-plus/test";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";
@@ -77,7 +77,8 @@ async function json<T>(response: Response): Promise<T> {
 async function buildFixture() {
   const name = "assessment";
   const db = await testDb();
-  const edge = createEdge(mongoImplementations(db), "http://127.0.0.1");
+  const instances = mongoImplementations(db);
+  const edge = createEdge(instances, "http://127.0.0.1");
   const { concepts } = edge.application;
   async function post(path: string, input: unknown, cookie = "") {
     return edge.fetch(
@@ -180,6 +181,7 @@ async function buildFixture() {
   });
   return {
     db,
+    resetEdge: () => refreshEdge(edge, instances, "http://127.0.0.1"),
     edge,
     concepts,
     post,
@@ -515,4 +517,8 @@ test("assignment and attempt excusals remain distinct and private", async () => 
   expect(
     await json(await post("/grades/detail", { grade: attempt.body.grade }, other.cookie)),
   ).toEqual({ error: "NOT_FOUND" });
+});
+
+beforeAll(async () => {
+  await fixture();
 });

@@ -1,6 +1,5 @@
-import { reusableFixture } from "../support/fixtures.ts";
-import { pooledTaskApplication, pooledApplication } from "../support/world-pool.ts";
-import { afterAll, describe, expect, test } from "vite-plus/test";
+import { reusableFixture, createCommonsApplication } from "../support/fixtures.ts";
+import { beforeAll, afterAll, describe, expect, test } from "vite-plus/test";
 import { assembleCommons } from "../../src/assembly/application.ts";
 import { stopTestDb } from "../../src/concepts/testing.ts";
 
@@ -9,8 +8,8 @@ type App = ReturnType<typeof assembleCommons>;
 const WINDOW = { startsAt: "2026-08-19T16:00:00.000Z", endsAt: "2026-08-19T17:00:00.000Z" };
 
 const actors = new WeakMap<App, Map<string, Awaited<ReturnType<typeof buildActor>>>>();
-async function prepareActors(build: typeof pooledTaskApplication) {
-  const { db, app } = await build();
+async function prepareActors() {
+  const { db, app } = await createCommonsApplication();
   const records = new Map<string, Awaited<ReturnType<typeof buildActor>>>();
   for (const username of [
     "mara",
@@ -25,10 +24,9 @@ async function prepareActors(build: typeof pooledTaskApplication) {
   actors.set(app, records);
   return { db, edge: { application: app }, app };
 }
-const prepared = reusableFixture(() => prepareActors(pooledTaskApplication));
-const crossDomain = reusableFixture(() => prepareActors(pooledApplication));
-async function newApp(full = false) {
-  return (await (full ? crossDomain : prepared)()).app;
+const prepared = reusableFixture(prepareActors);
+async function newApp() {
+  return (await prepared()).app;
 }
 async function actor(app: App, username: string) {
   return actors.get(app)?.get(username) ?? (await buildActor(app, username));
@@ -759,7 +757,7 @@ describe("the task inbox", () => {
 
 describe("the two notification instances stay apart", () => {
   test("a task notification queues its own mail and never the forum's one", async () => {
-    const app = await newApp(true);
+    const app = await newApp();
     const mara = await actor(app, "mara");
     const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "Apart");
@@ -933,4 +931,8 @@ describe("the two notification instances stay apart", () => {
     });
     expect(withoutTaskPresentation(rows[0])).toEqual({ list: null, title: null });
   });
+});
+
+beforeAll(async () => {
+  await prepared();
 });

@@ -1,22 +1,14 @@
-import { emptyApplication } from "../support/fixtures.ts";
-import { journals } from "../support/occurrences.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
-import { occurrences } from "../support/occurrences.ts";
+import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
 import { assembleCommons } from "../../src/assembly/application.ts";
 import { theStaffDashboardCounts } from "../../src/compositions/course/calendar.ts";
 import { theHomeFeedByCreation, theThreadContext } from "../../src/compositions/forum/feed.ts";
 import { theThread } from "../../src/compositions/forum/threads.ts";
 
-const retained = emptyApplication(async () => {
-  const db = await testDb();
-  return { db, app: assembleCommons(mongoImplementations(db)) };
-});
 async function freshApp() {
-  const app = await retained();
-  journals.get(app)?.clear();
-  return app;
+  return assembleCommons(mongoImplementations(await testDb()));
 }
 
 async function actor(
@@ -144,12 +136,12 @@ describe("consolidated reaction groups", () => {
     const at = new Date("2026-07-20T12:00:00.000Z");
     const { post } = await app.concepts.Posting.create({ author: "author", content: "Body", at });
     await app.concepts.Conversing.start({ item: post, at });
-    const before = occurrences(app).length;
+    const before = inspectAssembly(app).occurrences.length;
 
     await app.concepts.Posting.delete({ post });
 
-    const asks = occurrences(app)
-      .slice(before)
+    const asks = inspectAssembly(app)
+      .occurrences.slice(before)
       .map((event) => event.by)
       .filter(
         (by): by is string => by?.startsWith("Forum.posts.DeletedPostClearsSatellites:") ?? false,
@@ -174,12 +166,12 @@ describe("consolidated reaction groups", () => {
     const { post } = await app.concepts.Posting.create({ author: "author", content: "Body", at });
     await app.concepts.Conversing.start({ item: post, at });
     await app.concepts.Trashing.trash({ item: post, by: "moderator", at });
-    const before = occurrences(app).length;
+    const before = inspectAssembly(app).occurrences.length;
 
     await app.concepts.Trashing.purge({ item: post });
 
-    const formattingClears = occurrences(app)
-      .slice(before)
+    const formattingClears = inspectAssembly(app)
+      .occurrences.slice(before)
       .filter((event) => event.concept === "Formatting" && event.action === "clear")
       .map((event) => event.by)
       .sort((left, right) => left!.localeCompare(right!));
@@ -188,8 +180,8 @@ describe("consolidated reaction groups", () => {
       "Forum.purge.PurgeClearsCoreForumState:formatting",
     ]);
 
-    const nodeRemovals = occurrences(app)
-      .slice(before)
+    const nodeRemovals = inspectAssembly(app)
+      .occurrences.slice(before)
       .filter((event) => event.concept === "Conversing" && event.action === "remove");
     expect(nodeRemovals).toHaveLength(1);
     expect(nodeRemovals[0].by).toBe("Forum.posts.DeletedPostClearsSatellites:leaf-node");
@@ -262,12 +254,12 @@ describe("consolidated reaction groups", () => {
       at,
     });
     await app.concepts.Trashing.trash({ item: "answer", by: "moderator", at });
-    const before = occurrences(app).length;
+    const before = inspectAssembly(app).occurrences.length;
 
     await app.concepts.Trashing.purge({ item: "answer" });
 
-    const clears = occurrences(app)
-      .slice(before)
+    const clears = inspectAssembly(app)
+      .occurrences.slice(before)
       .filter((event) => event.concept === "Resolving" && event.action === "clear")
       .map((event) => event.by)
       .sort((left, right) => left!.localeCompare(right!));

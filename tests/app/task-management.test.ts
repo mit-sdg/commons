@@ -1,6 +1,5 @@
-import { reusableFixture } from "../support/fixtures.ts";
-import { pooledTaskApplication } from "../support/world-pool.ts";
-import { afterAll, describe, expect, test } from "vite-plus/test";
+import { reusableFixture, createCommonsApplication } from "../support/fixtures.ts";
+import { beforeAll, afterAll, describe, expect, test } from "vite-plus/test";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { assembleCommons } from "../../src/assembly/application.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
@@ -40,7 +39,7 @@ const WINDOW = { startsAt: "2026-08-19T16:00:00.000Z", endsAt: "2026-08-19T17:00
 
 const actors = new WeakMap<App, Map<string, Awaited<ReturnType<typeof buildActor>>>>();
 const prepared = reusableFixture(async () => {
-  const { db, app } = await pooledTaskApplication();
+  const { db, app } = await createCommonsApplication();
   const records = new Map<string, Awaited<ReturnType<typeof buildActor>>>();
   for (const username of [
     "mara",
@@ -821,4 +820,8 @@ describe("personal task scopes", () => {
       task,
     });
   });
+});
+
+beforeAll(async () => {
+  await prepared();
 });

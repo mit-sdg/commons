@@ -1,12 +1,12 @@
-import { afterAll, expect, test } from "vite-plus/test";
-import { createLiveEdge as createEdge } from "../support/domain-world.ts";
+import { beforeAll, afterAll, expect, test } from "vite-plus/test";
+import { createEdge } from "../../src/edge.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { MongoLockingConcept } from "../../src/concepts/locking/locking.mongo.ts";
 import { MongoSuggestingConcept } from "../../src/concepts/suggesting/suggesting.mongo.ts";
 import { placingPassage } from "../../src/computations/live-walls.ts";
 import { scriptedMind, serveOnePass, disabledMind } from "../../src/reasoning/worker.ts";
 import { MongoCategorizingConcept } from "../../src/concepts/categorizing/categorizing.mongo.ts";
-import { reusableFixture } from "../support/fixtures.ts";
+import { reusableFixture, refreshEdge } from "../support/fixtures.ts";
 import { testDb, stopTestDb } from "../../src/concepts/testing.ts";
 
 afterAll(stopTestDb);
@@ -62,12 +62,13 @@ async function buildFixture() {
   const categorizing = new PausedCategorizing(database);
   const suggesting = new PausedSuggesting(database);
   const locking = new PausedLocking(database);
-  const edge = createEdge({
+  const selected = {
     ...instances,
     Categorizing: categorizing,
     Suggesting: suggesting,
     Locking: locking,
-  });
+  };
+  const edge = createEdge(selected);
   const c = edge.application.concepts;
   const { user } = await c.Authenticating.register({
     username: "diag",
@@ -118,6 +119,7 @@ async function buildFixture() {
 
   return {
     db: database,
+    resetEdge: () => refreshEdge(edge, selected),
     edge,
     c,
     categorizing,
@@ -422,4 +424,8 @@ test("a lock acquired after observation records failed admission and preserves t
     f.locking.release.resolve();
     await request;
   }
+});
+
+beforeAll(async () => {
+  await fixture();
 });

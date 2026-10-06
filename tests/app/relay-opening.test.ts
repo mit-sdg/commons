@@ -1,7 +1,7 @@
-import { reusableFixture } from "../support/fixtures.ts";
-import { afterAll, describe, expect, test } from "vite-plus/test";
+import { reusableFixture, refreshEdge } from "../support/fixtures.ts";
+import { beforeAll, afterAll, describe, expect, test } from "vite-plus/test";
 import type { Db } from "mongodb";
-import { createLiveEdge as createEdge } from "../support/domain-world.ts";
+import { createEdge } from "../../src/edge.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoCategorizingConcept } from "../../src/concepts/categorizing/categorizing.mongo.ts";
@@ -102,8 +102,9 @@ const face = async (edge: Edge, token: string) =>
 
 const ordinaryStage = reusableFixture(async () => {
   const db = await testDb();
-  const edge = createEdge(mongoImplementations(db));
-  return { db, ...(await stage(edge, "lee")) };
+  const instances = mongoImplementations(db);
+  const edge = createEdge(instances);
+  return { db, resetEdge: () => refreshEdge(edge, instances), ...(await stage(edge, "lee")) };
 });
 
 /** The answer, or `late` once ten seconds have passed without one: a held press never answers, a slow one still does. */
@@ -586,4 +587,8 @@ describe("two presses that race to Publishing's guard", () => {
       expect(await s.edge.application.concepts.Publishing._parts({ whole: s.run })).toHaveLength(1);
     });
   }
+});
+
+beforeAll(async () => {
+  await ordinaryStage();
 });

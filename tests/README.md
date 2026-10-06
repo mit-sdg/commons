@@ -31,33 +31,19 @@ Vitest restores spies and environment/global stubs between tests; restore
 direct changes to process globals in `finally` blocks. Reuse `beforeAll`
 fixtures for probes that preserve their shared accounts and policy.
 
-The test setup caches only the Commons transport's immutable route and wire
-declarations, once per endpoint surface per run, through a disposable shared
-projection directory. Applications, gateways, authorization, and invokers remain real
-and independent. Artifact and repository inspections still derive the complete
-production design. Occurrence-only checks use `support/occurrences.ts` and the
-engine's redacted log sink instead of rebuilding design diagnostics. These test
-journals retain all entries in a scenario; they do not model the native
-inspector's bounded history. Reset them when restoring an occurrence fixture.
+Backend application fixtures use the real, fully assembled Commons application
+and native framework bindings. `support/fixtures.ts` holds no shared application
+state: each file initializes its own fixture in `beforeAll`, then clears or
+restores that database between scenarios while keeping its indexes. Wait for
+`whenIdle()` before resetting, invalidate query caches through the checked
+missing-input login refusal, and explicitly create fresh HTTP state with
+`createEdgeForApplication`. Keep separate applications for occurrence histories,
+faults, custom clocks and reassembly when their state cannot safely be reset.
+Occurrence assertions use the framework's native `inspectAssembly`.
 
-`support/fixtures.ts` can retain an application's compiled declarations and
-database indexes while clearing or restoring its stored state between tests.
-Wait for `whenIdle()` before restoring a world, reset custom fault gates and
-clocks, and keep separate applications for occurrence-history and reassembly tests.
-Restoration clears native query caches and attaches fresh transport state to the
-fixture edge so captured request closures cannot retain a renewal ledger.
-
-`support/world-pool.ts` explicitly reuses ordinary worlds within a worker, with
-a separately owned Mongo client and fresh gateway/HTTP state for every borrower.
-Callers must run sequentially; keep multi-app, fault, and custom-clock scenarios
-on separate fixtures. Focused HTTP surfaces in `support/domain-world.ts` retain
-**every production reaction, view and former**, including reactions belonging
-to other domains, while selecting the endpoint domains a suite exercises. A
-guard compares every non-endpoint reaction with the full application and every
-selected route with native and full bindings. Query-cost guards, cross-domain
-boundary evidence and every wire transcript still use the whole application.
-Password fixtures opt into scrypt N=16 through the explicit test hook; the
-production default remains N=16384, also checked in the real deployment process.
+The only `setupFiles` entry is `support/password-setup.ts`, which opts test
+fixtures into scrypt N=16. Production stays at N=16384; the real deployment
+process and verifier tests check that default.
 
 Assembled read-backs, wire contracts, and transcripts are test evidence.
 Change their authored concept or composition source and regenerate them; do not

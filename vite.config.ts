@@ -33,8 +33,7 @@ export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts"],
     globalSetup: ["tests/support/mongo-global.ts"],
-    setupFiles: ["tests/support/transport-setup.ts"],
-    server: { deps: { inline: ["@mit-sdg/sync-engine-http"] } },
+    setupFiles: ["tests/support/password-setup.ts"],
     pool: "threads",
     isolate: false,
     maxWorkers: Math.min(5, availableParallelism()),

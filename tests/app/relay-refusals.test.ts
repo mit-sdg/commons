@@ -1,4 +1,4 @@
-import { pooledLiveEdge } from "../support/world-pool.ts";
+import { createCommonsFixture } from "../support/fixtures.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 import { stopTestDb } from "../../src/concepts/testing.ts";
@@ -90,7 +90,7 @@ const addRound = async (relay: string, title: string): Promise<Added> => {
 };
 
 beforeAll(async () => {
-  edge = (await pooledLiveEdge()).edge;
+  edge = (await createCommonsFixture()).edge;
   cookie = await registerHost(edge);
 });
 

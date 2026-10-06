@@ -1,4 +1,4 @@
-import { pooledLiveEdge } from "../support/world-pool.ts";
+import { createCommonsFixture } from "../support/fixtures.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 import { BACKGROUND_CLOSES, BACKGROUND_OPENS } from "../../src/computations/live-background.ts";
@@ -149,7 +149,7 @@ describe("the background the drafter reads", () => {
   };
 
   beforeAll(async () => {
-    edge = (await pooledLiveEdge()).edge;
+    edge = (await createCommonsFixture()).edge;
     cookie = await register(edge, HOST, true);
     stranger = await register(edge, LEARNER, false);
   });

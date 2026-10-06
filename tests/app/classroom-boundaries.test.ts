@@ -1,8 +1,8 @@
-import { reusableFixture } from "../support/fixtures.ts";
+import { reusableFixture, refreshEdge } from "../support/fixtures.ts";
 import { MongoPublishingConcept } from "../../src/concepts/publishing/publishing.mongo.ts";
 import { MongoSuggestingConcept } from "../../src/concepts/suggesting/suggesting.mongo.ts";
-import { afterAll, expect, test } from "vite-plus/test";
-import { createLiveEdge as createEdge } from "../support/domain-world.ts";
+import { afterAll, beforeAll, expect, test } from "vite-plus/test";
+import { createEdge } from "../../src/edge.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { MongoRespondingConcept } from "../../src/concepts/responding/responding.mongo.ts";
 import { serveOnePass, disabledMind } from "../../src/reasoning/worker.ts";
@@ -59,12 +59,13 @@ async function buildFixture(carry = false) {
   const responding = new PausedResponding(database);
   const publishing = new PausedPublishing(database);
   const suggesting = new PausedSuggesting(database);
-  const edge = createEdge({
+  const selected = {
     ...instances,
     Responding: responding,
     Publishing: publishing,
     Suggesting: suggesting,
-  });
+  };
+  const edge = createEdge(selected);
   const c = edge.application.concepts;
   const { user } = await c.Authenticating.register({
     username: "diag",
@@ -128,6 +129,7 @@ async function buildFixture(carry = false) {
 
   return {
     db: database,
+    resetEdge: () => refreshEdge(edge, selected),
     edge,
     c,
     responding,
@@ -318,4 +320,9 @@ test("a failed summary provider leaves a failed commission and no pending work",
   expect((await f.c.Commissioning._forExecution({ execution: asking }))[0].status).toBe("failed");
   expect(await f.c.Locking._isLocked({ target: f.round })).toEqual({ locked: false });
   expect(await f.c.Reasoning._pending()).toEqual([]);
+});
+
+beforeAll(async () => {
+  await fixture(false);
+  await fixture(true);
 });
