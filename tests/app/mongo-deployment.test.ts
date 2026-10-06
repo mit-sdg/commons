@@ -5,13 +5,15 @@ import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vite-plus/test";
 import { MongoClient } from "mongodb";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { testMongoServer } from "../support/mongo-server.ts";
 import { constructConceptFloor } from "../../src/assembly/concept-floor.ts";
 
 const checkout = join(import.meta.dirname, "../..");
 let root: string;
+let mongo: Awaited<ReturnType<typeof testMongoServer>>["server"];
+let stopMongo: (() => Promise<void>) | undefined;
 
-beforeAll(() => {
+beforeAll(async () => {
   // A different port does not isolate Next's on-disk cache or dev-server
   // lock. Exercise the real scripts in a disposable checkout, without .env.
   root = mkdtempSync(join(tmpdir(), "commons-deployment-"));
@@ -24,9 +26,13 @@ beforeAll(() => {
   });
   for (const entry of ["node_modules", "frontend/node_modules"])
     symlinkSync(join(checkout, entry), join(root, entry), "dir");
+  const service = await testMongoServer();
+  mongo = service.server;
+  stopMongo = service.stop;
 });
 
-afterAll(() => {
+afterAll(async () => {
+  await stopMongo?.();
   if (root !== undefined) rmSync(root, { recursive: true, force: true });
 });
 interface RunningChild {
@@ -216,7 +222,6 @@ describe("the Commons process with MongoDB", () => {
   });
 
   test("starts with the platform MONGODB_URI environment variable", async () => {
-    const mongo = await MongoMemoryServer.create({ instance: { ip: "127.0.0.1" } });
     let running: Awaited<ReturnType<typeof startEdge>> | undefined;
     try {
       const database = `platform-${crypto.randomUUID()}`;
@@ -226,7 +231,6 @@ describe("the Commons process with MongoDB", () => {
       );
     } finally {
       if (running !== undefined && running.exitCode() === undefined) await stopChild(running);
-      await mongo.stop();
     }
   }, 30_000);
 
@@ -273,7 +277,6 @@ describe("the Commons process with MongoDB", () => {
   }, 20_000);
 
   test("when Commons stops, it closes its client and leaves the supplied MongoDB service and database running", async () => {
-    const mongo = await MongoMemoryServer.create({ instance: { ip: "127.0.0.1" } });
     const mongodbUrl = mongo.getUri(`lifecycle-${crypto.randomUUID()}`);
     let running: Awaited<ReturnType<typeof startEdge>> | undefined;
     try {
@@ -286,12 +289,10 @@ describe("the Commons process with MongoDB", () => {
       await observer.close();
     } finally {
       if (running !== undefined && running.exitCode() === undefined) await stopChild(running);
-      await mongo.stop();
     }
   }, 30_000);
 
   test("serves the application over HTTP, retains concept state across edge restart, and reaches it through the frontend proxy", async () => {
-    const mongo = await MongoMemoryServer.create({ instance: { ip: "127.0.0.1" } });
     let edge: Awaited<ReturnType<typeof startEdge>> | undefined;
     let frontend: Awaited<ReturnType<typeof startFrontend>> | undefined;
     try {
@@ -592,12 +593,10 @@ describe("the Commons process with MongoDB", () => {
     } finally {
       if (frontend !== undefined) await stopChild(frontend);
       if (edge !== undefined) await stopChild(edge);
-      await mongo.stop();
     }
   }, 120_000);
 
   test("reports an occupied edge port as a startup failure", async () => {
-    const mongo = await MongoMemoryServer.create({ instance: { ip: "127.0.0.1" } });
     const holder = createServer();
     await new Promise<void>((resolve, reject) => {
       holder.once("error", reject);
@@ -619,25 +618,19 @@ describe("the Commons process with MongoDB", () => {
       expect(running.output.join("")).toContain("commons: could not listen");
     } finally {
       await new Promise<void>((resolve) => holder.close(() => resolve()));
-      await mongo.stop();
     }
   }, 20_000);
 
   test("rejects an invalid port before opening its Mongo client", async () => {
-    const mongo = await MongoMemoryServer.create({ instance: { ip: "127.0.0.1" } });
-    try {
-      const running = startChild(["bun", "src/start.ts"], {
-        cwd: root,
-        env: { ...process.env, MONGODB_URL: mongo.getUri(), PORT: "0" },
-      });
-      expect(await running.exited).not.toBe(0);
-      await Promise.allSettled(running.drains);
-      expect(running.output.join("")).toContain(
-        'commons: PORT must be an integer from 1 to 65535; received "0"',
-      );
-    } finally {
-      await mongo.stop();
-    }
+    const running = startChild(["bun", "src/start.ts"], {
+      cwd: root,
+      env: { ...process.env, MONGODB_URL: "mongodb://127.0.0.1:1/unused", PORT: "0" },
+    });
+    expect(await running.exited).not.toBe(0);
+    await Promise.allSettled(running.drains);
+    expect(running.output.join("")).toContain(
+      'commons: PORT must be an integer from 1 to 65535; received "0"',
+    );
   }, 20_000);
 
   test("stops the stack promptly when signaled during edge readiness", async () => {

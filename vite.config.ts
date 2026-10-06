@@ -31,6 +31,13 @@ export default defineConfig({
   },
   test: {
     include: ["tests/**/*.test.ts"],
+    globalSetup: ["tests/support/mongo-global.ts"],
+    pool: "threads",
+    isolate: false,
+    maxWorkers: 4,
+    restoreMocks: true,
+    unstubEnvs: true,
+    unstubGlobals: true,
     testTimeout: 30000,
   },
   staged: {
