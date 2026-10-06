@@ -1,9 +1,9 @@
+import { createCommonsFixture } from "../support/fixtures.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
-import { mongoImplementations } from "../../src/concepts.ts";
 import { scriptedEditsReply } from "../../src/reasoning/scripted-edits.ts";
 import { serveOnePass, type Mind } from "../../src/reasoning/worker.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 
 type Edge = ReturnType<typeof createEdge>;
 
@@ -142,7 +142,7 @@ describe("the relay editing loop", () => {
   let cookie: string;
 
   beforeAll(async () => {
-    edge = createEdge(mongoImplementations(await testDb()));
+    edge = (await createCommonsFixture()).edge;
     ({ cookie } = await registerHost(edge));
   });
 

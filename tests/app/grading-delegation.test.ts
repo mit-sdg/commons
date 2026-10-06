@@ -1,6 +1,6 @@
-import { afterAll, describe, expect, test } from "vite-plus/test";
-import { mongoImplementations } from "../../src/concepts.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { createCommonsFixture, reusableFixture } from "../support/fixtures.ts";
+import { beforeAll, afterAll, describe, expect, test } from "vite-plus/test";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";
 
 afterAll(stopTestDb);
@@ -54,8 +54,8 @@ const register = async (edge: Edge, username: string, displayName: string) => {
   return { user: made.user, cookie: await login(edge, username) };
 };
 
-const classroom = async () => {
-  const edge = createEdge(mongoImplementations(await testDb()));
+const buildClassroom = async () => {
+  const { db, edge, resetEdge } = await createCommonsFixture();
   const mara = await register(edge, "mara", "Mara Adeyemi");
   const noah = await register(edge, "noah", "Noah Brandt");
   const priya = await register(edge, "priya", "Priya Raman");
@@ -130,8 +130,10 @@ const classroom = async () => {
   );
   await post(edge, "/assignments/publish", { assignment }, mara.cookie);
   await edge.application.whenIdle();
-  return { edge, mara, noah, priya, omar, dana, assignment, section, graderRole };
+  return { db, edge, resetEdge, mara, noah, priya, omar, dana, assignment, section, graderRole };
 };
+
+const classroom = reusableFixture(buildClassroom);
 
 describe("grading delegation HTTP boundary", () => {
   test("uses grade capability rather than roster title and hides every route from students", async () => {
@@ -363,4 +365,8 @@ describe("grading delegation HTTP boundary", () => {
       ],
     });
   });
+});
+
+beforeAll(async () => {
+  await classroom();
 });

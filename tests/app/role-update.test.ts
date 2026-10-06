@@ -1,6 +1,6 @@
+import { createCommonsFixture } from "../support/fixtures.ts";
 import { afterAll, expect, test } from "vite-plus/test";
-import { mongoImplementations } from "../../src/concepts.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";
 
 afterAll(stopTestDb);
@@ -41,7 +41,7 @@ const register = async (edge: ReturnType<typeof createEdge>, username: string) =
 };
 
 test("an administrator changes what a role carries and every holder gains it at once", async () => {
-  const edge = createEdge(mongoImplementations(await testDb()));
+  const edge = (await createCommonsFixture()).edge;
   const admin = await register(edge, "mara");
   const helper = await register(edge, "hana");
 

@@ -1,3 +1,4 @@
+import { availableParallelism } from "node:os";
 import { readFileSync } from "node:fs";
 import { defineConfig } from "vite-plus";
 
@@ -31,6 +32,14 @@ export default defineConfig({
   },
   test: {
     include: ["tests/**/*.test.ts"],
+    globalSetup: ["tests/support/mongo-global.ts"],
+    setupFiles: ["tests/support/password-setup.ts"],
+    pool: "threads",
+    isolate: false,
+    maxWorkers: Math.min(5, availableParallelism()),
+    restoreMocks: true,
+    unstubEnvs: true,
+    unstubGlobals: true,
     testTimeout: 30000,
   },
   staged: {

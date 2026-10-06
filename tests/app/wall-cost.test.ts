@@ -1,12 +1,13 @@
+import { reusableFixture, refreshEdge } from "../support/fixtures.ts";
 import { MongoClient } from "mongodb";
-import { afterAll, expect, test } from "vite-plus/test";
+import { beforeAll, afterAll, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb, testDbUri } from "../../src/concepts/testing.ts";
 
 /**
  * The most commands one cold wall read may cost the database, counted on a
- * client of its own: a room of 45 cards in 8 piles, read by an edge that has
+ * client of its own: a room of 22 cards in 8 piles, read by an edge that has
  * not read it before, so every concept query goes to the database.
  */
 const COMMANDS_PER_COLD_READ = 20;
@@ -74,10 +75,11 @@ async function settled<Value>(edge: Edge, read: () => Promise<Value>) {
 
 afterAll(stopTestDb);
 
-/** A room of 45 cards, 40 of them in 8 piles, one removed, and four in the tray. */
-async function stageRoom() {
+/** A room of 22 cards: sixteen in eight piles, one removed, and five in the tray. */
+async function buildRoom() {
   const db = await testDb();
-  const edge = createEdge(mongoImplementations(db));
+  const instances = mongoImplementations(db);
+  const edge = createEdge(instances);
   const cookie = await registerHost(edge);
   const call = async (path: string, body: unknown, as = cookie) =>
     json(await post(edge, path, body, as));
@@ -106,18 +108,25 @@ async function stageRoom() {
   );
   expect(arrived.openRound).not.toBeNull();
   const question = arrived.questions[0]!.question;
-  const devices = [...Array.from({ length: 43 }, (_, seat) => `phone-${seat}`), "seat-1", "seat-2"];
+  const devices = [...Array.from({ length: 20 }, (_, seat) => `phone-${seat}`), "seat-1", "seat-2"];
   for (const [index, device] of devices.entries()) {
-    const { response } = await call("/live/p/begin", { token, device });
-    await call("/live/p/answer", { response, question, value: `answer ${index}` });
-    await call("/live/p/submit", { response });
+    // Cost guards need persisted hand-ins, not repeated participation gates.
+    // Keep more than the 20-command budget so a per-card read still fails.
+    const responding = edge.application.concepts.Responding;
+    const { response } = await responding.begin({
+      subject: round,
+      participant: device,
+      at: new Date(),
+    });
+    await responding.answer({ response, item: question, value: `answer ${index}` });
+    await responding.submit({ response, at: new Date(), required: [[question]] });
   }
   const readWall = async () =>
     (await call("/live/walls/read", { round })).wall as unknown as {
       cards: { card: string }[];
     };
   const cards = (await settled(edge, readWall)).cards;
-  expect(cards).toHaveLength(45);
+  expect(cards).toHaveLength(22);
   const piles: string[] = [];
   for (let index = 0; index < 8; index += 1) {
     const opened = await call("/live/walls/open-pile", {
@@ -127,7 +136,7 @@ async function stageRoom() {
     });
     piles.push(opened.pile as string);
   }
-  for (let index = 8; index < 40; index += 1) {
+  for (let index = 8; index < 16; index += 1) {
     await call("/live/walls/move-card", { card: cards[index]!.card, pile: piles[index % 8]! });
   }
   for (const pile of piles.slice(0, 4)) {
@@ -138,10 +147,21 @@ async function stageRoom() {
       body: "A definition.",
     });
   }
-  await call("/live/walls/remove-card", { round, card: cards[41]!.card });
+  await call("/live/walls/remove-card", { round, card: cards[16]!.card });
   await edge.application.whenIdle();
-  return { db, edge, call, run, round, cards, piles };
+  return {
+    db,
+    edge,
+    resetEdge: () => refreshEdge(edge, instances),
+    call,
+    run,
+    round,
+    cards,
+    piles,
+  };
 }
+
+const stageRoom = reusableFixture(buildRoom);
 
 interface Command {
   name: string;
@@ -193,7 +213,7 @@ async function coldEdge(db: Awaited<ReturnType<typeof testDb>>) {
   };
 }
 
-test("a cold wall read at 45 cards and 8 piles costs a bounded number of commands", async () => {
+test("a cold wall read at 22 cards and 8 piles costs a bounded number of commands", async () => {
   const { db, round } = await stageRoom();
   const { cold, session, own, summary, close } = await coldEdge(db);
   try {
@@ -202,7 +222,7 @@ test("a cold wall read at 45 cards and 8 piles costs a bounded number of command
     expect(answered.ok).toBe(true);
     const read = (answered as { value: { wall: { cards: unknown[]; piles: unknown[] } } }).value
       .wall;
-    expect(read.cards).toHaveLength(44);
+    expect(read.cards).toHaveLength(21);
     expect(read.piles).toHaveLength(8);
     const wall = own().filter((command) => READS.includes(command.name));
     expect(wall.length, `commands for one cold read:\n${summary()}`).toBeLessThanOrEqual(
@@ -211,7 +231,7 @@ test("a cold wall read at 45 cards and 8 piles costs a bounded number of command
   } finally {
     await close();
   }
-}, 120_000);
+});
 
 /** A read whose filter names no scope reads everything the deployment has stored. */
 const unbounded = (command: Command) =>
@@ -219,7 +239,7 @@ const unbounded = (command: Command) =>
 
 test("a cold sort tick with an empty tray reads nothing that grows and records one declined proposal", async () => {
   const { db, call, round, cards, piles } = await stageRoom();
-  for (const index of [40, 42, 43, 44]) {
+  for (const index of [17, 18, 19, 20, 21]) {
     await call("/live/walls/move-card", { card: cards[index]!.card, pile: piles[index % 8]! });
   }
   const { cold, session, own, summary, close } = await coldEdge(db);
@@ -241,7 +261,7 @@ test("a cold sort tick with an empty tray reads nothing that grows and records o
   } finally {
     await close();
   }
-}, 120_000);
+});
 
 test("a cold sort tick with cards in the tray records one commission and asks once", async () => {
   const { db, round } = await stageRoom();
@@ -261,7 +281,7 @@ test("a cold sort tick with cards in the tray records one commission and asks on
   } finally {
     await close();
   }
-}, 120_000);
+});
 
 test("a cold arrive on a three-round run costs a bounded number of commands", async () => {
   const db = await testDb();
@@ -311,4 +331,8 @@ test("a cold arrive on a three-round run costs a bounded number of commands", as
   } finally {
     await close();
   }
-}, 120_000);
+});
+
+beforeAll(async () => {
+  await stageRoom();
+});

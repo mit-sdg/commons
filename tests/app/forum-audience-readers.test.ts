@@ -1,18 +1,9 @@
-import { afterAll, afterEach, expect, test } from "vite-plus/test";
-import type { Db } from "mongodb";
-import { mongoImplementations } from "../../src/concepts.ts";
-import { createEdge } from "../../src/edge.ts";
-import { testDb, stopTestDb } from "../../src/concepts/testing.ts";
-const databases = new Set<Db>();
-afterEach(async () => {
-  await Promise.all([...databases].map((db) => db.dropDatabase()));
-  databases.clear();
-});
+import { createCommonsApplication, reusableFixture } from "../support/fixtures.ts";
+import { beforeAll, afterAll, expect, test } from "vite-plus/test";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 afterAll(stopTestDb);
-async function fixture() {
-  const db = await testDb();
-  databases.add(db);
-  const instances = mongoImplementations(db);
+async function buildfixture() {
+  const { db, app, instances } = await createCommonsApplication();
   const people = await Promise.all(
     ["author", "reader", "moderator"].map(async (username) => {
       const { user } = await instances.Authenticating.register({
@@ -45,10 +36,21 @@ async function fixture() {
     "Shared body",
     people.map((p) => `account:${p.user}`),
   );
-  const app = createEdge(instances).application;
   const invoke = (path: string, input: Record<string, unknown>) => app.invoker.invoke(path, input);
-  return { db, instances, people, author, reader, moderator, privateThread, shared, invoke };
+  return {
+    db,
+    edge: { application: app },
+    instances,
+    people,
+    author,
+    reader,
+    moderator,
+    privateThread,
+    shared,
+    invoke,
+  };
 }
+const fixture = reusableFixture(buildfixture);
 const missing = { ok: false, error: { kind: "domain", value: "NOT_FOUND" } };
 test("tag names are shared while private tag applications follow the discussion audience", async () => {
   const f = await fixture();
@@ -332,4 +334,8 @@ test("resolution admission excludes the question itself and hides retained self-
   expect(await f.instances.Resolving._getResolution({ question })).toMatchObject([
     { answer: descendant.post },
   ]);
+});
+
+beforeAll(async () => {
+  await fixture();
 });

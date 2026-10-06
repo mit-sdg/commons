@@ -1,4 +1,4 @@
-import { afterAll, expect, test } from "vite-plus/test";
+import { beforeAll, afterAll, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { MongoLockingConcept } from "../../src/concepts/locking/locking.mongo.ts";
@@ -6,14 +6,15 @@ import { MongoSuggestingConcept } from "../../src/concepts/suggesting/suggesting
 import { placingPassage } from "../../src/computations/live-walls.ts";
 import { scriptedMind, serveOnePass, disabledMind } from "../../src/reasoning/worker.ts";
 import { MongoCategorizingConcept } from "../../src/concepts/categorizing/categorizing.mongo.ts";
+import { reusableFixture, refreshEdge } from "../support/fixtures.ts";
 import { testDb, stopTestDb } from "../../src/concepts/testing.ts";
 
 afterAll(stopTestDb);
 
 class PausedCategorizing extends MongoCategorizingConcept {
   armed = false;
-  readonly entered = Promise.withResolvers<void>();
-  readonly release = Promise.withResolvers<void>();
+  entered = Promise.withResolvers<void>();
+  release = Promise.withResolvers<void>();
   async _categoriesWithItems(input: { scope: string }) {
     const result = await super._categoriesWithItems(input);
     if (this.armed) {
@@ -27,8 +28,8 @@ class PausedCategorizing extends MongoCategorizingConcept {
 
 class PausedSuggesting extends MongoSuggestingConcept {
   armed = false;
-  readonly entered = Promise.withResolvers<void>();
-  readonly release = Promise.withResolvers<void>();
+  entered = Promise.withResolvers<void>();
+  release = Promise.withResolvers<void>();
   async take(input: { suggestion: string }) {
     const result = await super.take(input);
     if (this.armed) {
@@ -42,8 +43,8 @@ class PausedSuggesting extends MongoSuggestingConcept {
 
 class PausedLocking extends MongoLockingConcept {
   armed = false;
-  readonly entered = Promise.withResolvers<void>();
-  readonly release = Promise.withResolvers<void>();
+  entered = Promise.withResolvers<void>();
+  release = Promise.withResolvers<void>();
   async _isLocked(input: { target: string }) {
     const result = await super._isLocked(input);
     if (this.armed) {
@@ -55,18 +56,19 @@ class PausedLocking extends MongoLockingConcept {
   }
 }
 
-async function fixture() {
+async function buildFixture() {
   const database = await testDb();
   const instances = mongoImplementations(database);
   const categorizing = new PausedCategorizing(database);
   const suggesting = new PausedSuggesting(database);
   const locking = new PausedLocking(database);
-  const edge = createEdge({
+  const selected = {
     ...instances,
     Categorizing: categorizing,
     Suggesting: suggesting,
     Locking: locking,
-  });
+  };
+  const edge = createEdge(selected);
   const c = edge.application.concepts;
   const { user } = await c.Authenticating.register({
     username: "diag",
@@ -115,8 +117,30 @@ async function fixture() {
   });
   await c.Categorizing.assign({ category, item: card });
 
-  return { edge, c, categorizing, call, session, round, run, card, user, suggesting, locking };
+  return {
+    db: database,
+    resetEdge: () => refreshEdge(edge, selected),
+    edge,
+    c,
+    categorizing,
+    call,
+    session,
+    round,
+    run,
+    card,
+    user,
+    suggesting,
+    locking,
+  };
 }
+
+const fixture = reusableFixture(buildFixture, (value) => {
+  for (const gate of [value.categorizing, value.suggesting, value.locking]) {
+    gate.armed = false;
+    gate.entered = Promise.withResolvers<void>();
+    gate.release = Promise.withResolvers<void>();
+  }
+});
 
 for (const path of ["/live/walls/sort", "/live/walls/sort-now"]) {
   test(`${path} answers when a piled-card observation crosses emptying`, async () => {
@@ -400,4 +424,8 @@ test("a lock acquired after observation records failed admission and preserves t
     f.locking.release.resolve();
     await request;
   }
+});
+
+beforeAll(async () => {
+  await fixture();
 });

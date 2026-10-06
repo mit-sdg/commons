@@ -1,13 +1,12 @@
-import { afterAll, describe, expect, test } from "vite-plus/test";
-import { createEdge } from "../../src/edge.ts";
-import { mongoImplementations } from "../../src/concepts.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { createCommonsFixture, reusableFixture } from "../support/fixtures.ts";
+import { beforeAll, afterAll, describe, expect, test } from "vite-plus/test";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 
 afterAll(stopTestDb);
 
 /** Register an administrator (the first account) and one ordinary member. */
-async function forumWithAdminAndMember() {
-  const edge = createEdge(mongoImplementations(await testDb()));
+async function buildforumWithAdminAndMember() {
+  const { db, edge, resetEdge } = await createCommonsFixture();
   const register = async (username: string, email: string) => {
     const result = await edge.application.concepts.Authenticating.register({
       username,
@@ -25,8 +24,9 @@ async function forumWithAdminAndMember() {
   const adminLogin = await signIn("archive_admin");
   if (!adminLogin.ok) throw new Error("the administrator could not sign in");
   const adminSession = (adminLogin.value as { session: string }).session;
-  return { edge, admin, member, adminSession, signIn };
+  return { db, edge, resetEdge, admin, member, adminSession, signIn };
 }
+const forumWithAdminAndMember = reusableFixture(buildforumWithAdminAndMember);
 
 describe("archiving a user", () => {
   test("an archived account cannot sign in, and restoring it lets the person back", async () => {
@@ -138,4 +138,8 @@ describe("archiving a user", () => {
       (await edge.gateway.invoke("/users/archive", { session: adminSession, user: member })).ok,
     ).toBe(true);
   });
+});
+
+beforeAll(async () => {
+  await forumWithAdminAndMember();
 });

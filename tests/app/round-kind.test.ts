@@ -1,7 +1,7 @@
+import { createCommonsFixture } from "../support/fixtures.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
-import { mongoImplementations } from "../../src/concepts.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 
 type Edge = ReturnType<typeof createEdge>;
 
@@ -180,7 +180,7 @@ const kindOf = async (relay: string, leg: string) =>
 /** The boundary answers a refusal's category, so KIND_BLANK arrives as INVALID_REQUEST. */
 describe("the kind a round is to its planner", () => {
   beforeAll(async () => {
-    edge = createEdge(mongoImplementations(await testDb()));
+    edge = (await createCommonsFixture()).edge;
     cookie = await registerHost(edge);
   });
 

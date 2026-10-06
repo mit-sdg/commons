@@ -1,6 +1,6 @@
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
-import { afterAll, beforeEach, describe, expect, test } from "vite-plus/test";
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vite-plus/test";
 import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
 import { assembleCommons } from "../../src/assembly/application.ts";
 import { createEdge } from "../../src/edge.ts";
@@ -37,16 +37,17 @@ describe("HTTP authorization and privacy", () => {
       user: made.user,
       displayName: username,
     });
-    const login = await call("/auth/login", { username, password: "password123" });
-    return { user: made.user, cookie: login.cookie as string, email };
+    const { session } = await edge.application.concepts.Sessioning.start({ user: made.user });
+    return { user: made.user, cookie: `__Host-commons-session=${session}`, email };
   };
 
   let admin: Actor;
   let learner: Actor;
   let limitedStaff: Actor;
   let outsider: Actor;
-  beforeEach(async () => {
-    edge = createEdge(mongoImplementations(await testDb()));
+  async function buildActors() {
+    const db = await testDb();
+    edge = createEdge(mongoImplementations(db));
     admin = await register("admin");
     learner = await register("learner");
     limitedStaff = await register("limited_staff");
@@ -91,606 +92,632 @@ describe("HTTP authorization and privacy", () => {
       { user: limitedStaff.user, context: "commons", role: limitedRole.body.role },
       admin.cookie,
     );
-  });
+    return { db, edge, admin, learner, limitedStaff, outsider };
+  }
+  async function setupActors() {
+    ({ edge, admin, learner, limitedStaff, outsider } = await buildActors());
+  }
 
-  test("the last administrator cannot be removed and nobody can promote themselves", async () => {
-    // Removing the only administrator used to leave policy open to everyone.
-    const revoked = await call(
-      "/roles/revoke",
-      { user: admin.user, context: "commons" },
-      admin.cookie,
-    );
-    expect(revoked).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
-
-    const lesser = await call(
-      "/roles/define",
-      { name: "lesser", capabilities: ["moderate"] },
-      admin.cookie,
-    );
-    expect(lesser.status).toBe(200);
-    const moved = await call(
-      "/roles/assign",
-      { user: admin.user, context: "commons", role: lesser.body.role },
-      admin.cookie,
-    );
-    expect(moved).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
-
-    // The administrator still administers, and an ordinary account still cannot.
-    expect((await call("/auth/permissions", {}, admin.cookie)).body).toMatchObject({
-      capabilities: expect.arrayContaining(["administer"]),
-    });
-    expect(
-      await call(
-        "/roles/define",
-        { name: "takeover", capabilities: ["administer"] },
-        outsider.cookie,
-      ),
-    ).toMatchObject({ status: 403, body: { error: "FORBIDDEN" } });
-    expect(
-      await call("/invitations/invite", { email: "x@example.edu" }, outsider.cookie),
-    ).toMatchObject({ status: 403, body: { error: "FORBIDDEN" } });
-  });
-
-  test("archiving an account that holds a role revokes it first, then archives, then ends its sessions", async () => {
-    expect(
-      (await call("/roles/forUser", { user: limitedStaff.user, context: "commons" }, admin.cookie))
-        .body,
-    ).toMatchObject({ name: "limited-staff" });
-
-    const before = inspectAssembly(edge.application).occurrences.length;
-    const archived = await call("/users/archive", { user: limitedStaff.user }, admin.cookie);
-    expect(archived).toMatchObject({ status: 200, body: { user: limitedStaff.user } });
-    await edge.application.whenIdle();
-
-    // The order matters: an account that is already archived must never be seen
-    // holding a role, so the revocation lands before the archive commits.
-    const steps = inspectAssembly(edge.application)
-      .occurrences.slice(before)
-      .map((event) => `${event.concept}.${event.action}`);
-    expect(steps).toContain("Roling.revoke");
-    expect(steps.indexOf("Roling.revoke")).toBeLessThan(steps.indexOf("Archiving.trash"));
-    expect(steps.indexOf("Archiving.trash")).toBeLessThan(
-      steps.indexOf("Sessioning.endAllForUser"),
-    );
-
-    expect(
-      (await call("/roles/forUser", { user: limitedStaff.user, context: "commons" }, admin.cookie))
-        .body,
-    ).toMatchObject({ role: null, name: null, capabilities: [] });
-    const listed = await call("/users/list", {}, admin.cookie);
-    expect(
-      (listed.body.users as { user: string; archived: boolean; role: unknown }[]).find(
-        (row) => row.user === limitedStaff.user,
-      ),
-    ).toMatchObject({ archived: true, role: { role: null, name: null, capabilities: null } });
-    expect((await call("/auth/me", {}, limitedStaff.cookie)).status).toBe(401);
-  });
-
-  test("archiving an account that holds no role archives it without surfacing a refusal", async () => {
-    expect(
-      (await call("/roles/forUser", { user: learner.user, context: "commons" }, admin.cookie)).body,
-    ).toMatchObject({ role: null });
-
-    const archived = await call("/users/archive", { user: learner.user }, admin.cookie);
-    expect(archived).toEqual({
-      status: 200,
-      body: { user: learner.user },
-      cookie: undefined,
-    });
-    await edge.application.whenIdle();
-
-    const listed = await call("/users/list", {}, admin.cookie);
-    expect(
-      (listed.body.users as { user: string; archived: boolean }[]).find(
-        (row) => row.user === learner.user,
-      ),
-    ).toMatchObject({ archived: true });
-    expect((await call("/auth/me", {}, learner.cookie)).status).toBe(401);
-  });
-
-  test("archiving the other administrator leaves the last live one unable to give up administer", async () => {
-    // A second administrator holds the built-in role established at registration.
-    expect(
-      await call(
-        "/roles/assign",
-        { user: outsider.user, context: "commons", role: "administrator" },
+  describe("account and administrator mutations", () => {
+    beforeEach(setupActors);
+    test("the last administrator cannot be removed and nobody can promote themselves", async () => {
+      // Removing the only administrator used to leave policy open to everyone.
+      const revoked = await call(
+        "/roles/revoke",
+        { user: admin.user, context: "commons" },
         admin.cookie,
-      ),
-    ).toMatchObject({ status: 200 });
-    expect((await call("/auth/permissions", {}, outsider.cookie)).body).toMatchObject({
-      capabilities: expect.arrayContaining(["administer"]),
-    });
+      );
+      expect(revoked).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
 
-    expect(await call("/users/archive", { user: outsider.user }, admin.cookie)).toMatchObject({
-      status: 200,
-      body: { user: outsider.user },
-    });
-    await edge.application.whenIdle();
-
-    // The archived account can never sign in again, so it no longer counts as a
-    // holder: the guard now sees exactly one administrator, the live one.
-    expect(
-      await call("/roles/revoke", { user: admin.user, context: "commons" }, admin.cookie),
-    ).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
-    const lesser = await call(
-      "/roles/define",
-      { name: "lesser", capabilities: ["moderate"] },
-      admin.cookie,
-    );
-    expect(
-      await call(
+      const lesser = await call(
+        "/roles/define",
+        { name: "lesser", capabilities: ["moderate"] },
+        admin.cookie,
+      );
+      expect(lesser.status).toBe(200);
+      const moved = await call(
         "/roles/assign",
         { user: admin.user, context: "commons", role: lesser.body.role },
         admin.cookie,
-      ),
-    ).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
-    expect((await call("/auth/permissions", {}, admin.cookie)).body).toMatchObject({
-      capabilities: expect.arrayContaining(["administer"]),
-    });
-  });
+      );
+      expect(moved).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
 
-  test("role refusals reach the client as public categories, not as server errors", async () => {
-    const typo = await call(
-      "/roles/define",
-      { name: "typo-role", capabilities: ["gradez:manag"] },
-      admin.cookie,
-    );
-    expect(typo).toMatchObject({
-      status: 400,
-      body: { error: "INVALID_REQUEST" },
-    });
-
-    const held = await call("/roles/delete", { role: "limited-staff" }, admin.cookie);
-    expect(held).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
-  });
-
-  test("/profiles/get returns email to an authenticated owner or course:manage reader, public fields to an active member, 401 anonymously, and 404 otherwise", async () => {
-    const own = await call("/profiles/get", { user: learner.user }, learner.cookie);
-    expect(own.status).toBe(200);
-    expect(own.body).toMatchObject({ profile: { email: learner.email } });
-    const unrosteredOwn = await call("/profiles/get", { user: outsider.user }, outsider.cookie);
-    expect(unrosteredOwn.status).toBe(200);
-    expect(unrosteredOwn.body).toMatchObject({ profile: { email: outsider.email } });
-    const member = await call("/profiles/get", { user: admin.user }, learner.cookie);
-    expect(member.status).toBe(200);
-    expect(member.body.profile).not.toHaveProperty("email");
-    expect(
-      await call("/profiles/get", { user: crypto.randomUUID() }, learner.cookie),
-    ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
-    const staff = await call("/profiles/get", { user: learner.user }, admin.cookie);
-    expect(staff.body).toMatchObject({ profile: { email: learner.email } });
-    const hidden = await call("/profiles/get", { user: learner.user }, outsider.cookie);
-    expect(hidden).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
-    const limited = await call("/profiles/get", { user: learner.user }, limitedStaff.cookie);
-    expect(limited.status).toBe(200);
-    expect(limited.body.profile).not.toHaveProperty("email");
-    expect(await call("/profiles/get", { user: learner.user })).toMatchObject({
-      status: 401,
-      body: { error: "UNAUTHORIZED" },
-    });
-  });
-
-  test("submission and balance routes allow the owner or grade/student-records staff; other known users and unknown learners receive 404", async () => {
-    const submissionReads = [
-      ["/submissions/for-student", { submitter: learner.user }],
-      ["/submissions/latest", { submitter: learner.user, assignment: "work" }],
-      ["/submissions/attempts", { submitter: learner.user, assignment: "work" }],
-    ] as const;
-    for (const [path, body] of submissionReads) {
-      expect((await call(path, body, learner.cookie)).status).toBe(200);
-      expect(await call(path, body, outsider.cookie)).toMatchObject({
-        status: 404,
-        body: { error: "NOT_FOUND" },
+      // The administrator still administers, and an ordinary account still cannot.
+      expect((await call("/auth/permissions", {}, admin.cookie)).body).toMatchObject({
+        capabilities: expect.arrayContaining(["administer"]),
       });
-      expect(await call(path, body, limitedStaff.cookie)).toMatchObject({
-        status: 404,
-        body: { error: "NOT_FOUND" },
+      expect(
+        await call(
+          "/roles/define",
+          { name: "takeover", capabilities: ["administer"] },
+          outsider.cookie,
+        ),
+      ).toMatchObject({ status: 403, body: { error: "FORBIDDEN" } });
+      expect(
+        await call("/invitations/invite", { email: "x@example.edu" }, outsider.cookie),
+      ).toMatchObject({ status: 403, body: { error: "FORBIDDEN" } });
+    });
+
+    test("archiving an account that holds a role revokes it first, then archives, then ends its sessions", async () => {
+      expect(
+        (
+          await call(
+            "/roles/forUser",
+            { user: limitedStaff.user, context: "commons" },
+            admin.cookie,
+          )
+        ).body,
+      ).toMatchObject({ name: "limited-staff" });
+
+      const before = inspectAssembly(edge.application).occurrences.length;
+      const archived = await call("/users/archive", { user: limitedStaff.user }, admin.cookie);
+      expect(archived).toMatchObject({ status: 200, body: { user: limitedStaff.user } });
+      await edge.application.whenIdle();
+
+      // The order matters: an account that is already archived must never be seen
+      // holding a role, so the revocation lands before the archive commits.
+      const steps = inspectAssembly(edge.application)
+        .occurrences.slice(before)
+        .map((event) => `${event.concept}.${event.action}`);
+      expect(steps).toContain("Roling.revoke");
+      expect(steps.indexOf("Roling.revoke")).toBeLessThan(steps.indexOf("Archiving.trash"));
+      expect(steps.indexOf("Archiving.trash")).toBeLessThan(
+        steps.indexOf("Sessioning.endAllForUser"),
+      );
+
+      expect(
+        (
+          await call(
+            "/roles/forUser",
+            { user: limitedStaff.user, context: "commons" },
+            admin.cookie,
+          )
+        ).body,
+      ).toMatchObject({ role: null, name: null, capabilities: [] });
+      const listed = await call("/users/list", {}, admin.cookie);
+      expect(
+        (listed.body.users as { user: string; archived: boolean; role: unknown }[]).find(
+          (row) => row.user === limitedStaff.user,
+        ),
+      ).toMatchObject({ archived: true, role: { role: null, name: null, capabilities: null } });
+      expect((await call("/auth/me", {}, limitedStaff.cookie)).status).toBe(401);
+    });
+
+    test("archiving an account that holds no role archives it without surfacing a refusal", async () => {
+      expect(
+        (await call("/roles/forUser", { user: learner.user, context: "commons" }, admin.cookie))
+          .body,
+      ).toMatchObject({ role: null });
+
+      const archived = await call("/users/archive", { user: learner.user }, admin.cookie);
+      expect(archived).toEqual({
+        status: 200,
+        body: { user: learner.user },
+        cookie: undefined,
       });
-      expect((await call(path, body, admin.cookie)).status).toBe(200);
-      expect(await call(path, body)).toMatchObject({
+      await edge.application.whenIdle();
+
+      const listed = await call("/users/list", {}, admin.cookie);
+      expect(
+        (listed.body.users as { user: string; archived: boolean }[]).find(
+          (row) => row.user === learner.user,
+        ),
+      ).toMatchObject({ archived: true });
+      expect((await call("/auth/me", {}, learner.cookie)).status).toBe(401);
+    });
+
+    test("archiving the other administrator leaves the last live one unable to give up administer", async () => {
+      // A second administrator holds the built-in role established at registration.
+      expect(
+        await call(
+          "/roles/assign",
+          { user: outsider.user, context: "commons", role: "administrator" },
+          admin.cookie,
+        ),
+      ).toMatchObject({ status: 200 });
+      expect((await call("/auth/permissions", {}, outsider.cookie)).body).toMatchObject({
+        capabilities: expect.arrayContaining(["administer"]),
+      });
+
+      expect(await call("/users/archive", { user: outsider.user }, admin.cookie)).toMatchObject({
+        status: 200,
+        body: { user: outsider.user },
+      });
+      await edge.application.whenIdle();
+
+      // The archived account can never sign in again, so it no longer counts as a
+      // holder: the guard now sees exactly one administrator, the live one.
+      expect(
+        await call("/roles/revoke", { user: admin.user, context: "commons" }, admin.cookie),
+      ).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
+      const lesser = await call(
+        "/roles/define",
+        { name: "lesser", capabilities: ["moderate"] },
+        admin.cookie,
+      );
+      expect(
+        await call(
+          "/roles/assign",
+          { user: admin.user, context: "commons", role: lesser.body.role },
+          admin.cookie,
+        ),
+      ).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
+      expect((await call("/auth/permissions", {}, admin.cookie)).body).toMatchObject({
+        capabilities: expect.arrayContaining(["administer"]),
+      });
+    });
+  });
+
+  describe("authorization with active accounts", () => {
+    // These probes create scoped resources but keep the accounts, roster and
+    // capabilities intact. Build their common actors once.
+    beforeAll(setupActors);
+    test("role refusals reach the client as public categories, not as server errors", async () => {
+      const typo = await call(
+        "/roles/define",
+        { name: "typo-role", capabilities: ["gradez:manag"] },
+        admin.cookie,
+      );
+      expect(typo).toMatchObject({
+        status: 400,
+        body: { error: "INVALID_REQUEST" },
+      });
+
+      const held = await call("/roles/delete", { role: "limited-staff" }, admin.cookie);
+      expect(held).toMatchObject({ status: 409, body: { error: "CONFLICT" } });
+    });
+
+    test("/profiles/get returns email to an authenticated owner or course:manage reader, public fields to an active member, 401 anonymously, and 404 otherwise", async () => {
+      const own = await call("/profiles/get", { user: learner.user }, learner.cookie);
+      expect(own.status).toBe(200);
+      expect(own.body).toMatchObject({ profile: { email: learner.email } });
+      const unrosteredOwn = await call("/profiles/get", { user: outsider.user }, outsider.cookie);
+      expect(unrosteredOwn.status).toBe(200);
+      expect(unrosteredOwn.body).toMatchObject({ profile: { email: outsider.email } });
+      const member = await call("/profiles/get", { user: admin.user }, learner.cookie);
+      expect(member.status).toBe(200);
+      expect(member.body.profile).not.toHaveProperty("email");
+      expect(
+        await call("/profiles/get", { user: crypto.randomUUID() }, learner.cookie),
+      ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
+      const staff = await call("/profiles/get", { user: learner.user }, admin.cookie);
+      expect(staff.body).toMatchObject({ profile: { email: learner.email } });
+      const hidden = await call("/profiles/get", { user: learner.user }, outsider.cookie);
+      expect(hidden).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
+      const limited = await call("/profiles/get", { user: learner.user }, limitedStaff.cookie);
+      expect(limited.status).toBe(200);
+      expect(limited.body.profile).not.toHaveProperty("email");
+      expect(await call("/profiles/get", { user: learner.user })).toMatchObject({
+        status: 401,
+        body: { error: "UNAUTHORIZED" },
+      });
+    });
+
+    test("submission and balance routes allow the owner or grade/student-records staff; other known users and unknown learners receive 404", async () => {
+      const submissionReads = [
+        ["/submissions/for-student", { submitter: learner.user }],
+        ["/submissions/latest", { submitter: learner.user, assignment: "work" }],
+        ["/submissions/attempts", { submitter: learner.user, assignment: "work" }],
+      ] as const;
+      for (const [path, body] of submissionReads) {
+        expect((await call(path, body, learner.cookie)).status).toBe(200);
+        expect(await call(path, body, outsider.cookie)).toMatchObject({
+          status: 404,
+          body: { error: "NOT_FOUND" },
+        });
+        expect(await call(path, body, limitedStaff.cookie)).toMatchObject({
+          status: 404,
+          body: { error: "NOT_FOUND" },
+        });
+        expect((await call(path, body, admin.cookie)).status).toBe(200);
+        expect(await call(path, body)).toMatchObject({
+          status: 401,
+          body: { error: "UNAUTHORIZED" },
+        });
+        expect(
+          await call(path, { ...body, submitter: crypto.randomUUID() }, admin.cookie),
+        ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
+      }
+      expect(
+        (await call("/late-days/balance", { learner: learner.user }, learner.cookie)).status,
+      ).toBe(200);
+      expect(
+        await call("/late-days/balance", { learner: learner.user }, outsider.cookie),
+      ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
+      expect(
+        (await call("/late-days/balance", { learner: learner.user }, admin.cookie)).status,
+      ).toBe(200);
+      expect(
+        await call("/late-days/balance", { learner: learner.user }, limitedStaff.cookie),
+      ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
+      expect(await call("/late-days/balance", { learner: learner.user })).toMatchObject({
         status: 401,
         body: { error: "UNAUTHORIZED" },
       });
       expect(
-        await call(path, { ...body, submitter: crypto.randomUUID() }, admin.cookie),
+        await call("/late-days/balance", { learner: crypto.randomUUID() }, admin.cookie),
       ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
-    }
-    expect(
-      (await call("/late-days/balance", { learner: learner.user }, learner.cookie)).status,
-    ).toBe(200);
-    expect(
-      await call("/late-days/balance", { learner: learner.user }, outsider.cookie),
-    ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
-    expect((await call("/late-days/balance", { learner: learner.user }, admin.cookie)).status).toBe(
-      200,
-    );
-    expect(
-      await call("/late-days/balance", { learner: learner.user }, limitedStaff.cookie),
-    ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
-    expect(await call("/late-days/balance", { learner: learner.user })).toMatchObject({
-      status: 401,
-      body: { error: "UNAUTHORIZED" },
-    });
-    expect(
-      await call("/late-days/balance", { learner: crypto.randomUUID() }, admin.cookie),
-    ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
-    expect(
-      await call(
-        "/late-days/staff-change",
-        { learner: learner.user, assignment: "work", days: 1 },
-        outsider.cookie,
-      ),
-    ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
-  });
-
-  test("active owners may change and cancel late-day use; inactive users receive 403; student-records staff may use staff routes; other and unknown learners receive 404", async () => {
-    expect(
-      (
+      expect(
         await call(
-          "/late-days/configure-policy",
-          { defaultDays: 5, unitHours: 24, maxDaysPerItem: 3 },
-          admin.cookie,
-        )
-      ).status,
-    ).toBe(200);
-    const lateAssignments: string[] = [];
-    for (const title of ["work", "staff-work"]) {
-      const created = await edge.application.concepts.Assigning.createDraft({
-        author: admin.user,
-        title,
-        instructions: "",
-        kind: "HOMEWORK",
-        availableAt: "2026-01-01T00:00:00.000Z",
-        dueAt: "2026-01-02T00:00:00.000Z",
-        closeAt: "2026-01-03T00:00:00.000Z",
-        acceptsSubmissions: true,
-        audience: "EVERYONE",
-        targets: [],
-        at: new Date("2026-01-01T00:00:00.000Z"),
-      });
-      await edge.application.concepts.Assigning.publish({
-        assignment: created.assignment,
-        at: new Date(),
-      });
-      await edge.application.concepts.Assigning.assign({
-        assignment: created.assignment,
-        assignee: learner.user,
-        at: new Date(),
-      });
-      lateAssignments.push(created.assignment);
-    }
-    const [work, staffWork] = lateAssignments;
-    expect(
-      (await call("/late-days/apply", { assignment: work, days: 1 }, learner.cookie)).status,
-    ).toBe(200);
-    expect(
-      (await call("/late-days/change", { assignment: work, days: 2 }, learner.cookie)).status,
-    ).toBe(200);
-    expect((await call("/late-days/cancel", { assignment: work }, learner.cookie)).status).toBe(
-      200,
-    );
+          "/late-days/staff-change",
+          { learner: learner.user, assignment: "work", days: 1 },
+          outsider.cookie,
+        ),
+      ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
+    });
 
-    for (const path of ["/late-days/change", "/late-days/cancel"] as const) {
-      const body = path.endsWith("change")
-        ? { assignment: "work", days: 1 }
-        : { assignment: "work" };
-      expect(await call(path, body, outsider.cookie)).toMatchObject({
-        status: 403,
-        body: { error: "FORBIDDEN" },
-      });
-      expect(await call(path, body)).toMatchObject({
-        status: 401,
-        body: { error: "UNAUTHORIZED" },
-      });
-    }
+    test("active owners may change and cancel late-day use; inactive users receive 403; student-records staff may use staff routes; other and unknown learners receive 404", async () => {
+      expect(
+        (
+          await call(
+            "/late-days/configure-policy",
+            { defaultDays: 5, unitHours: 24, maxDaysPerItem: 3 },
+            admin.cookie,
+          )
+        ).status,
+      ).toBe(200);
+      const lateAssignments: string[] = [];
+      for (const title of ["work", "staff-work"]) {
+        const created = await edge.application.concepts.Assigning.createDraft({
+          author: admin.user,
+          title,
+          instructions: "",
+          kind: "HOMEWORK",
+          availableAt: "2026-01-01T00:00:00.000Z",
+          dueAt: "2026-01-02T00:00:00.000Z",
+          closeAt: "2026-01-03T00:00:00.000Z",
+          acceptsSubmissions: true,
+          audience: "EVERYONE",
+          targets: [],
+          at: new Date("2026-01-01T00:00:00.000Z"),
+        });
+        await edge.application.concepts.Assigning.publish({
+          assignment: created.assignment,
+          at: new Date(),
+        });
+        await edge.application.concepts.Assigning.assign({
+          assignment: created.assignment,
+          assignee: learner.user,
+          at: new Date(),
+        });
+        lateAssignments.push(created.assignment);
+      }
+      const [work, staffWork] = lateAssignments;
+      expect(
+        (await call("/late-days/apply", { assignment: work, days: 1 }, learner.cookie)).status,
+      ).toBe(200);
+      expect(
+        (await call("/late-days/change", { assignment: work, days: 2 }, learner.cookie)).status,
+      ).toBe(200);
+      expect((await call("/late-days/cancel", { assignment: work }, learner.cookie)).status).toBe(
+        200,
+      );
 
-    await call("/late-days/apply", { assignment: staffWork, days: 1 }, learner.cookie);
-    expect(
-      await call(
-        "/late-days/staff-change",
-        { learner: learner.user, assignment: staffWork, days: 2 },
-        limitedStaff.cookie,
-      ),
-    ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
-    expect(
-      (
+      for (const path of ["/late-days/change", "/late-days/cancel"] as const) {
+        const body = path.endsWith("change")
+          ? { assignment: "work", days: 1 }
+          : { assignment: "work" };
+        expect(await call(path, body, outsider.cookie)).toMatchObject({
+          status: 403,
+          body: { error: "FORBIDDEN" },
+        });
+        expect(await call(path, body)).toMatchObject({
+          status: 401,
+          body: { error: "UNAUTHORIZED" },
+        });
+      }
+
+      await call("/late-days/apply", { assignment: staffWork, days: 1 }, learner.cookie);
+      expect(
         await call(
           "/late-days/staff-change",
           { learner: learner.user, assignment: staffWork, days: 2 },
-          admin.cookie,
-        )
-      ).status,
-    ).toBe(200);
-    expect(
-      (
-        await call(
-          "/late-days/staff-cancel",
-          { learner: learner.user, assignment: staffWork },
-          admin.cookie,
-        )
-      ).status,
-    ).toBe(200);
-    for (const path of ["/late-days/staff-change", "/late-days/staff-cancel"] as const) {
-      const body = {
-        learner: crypto.randomUUID(),
-        assignment: "staff-work",
-        ...(path.endsWith("change") ? { days: 1 } : {}),
-      };
-      expect(await call(path, body, admin.cookie)).toMatchObject({
+          limitedStaff.cookie,
+        ),
+      ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
+      expect(
+        (
+          await call(
+            "/late-days/staff-change",
+            { learner: learner.user, assignment: staffWork, days: 2 },
+            admin.cookie,
+          )
+        ).status,
+      ).toBe(200);
+      expect(
+        (
+          await call(
+            "/late-days/staff-cancel",
+            { learner: learner.user, assignment: staffWork },
+            admin.cookie,
+          )
+        ).status,
+      ).toBe(200);
+      for (const path of ["/late-days/staff-change", "/late-days/staff-cancel"] as const) {
+        const body = {
+          learner: crypto.randomUUID(),
+          assignment: "staff-work",
+          ...(path.endsWith("change") ? { days: 1 } : {}),
+        };
+        expect(await call(path, body, admin.cookie)).toMatchObject({
+          status: 404,
+          body: { error: "NOT_FOUND" },
+        });
+      }
+    });
+
+    test("revision routes require a member session and hide trashed items while moderate readers may use moderation routes", async () => {
+      const thread = await call(
+        "/threads/create",
+        { holders: ["standing:everyone"], content: "private after trash" },
+        admin.cookie,
+      );
+      const item = thread.body.post as string;
+      for (const [path, body] of [
+        ["/revisions/list", { item }],
+        ["/revisions/get", { item, number: 1 }],
+        ["/revisions/latest", { item }],
+      ] as const)
+        expect((await call(path, body, learner.cookie)).status).toBe(200);
+      // The opening is only ever trashed with its thread.
+      expect(await call("/trash/trash", { item }, admin.cookie)).toMatchObject({
+        status: 409,
+        body: { error: "CONFLICT" },
+      });
+      await call("/trash/trash", { item: thread.body.conversation as string }, admin.cookie);
+      for (const [publicPath, moderationPath, body] of [
+        ["/revisions/list", "/moderation/revisions/list", { item }],
+        ["/revisions/get", "/moderation/revisions/get", { item, number: 1 }],
+        ["/revisions/latest", "/moderation/revisions/latest", { item }],
+      ] as const) {
+        const unknownBody = { ...body, item: crypto.randomUUID() };
+        const hidden = await call(publicPath, body, learner.cookie);
+        expect(hidden).toEqual(await call(publicPath, unknownBody, learner.cookie));
+        expect(hidden).toEqual({ status: 404, body: { error: "NOT_FOUND" }, cookie: undefined });
+        expect((await call(moderationPath, body, admin.cookie)).status).toBe(200);
+        expect(await call(moderationPath, body, outsider.cookie)).toMatchObject({
+          status: 404,
+          body: { error: "NOT_FOUND" },
+        });
+        expect(await call(moderationPath, unknownBody, admin.cookie)).toMatchObject({
+          status: 404,
+          body: { error: "NOT_FOUND" },
+        });
+      }
+      expect((await call("/moderation/posts/get", { item }, admin.cookie)).status).toBe(200);
+      expect(await call("/moderation/posts/get", { item }, outsider.cookie)).toMatchObject({
         status: 404,
         body: { error: "NOT_FOUND" },
       });
-    }
-  });
-
-  test("revision routes require a member session and hide trashed items while moderate readers may use moderation routes", async () => {
-    const thread = await call(
-      "/threads/create",
-      { holders: ["standing:everyone"], content: "private after trash" },
-      admin.cookie,
-    );
-    const item = thread.body.post as string;
-    for (const [path, body] of [
-      ["/revisions/list", { item }],
-      ["/revisions/get", { item, number: 1 }],
-      ["/revisions/latest", { item }],
-    ] as const)
-      expect((await call(path, body, learner.cookie)).status).toBe(200);
-    // The opening is only ever trashed with its thread.
-    expect(await call("/trash/trash", { item }, admin.cookie)).toMatchObject({
-      status: 409,
-      body: { error: "CONFLICT" },
     });
-    await call("/trash/trash", { item: thread.body.conversation as string }, admin.cookie);
-    for (const [publicPath, moderationPath, body] of [
-      ["/revisions/list", "/moderation/revisions/list", { item }],
-      ["/revisions/get", "/moderation/revisions/get", { item, number: 1 }],
-      ["/revisions/latest", "/moderation/revisions/latest", { item }],
-    ] as const) {
-      const unknownBody = { ...body, item: crypto.randomUUID() };
-      const hidden = await call(publicPath, body, learner.cookie);
-      expect(hidden).toEqual(await call(publicPath, unknownBody, learner.cookie));
-      expect(hidden).toEqual({ status: 404, body: { error: "NOT_FOUND" }, cookie: undefined });
-      expect((await call(moderationPath, body, admin.cookie)).status).toBe(200);
-      expect(await call(moderationPath, body, outsider.cookie)).toMatchObject({
-        status: 404,
-        body: { error: "NOT_FOUND" },
+
+    test("submission artifacts are visible only to their student and graders", async () => {
+      const created = await call(
+        "/assignments/create-draft",
+        {
+          title: "Private assignment",
+          instructions: "Submit work",
+          kind: "HOMEWORK",
+          availableAt: "2020-01-01T00:00:00Z",
+          dueAt: "2090-01-01T00:00:00Z",
+          closeAt: "2090-02-01T00:00:00Z",
+          acceptsSubmissions: true,
+          audience: "EVERYONE",
+          targets: [],
+        },
+        admin.cookie,
+      );
+      const assignment = created.body.assignment as string;
+      await call("/assignments/publish", { assignment }, admin.cookie);
+      await call(
+        "/assignments/submit",
+        { assignment, content: "PRIVATE FINAL ANSWER: 42" },
+        learner.cookie,
+      );
+      const attempts = await call(
+        "/submissions/attempts",
+        { assignment, submitter: learner.user },
+        learner.cookie,
+      );
+      const artifact = (attempts.body.attempts as { artifacts: string[] }[])[0].artifacts[0];
+      const thread = await call(
+        "/threads/create",
+        { holders: ["standing:everyone"], content: "A forum post" },
+        learner.cookie,
+      );
+      expect(
+        (await call("/posts/byAuthor", { author: learner.user }, learner.cookie)).body,
+      ).toEqual({
+        posts: [{ post: thread.body.post }],
       });
-      expect(await call(moderationPath, unknownBody, admin.cookie)).toMatchObject({
-        status: 404,
-        body: { error: "NOT_FOUND" },
-      });
-    }
-    expect((await call("/moderation/posts/get", { item }, admin.cookie)).status).toBe(200);
-    expect(await call("/moderation/posts/get", { item }, outsider.cookie)).toMatchObject({
-      status: 404,
-      body: { error: "NOT_FOUND" },
-    });
-  });
 
-  test("submission artifacts are visible only to their student and graders", async () => {
-    const created = await call(
-      "/assignments/create-draft",
-      {
-        title: "Private assignment",
-        instructions: "Submit work",
-        kind: "HOMEWORK",
-        availableAt: "2020-01-01T00:00:00Z",
-        dueAt: "2090-01-01T00:00:00Z",
-        closeAt: "2090-02-01T00:00:00Z",
-        acceptsSubmissions: true,
-        audience: "EVERYONE",
-        targets: [],
-      },
-      admin.cookie,
-    );
-    const assignment = created.body.assignment as string;
-    await call("/assignments/publish", { assignment }, admin.cookie);
-    await call(
-      "/assignments/submit",
-      { assignment, content: "PRIVATE FINAL ANSWER: 42" },
-      learner.cookie,
-    );
-    const attempts = await call(
-      "/submissions/attempts",
-      { assignment, submitter: learner.user },
-      learner.cookie,
-    );
-    const artifact = (attempts.body.attempts as { artifacts: string[] }[])[0].artifacts[0];
-    const thread = await call(
-      "/threads/create",
-      { holders: ["standing:everyone"], content: "A forum post" },
-      learner.cookie,
-    );
-    expect((await call("/posts/byAuthor", { author: learner.user }, learner.cookie)).body).toEqual({
-      posts: [{ post: thread.body.post }],
-    });
-
-    expect((await call("/posts/byAuthor", { author: learner.user }, outsider.cookie)).body).toEqual(
-      {
+      expect(
+        (await call("/posts/byAuthor", { author: learner.user }, outsider.cookie)).body,
+      ).toEqual({
         posts: [],
-      },
-    );
-    expect((await call("/posts/get", { post: thread.body.post }, outsider.cookie)).status).toBe(
-      404,
-    );
-    for (const [path, body] of [
-      ["/posts/get", { post: artifact }],
-      ["/revisions/latest", { item: artifact }],
-    ] as const)
-      expect(await call(path, body, outsider.cookie)).toMatchObject({
+      });
+      expect((await call("/posts/get", { post: thread.body.post }, outsider.cookie)).status).toBe(
+        404,
+      );
+      for (const [path, body] of [
+        ["/posts/get", { post: artifact }],
+        ["/revisions/latest", { item: artifact }],
+      ] as const)
+        expect(await call(path, body, outsider.cookie)).toMatchObject({
+          status: 404,
+          body: { error: "NOT_FOUND" },
+        });
+      expect(await call("/trash/trash", { item: artifact }, limitedStaff.cookie)).toMatchObject({
         status: 404,
         body: { error: "NOT_FOUND" },
       });
-    expect(await call("/trash/trash", { item: artifact }, limitedStaff.cookie)).toMatchObject({
-      status: 404,
-      body: { error: "NOT_FOUND" },
-    });
 
-    const artifactInput = { assignment, submitter: learner.user, artifact };
-    expect(await call("/submissions/artifact", artifactInput, outsider.cookie)).toMatchObject({
-      status: 404,
-      body: { error: "NOT_FOUND" },
-    });
-    for (const reader of [learner, admin])
-      expect(await call("/submissions/artifact", artifactInput, reader.cookie)).toMatchObject({
-        status: 200,
-        body: { post: expect.objectContaining({ content: "PRIVATE FINAL ANSWER: 42" }) },
+      const artifactInput = { assignment, submitter: learner.user, artifact };
+      expect(await call("/submissions/artifact", artifactInput, outsider.cookie)).toMatchObject({
+        status: 404,
+        body: { error: "NOT_FOUND" },
       });
-  });
-
-  test("a learner receives 404 for staff-only and unknown notes while student-records staff may read the staff-only note", async () => {
-    const written = await call(
-      "/students/notes/write",
-      {
-        learner: learner.user,
-        body: "staff confidence",
-        visibility: "STAFF_ONLY",
-        tags: [],
-        followUpAt: null,
-      },
-      admin.cookie,
-    );
-    const hidden = await call(
-      "/students/notes/acknowledge",
-      { note: written.body.note },
-      learner.cookie,
-    );
-    const missing = await call(
-      "/students/notes/acknowledge",
-      { note: crypto.randomUUID() },
-      learner.cookie,
-    );
-    expect(hidden).toEqual(missing);
-    expect(hidden).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
-    const staffRead = await call("/students/notes/list", { learner: learner.user }, admin.cookie);
-    expect(staffRead.status).toBe(200);
-    expect(staffRead.body.notes).toEqual(
-      expect.arrayContaining([expect.objectContaining({ note: written.body.note })]),
-    );
-  });
-
-  test("target reads and mutations return the same 404 shapes for trashed, purged, and unknown posts except /threads/forItem, which returns its documented null shape", async () => {
-    const made = await call(
-      "/threads/create",
-      { holders: ["standing:everyone"], content: "satellite target" },
-      admin.cookie,
-    );
-    const item = made.body.post as string;
-    const conversation = made.body.conversation as string;
-    await call(
-      "/threads/reply",
-      { parent: made.body.node as string, content: "keeps the root node nonleaf" },
-      learner.cookie,
-    );
-    const category = await call(
-      "/categories/create",
-      { name: "Trust", description: "Trust probes" },
-      admin.cookie,
-    );
-    const tag = await call("/tags/create", { name: "trust" }, admin.cookie);
-    const unknown = crypto.randomUUID();
-    const unknownConversation = crypto.randomUUID();
-
-    const probes = [
-      ["/categories/forItem", (post: string) => ({ item: post })],
-      ["/tags/forTarget", (post: string) => ({ target: post })],
-      ["/reactions/forTarget", (post: string) => ({ target: post })],
-      ["/links/backlinks", (post: string) => ({ target: post })],
-      ["/links/forward", (post: string) => ({ source: post })],
-      ["/pins/isPinned", (post: string) => ({ item: post, scope: conversation })],
-      ["/resolutions/get", (post: string) => ({ question: post })],
-      ["/resolutions/isResolved", (post: string) => ({ question: post })],
-      ["/threads/forItem", (post: string) => ({ item: post })],
-      ["/locks/isLocked", (post: string) => ({ target: post })],
-      ["/bookmarks/isSaved", (post: string) => ({ item: post }), learner.cookie],
-      ["/flags/forTarget", (post: string) => ({ target: post }), admin.cookie],
-    ] as const;
-    const conversationProbes = [
-      ["/subscriptions/isSubscribed", (target: string) => ({ target }), learner.cookie],
-      ["/subscriptions/subscribers", (target: string) => ({ target })],
-    ] as const;
-
-    for (const [path, bodyOf, cookie] of probes) {
-      expect((await call(path, bodyOf(item), cookie ?? learner.cookie)).status, path).toBe(200);
-    }
-    for (const [path, bodyOf, cookie] of conversationProbes) {
-      expect((await call(path, bodyOf(conversation), cookie ?? learner.cookie)).status, path).toBe(
-        200,
-      );
-    }
-    expect((await call("/flags/open", {}, admin.cookie)).status).toBe(200);
-    expect(await call("/flags/open", {}, outsider.cookie)).toMatchObject({
-      status: 404,
-      body: { error: "NOT_FOUND" },
-    });
-    expect(await call("/flags/open", {})).toMatchObject({
-      status: 401,
-      body: { error: "UNAUTHORIZED" },
+      for (const reader of [learner, admin])
+        expect(await call("/submissions/artifact", artifactInput, reader.cookie)).toMatchObject({
+          status: 200,
+          body: { post: expect.objectContaining({ content: "PRIVATE FINAL ANSWER: 42" }) },
+        });
     });
 
-    expect((await call("/trash/trash", { item: conversation }, admin.cookie)).status).toBe(200);
-    for (const [path, bodyOf, cookie] of probes) {
-      expect(await call(path, bodyOf(item), cookie), `${path} trashed`).toEqual(
-        await call(path, bodyOf(unknown), cookie),
+    test("a learner receives 404 for staff-only and unknown notes while student-records staff may read the staff-only note", async () => {
+      const written = await call(
+        "/students/notes/write",
+        {
+          learner: learner.user,
+          body: "staff confidence",
+          visibility: "STAFF_ONLY",
+          tags: [],
+          followUpAt: null,
+        },
+        admin.cookie,
       );
-    }
-    for (const [path, bodyOf, cookie] of conversationProbes) {
-      const hidden = await call(path, bodyOf(conversation), cookie ?? learner.cookie);
+      const hidden = await call(
+        "/students/notes/acknowledge",
+        { note: written.body.note },
+        learner.cookie,
+      );
+      const missing = await call(
+        "/students/notes/acknowledge",
+        { note: crypto.randomUUID() },
+        learner.cookie,
+      );
+      expect(hidden).toEqual(missing);
       expect(hidden).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
-      expect(hidden).toEqual(
-        await call(path, bodyOf(unknownConversation), cookie ?? learner.cookie),
+      const staffRead = await call("/students/notes/list", { learner: learner.user }, admin.cookie);
+      expect(staffRead.status).toBe(200);
+      expect(staffRead.body.notes).toEqual(
+        expect.arrayContaining([expect.objectContaining({ note: written.body.note })]),
       );
-    }
-    const hiddenMutations = [
-      ["/categories/assign", { item, category: category.body.category }, admin.cookie],
-      ["/categories/unassign", { item }, admin.cookie],
-      ["/tags/add", { target: item, tag: tag.body.tag }, learner.cookie],
-      ["/tags/remove", { target: item, tag: tag.body.tag }, learner.cookie],
-      ["/reactions/add", { target: item, kind: "like" }, learner.cookie],
-      ["/reactions/remove", { target: item, kind: "like" }, learner.cookie],
-      ["/pins/pin", { item, scope: conversation, priority: 1 }, admin.cookie],
-      ["/pins/unpin", { item, scope: conversation }, admin.cookie],
-      ["/pins/setPriority", { item, scope: conversation, priority: 2 }, admin.cookie],
-      ["/flags/raise", { target: item, reason: "hidden" }, learner.cookie],
-      ["/flags/resolve", { target: item, outcome: "dismissed" }, admin.cookie],
-      ["/bookmarks/save", { item }, learner.cookie],
-      ["/bookmarks/unsave", { item }, learner.cookie],
-    ] as const;
-    for (const [path, body, cookie] of hiddenMutations) {
-      expect(await call(path, body, cookie), `${path} mutation`).toMatchObject({
+    });
+
+    test("target reads and mutations return the same 404 shapes for trashed, purged, and unknown posts except /threads/forItem, which returns its documented null shape", async () => {
+      const made = await call(
+        "/threads/create",
+        { holders: ["standing:everyone"], content: "satellite target" },
+        admin.cookie,
+      );
+      const item = made.body.post as string;
+      const conversation = made.body.conversation as string;
+      await call(
+        "/threads/reply",
+        { parent: made.body.node as string, content: "keeps the root node nonleaf" },
+        learner.cookie,
+      );
+      const category = await call(
+        "/categories/create",
+        { name: "Trust", description: "Trust probes" },
+        admin.cookie,
+      );
+      const tag = await call("/tags/create", { name: "trust" }, admin.cookie);
+      const unknown = crypto.randomUUID();
+      const unknownConversation = crypto.randomUUID();
+
+      const probes = [
+        ["/categories/forItem", (post: string) => ({ item: post })],
+        ["/tags/forTarget", (post: string) => ({ target: post })],
+        ["/reactions/forTarget", (post: string) => ({ target: post })],
+        ["/links/backlinks", (post: string) => ({ target: post })],
+        ["/links/forward", (post: string) => ({ source: post })],
+        ["/pins/isPinned", (post: string) => ({ item: post, scope: conversation })],
+        ["/resolutions/get", (post: string) => ({ question: post })],
+        ["/resolutions/isResolved", (post: string) => ({ question: post })],
+        ["/threads/forItem", (post: string) => ({ item: post })],
+        ["/locks/isLocked", (post: string) => ({ target: post })],
+        ["/bookmarks/isSaved", (post: string) => ({ item: post }), learner.cookie],
+        ["/flags/forTarget", (post: string) => ({ target: post }), admin.cookie],
+      ] as const;
+      const conversationProbes = [
+        ["/subscriptions/isSubscribed", (target: string) => ({ target }), learner.cookie],
+        ["/subscriptions/subscribers", (target: string) => ({ target })],
+      ] as const;
+
+      for (const [path, bodyOf, cookie] of probes) {
+        expect((await call(path, bodyOf(item), cookie ?? learner.cookie)).status, path).toBe(200);
+      }
+      for (const [path, bodyOf, cookie] of conversationProbes) {
+        expect(
+          (await call(path, bodyOf(conversation), cookie ?? learner.cookie)).status,
+          path,
+        ).toBe(200);
+      }
+      expect((await call("/flags/open", {}, admin.cookie)).status).toBe(200);
+      expect(await call("/flags/open", {}, outsider.cookie)).toMatchObject({
         status: 404,
         body: { error: "NOT_FOUND" },
       });
-    }
-    expect(
-      await call("/posts/edit", { post: item, content: "bypass" }, admin.cookie),
-    ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
-    expect(await call("/posts/delete", { post: item }, admin.cookie)).toMatchObject({
-      status: 404,
-      body: { error: "NOT_FOUND" },
-    });
+      expect(await call("/flags/open", {})).toMatchObject({
+        status: 401,
+        body: { error: "UNAUTHORIZED" },
+      });
 
-    expect((await call("/trash/purge", { item: conversation }, admin.cookie)).status).toBe(200);
-    for (const [path, bodyOf, cookie] of probes) {
-      expect(await call(path, bodyOf(item), cookie), `${path} purged`).toEqual(
-        await call(path, bodyOf(unknown), cookie),
+      expect((await call("/trash/trash", { item: conversation }, admin.cookie)).status).toBe(200);
+      for (const [path, bodyOf, cookie] of probes) {
+        expect(await call(path, bodyOf(item), cookie), `${path} trashed`).toEqual(
+          await call(path, bodyOf(unknown), cookie),
+        );
+      }
+      for (const [path, bodyOf, cookie] of conversationProbes) {
+        const hidden = await call(path, bodyOf(conversation), cookie ?? learner.cookie);
+        expect(hidden).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
+        expect(hidden).toEqual(
+          await call(path, bodyOf(unknownConversation), cookie ?? learner.cookie),
+        );
+      }
+      const hiddenMutations = [
+        ["/categories/assign", { item, category: category.body.category }, admin.cookie],
+        ["/categories/unassign", { item }, admin.cookie],
+        ["/tags/add", { target: item, tag: tag.body.tag }, learner.cookie],
+        ["/tags/remove", { target: item, tag: tag.body.tag }, learner.cookie],
+        ["/reactions/add", { target: item, kind: "like" }, learner.cookie],
+        ["/reactions/remove", { target: item, kind: "like" }, learner.cookie],
+        ["/pins/pin", { item, scope: conversation, priority: 1 }, admin.cookie],
+        ["/pins/unpin", { item, scope: conversation }, admin.cookie],
+        ["/pins/setPriority", { item, scope: conversation, priority: 2 }, admin.cookie],
+        ["/flags/raise", { target: item, reason: "hidden" }, learner.cookie],
+        ["/flags/resolve", { target: item, outcome: "dismissed" }, admin.cookie],
+        ["/bookmarks/save", { item }, learner.cookie],
+        ["/bookmarks/unsave", { item }, learner.cookie],
+      ] as const;
+      for (const [path, body, cookie] of hiddenMutations) {
+        expect(await call(path, body, cookie), `${path} mutation`).toMatchObject({
+          status: 404,
+          body: { error: "NOT_FOUND" },
+        });
+      }
+      expect(
+        await call("/posts/edit", { post: item, content: "bypass" }, admin.cookie),
+      ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
+      expect(await call("/posts/delete", { post: item }, admin.cookie)).toMatchObject({
+        status: 404,
+        body: { error: "NOT_FOUND" },
+      });
+
+      expect((await call("/trash/purge", { item: conversation }, admin.cookie)).status).toBe(200);
+      for (const [path, bodyOf, cookie] of probes) {
+        expect(await call(path, bodyOf(item), cookie), `${path} purged`).toEqual(
+          await call(path, bodyOf(unknown), cookie),
+        );
+      }
+      for (const [path, bodyOf, cookie] of conversationProbes) {
+        expect(await call(path, bodyOf(conversation), cookie ?? learner.cookie)).toEqual(
+          await call(path, bodyOf(unknownConversation), cookie ?? learner.cookie),
+        );
+      }
+      expect(await call("/threads/forItem", { item })).toEqual(
+        await call("/threads/forItem", { item: unknown }),
       );
-    }
-    for (const [path, bodyOf, cookie] of conversationProbes) {
-      expect(await call(path, bodyOf(conversation), cookie ?? learner.cookie)).toEqual(
-        await call(path, bodyOf(unknownConversation), cookie ?? learner.cookie),
+      expect(await call("/moderation/posts/get", { item }, admin.cookie)).toEqual(
+        await call("/moderation/posts/get", { item: unknown }, admin.cookie),
       );
-    }
-    expect(await call("/threads/forItem", { item })).toEqual(
-      await call("/threads/forItem", { item: unknown }),
-    );
-    expect(await call("/moderation/posts/get", { item }, admin.cookie)).toEqual(
-      await call("/moderation/posts/get", { item: unknown }, admin.cookie),
-    );
-    expect(await call("/moderation/revisions/list", { item }, admin.cookie)).toEqual(
-      await call("/moderation/revisions/list", { item: unknown }, admin.cookie),
-    );
+      expect(await call("/moderation/revisions/list", { item }, admin.cookie)).toEqual(
+        await call("/moderation/revisions/list", { item: unknown }, admin.cookie),
+      );
+    });
   });
 });
 

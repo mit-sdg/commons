@@ -1,15 +1,15 @@
-import { afterAll, expect, test } from "vite-plus/test";
-import { mongoImplementations } from "../../src/concepts.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { createEdge } from "../../src/edge.ts";
+import { createCommonsApplication, reusableFixture, refreshEdge } from "../support/fixtures.ts";
+import { beforeAll, afterAll, expect, test } from "vite-plus/test";
+import { stopTestDb } from "../../src/concepts/testing.ts";
+import { createEdgeForApplication } from "../../src/edge.ts";
 import { forumMailEligibility } from "../../src/email/forum-policy.ts";
 
 const missing = { ok: false, error: { kind: "domain", value: "NOT_FOUND" } };
 const origin = "https://commons.example.edu";
 afterAll(stopTestDb);
 
-async function fixture() {
-  const instances = mongoImplementations(await testDb());
+async function buildfixture() {
+  const { db, app, instances } = await createCommonsApplication();
   const people = [];
   for (const username of ["author", "recipient", "administrator"]) {
     const email = `${username}@example.edu`;
@@ -31,8 +31,7 @@ async function fixture() {
     capabilities: ["administer"],
   });
   await instances.Roling.assign({ user: administrator.user, context: "commons", role });
-  const edge = createEdge(instances, origin);
-  const app = edge.application;
+  const edge = createEdgeForApplication(app, instances, origin);
   const invoke = async (path: string, input: Record<string, unknown>) => {
     const result = await app.invoker.invoke(path, input);
     await app.whenIdle();
@@ -49,8 +48,20 @@ async function fixture() {
     if (!result.ok) throw new Error("Thread creation failed");
     return result.value as { post: string; conversation: string; node: string };
   }
-  return { app, edge, invoke, author, recipient, administrator, holders, thread };
+  return {
+    db,
+    app,
+    edge,
+    resetEdge: () => refreshEdge(edge, instances, origin),
+    invoke,
+    author,
+    recipient,
+    administrator,
+    holders,
+    thread,
+  };
 }
+const fixture = reusableFixture(buildfixture);
 
 test("administrators outside direct, group, and section audiences cannot read or act on their discussions", async () => {
   const f = await fixture();
@@ -230,4 +241,8 @@ test("administrator outbox inspection intentionally exposes snapshots without gr
     status: 200,
     body: { recipient: f.recipient.email, text: expect.stringContaining("CONFIDENTIAL-MESSAGE") },
   });
+});
+
+beforeAll(async () => {
+  await fixture();
 });

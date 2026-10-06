@@ -1,6 +1,6 @@
 import { createGateway } from "@mit-sdg/sync-engine/boundary";
 import { createHttpHandler } from "@mit-sdg/sync-engine-http/handler";
-import type { CommonsImplementations } from "./assembly/application.ts";
+import type { CommonsApp, CommonsImplementations } from "./assembly/application.ts";
 import { assembleCommons } from "./assembly/application.ts";
 import { commonsHttpPolicy } from "./assembly/http-policy.ts";
 import { slowRequestObserver } from "./assembly/slow-requests.ts";
@@ -116,6 +116,16 @@ export function createEdge(
   clock?: () => Date,
 ) {
   const application = assembleCommons(instances, clock);
+  return createEdgeForApplication(application, instances, origin, clock);
+}
+
+/** Attach fresh transport state to an existing application (used by test fixtures). */
+export function createEdgeForApplication(
+  application: CommonsApp,
+  instances: CommonsImplementations,
+  origin: string = configuredPublicOrigin(),
+  clock?: () => Date,
+) {
   const gateway = createGateway({ application, observers: [slowRequestObserver()] });
   const policy = commonsHttpPolicy(origin);
   const handler = createHttpHandler({ application, gateway, policy });

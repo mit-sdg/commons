@@ -1,7 +1,7 @@
+import { createCommonsFixture } from "../support/fixtures.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
-import { mongoImplementations } from "../../src/concepts.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 
 type Edge = ReturnType<typeof createEdge>;
 
@@ -90,7 +90,7 @@ const addRound = async (relay: string, title: string): Promise<Added> => {
 };
 
 beforeAll(async () => {
-  edge = createEdge(mongoImplementations(await testDb()));
+  edge = (await createCommonsFixture()).edge;
   cookie = await registerHost(edge);
 });
 
