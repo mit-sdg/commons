@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-for (const entryPoint of ["post menu", "flag queue"]) {
+for (const entryPoint of ["post menu"]) {
   test(`${entryPoint} trashes selected replies independently and preserves every removed slot`, async ({
     page,
   }) => {

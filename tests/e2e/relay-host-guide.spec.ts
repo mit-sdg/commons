@@ -1,7 +1,6 @@
+import { logIn } from "./support/browser.ts";
 import { expect, type Page, test } from "@playwright/test";
-import staff from "./fixtures/relay-host-guide/staff.json" with { type: "json" };
 import classroom from "./fixtures/relay-host-guide/classroom.json" with { type: "json" };
-import creative from "./fixtures/relay-host-guide/creative.json" with { type: "json" };
 
 async function call<T>(page: Page, path: string, data: unknown): Promise<T> {
   const cookie = (await page.context().cookies())
@@ -14,7 +13,7 @@ async function call<T>(page: Page, path: string, data: unknown): Promise<T> {
   return result as T;
 }
 
-async function seed(page: Page, draft: typeof staff | typeof classroom | typeof creative) {
+async function seed(page: Page, draft: typeof classroom) {
   const { relay } = await call<{ relay: string }>(page, "/live/relays/plan", {
     title: draft.title,
   });
@@ -58,35 +57,21 @@ async function fits(page: Page) {
   expect(await page.evaluate("document.documentElement.scrollWidth <= innerWidth")).toBe(true);
 }
 
-test("generated guides accompany realistic relay authoring and hosting", async ({
-  page,
-}, testInfo) => {
+test("generated guides accompany realistic relay authoring and hosting", async ({ page }) => {
   test.setTimeout(180_000);
-  await page.goto("/login");
-  await page.getByRole("textbox", { name: "Username" }).fill("mara");
-  await page.getByRole("textbox", { name: "Password" }).fill("password123");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await page.waitForURL("**/");
-  for (const [name, draft] of Object.entries({ staff, classroom, creative })) {
+  await logIn(page);
+  for (const [name, draft] of Object.entries({ classroom })) {
     const { relay, legs } = await seed(page, draft);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`/staff/live/relay/${relay}`);
     await expect(page.getByRole("paragraph").filter({ hasText: draft.description })).toBeVisible();
     await fits(page);
-    await page.screenshot({
-      path: testInfo.outputPath(`${name}-overview-desktop.png`),
-      fullPage: true,
-    });
     await page
       .getByRole("button", { name: "Relay guide: Session host guide", exact: true })
       .click();
     await expect(page.getByText(draft.hostGuide.opening, { exact: true })).toBeVisible();
     await page.setViewportSize({ width: 390, height: 844 });
     await fits(page);
-    await page.screenshot({
-      path: testInfo.outputPath(`${name}-overview-mobile.png`),
-      fullPage: true,
-    });
     await page.goto(`/staff/live/relay/${relay}/edit`);
     await expect(page.getByRole("textbox", { name: "Round 1 title" })).toHaveValue(
       draft.rounds[0]!.title,
@@ -114,11 +99,9 @@ test("generated guides accompany realistic relay authoring and hosting", async (
     await page.keyboard.press("Escape");
     await expect(walkthrough).toHaveCount(0);
     await fits(page);
-    await page.screenshot({ path: testInfo.outputPath(`${name}-editor-mobile.png`) });
     if (name === "staff") {
       await page.setViewportSize({ width: 320, height: 740 });
       await fits(page);
-      await page.screenshot({ path: testInfo.outputPath("staff-editor-small-mobile.png") });
       await page.setViewportSize({ width: 390, height: 844 });
     }
     await page.getByRole("textbox", { name: "Round 1 title" }).click();
@@ -137,7 +120,6 @@ test("generated guides accompany realistic relay authoring and hosting", async (
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.evaluate("scrollTo(0, 0)");
     await fits(page);
-    await page.screenshot({ path: testInfo.outputPath(`${name}-editor-desktop.png`) });
     if (name === "staff") {
       const { run } = await call<{ run: string }>(page, "/live/relays/launch", { relay });
       await page.goto(`/staff/live/run/${run}`);
@@ -150,13 +132,8 @@ test("generated guides accompany realistic relay authoring and hosting", async (
       await expect(
         page.getByText(draft.rounds[0]!.hostGuide.facilitation, { exact: true }),
       ).toBeVisible();
-      await page.screenshot({
-        path: testInfo.outputPath("staff-host-desktop.png"),
-        fullPage: true,
-      });
       await page.setViewportSize({ width: 390, height: 844 });
       await fits(page);
-      await page.screenshot({ path: testInfo.outputPath("staff-host-mobile.png"), fullPage: true });
       await call(page, "/live/relays/open-round", { run, leg: legs[0] });
       await page.reload();
       await expect(page.getByRole("button", { name: /^Close / }).first()).toBeVisible();

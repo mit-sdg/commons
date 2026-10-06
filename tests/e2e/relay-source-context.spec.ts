@@ -68,7 +68,7 @@ async function noHorizontalOverflow(page: Page) {
 test("a phone can read every source scenario after write, vote, and list, then recover its receipt", async ({
   request,
   browser,
-}, testInfo) => {
+}) => {
   test.setTimeout(120_000);
   const login = await request.post("/api/auth/login", {
     data: { username: "mara", password: "password123" },
@@ -195,10 +195,6 @@ test("a phone can read every source scenario after write, vote, and list, then r
       await expect(item).toBeInViewport();
     }
     await noHorizontalOverflow(participant);
-    await participant.screenshot({
-      path: testInfo.outputPath("relay-source-context-phone.png"),
-      fullPage: true,
-    });
     await participant.keyboard.press("Escape");
     await expect(inspect).toBeFocused();
     await expect(sources).toHaveCount(0);
@@ -230,10 +226,6 @@ test("a phone can read every source scenario after write, vote, and list, then r
     ).toBeVisible();
     await expect(participant.getByRole("button", { name: "Hand in", exact: true })).toBeHidden();
     await noHorizontalOverflow(participant);
-    await participant.screenshot({
-      path: testInfo.outputPath("relay-source-context-receipt.png"),
-      fullPage: true,
-    });
   } finally {
     await phone.close();
     await call(host, "/live/relays/close", { run });

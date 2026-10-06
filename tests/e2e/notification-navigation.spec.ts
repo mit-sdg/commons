@@ -14,7 +14,7 @@ interface Task {
 
 test("task notifications and email links focus their subject, including after sign-in", async ({
   page,
-}, testInfo) => {
+}) => {
   test.setTimeout(180_000);
   const mara = await logIn(page);
   const noah = await logIn(page, "noah");
@@ -60,7 +60,8 @@ test("task notifications and email links focus their subject, including after si
   }
 
   // Compile before interactive assertions; dev route compilation can reload an open page.
-  for (const path of ["/login", "/notifications", tasks[0].path]) await page.request.get(path);
+  if (!process.env.CI && process.env.COMMONS_E2E_STANDALONE !== "1")
+    for (const path of ["/login", "/notifications", tasks[0].path]) await page.request.get(path);
   await page.setViewportSize({ width: 390, height: 844 });
   for (const target of tasks) {
     await page.goto("/notifications");
@@ -68,15 +69,7 @@ test("task notifications and email links focus their subject, including after si
     const title = page.getByText(target.title, { exact: true }).first();
     await expect(title).toBeVisible();
     if (target === tasks[0]) {
-      await page.screenshot({
-        path: testInfo.outputPath("notifications-mobile.png"),
-        fullPage: true,
-      });
       await page.setViewportSize({ width: 1280, height: 900 });
-      await page.screenshot({
-        path: testInfo.outputPath("notifications-desktop.png"),
-        fullPage: true,
-      });
       await page.setViewportSize({ width: 390, height: 844 });
     }
     await title.click();
@@ -90,10 +83,6 @@ test("task notifications and email links focus their subject, including after si
         .locator("html")
         .evaluate((element, width) => element.scrollWidth <= width + 1, page.viewportSize()!.width),
     ).toBe(true);
-    await page.screenshot({
-      path: testInfo.outputPath(`${target.title}-mobile.png`),
-      fullPage: false,
-    });
   }
 
   const target = tasks.at(-1)!;

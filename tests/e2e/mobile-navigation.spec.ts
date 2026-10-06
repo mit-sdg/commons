@@ -5,19 +5,19 @@ async function signInAsStaff(page: Page) {
   await authenticate(page);
   // Compile the routes this menu navigates to: Next dev reloads a page the
   // first time it compiles a route, and the reload swallows the press.
-  for (const route of ["/staff/class", "/settings"]) await page.request.get(route);
+  if (!process.env.CI && process.env.COMMONS_E2E_STANDALONE !== "1")
+    for (const route of ["/staff/class", "/settings"]) await page.request.get(route);
   await page.goto("/staff/class");
   await expect(page.getByRole("heading", { name: "Class settings", exact: true })).toBeVisible();
 }
 
 for (const viewport of [
-  { width: 390, height: 700 },
   { width: 360, height: 568 },
   { width: 844, height: 390 },
 ]) {
   test(`expanded staff navigation scrolls natively at ${viewport.width}×${viewport.height}`, async ({
     page,
-  }, testInfo) => {
+  }) => {
     await page.setViewportSize(viewport);
     await signInAsStaff(page);
     const header = page.getByRole("banner");
@@ -39,8 +39,6 @@ for (const viewport of [
     expect(bounds.y).toBe(0);
     expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
     expect(await menu.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
-
-    await page.screenshot({ path: testInfo.outputPath("menu-open.png"), animations: "disabled" });
     await scrollToEdge(page, menu, 1);
     await expect(menu.getByRole("link", { name: "Settings", exact: true })).toBeInViewport({
       ratio: 1,

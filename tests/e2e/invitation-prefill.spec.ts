@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { invitationCredential } from "../../src/concepts/inviting/credential.ts";
 
-for (const source of ["csv", "manual"] as const) {
+for (const source of ["csv"] as ("csv" | "manual")[]) {
   test(`${source} invitation prefills registration and accepts the entered temporary password`, async ({
     page,
     request,

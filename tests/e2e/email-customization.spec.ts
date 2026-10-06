@@ -2,7 +2,8 @@ import { expect, type Page, test } from "@playwright/test";
 import type { CommonsBrowserWire } from "../../src/client.ts";
 
 async function signIn(page: Page, username = "mara") {
-  for (const route of ["/login", "/", "/admin", "/notifications"]) await page.request.get(route);
+  if (!process.env.CI && process.env.COMMONS_E2E_STANDALONE !== "1")
+    for (const route of ["/login", "/", "/admin", "/notifications"]) await page.request.get(route);
   await page.goto("/login");
   await page.getByRole("textbox", { name: "Username" }).fill(username);
   await page.getByRole("textbox", { name: "Password" }).fill("password123");
@@ -31,7 +32,7 @@ async function post<P extends keyof CommonsBrowserWire>(
 
 test("an administrator previews/saves invitation copy and reads a redacted outbox on mobile", async ({
   page,
-}, testInfo) => {
+}) => {
   test.setTimeout(180_000);
   await signIn(page);
   await page.goto("/admin");
@@ -79,7 +80,6 @@ test("an administrator previews/saves invitation copy and reads a redacted outbo
   expect(detailReads).toBeGreaterThan(0);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.locator("html").evaluate((el) => el.scrollWidth <= 391)).toBe(true);
-  await page.screenshot({ path: testInfo.outputPath("email-outbox-mobile.png"), fullPage: true });
 
   await page.getByRole("button", { name: /Use Commons. wording/ }).click();
   await page.getByRole("button", { name: "Restore wording", exact: true }).click();
@@ -96,7 +96,7 @@ test("an administrator previews/saves invitation copy and reads a redacted outbo
 test("a real forum reply shows discussion context and navigates directly; email carries its author and message", async ({
   page,
   browser,
-}, testInfo) => {
+}) => {
   test.setTimeout(180_000);
   await signIn(page);
   const title = "Useful email discussion context";
@@ -127,10 +127,6 @@ test("a real forum reply shows discussion context and navigates directly; email 
   await expect(notification).toContainText("Noah Patel");
   await expect(notification).toContainText("replied to your post");
   expect(placementReads).toBe(0);
-  await page.screenshot({
-    path: testInfo.outputPath("discussion-notification.png"),
-    fullPage: true,
-  });
   await notification.click();
   await page.waitForURL(`**/t/${thread.conversation}#post-${reply.post}`);
   const mail = (await post(page, "/mail/list")).messages.find(
