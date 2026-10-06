@@ -145,15 +145,28 @@ function edgeWith(database: Db, clock: Clock, attending?: MongoAttendingConcept)
 }
 
 describe("a device on the participant link", () => {
-  test("checks in with the round it shows, or with nothing while it waits", async () => {
+  test("checks in while waiting and sees the first round even two hours after launch", async () => {
     const clock = new Clock();
-    const s = await stage(edgeWith(await testDb(), clock), "ada");
+    const db = await testDb();
+    const s = await stage(edgeWith(db, clock), "ada");
     expect(await attend(s, "phone-1")).toEqual({ status: 200, body: {} });
     expect(await attendances(s)).toEqual([
       { attendee: "phone-1", holding: "", heardAt: clock.now() },
     ]);
 
+    // A few polls across a clock jump state the aging invariant without a
+    // two-hour request history. A second edge also observes the shared state.
+    for (let poll = 0; poll < 3; poll += 1) {
+      expect((await s.call("/live/p/arrive", { token: s.token })).relay).toMatchObject({
+        open: true,
+        openRound: null,
+      });
+      if (poll < 2) clock.advance(3_600_000);
+    }
     const round = await openRound(s, s.legs[0]!);
+    const observer = edgeWith(db, clock);
+    const observed = await post(observer, "/live/p/arrive", { token: s.token }).then(answer);
+    expect(observed.body.relay).toMatchObject({ openRound: round });
     clock.advance(3_000);
     expect(await attend(s, "phone-1", round)).toEqual({ status: 200, body: {} });
     expect(await attendances(s)).toEqual([
