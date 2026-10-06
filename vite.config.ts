@@ -1,3 +1,4 @@
+import { availableParallelism } from "node:os";
 import { readFileSync } from "node:fs";
 import { defineConfig } from "vite-plus";
 
@@ -32,9 +33,11 @@ export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts"],
     globalSetup: ["tests/support/mongo-global.ts"],
+    setupFiles: ["tests/support/transport-setup.ts"],
+    server: { deps: { inline: ["@mit-sdg/sync-engine-http"] } },
     pool: "threads",
     isolate: false,
-    maxWorkers: 4,
+    maxWorkers: Math.min(5, availableParallelism()),
     restoreMocks: true,
     unstubEnvs: true,
     unstubGlobals: true,
