@@ -1,3 +1,5 @@
+import { reusableFixture } from "../support/fixtures.ts";
+import { pooledTaskApplication } from "../support/world-pool.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { assembleCommons } from "../../src/assembly/application.ts";
@@ -5,7 +7,7 @@ import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 
 type App = ReturnType<typeof assembleCommons>;
 
-async function actor(app: App, username: string) {
+async function buildActor(app: App, username: string) {
   const email = `${username}@example.edu`;
   const registered = await app.concepts.Authenticating.register({
     username,
@@ -36,8 +38,28 @@ async function call(app: App, path: string, body: Record<string, unknown>) {
 
 const WINDOW = { startsAt: "2026-08-19T16:00:00.000Z", endsAt: "2026-08-19T17:00:00.000Z" };
 
+const actors = new WeakMap<App, Map<string, Awaited<ReturnType<typeof buildActor>>>>();
+const prepared = reusableFixture(async () => {
+  const { db, app } = await pooledTaskApplication();
+  const records = new Map<string, Awaited<ReturnType<typeof buildActor>>>();
+  for (const username of [
+    "mara",
+    "noah",
+    "priya",
+    "outsider",
+    "personal-owner",
+    "personal-outsider",
+  ]) {
+    records.set(username, await buildActor(app, username));
+  }
+  actors.set(app, records);
+  return { db, edge: { application: app }, app };
+});
 async function newApp() {
-  return assembleCommons(mongoImplementations(await testDb()));
+  return (await prepared()).app;
+}
+async function actor(app: App, username: string) {
+  return actors.get(app)?.get(username) ?? (await buildActor(app, username));
 }
 
 afterAll(stopTestDb);
@@ -81,8 +103,8 @@ describe("collaborative task lists management", () => {
 
   test("any member can rename a list", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_rename");
-    const noah = await actor(app, "noah_rename");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
 
     const { list } = await call(app, "/tasklists/create", {
       session: mara.session,
@@ -107,9 +129,9 @@ describe("collaborative task lists management", () => {
 
   test("any member can add, remove, or leave, with equal authority", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_collab");
-    const noah = await actor(app, "noah_collab");
-    const priya = await actor(app, "priya_collab");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
+    const priya = await actor(app, "priya");
 
     const { list } = await call(app, "/tasklists/create", {
       session: mara.session,
@@ -180,8 +202,8 @@ describe("collaborative task lists management", () => {
 
   test("leaving or removal releases open tasks and preserves done/canceled task history", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_lin");
-    const noah = await actor(app, "noah_lin");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
 
     const { list } = await call(app, "/tasklists/create", {
       session: mara.session,
@@ -250,7 +272,7 @@ describe("collaborative task lists management", () => {
 
   test("last remaining member cannot leave or be removed", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_last");
+    const mara = await actor(app, "mara");
 
     const { list } = await call(app, "/tasklists/create", {
       session: mara.session,
@@ -271,7 +293,7 @@ describe("collaborative task lists management", () => {
 
   test("tasks/mine returns open tasks across lists the user belongs to ordered by due time", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_mine");
+    const mara = await actor(app, "mara");
 
     const { list: listA } = await call(app, "/tasklists/create", {
       session: mara.session,
@@ -315,8 +337,8 @@ describe("collaborative task lists management", () => {
 
   test("retime, release, and reopen endpoints operate correctly for members", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_ops");
-    const noah = await actor(app, "noah_ops");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
 
     const { list } = await call(app, "/tasklists/create", {
       session: mara.session,
@@ -369,8 +391,8 @@ describe("collaborative task lists management", () => {
 
   test("leaving or being removed from a list removes its tasks from cross-list /tasks/mine read", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_mine_leave");
-    const noah = await actor(app, "noah_mine_leave");
+    const mara = await actor(app, "mara_leave");
+    const noah = await actor(app, "noah_leave");
 
     const { list: listA } = await call(app, "/tasklists/create", {
       session: mara.session,
@@ -425,8 +447,8 @@ describe("collaborative task lists management", () => {
   test("state survives application restart in MongoDB", async () => {
     const db = await testDb();
     const app1 = assembleCommons(mongoImplementations(db));
-    const mara = await actor(app1, "mara_restart");
-    const noah = await actor(app1, "noah_restart");
+    const mara = await actor(app1, "mara");
+    const noah = await actor(app1, "noah");
 
     const { list } = await call(app1, "/tasklists/create", {
       session: mara.session,
@@ -478,8 +500,8 @@ describe("collaborative task lists management", () => {
 
   test("expected refusals", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_ref");
-    const outsider = await actor(app, "outsider_ref");
+    const mara = await actor(app, "mara");
+    const outsider = await actor(app, "outsider");
 
     const { list } = await call(app, "/tasklists/create", {
       session: mara.session,
@@ -568,8 +590,8 @@ describe("collaborative task lists management", () => {
 
   test("a member uncancels a canceled task, keeping its window, text, and assignee", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_uncancel");
-    const noah = await actor(app, "noah_uncancel");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
 
     const { list } = await call(app, "/tasklists/create", {
       session: mara.session,
@@ -615,8 +637,8 @@ describe("collaborative task lists management", () => {
 
   test("a member deletes settled tasks, and they disappear from the list and from /tasks/mine", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_delete");
-    const noah = await actor(app, "noah_delete");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
 
     const { list } = await call(app, "/tasklists/create", {
       session: mara.session,
@@ -667,8 +689,8 @@ describe("collaborative task lists management", () => {
 
   test("delete and uncancel refuse a non-member, and a repeated delete", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_del_ref");
-    const outsider = await actor(app, "outsider_del_ref");
+    const mara = await actor(app, "mara_ref");
+    const outsider = await actor(app, "outsider_ref");
 
     const { list } = await call(app, "/tasklists/create", {
       session: mara.session,

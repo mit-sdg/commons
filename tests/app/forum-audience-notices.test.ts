@@ -1,7 +1,7 @@
+import { pooledForumApplication } from "../support/world-pool.ts";
+import { reusableFixture } from "../support/fixtures.ts";
 import { afterAll, expect, test } from "vite-plus/test";
-import { assembleCommons } from "../../src/assembly/application.ts";
-import { mongoImplementations } from "../../src/concepts.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 
 afterAll(stopTestDb);
 
@@ -9,8 +9,8 @@ afterAll(stopTestDb);
  * `admin` and `tutor` are staff; `student` writes, `outsider` is enrolled but
  * outside every audience below, so a notice must never reach them.
  */
-async function fixture() {
-  const instances = mongoImplementations(await testDb());
+async function buildfixture() {
+  const { db, app, instances } = await pooledForumApplication();
   const people: { user: string; session: string; email: string; seat: string }[] = [];
   for (const username of ["student", "admin", "tutor", "outsider"]) {
     const email = `${username}@example.edu`;
@@ -38,8 +38,9 @@ async function fixture() {
     });
     await instances.Roling.assign({ user: people[index]!.user, context: "commons", role });
   }
-  return { app: assembleCommons(instances), instances, people };
+  return { db, edge: { application: app }, app, instances, people };
 }
+const fixture = reusableFixture(buildfixture);
 
 type App = Awaited<ReturnType<typeof fixture>>["app"];
 async function invoke(app: App, path: string, body: Record<string, unknown>) {

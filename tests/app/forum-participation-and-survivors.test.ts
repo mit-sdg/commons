@@ -1,12 +1,12 @@
+import { pooledForumApplication } from "../support/world-pool.ts";
+import { reusableFixture } from "../support/fixtures.ts";
 import { afterAll, expect, test } from "vite-plus/test";
-import { assembleCommons } from "../../src/assembly/application.ts";
-import { mongoImplementations } from "../../src/concepts.ts";
-import { testDb, stopTestDb } from "../../src/concepts/testing.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 import { forumMailEligibility } from "../../src/email/forum-policy.ts";
 
 afterAll(stopTestDb);
-async function fixture() {
-  const instances = mongoImplementations(await testDb());
+async function buildFixture() {
+  const { db, app, instances } = await pooledForumApplication();
   const people = [];
   for (const username of ["author", "participant", "outsider"]) {
     const { user } = await instances.Authenticating.register({
@@ -23,15 +23,15 @@ async function fixture() {
     });
     people.push({ user, session });
   }
-  const app = assembleCommons(instances);
   const call = async (path: string, session: string, input: Record<string, unknown> = {}) => {
     const result = await app.invoker.invoke(path, { session, ...input });
     expect(result.ok, `${path}: ${JSON.stringify(result)}`).toBe(true);
     if (!result.ok) throw new Error(path);
     return result.value as Record<string, any>;
   };
-  return { instances, app, people, call };
+  return { db, edge: { application: app }, instances, app, people, call };
 }
+const fixture = reusableFixture(buildFixture);
 
 for (const kind of ["people", "staff", "group"]) {
   test(`${kind} replies preserve explicit following choices and respect access loss`, async () => {

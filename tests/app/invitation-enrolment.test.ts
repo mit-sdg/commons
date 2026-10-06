@@ -1,5 +1,6 @@
+import { clearFixtureDb, refreshFixture } from "../support/fixtures.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
-import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
+import { occurrences } from "../support/occurrences.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import type { CommonsImplementations } from "../../src/assembly/application.ts";
 import { invitationCredential } from "../../src/concepts/inviting/credential.ts";
@@ -106,6 +107,21 @@ const publishedAssignment = async (edge: ReturnType<typeof createEdge>, cookie: 
   return assignment;
 };
 
+let world:
+  | { db: Awaited<ReturnType<typeof testDb>>; edge: ReturnType<typeof createEdge> }
+  | undefined;
+async function ordinaryEdge() {
+  if (world === undefined) {
+    const db = await testDb();
+    world = { db, edge: createEdge(mongoImplementations(db)) };
+  } else {
+    await world.edge.application.whenIdle();
+    await clearFixtureDb(world.db);
+    await refreshFixture(world.edge.application);
+  }
+  return world.edge;
+}
+
 const floorCases: [string, () => Promise<CommonsImplementations>][] = [
   ["on MongoDB", async () => mongoImplementations(await testDb())],
 ];
@@ -132,7 +148,7 @@ for (const [floor, makeFloor] of floorCases) {
       expect(invited).toHaveLength(1);
 
       // A repeated import must not resend mail to somebody already invited.
-      const before = inspectAssembly(app).occurrences.length;
+      const before = occurrences(app).length;
       await post(
         edge,
         "/roster/import",
@@ -140,14 +156,14 @@ for (const [floor, makeFloor] of floorCases) {
         admin.cookie,
       );
       await app.whenIdle();
-      const reinvites = inspectAssembly(app)
-        .occurrences.slice(before)
+      const reinvites = occurrences(app)
+        .slice(before)
         .filter((event) => event.concept === "Inviting" && event.action === "invite");
       expect(reinvites).toHaveLength(0);
     });
 
     test("accepting the invitation claims the seat held for that address", async () => {
-      const edge = createEdge(await makeFloor());
+      const edge = await ordinaryEdge();
       const app = edge.application;
       const admin = await registerAdmin(app, edge);
 
@@ -184,7 +200,7 @@ for (const [floor, makeFloor] of floorCases) {
     });
 
     test("an invitation with no seat still creates the account and leaves the roster alone", async () => {
-      const edge = createEdge(await makeFloor());
+      const edge = await ordinaryEdge();
       const app = edge.application;
       const admin = await registerAdmin(app, edge);
 
@@ -215,7 +231,7 @@ for (const [floor, makeFloor] of floorCases) {
     });
 
     test("an imported address that already has a live account claims its seat at once", async () => {
-      const edge = createEdge(await makeFloor());
+      const edge = await ordinaryEdge();
       const app = edge.application;
       const admin = await registerAdmin(app, edge);
       const assignment = await publishedAssignment(edge, admin.cookie);
@@ -251,7 +267,7 @@ for (const [floor, makeFloor] of floorCases) {
     });
 
     test("an imported address with no account is invited and its seat stays pending", async () => {
-      const edge = createEdge(await makeFloor());
+      const edge = await ordinaryEdge();
       const app = edge.application;
       const admin = await registerAdmin(app, edge);
 
@@ -279,7 +295,7 @@ for (const [floor, makeFloor] of floorCases) {
     });
 
     test("an imported address held by an archived account is neither invited nor claimed", async () => {
-      const edge = createEdge(await makeFloor());
+      const edge = await ordinaryEdge();
       const app = edge.application;
       const admin = await registerAdmin(app, edge);
       const pia = await registerPerson(app, edge, "pia", "pia@example.edu");
@@ -329,7 +345,7 @@ for (const [floor, makeFloor] of floorCases) {
     });
 
     test("every import sweeps every pending seat, so re-importing is a real retry", async () => {
-      const edge = createEdge(await makeFloor());
+      const edge = await ordinaryEdge();
       const app = edge.application;
       const admin = await registerAdmin(app, edge);
 
@@ -359,7 +375,7 @@ for (const [floor, makeFloor] of floorCases) {
     });
 
     test("accepting an invitation to an address some account already holds is refused", async () => {
-      const edge = createEdge(await makeFloor());
+      const edge = await ordinaryEdge();
       const app = edge.application;
       const admin = await registerAdmin(app, edge);
       const sam = await registerPerson(app, edge, "sam", "sam@example.edu");
@@ -397,7 +413,7 @@ for (const [floor, makeFloor] of floorCases) {
     });
 
     test("removing a seat frees the address and leaves the account and its course records intact", async () => {
-      const edge = createEdge(await makeFloor());
+      const edge = await ordinaryEdge();
       const app = edge.application;
       const admin = await registerAdmin(app, edge);
       const assignment = await publishedAssignment(edge, admin.cookie);
@@ -587,7 +603,7 @@ for (const [floor, makeFloor] of floorCases) {
     });
 
     test("removing a seat that is already gone answers SEAT_NOT_FOUND", async () => {
-      const edge = createEdge(await makeFloor());
+      const edge = await ordinaryEdge();
       const app = edge.application;
       const admin = await registerAdmin(app, edge);
 
@@ -609,7 +625,7 @@ for (const [floor, makeFloor] of floorCases) {
     });
 
     test("the class can be revised afterwards but not before it is configured", async () => {
-      const edge = createEdge(await makeFloor());
+      const edge = await ordinaryEdge();
       const app = edge.application;
       const admin = await registerAdmin(app, edge);
 

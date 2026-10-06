@@ -1,3 +1,4 @@
+import { reusableFixture } from "../support/fixtures.ts";
 import { MongoClient } from "mongodb";
 import { afterAll, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
@@ -75,7 +76,7 @@ async function settled<Value>(edge: Edge, read: () => Promise<Value>) {
 afterAll(stopTestDb);
 
 /** A room of 22 cards: sixteen in eight piles, one removed, and five in the tray. */
-async function stageRoom() {
+async function buildRoom() {
   const db = await testDb();
   const edge = createEdge(mongoImplementations(db));
   const cookie = await registerHost(edge);
@@ -149,6 +150,8 @@ async function stageRoom() {
   await edge.application.whenIdle();
   return { db, edge, call, run, round, cards, piles };
 }
+
+const stageRoom = reusableFixture(buildRoom);
 
 interface Command {
   name: string;

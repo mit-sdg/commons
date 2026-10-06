@@ -1,7 +1,9 @@
+import { reusableFixture } from "../support/fixtures.ts";
+import { journals } from "../support/occurrences.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vite-plus/test";
-import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
+import { occurrences } from "../support/occurrences.ts";
 import { assembleCommons } from "../../src/assembly/application.ts";
 import { createEdge } from "../../src/edge.ts";
 
@@ -45,8 +47,9 @@ describe("HTTP authorization and privacy", () => {
   let learner: Actor;
   let limitedStaff: Actor;
   let outsider: Actor;
-  async function setupActors() {
-    edge = createEdge(mongoImplementations(await testDb()));
+  async function buildActors() {
+    const db = await testDb();
+    edge = createEdge(mongoImplementations(db));
     admin = await register("admin");
     learner = await register("learner");
     limitedStaff = await register("limited_staff");
@@ -91,6 +94,13 @@ describe("HTTP authorization and privacy", () => {
       { user: limitedStaff.user, context: "commons", role: limitedRole.body.role },
       admin.cookie,
     );
+    return { db, edge, admin, learner, limitedStaff, outsider };
+  }
+  const preparedActors = reusableFixture(buildActors, ({ edge }) =>
+    journals.get(edge.application)?.clear(),
+  );
+  async function setupActors() {
+    ({ edge, admin, learner, limitedStaff, outsider } = await preparedActors());
   }
 
   describe("account and administrator mutations", () => {
@@ -144,15 +154,15 @@ describe("HTTP authorization and privacy", () => {
         ).body,
       ).toMatchObject({ name: "limited-staff" });
 
-      const before = inspectAssembly(edge.application).occurrences.length;
+      const before = occurrences(edge.application).length;
       const archived = await call("/users/archive", { user: limitedStaff.user }, admin.cookie);
       expect(archived).toMatchObject({ status: 200, body: { user: limitedStaff.user } });
       await edge.application.whenIdle();
 
       // The order matters: an account that is already archived must never be seen
       // holding a role, so the revocation lands before the archive commits.
-      const steps = inspectAssembly(edge.application)
-        .occurrences.slice(before)
+      const steps = occurrences(edge.application)
+        .slice(before)
         .map((event) => `${event.concept}.${event.action}`);
       expect(steps).toContain("Roling.revoke");
       expect(steps.indexOf("Roling.revoke")).toBeLessThan(steps.indexOf("Archiving.trash"));
@@ -818,13 +828,13 @@ test("dropping the actor's own staff seat returns one response and keeps their c
   const seat = held.seat;
   expect(held).toEqual(expect.objectContaining({ seat, status: "ACTIVE" }));
 
-  const before = inspectAssembly(app).occurrences.length;
+  const before = occurrences(app).length;
   expect(await send("/roster/drop", { session: staff.session, seat })).toEqual({
     seat: expect.objectContaining({ _id: seat, status: "DROPPED" }),
   });
   await app.whenIdle();
-  const responses = inspectAssembly(app)
-    .occurrences.slice(before)
+  const responses = occurrences(app)
+    .slice(before)
     .filter((event) => event.concept === "RequestBoundary" && event.action === "respond");
   expect(responses.filter((event) => event.outcome?.kind === "result")).toHaveLength(1);
   expect(responses.filter((event) => event.outcome?.kind === "error")).toHaveLength(0);

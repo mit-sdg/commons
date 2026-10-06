@@ -2,7 +2,7 @@ import { afterAll, expect, test } from "vite-plus/test";
 import type { CommonsBrowserWire } from "../../src/client.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { createEdge } from "../../src/edge.ts";
+import { createForumEdge as createEdge } from "../support/domain-world.ts";
 import { forumMailEligibility } from "../../src/email/forum-policy.ts";
 
 const origin = "https://commons.test";
@@ -134,16 +134,21 @@ test.each([
       (await ok("/threads/get", { conversation: root.conversation })).thread.map((p) => p.item),
     ).toEqual([root.post, middle.post, leaf.post]);
 
-    async function assertHidden() {
+    async function assertHidden(full = false) {
+      for (const actor of [author, reader, moderator]) {
+        expect(await call("/threads/get", { conversation: root.conversation }, actor)).toEqual(
+          missing,
+        );
+        expect(await call("/posts/get", { post: leaf.post }, actor)).toEqual(missing);
+      }
+      expect(await forumMailEligibility(edge.application)(mail!)).toBe(false);
+      if (!full) return;
       expect(await call("/notices/preview", { post: root.post }, moderator)).toEqual(missing);
       expect(await call("/notices/notify", { post: leaf.post }, moderator)).toEqual(missing);
       expect(
         await call("/notices/forConversation", { conversation: root.conversation }, moderator),
       ).toEqual(missing);
       for (const actor of [author, reader, moderator]) {
-        expect(await call("/threads/get", { conversation: root.conversation }, actor)).toEqual(
-          missing,
-        );
         for (const post of [root.post, middle.post, leaf.post])
           expect(await call("/posts/get", { post }, actor)).toEqual(missing);
         expect(await ok("/threads/forItem", { item: leaf.post }, actor)).toEqual({
@@ -207,7 +212,7 @@ test.each([
     expect(await ok("/trash/isTrashed", { item: root.conversation }, moderator)).toEqual({
       trashed: true,
     });
-    await assertHidden();
+    await assertHidden(audience === "private");
     expect((await ok("/trash/list", {}, moderator)).trashed).toEqual([
       expect.objectContaining({
         item: root.conversation,

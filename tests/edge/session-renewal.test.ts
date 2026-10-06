@@ -1,3 +1,4 @@
+import { reusableFixture } from "../support/fixtures.ts";
 import { afterAll, afterEach, expect, test, vi } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
@@ -7,14 +8,13 @@ afterAll(stopTestDb);
 afterEach(() => vi.restoreAllMocks());
 const HOUR = 3_600_000;
 
-async function fixture() {
+async function buildWorld() {
   const db = await testDb();
   // Keep the HTTP package's real-clock cookie validation independent of the test clock.
   const startedAt = new Date(Date.now() + 60_000);
   let now = startedAt;
   const instances = mongoImplementations(db, () => now);
   const realRefresh = instances.Sessioning.refresh.bind(instances.Sessioning);
-  const refresh = vi.spyOn(instances.Sessioning, "refresh");
   const edge = createEdge(instances, "https://commons.test", () => now);
   const { user } = await edge.application.concepts.Authenticating.register({
     username: "maya",
@@ -39,30 +39,42 @@ async function fixture() {
         body: JSON.stringify(body),
       }),
     );
-  const login = await request("/auth/login", { username: "maya", password: "password123" });
-  expect(login.status).toBe(200);
-  const cookie = login.headers.get("set-cookie")!.split(";")[0];
-  const session = cookie!.slice(cookie!.indexOf("=") + 1);
-  const records = db.collection<{ _id: string; expiresAt: Date; absoluteExpiresAt?: Date }>(
-    "sessioning.sessions",
-  );
   return {
     db,
     edge,
     instances,
-    refresh,
     realRefresh,
     user,
+    startedAt,
+    rawRequest: request,
+    resetClock: () => {
+      now = startedAt;
+    },
+    atHour: (hour: number) => {
+      now = new Date(startedAt.getTime() + hour * HOUR);
+    },
+  };
+}
+const world = reusableFixture(buildWorld, (value) => value.resetClock());
+async function fixture() {
+  const base = await world();
+  const refresh = vi.spyOn(base.instances.Sessioning, "refresh");
+  const login = await base.rawRequest("/auth/login", { username: "maya", password: "password123" });
+  expect(login.status).toBe(200);
+  const cookie = login.headers.get("set-cookie")!.split(";")[0];
+  const session = cookie!.slice(cookie!.indexOf("=") + 1);
+  const records = base.db.collection<{ _id: string; expiresAt: Date; absoluteExpiresAt?: Date }>(
+    "sessioning.sessions",
+  );
+  return {
+    ...base,
+    refresh,
     login,
     cookie,
     session,
     records,
-    startedAt,
-    atHour: (hour: number) => {
-      now = new Date(startedAt.getTime() + hour * HOUR);
-    },
     request: (path: string, body: unknown = {}, headers: Record<string, string> = {}) =>
-      request(path, body, cookie, headers),
+      base.rawRequest(path, body, cookie, headers),
   };
 }
 

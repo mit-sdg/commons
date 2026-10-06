@@ -1,8 +1,20 @@
+import { emptyApplication } from "../support/fixtures.ts";
+import { journals } from "../support/occurrences.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
-import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
+import { occurrences } from "../support/occurrences.ts";
 import { assembleCommons } from "../../src/assembly/application.ts";
+
+const retained = emptyApplication(async () => {
+  const db = await testDb();
+  return { db, app: assembleCommons(mongoImplementations(db)) };
+});
+async function freshApp() {
+  const app = await retained();
+  journals.get(app)?.clear();
+  return app;
+}
 
 async function actor(app: ReturnType<typeof assembleCommons>, username: string) {
   const registered = await app.concepts.Authenticating.register({
@@ -43,12 +55,12 @@ async function expectOneAnswer(
   expected: unknown,
   expectedBy?: string,
 ) {
-  const before = inspectAssembly(app).occurrences.length;
+  const before = occurrences(app).length;
   const result = await app.invoker.invoke(path as never, body as never);
   expect(publicResult(result)).toEqual(expected);
   await app.whenIdle();
-  const responses = inspectAssembly(app)
-    .occurrences.slice(before)
+  const responses = occurrences(app)
+    .slice(before)
     .filter((event) => event.concept === "RequestBoundary" && event.action === "respond");
   expect(responses.filter((event) => event.outcome?.kind === "result")).toHaveLength(1);
   expect(responses.filter((event) => event.outcome?.kind === "error")).toHaveLength(0);
@@ -59,7 +71,7 @@ async function expectOneAnswer(
 
 describe("boundary partitions", () => {
   test("thread replies choose one open, locked, or missing-parent answer", async () => {
-    const app = assembleCommons(mongoImplementations(await testDb()));
+    const app = await freshApp();
     const session = await actor(app, "thread_partition");
     const created = await app.invoker.invoke("/threads/create", {
       holders: ["standing:everyone"],
@@ -69,7 +81,7 @@ describe("boundary partitions", () => {
     if (!created.ok) throw new Error("could not create thread");
     const thread = created.value as { conversation: string; node: string };
 
-    const beforeReply = inspectAssembly(app).occurrences.length;
+    const beforeReply = occurrences(app).length;
     const reply = await app.invoker.invoke("/threads/reply", {
       session,
       parent: thread.node,
@@ -77,8 +89,8 @@ describe("boundary partitions", () => {
     } as never);
     expect(reply.ok).toBe(true);
     await app.whenIdle();
-    const replyResponses = inspectAssembly(app)
-      .occurrences.slice(beforeReply)
+    const replyResponses = occurrences(app)
+      .slice(beforeReply)
       .filter((event) => event.concept === "RequestBoundary" && event.action === "respond");
     expect(replyResponses.filter((event) => event.outcome?.kind === "result")).toHaveLength(1);
     expect(replyResponses.filter((event) => event.outcome?.kind === "error")).toHaveLength(0);
@@ -99,7 +111,7 @@ describe("boundary partitions", () => {
   });
 
   test("resolution acceptance names its success, policy, and absence paths", async () => {
-    const app = assembleCommons(mongoImplementations(await testDb()));
+    const app = await freshApp();
     const authorSession = await actor(app, "resolution_author");
     const otherSession = await actor(app, "resolution_other");
     const created = await app.invoker.invoke("/threads/create", {
@@ -148,13 +160,13 @@ describe("boundary partitions", () => {
   });
 
   test("overlapping profile absence paths both fire without gaining priority", async () => {
-    const app = assembleCommons(mongoImplementations(await testDb()));
+    const app = await freshApp();
     await actor(app, "profile_overlap_admin");
     const session = await actor(app, "profile_overlap");
     const [{ user }] = await app.concepts.Sessioning._getUser({ session });
     const [{ seat }] = await app.concepts.Rostering._getSeatByUser({ user });
     await app.concepts.Rostering.dropSeat({ seat });
-    const before = inspectAssembly(app).occurrences.length;
+    const before = occurrences(app).length;
     const result = await app.invoker.invoke("/profiles/get", {
       session,
       user: "missing-user",
@@ -162,8 +174,8 @@ describe("boundary partitions", () => {
 
     expect(publicResult(result)).toEqual({ error: "NOT_FOUND" });
     await app.whenIdle();
-    const responses = inspectAssembly(app)
-      .occurrences.slice(before)
+    const responses = occurrences(app)
+      .slice(before)
       .filter((event) => event.concept === "RequestBoundary" && event.action === "respond");
     expect(responses.filter((event) => event.outcome?.kind === "result")).toHaveLength(1);
     expect(responses.filter((event) => event.outcome?.kind === "error")).toHaveLength(1);

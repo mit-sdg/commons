@@ -1,15 +1,17 @@
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { mongoImplementations } from "../../src/concepts.ts";
+import { pooledApplication } from "../support/world-pool.ts";
+import { emptyApplication } from "../support/fixtures.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
-import { assembleCommons } from "../../src/assembly/application.ts";
 import { theAssignmentsOf } from "../../src/compositions/course/assignments.ts";
 import { theRoster } from "../../src/compositions/course/roster.ts";
 import { theHomeFeedByActivity, theThreadContext } from "../../src/compositions/forum/feed.ts";
 import { theModerationQueue } from "../../src/compositions/forum/moderation.ts";
 
+const freshApp = emptyApplication(pooledApplication);
+
 describe("composed application reads", () => {
   test("the assignments read returns each assigned learner release", async () => {
-    const app = assembleCommons(mongoImplementations(await testDb()));
+    const app = await freshApp();
     const learner = "learner";
     const at = new Date("2026-07-19T12:00:00.000Z");
     const { assignment } = await app.concepts.Assigning.createDraft({
@@ -39,7 +41,7 @@ describe("composed application reads", () => {
   });
 
   test("the forum pages receive their complete formed rows", async () => {
-    const app = assembleCommons(mongoImplementations(await testDb()));
+    const app = await freshApp();
     const { user: viewer } = await app.concepts.Authenticating.register({
       username: "viewer",
       password: "password123",
@@ -104,7 +106,7 @@ describe("composed application reads", () => {
   });
 
   test("the moderation queue carries each target's flags and post", async () => {
-    const app = assembleCommons(mongoImplementations(await testDb()));
+    const app = await freshApp();
     const { user: viewer } = await app.concepts.Authenticating.register({
       username: "viewer",
       password: "password123",
@@ -139,7 +141,7 @@ describe("composed application reads", () => {
   });
 
   test("the roster read carries the active seat and section", async () => {
-    const app = assembleCommons(mongoImplementations(await testDb()));
+    const app = await freshApp();
     const { section } = await app.concepts.Rostering.createSection({
       name: "Section A",
       location: "Room 9",

@@ -2,7 +2,7 @@ import { afterAll, expect, test } from "vite-plus/test";
 import type { CommonsBrowserWire } from "../../src/client.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { createEdge } from "../../src/edge.ts";
+import { createForumEdge as createEdge } from "../support/domain-world.ts";
 
 const origin = "https://commons.test";
 afterAll(stopTestDb);

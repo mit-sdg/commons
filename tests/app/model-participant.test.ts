@@ -2,7 +2,7 @@ import type { Db } from "mongodb";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
-import { createEdge } from "../../src/edge.ts";
+import { createLiveEdge as createEdge } from "../support/domain-world.ts";
 import { scriptedMind, serveOnePass } from "../../src/reasoning/worker.ts";
 import { serveParticipantsOnce } from "../../src/reasoning/participant.ts";
 

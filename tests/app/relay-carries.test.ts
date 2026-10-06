@@ -1,7 +1,7 @@
+import { pooledLiveEdge } from "../support/world-pool.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
-import { mongoImplementations } from "../../src/concepts.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 
 type Edge = ReturnType<typeof createEdge>;
 
@@ -100,7 +100,7 @@ describe("what a round carries from an earlier one", () => {
   let cookie: string;
 
   beforeAll(async () => {
-    edge = createEdge(mongoImplementations(await testDb()));
+    edge = (await pooledLiveEdge()).edge;
     cookie = await registerHost(edge);
   });
 

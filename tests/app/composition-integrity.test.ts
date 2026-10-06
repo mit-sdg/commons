@@ -1,11 +1,23 @@
+import { emptyApplication } from "../support/fixtures.ts";
+import { journals } from "../support/occurrences.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
-import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
+import { occurrences } from "../support/occurrences.ts";
 import { assembleCommons } from "../../src/assembly/application.ts";
 import { theStaffDashboardCounts } from "../../src/compositions/course/calendar.ts";
 import { theHomeFeedByCreation, theThreadContext } from "../../src/compositions/forum/feed.ts";
 import { theThread } from "../../src/compositions/forum/threads.ts";
+
+const retained = emptyApplication(async () => {
+  const db = await testDb();
+  return { db, app: assembleCommons(mongoImplementations(db)) };
+});
+async function freshApp() {
+  const app = await retained();
+  journals.get(app)?.clear();
+  return app;
+}
 
 async function actor(
   app: ReturnType<typeof assembleCommons>,
@@ -34,7 +46,7 @@ async function actor(
 
 describe("course staff composition", () => {
   test("a claimed staff seat confers no capability of its own", async () => {
-    const app = assembleCommons(mongoImplementations(await testDb()));
+    const app = await freshApp();
     // The first account registered becomes the bootstrap administrator, so the
     // staff account under test must not be it.
     await actor(app, "bootstrap_admin");
@@ -59,7 +71,7 @@ describe("course staff composition", () => {
   });
 
   test("an assigned role is what confers capability, and dropping a seat leaves it alone", async () => {
-    const app = assembleCommons(mongoImplementations(await testDb()));
+    const app = await freshApp();
     await actor(app, "bootstrap_admin");
     const staff = await actor(app, "custom_staff", "custom@example.edu");
     const { role } = await app.concepts.Roling.defineRole({
@@ -92,7 +104,7 @@ describe("course staff composition", () => {
   });
 
   test("the staff dashboard counts active course work", async () => {
-    const app = assembleCommons(mongoImplementations(await testDb()));
+    const app = await freshApp();
     const at = new Date("2026-07-19T12:00:00.000Z");
     const { assignment } = await app.concepts.Assigning.createDraft({
       author: "staff",
@@ -128,16 +140,16 @@ describe("course staff composition", () => {
 
 describe("consolidated reaction groups", () => {
   test("deleting a leaf post asks every cleanup sibling", async () => {
-    const app = assembleCommons(mongoImplementations(await testDb()));
+    const app = await freshApp();
     const at = new Date("2026-07-20T12:00:00.000Z");
     const { post } = await app.concepts.Posting.create({ author: "author", content: "Body", at });
     await app.concepts.Conversing.start({ item: post, at });
-    const before = inspectAssembly(app).occurrences.length;
+    const before = occurrences(app).length;
 
     await app.concepts.Posting.delete({ post });
 
-    const asks = inspectAssembly(app)
-      .occurrences.slice(before)
+    const asks = occurrences(app)
+      .slice(before)
       .map((event) => event.by)
       .filter(
         (by): by is string => by?.startsWith("Forum.posts.DeletedPostClearsSatellites:") ?? false,
@@ -157,17 +169,17 @@ describe("consolidated reaction groups", () => {
   });
 
   test("purging a post keeps direct and deletion cleanup occurrences", async () => {
-    const app = assembleCommons(mongoImplementations(await testDb()));
+    const app = await freshApp();
     const at = new Date("2026-07-20T12:00:00.000Z");
     const { post } = await app.concepts.Posting.create({ author: "author", content: "Body", at });
     await app.concepts.Conversing.start({ item: post, at });
     await app.concepts.Trashing.trash({ item: post, by: "moderator", at });
-    const before = inspectAssembly(app).occurrences.length;
+    const before = occurrences(app).length;
 
     await app.concepts.Trashing.purge({ item: post });
 
-    const formattingClears = inspectAssembly(app)
-      .occurrences.slice(before)
+    const formattingClears = occurrences(app)
+      .slice(before)
       .filter((event) => event.concept === "Formatting" && event.action === "clear")
       .map((event) => event.by)
       .sort((left, right) => left!.localeCompare(right!));
@@ -176,8 +188,8 @@ describe("consolidated reaction groups", () => {
       "Forum.purge.PurgeClearsCoreForumState:formatting",
     ]);
 
-    const nodeRemovals = inspectAssembly(app)
-      .occurrences.slice(before)
+    const nodeRemovals = occurrences(app)
+      .slice(before)
       .filter((event) => event.concept === "Conversing" && event.action === "remove");
     expect(nodeRemovals).toHaveLength(1);
     expect(nodeRemovals[0].by).toBe("Forum.posts.DeletedPostClearsSatellites:leaf-node");
@@ -185,7 +197,7 @@ describe("consolidated reaction groups", () => {
   });
 
   test("reply purge preserves conversation state and root purge clears it", async () => {
-    const app = assembleCommons(mongoImplementations(await testDb()));
+    const app = await freshApp();
     const { user: viewer } = await app.concepts.Authenticating.register({
       username: "viewer",
       password: "password123",
@@ -235,7 +247,7 @@ describe("consolidated reaction groups", () => {
   });
 
   test("purging a resolved answer clears both resolution roles", async () => {
-    const app = assembleCommons(mongoImplementations(await testDb()));
+    const app = await freshApp();
     const at = new Date("2026-07-20T12:00:00.000Z");
     await app.concepts.Resolving.accept({
       question: "question",
@@ -250,12 +262,12 @@ describe("consolidated reaction groups", () => {
       at,
     });
     await app.concepts.Trashing.trash({ item: "answer", by: "moderator", at });
-    const before = inspectAssembly(app).occurrences.length;
+    const before = occurrences(app).length;
 
     await app.concepts.Trashing.purge({ item: "answer" });
 
-    const clears = inspectAssembly(app)
-      .occurrences.slice(before)
+    const clears = occurrences(app)
+      .slice(before)
       .filter((event) => event.concept === "Resolving" && event.action === "clear")
       .map((event) => event.by)
       .sort((left, right) => left!.localeCompare(right!));

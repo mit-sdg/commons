@@ -2,7 +2,7 @@ import type { CommonsWire } from "../../generated/wire.ts";
 import { afterAll, expect, test } from "vite-plus/test";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { createEdge } from "../../src/edge.ts";
+import { createForumEdge as createEdge } from "../support/domain-world.ts";
 
 afterAll(stopTestDb);
 

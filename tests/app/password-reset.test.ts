@@ -1,7 +1,13 @@
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { mongoImplementations } from "../../src/concepts.ts";
+import { pooledEdge } from "../support/world-pool.ts";
+import { emptyFixture } from "../support/fixtures.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
+
+const world = emptyFixture(() => pooledEdge());
+async function freshEdge() {
+  return (await world()).edge;
+}
 
 afterAll(stopTestDb);
 
@@ -44,7 +50,7 @@ function resetCodeIn(text: string): string {
 
 describe("password reset", () => {
   test("a reset email lets its holder replace the password once", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     await registeredUser(edge, "resetting_member", "member@example.edu");
 
     const login = await edge.gateway.invoke("/auth/login", {
@@ -103,7 +109,7 @@ describe("password reset", () => {
   });
 
   test("an unknown address receives the same acceptance and no mail", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     await registeredUser(edge, "lone_member", "lone@example.edu");
 
     const requested = await edge.gateway.invoke("/auth/request-password-reset", {
@@ -117,7 +123,7 @@ describe("password reset", () => {
   });
 
   test("a malformed address is refused", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const requested = await edge.gateway.invoke("/auth/request-password-reset", {
       email: "not-an-address",
     });
@@ -125,7 +131,7 @@ describe("password reset", () => {
   });
 
   test("a refused new password leaves the voucher usable", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     await registeredUser(edge, "careful_member", "careful@example.edu");
 
     await edge.gateway.invoke("/auth/request-password-reset", {
@@ -153,7 +159,7 @@ describe("password reset", () => {
   });
 
   test("an address reaches the one account holding it", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     await registeredUser(edge, "first_holder", "shared@example.edu");
 
     // An address identifies at most one account, so no second account can hold
@@ -177,7 +183,7 @@ describe("password reset", () => {
   });
 
   test("a second request inside the cooldown queues no further mail", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     await registeredUser(edge, "eager_member", "eager@example.edu");
 
     for (let attempt = 0; attempt < 4; attempt += 1) {
@@ -200,7 +206,7 @@ describe("password reset", () => {
   });
 
   test("the HTTP boundary serves both endpoints without a session", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     await registeredUser(edge, "signed_out_member", "signed.out@example.edu");
 
     const requested = await post(edge, "/auth/request-password-reset", {
@@ -229,7 +235,7 @@ describe("password reset", () => {
   });
 
   test("a lapsed voucher is refused", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const user = await registeredUser(edge, "late_member", "late@example.edu");
 
     const issued = await edge.application.concepts.PasswordResetVouching.issue({

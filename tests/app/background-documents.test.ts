@@ -1,9 +1,9 @@
+import { pooledLiveEdge } from "../support/world-pool.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
-import { mongoImplementations } from "../../src/concepts.ts";
 import { BACKGROUND_CLOSES, BACKGROUND_OPENS } from "../../src/computations/live-background.ts";
 import { relayDraftPassage } from "../../src/computations/live-edits.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 
 type Edge = ReturnType<typeof createEdge>;
 
@@ -149,7 +149,7 @@ describe("the background the drafter reads", () => {
   };
 
   beforeAll(async () => {
-    edge = createEdge(mongoImplementations(await testDb()));
+    edge = (await pooledLiveEdge()).edge;
     cookie = await register(edge, HOST, true);
     stranger = await register(edge, LEARNER, false);
   });

@@ -1,6 +1,6 @@
 import { afterAll, expect, test } from "vite-plus/test";
-import { assembleCommons } from "../../src/assembly/application.ts";
-import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
+import { assembleForum as assembleCommons } from "../support/domain-world.ts";
+import { occurrences } from "../support/occurrences.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 
@@ -199,13 +199,13 @@ test("moderators can review all retained thread content without widening ordinar
     "/moderation/revisions/get",
     "/moderation/revisions/latest",
   ]) {
-    const before = inspectAssembly(f.app).occurrences.length;
+    const before = occurrences(f.app).length;
     expect(
       await f.app.invoker.invoke(path, { session: f.session, item: f.root.post, number: 1 }),
     ).toMatchObject({ ok: true });
     expect(
-      inspectAssembly(f.app)
-        .occurrences.slice(before)
+      occurrences(f.app)
+        .slice(before)
         .filter((entry) => entry.concept === "RequestBoundary" && entry.action === "respond"),
     ).toHaveLength(1);
   }

@@ -1,7 +1,13 @@
+import { pooledEdge } from "../support/world-pool.ts";
+import { emptyFixture } from "../support/fixtures.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
-import { mongoImplementations } from "../../src/concepts.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";
+
+const world = emptyFixture(() => pooledEdge());
+async function freshEdge() {
+  return (await world()).edge;
+}
 
 afterAll(stopTestDb);
 
@@ -78,7 +84,7 @@ const invitedAddresses = async (edge: ReturnType<typeof createEdge>, cookie: str
 
 describe("adding one person to the roster by hand", () => {
   test("an address that already has an account takes its seat", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
     const nadia = await registerPerson(edge, "nadia", "nadia@example.edu");
 
@@ -108,7 +114,7 @@ describe("adding one person to the roster by hand", () => {
   });
 
   test("an address with no account becomes pending and is invited", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
 
     const added = await post(
@@ -134,7 +140,7 @@ describe("adding one person to the roster by hand", () => {
   });
 
   test("adding a still-pending address again refreshes only its name", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
     const created = (
       await post(edge, "/roster/sections/create", { name: "Section A" }, admin.cookie)
@@ -186,7 +192,7 @@ describe("adding one person to the roster by hand", () => {
   });
 
   test("an active or dropped seat at the address is refused", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
     await registerPerson(edge, "quinn", "quinn@example.edu");
 
@@ -221,7 +227,7 @@ describe("adding one person to the roster by hand", () => {
   });
 
   test("an archived account's address is neither claimed nor invited", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
     const rex = await registerPerson(edge, "rex", "rex@example.edu");
     expect((await post(edge, "/users/archive", { user: rex.user }, admin.cookie)).status).toBe(200);
@@ -260,7 +266,7 @@ describe("adding one person to the roster by hand", () => {
   });
 
   test("the sweep a hand-add re-enters is not attributed to the person added", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
 
     // An earlier import left an address uninvited because it had an account;
@@ -294,7 +300,7 @@ describe("adding one person to the roster by hand", () => {
   });
 
   test("a caller without course:manage is refused", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
     const outsider = await registerPerson(edge, "vic", "vic@example.edu");
 

@@ -1,7 +1,13 @@
+import { pooledEdge } from "../support/world-pool.ts";
+import { emptyFixture } from "../support/fixtures.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
-import { mongoImplementations } from "../../src/concepts.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";
+
+const world = emptyFixture(() => pooledEdge());
+async function freshEdge() {
+  return (await world()).edge;
+}
 
 afterAll(stopTestDb);
 
@@ -68,7 +74,7 @@ const roleOf = async (edge: ReturnType<typeof createEdge>, user: string, cookie:
 
 describe("naming the subject of a role", () => {
   test("an exact email address names the account that holds it, whatever its spelling", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
     const helper = await registerPerson(edge, "hana", "Hana@Example.edu");
 
@@ -112,7 +118,7 @@ describe("naming the subject of a role", () => {
   });
 
   test("an exact username still names the same account", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
     const helper = await registerPerson(edge, "ivo", "ivo@example.edu");
 
@@ -140,7 +146,7 @@ describe("naming the subject of a role", () => {
   });
 
   test("an address no account holds is refused, and every other subject stays opaque", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
     await post(edge, "/roles/define", { name: "helper", capabilities: ["moderate"] }, admin.cookie);
 
@@ -179,7 +185,7 @@ describe("naming the subject of a role", () => {
   });
 
   test("a caller who does not administer is refused whatever address they type", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
     const outsider = await registerPerson(edge, "jae", "jae@example.edu");
     await post(edge, "/roles/define", { name: "helper", capabilities: ["moderate"] }, admin.cookie);
@@ -218,7 +224,7 @@ describe("naming the subject of a role", () => {
   });
 
   test("the address of the last administrator is guarded like their identifier", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
     await post(edge, "/roles/define", { name: "helper", capabilities: ["moderate"] }, admin.cookie);
 
@@ -248,7 +254,7 @@ describe("naming the subject of a role", () => {
   });
 
   test("a public role read still treats an address as an unmatched string", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
     const helper = await registerPerson(edge, "kit", "kit@example.edu");
     await post(edge, "/roles/define", { name: "helper", capabilities: ["moderate"] }, admin.cookie);

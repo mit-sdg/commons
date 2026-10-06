@@ -1,6 +1,6 @@
+import { pooledEdge } from "../support/world-pool.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
-import { mongoImplementations } from "../../src/concepts.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";
 
 const post = (
@@ -21,7 +21,7 @@ afterAll(stopTestDb);
 
 describe("security regressions", () => {
   test("rejects MongoDB operators before they reach any endpoint", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = (await pooledEdge()).edge;
     const response = await edge.application.concepts.Responding.begin({
       participant: "anonymous-device",
       subject: "run",
@@ -42,7 +42,7 @@ describe("security regressions", () => {
   });
 
   test("a signed response accepts only its account's session", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = (await pooledEdge()).edge;
     const victim = await edge.application.concepts.Authenticating.register({
       username: "live_victim",
       password: "password123",

@@ -1,8 +1,8 @@
+import { pooledEdge } from "../support/world-pool.ts";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { afterAll, beforeAll, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
-import { mongoImplementations } from "../../src/concepts.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 
 /**
  * The wall on one fixed room, read through all three wall endpoints at four
@@ -193,7 +193,7 @@ function digest(moment: string, wall: Wall): string[] {
 }
 
 beforeAll(async () => {
-  edge = createEdge(mongoImplementations(await testDb()));
+  edge = (await pooledEdge()).edge;
   cookie = (await register(edge, "omar", true)).cookie;
 });
 

@@ -1,6 +1,7 @@
+import { reusableFixture } from "../support/fixtures.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import type { Db } from "mongodb";
-import { createEdge } from "../../src/edge.ts";
+import { createLiveEdge as createEdge } from "../support/domain-world.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoAttendingConcept } from "../../src/concepts/attending/attending.mongo.ts";
@@ -144,6 +145,17 @@ function edgeWith(database: Db, clock: Clock, attending?: MongoAttendingConcept)
   );
 }
 
+const ordinaryRoom = reusableFixture(
+  async () => {
+    const db = await testDb();
+    const clock = new Clock();
+    return { db, clock, ...(await stage(edgeWith(db, clock), "host")) };
+  },
+  (value) => {
+    value.clock.at = Date.now();
+  },
+);
+
 describe("a device on the participant link", () => {
   test("checks in while waiting and sees the first round even two hours after launch", async () => {
     const clock = new Clock();
@@ -218,8 +230,8 @@ describe("a device on the participant link", () => {
   });
 
   test("writes once for two check-ins inside twenty seconds on the same round", async () => {
-    const clock = new Clock();
-    const s = await stage(edgeWith(await testDb(), clock), "cyd");
+    const s = await ordinaryRoom();
+    const clock = s.clock;
     const first = clock.now();
     await attend(s, "phone-1");
     clock.advance(10_000);
@@ -232,8 +244,7 @@ describe("a device on the participant link", () => {
   });
 
   test("is not counted for arriving alone", async () => {
-    const clock = new Clock();
-    const s = await stage(edgeWith(await testDb(), clock), "dee");
+    const s = await ordinaryRoom();
     const arrived = await arrive(s);
     expect(arrived.status).toBe(200);
     expect(arrived.body.relay).toMatchObject({ run: s.run });
@@ -243,8 +254,7 @@ describe("a device on the participant link", () => {
   });
 
   test("is answered NOT_FOUND on a token that shares nothing or opens a questionnaire run", async () => {
-    const clock = new Clock();
-    const s = await stage(edgeWith(await testDb(), clock), "ivy");
+    const s = await ordinaryRoom();
     const unshared = { token: "no-such-token", device: "phone-1", holding: "" };
     expect(await answer(await post(s.edge, "/live/p/attend", unshared))).toMatchObject({
       body: { error: "NOT_FOUND" },
@@ -278,8 +288,8 @@ describe("a device on the participant link", () => {
 
 describe("the room on the run read", () => {
   test("counts the devices heard in the last minute and those holding the open round", async () => {
-    const clock = new Clock();
-    const s = await stage(edgeWith(await testDb(), clock), "eve");
+    const s = await ordinaryRoom();
+    const clock = s.clock;
     for (const device of ["phone-1", "phone-2", "laptop-1"]) await attend(s, device);
     expect(await room(s)).toEqual({ here: 3, onOpenRound: 0 });
 
@@ -299,8 +309,7 @@ describe("the room on the run read", () => {
   });
 
   test("no longer counts a device that leaves, and a second leave is refused", async () => {
-    const clock = new Clock();
-    const s = await stage(edgeWith(await testDb(), clock), "fay");
+    const s = await ordinaryRoom();
     await attend(s, "phone-1");
     await attend(s, "phone-2");
     expect(await room(s)).toEqual({ here: 2, onOpenRound: 0 });
@@ -320,8 +329,7 @@ describe("the room on the run read", () => {
   });
 
   test("never counts a model seat", async () => {
-    const clock = new Clock();
-    const s = await stage(edgeWith(await testDb(), clock), "gus");
+    const s = await ordinaryRoom();
     const round = await openRound(s, s.legs[0]!);
     await attend(s, "phone-1", round);
     expect((await s.call("/live/runs/invite", { run: s.run, device: "seat-1" })).participant).toBe(

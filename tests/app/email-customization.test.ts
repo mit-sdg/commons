@@ -1,12 +1,13 @@
+import { pooledEdge } from "../support/world-pool.ts";
+import { reusableFixture } from "../support/fixtures.ts";
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import { mongoImplementations } from "../../src/concepts.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";
 import { passwordResetMailText } from "../../src/computations/password-reset.ts";
 
-async function setup() {
-  const db = await testDb();
-  const edge = createEdge(mongoImplementations(db));
+async function buildsetup() {
+  const { db, edge } = await pooledEdge();
   const app = edge.application;
   const admin = await app.concepts.Authenticating.register({
     username: "admin",
@@ -31,6 +32,7 @@ async function setup() {
   }
   return { db, edge, app, admin, member, adminSession, memberSession, call };
 }
+const setup = reusableFixture(buildsetup);
 
 afterAll(stopTestDb);
 

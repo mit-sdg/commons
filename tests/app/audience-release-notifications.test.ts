@@ -1,13 +1,13 @@
+import { pooledForumApplication } from "../support/world-pool.ts";
+import { reusableFixture } from "../support/fixtures.ts";
 import { afterAll, expect, test } from "vite-plus/test";
-import { assembleCommons } from "../../src/assembly/application.ts";
-import { mongoImplementations } from "../../src/concepts.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 import { theMailEligibility } from "../../src/compositions/forum/notifications.ts";
 
 afterAll(stopTestDb);
 
-async function fixture() {
-  const instances = mongoImplementations(await testDb());
+async function buildFixture() {
+  const { db, app, instances } = await pooledForumApplication();
   const people = [];
   for (const username of ["student", "admin", "tutor", "other"]) {
     const { user } = await instances.Authenticating.register({
@@ -34,8 +34,9 @@ async function fixture() {
     });
     await instances.Roling.assign({ user: people[index].user, context: "commons", role });
   }
-  return { app: assembleCommons(instances), people };
+  return { db, edge: { application: app }, app, people };
 }
+const fixture = reusableFixture(buildFixture);
 
 type App = Awaited<ReturnType<typeof fixture>>["app"];
 async function invoke(app: App, path: string, body: Record<string, unknown>) {

@@ -1,5 +1,5 @@
 import { afterAll, expect, test } from "vite-plus/test";
-import { assembleCommons } from "../../src/assembly/application.ts";
+import { assembleForum as assembleCommons } from "../support/domain-world.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { testDb, stopTestDb } from "../../src/concepts/testing.ts";
 

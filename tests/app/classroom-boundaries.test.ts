@@ -1,7 +1,8 @@
+import { reusableFixture } from "../support/fixtures.ts";
 import { MongoPublishingConcept } from "../../src/concepts/publishing/publishing.mongo.ts";
 import { MongoSuggestingConcept } from "../../src/concepts/suggesting/suggesting.mongo.ts";
 import { afterAll, expect, test } from "vite-plus/test";
-import { createEdge } from "../../src/edge.ts";
+import { createLiveEdge as createEdge } from "../support/domain-world.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { MongoRespondingConcept } from "../../src/concepts/responding/responding.mongo.ts";
 import { serveOnePass, disabledMind } from "../../src/reasoning/worker.ts";
@@ -11,8 +12,8 @@ afterAll(stopTestDb);
 
 class PausedResponding extends MongoRespondingConcept {
   submitArmed = false;
-  readonly submitEntered = Promise.withResolvers<void>();
-  readonly submitRelease = Promise.withResolvers<void>();
+  submitEntered = Promise.withResolvers<void>();
+  submitRelease = Promise.withResolvers<void>();
   async submit(input: Parameters<MongoRespondingConcept["submit"]>[0]) {
     if (this.submitArmed) {
       this.submitArmed = false;
@@ -25,8 +26,8 @@ class PausedResponding extends MongoRespondingConcept {
 
 class PausedPublishing extends MongoPublishingConcept {
   armed = false;
-  readonly entered = Promise.withResolvers<void>();
-  readonly release = Promise.withResolvers<void>();
+  entered = Promise.withResolvers<void>();
+  release = Promise.withResolvers<void>();
   async publishWithin(input: Parameters<MongoPublishingConcept["publishWithin"]>[0]) {
     if (this.armed) {
       this.armed = false;
@@ -39,8 +40,8 @@ class PausedPublishing extends MongoPublishingConcept {
 
 class PausedSuggesting extends MongoSuggestingConcept {
   armed = false;
-  readonly entered = Promise.withResolvers<void>();
-  readonly release = Promise.withResolvers<void>();
+  entered = Promise.withResolvers<void>();
+  release = Promise.withResolvers<void>();
   async take(input: { suggestion: string }) {
     const result = await super.take(input);
     if (this.armed) {
@@ -52,7 +53,7 @@ class PausedSuggesting extends MongoSuggestingConcept {
   }
 }
 
-async function fixture(carry = false) {
+async function buildFixture(carry = false) {
   const database = await testDb();
   const instances = mongoImplementations(database);
   const responding = new PausedResponding(database);
@@ -126,6 +127,7 @@ async function fixture(carry = false) {
   await c.Categorizing.assign({ category, item: card });
 
   return {
+    db: database,
     edge,
     c,
     responding,
@@ -144,6 +146,30 @@ async function fixture(carry = false) {
     nextLeg,
     relay,
   };
+}
+const variants = new Map<
+  boolean,
+  ReturnType<typeof reusableFixture<Awaited<ReturnType<typeof buildFixture>>>>
+>();
+function fixture(carry = false) {
+  let prepared = variants.get(carry);
+  if (prepared === undefined) {
+    prepared = reusableFixture(
+      () => buildFixture(carry),
+      ({ responding, publishing, suggesting }) => {
+        responding.submitArmed = false;
+        responding.submitEntered = Promise.withResolvers<void>();
+        responding.submitRelease = Promise.withResolvers<void>();
+        for (const gate of [publishing, suggesting]) {
+          gate.armed = false;
+          gate.entered = Promise.withResolvers<void>();
+          gate.release = Promise.withResolvers<void>();
+        }
+      },
+    );
+    variants.set(carry, prepared);
+  }
+  return prepared();
 }
 
 async function resumeAfter<Result>(

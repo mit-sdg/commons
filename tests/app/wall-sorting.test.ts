@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
-import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
-import { createEdge } from "../../src/edge.ts";
+import { occurrences } from "../support/occurrences.ts";
+import { createLiveEdge as createEdge } from "../support/domain-world.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { disabledMind, scriptedMind, serveOnePass } from "../../src/reasoning/worker.ts";
@@ -145,16 +145,15 @@ async function handIn(token: string, value: string) {
       },
   );
   expect(face.openRound).not.toBeNull();
-  const begun = await json(
-    await post(edge, "/live/p/begin", { token, device: `phone-${Math.random()}` }),
-  );
-  const response = begun.response as string;
-  await post(edge, "/live/p/answer", {
-    response,
-    question: face.questions[0]!.question,
-    value,
+  const responding = edge.application.concepts.Responding;
+  const { response } = await responding.begin({
+    subject: face.openRound!,
+    participant: `phone-${crypto.randomUUID()}`,
+    at: new Date(),
   });
-  await post(edge, "/live/p/submit", { response });
+  const question = face.questions[0]!.question;
+  await responding.answer({ response, item: question, value });
+  await responding.submit({ response, at: new Date(), required: [[question]] });
   return response;
 }
 
@@ -499,7 +498,7 @@ describe("the sorting controls the dashboard presses", () => {
     expect(done.asksOut).toBe(0);
     expect(done.sortPending).toBe(false);
     expect(done.cards.every((card) => card.pile !== null)).toBe(true);
-    const consequences = inspectAssembly(edge.application).occurrences;
+    const consequences = occurrences(edge.application);
     const categories = new Set(done.piles.map((pile) => pile.pile));
     const placements = consequences.flatMap((record, index) =>
       record.concept === "Categorizing" &&
@@ -539,7 +538,7 @@ describe("the sorting controls the dashboard presses", () => {
     await serveReasoner();
     // Match unique domain identities: the engine retains a bounded flow window,
     // so offsets into an earlier inspection can shift as old flows expire.
-    const records = inspectAssembly(edge.application).occurrences;
+    const records = occurrences(edge.application);
     const settledWall = await readWall(live.round);
     const categories = new Set(settledWall.piles.map((pile) => pile.pile));
     for (const ask of pending) {
