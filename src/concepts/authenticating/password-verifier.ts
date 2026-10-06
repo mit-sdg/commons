@@ -3,8 +3,14 @@ import { randomBytes, scrypt as derive, timingSafeEqual } from "node:crypto";
 const parameters = { N: 16_384, r: 8, p: 1, maxmem: 32 * 1024 * 1024 } as const;
 let workFactor: number = parameters.N;
 
-/** Test fixtures may use a cheaper KDF; production always starts at N=16384. */
+/**
+ * Test fixtures may use a cheaper KDF; production always starts at N=16384.
+ * Only the Vitest runtime may lower it, so a stray production call cannot
+ * start minting or accepting weak verifiers.
+ */
 export function setPasswordWorkFactorForTests(N: 16 | 16_384): () => void {
+  if (process.env.VITEST === undefined)
+    throw new Error("commons: the password work factor can only change under Vitest.");
   const previous = workFactor;
   workFactor = N;
   return () => {
