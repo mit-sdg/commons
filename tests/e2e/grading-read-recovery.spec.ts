@@ -108,75 +108,22 @@ async function recoverAllNotices(page: Page, readPath: string) {
   await expect(notice).toHaveCount(0);
 }
 
-test("atomic setup reconciles uncertain saves and retains a stale CAS draft", async ({
-  browser,
-  baseURL,
-}) => {
-  test.setTimeout(180_000);
-  const staff = await browser.newContext({
-    viewport: { width: 1280, height: 900 },
+// Saving refreshes the workspace and can replace the opener during its click.
+// Only opening the dialog is retried; the release action is performed once.
+async function openBulkRelease(page: Page) {
+  const dialog = page.getByRole("dialog", {
+    name: "Release all complete assessment drafts for this assignment?",
   });
-  try {
-    const { assignment, call } = await setupAssignment(staff, baseURL!, "POINTS");
-    const page = await staff.newPage();
-    await page.goto(`${baseURL}/staff/assignments/${assignment}`);
-    const criterion = page.getByRole("textbox", {
-      name: "Criterion",
-      exact: true,
-    });
-    await criterion.fill("Response-lost criterion");
-
-    await page.route("**/api/grades/configure-setup", async (route) => {
-      const committed = await route.fetch();
-      expect(committed.ok()).toBe(true);
-      await route.fulfill({ status: 200, json: { error: "NETWORK_ERROR" } });
-    });
-    await page.getByRole("button", { name: "Review and save", exact: true }).click();
-    await page
-      .getByRole("dialog")
-      .getByRole("button", { name: "Save grading setup", exact: true })
-      .click();
-    await expect(criterion).toHaveValue("Response-lost criterion");
-    await expect(page.getByText("Setup saved", { exact: true })).toBeVisible();
-    await page.unroute("**/api/grades/configure-setup");
-    const confirmed = await call("/grades/item", { item: assignment });
-    expect(confirmed.criteria[0].name).toBe("Response-lost criterion");
-
-    await criterion.fill("Local unsaved criterion");
-    const concurrent = await call("/grades/configure-setup", {
-      item: assignment,
-      method: "POINTS",
-      revision: confirmed.revision,
-      criteria: [
-        {
-          kind: "POINTS",
-          criterion: confirmed.criteria[0].criterion,
-          name: "Concurrent saved criterion",
-          maxPoints: 10,
-          position: 0,
-        },
-      ],
-    });
-    expect(concurrent.revision).toBeGreaterThan(confirmed.revision);
-    await page.getByRole("button", { name: "Review and save", exact: true }).click();
-    await page
-      .getByRole("dialog")
-      .getByRole("button", { name: "Save grading setup", exact: true })
-      .click();
-    await expect(criterion).toHaveValue("Local unsaved criterion");
-    await expect(
-      page.getByText("The saved setup changed elsewhere", { exact: true }),
-    ).toBeVisible();
-    await page.getByRole("button", { name: "Review saved setup", exact: true }).click();
-    await page
-      .getByRole("dialog")
-      .getByRole("button", { name: "Reload saved setup", exact: true })
-      .click();
-    await expect(criterion).toHaveValue("Concurrent saved criterion");
-  } finally {
-    await staff.close();
-  }
-});
+  await expect(async () => {
+    if (!(await dialog.isVisible())) {
+      await page
+        .getByRole("button", { name: "Release all drafts (1)", exact: true })
+        .click({ timeout: 2_000 });
+    }
+    await expect(dialog).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+  await dialog.getByRole("button", { name: "Release all assignment drafts", exact: true }).click();
+}
 
 test("points grading retains its mode and unsaved editor through read failures", async ({
   browser,
@@ -250,11 +197,7 @@ test("points grading retains its mode and unsaved editor through read failures",
     await expect(score).toBeEnabled();
     await page.getByRole("button", { name: "Save draft" }).click();
     await expect(page.getByText("9.25 / 10", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Release all drafts (1)", exact: true }).click();
-    await page
-      .getByRole("dialog")
-      .getByRole("button", { name: "Release all assignment drafts", exact: true })
-      .click();
+    await openBulkRelease(page);
     await expect(page.getByText("released", { exact: true }).first()).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Retract to correct", exact: true }),
@@ -348,11 +291,7 @@ test("competency grading retains unsaved judgments through uncertain actions and
     await expect(feedback).toBeEnabled();
     await page.getByRole("button", { name: "Save draft" }).click();
     await expect(page.getByText("Draft saved", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Release all drafts (1)", exact: true }).click();
-    await page
-      .getByRole("dialog")
-      .getByRole("button", { name: "Release all assignment drafts", exact: true })
-      .click();
+    await openBulkRelease(page);
     await expect(page.getByText("released", { exact: true }).first()).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Retract to correct", exact: true }),

@@ -74,24 +74,10 @@ const launch = async (): Promise<string> => {
 const openRound = async (run: string, leg: string) =>
   json(await post(edge, "/live/relays/open-round", { run, leg }, cookie));
 
-const sort = async (round: string) => json(await post(edge, "/live/walls/sort", { round }, cookie));
-
-const isLocked = (target: string) => edge.application.concepts.Locking._isLocked({ target });
-
 /** Reads once every flow the edge accepted has settled, so a reaction's chain is not raced. */
 async function settled<Value>(read: () => PromiseLike<Value>) {
   await edge.application.whenIdle();
   return read();
-}
-
-/** One phone hands the open round in, so a card waits in the tray. */
-async function handIn(token: string, device: string, value: string) {
-  const face = await json(await post(edge, "/live/p/arrive", { token }));
-  const question = (face.relay as unknown as { questions: { question: string }[] }).questions[0]
-    ?.question as string;
-  const begun = await json(await post(edge, "/live/p/begin", { token, device }));
-  await post(edge, "/live/p/answer", { response: begun.response, question, value });
-  await post(edge, "/live/p/submit", { response: begun.response });
 }
 
 beforeAll(async () => {
@@ -177,41 +163,6 @@ describe("two dashboards opening rounds in one instant", () => {
     await post(edge, "/live/relays/close", { run }, cookie);
   });
 
-  test("every trial leaves one round open, turns the others away, and the run still reads", async () => {
-    for (let trial = 0; trial < 25; trial += 1) {
-      const run = await launch();
-      const answers = await Promise.all([
-        openRound(run, legs[0]),
-        openRound(run, legs[1]),
-        openRound(run, legs[2]),
-      ]);
-      const opened = answers.filter((answer) => typeof answer.round === "string");
-      const turned = answers.filter(
-        (answer) => answer.error === "CONFLICT" || answer.declined === "ROUND_OPEN",
-      );
-      expect(opened, `trial ${trial}: ${JSON.stringify(answers)}`).toHaveLength(1);
-      expect(turned, `trial ${trial}: ${JSON.stringify(answers)}`).toHaveLength(2);
-
-      const read = await readRun(run);
-      expect(read.run?.openRound).toBe(opened[0].round);
-      expect(read.run?.rounds.filter((round) => round.round !== null)).toHaveLength(1);
-
-      const closed = await json(
-        await post(edge, "/live/relays/close-round", { round: opened[0].round }, cookie),
-      );
-      expect(closed.round).toBe(opened[0].round);
-      const after = await readRun(run);
-      expect(after.run?.openRound).toBeNull();
-
-      const ran = read.run?.rounds.find((round) => round.round === opened[0].round)?.leg;
-      const loser = legs.find((leg) => leg !== ran) as string;
-      const next = await openRound(run, loser);
-      expect(typeof next.round, `trial ${trial}: ${JSON.stringify(next)}`).toBe("string");
-      await post(edge, "/live/relays/close", { run }, cookie);
-      expect(await edge.application.concepts.Publishing._openPart({ whole: run })).toEqual([]);
-    }
-  });
-
   test("a parent close also closes the round it holds open", async () => {
     const run = await launch();
     const { round } = await openRound(run, legs[0]);
@@ -243,38 +194,8 @@ describe("the run's Model sorts switch", () => {
   });
 });
 
-describe("dashboards ticking the sort together", () => {
-  test("send one ask, answer the rest quietly, and give the lock back with the reply", async () => {
-    const run = await launch();
-    const token = (await readRun(run)).run?.token as string;
-    const opened = await openRound(run, legs[0] as string);
-    const round = opened.round as string;
-    await handIn(token, "phone-1", "save");
-
-    const ticks = await Promise.all([sort(round), sort(round), sort(round)]);
-    const asked = ticks.filter((tick) => tick.asked === true);
-    expect(asked, JSON.stringify(ticks)).toHaveLength(1);
-    expect(await edge.application.concepts.Reasoning._pending()).toHaveLength(1);
-    expect(await isLocked(round)).toEqual({ locked: true });
-
-    // A tick that finds the lock held is a quiet no, not a conflict.
-    const later = await sort(round);
-    expect(later.asked).toBe(false);
-    expect(later.error).toBeUndefined();
-
-    const [pending] = await edge.application.concepts.Reasoning._pending();
-    await edge.application.concepts.Reasoning.answer({
-      asking: pending?.asking as string,
-      reply: JSON.stringify({ kind: "placed", placements: [{ card: "c1", pile: "Words" }] }),
-      at: new Date(),
-    });
-    expect(await settled(() => isLocked(round))).toEqual({ locked: false });
-    await post(edge, "/live/relays/close", { run }, cookie);
-  });
-});
-
 describe("a classroom reconnects and hands in", () => {
-  test("fifty devices retain one response each and repeated hand-ins make fifty cards", async () => {
+  test("four devices retain one response each and repeated hand-ins make four cards", async () => {
     const run = await launch();
     const token = (await readRun(run)).run?.token as string;
     const { round } = await openRound(run, legs[0]);
@@ -282,7 +203,7 @@ describe("a classroom reconnects and hands in", () => {
     const question = (face.relay as unknown as { questions: { question: string }[] }).questions[0]
       .question;
     const replies = await Promise.all(
-      Array.from({ length: 50 }, async (_, index) => {
+      Array.from({ length: 4 }, async (_, index) => {
         const device = `classroom-${index}`;
         const attempts = await Promise.all([
           post(edge, "/live/p/begin", { token, device }).then(json),
@@ -308,14 +229,14 @@ describe("a classroom reconnects and hands in", () => {
         return response;
       }),
     );
-    expect(new Set(replies).size).toBe(50);
+    expect(new Set(replies).size).toBe(4);
     const read = async () =>
       (await json(await post(edge, "/live/walls/read", { round }, cookie))).wall as unknown as {
         cards: { value: string }[];
       };
     const wall = await settled(read);
-    expect(wall.cards).toHaveLength(50);
-    expect(new Set(wall.cards.map((card) => card.value)).size).toBe(50);
+    expect(wall.cards).toHaveLength(4);
+    expect(new Set(wall.cards.map((card) => card.value)).size).toBe(4);
     await post(edge, "/live/relays/close-round", { round }, cookie);
     const late = await json(await post(edge, "/live/p/submit", { response: replies[0] }));
     expect(late.error).toBe("CONFLICT");

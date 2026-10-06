@@ -1,5 +1,4 @@
 import { type Db, MongoClient } from "mongodb";
-import { MongoMemoryServer } from "mongodb-memory-server";
 
 export async function caughtError(fn: () => unknown): Promise<Error> {
   try {
@@ -11,46 +10,43 @@ export async function caughtError(fn: () => unknown): Promise<Error> {
   throw new Error("expected an error");
 }
 
-let shared: Promise<{ client: MongoClient; server: MongoMemoryServer }> | undefined;
+let shared: Promise<MongoClient> | undefined;
+// Isolation may reload this module, and thread workers share a process id.
+const namespace = `${process.pid}-${crypto.randomUUID()}`;
 let databases = 0;
+const owned: Db[] = [];
 
 async function boot() {
-  const server = await MongoMemoryServer.create();
-  const client = new MongoClient(server.getUri());
+  const client = new MongoClient(await testDbUri());
   await client.connect();
-  return { client, server };
+  return client;
 }
 
 export async function testDb(): Promise<Db> {
   shared ??= boot();
-  const { client } = await shared;
+  const client = await shared;
   databases += 1;
-  return client.db(`test-${databases}`);
+  const db = client.db(`test-${namespace}-${databases}`);
+  owned.push(db);
+  return db;
 }
 
-/** The shared server's address, for a test that needs a client of its own. */
+/** The run's server address, for a test that needs a client of its own. */
 export async function testDbUri(): Promise<string> {
-  shared ??= boot();
-  return (await shared).server.getUri();
+  const uri = process.env.COMMONS_TEST_MONGO_URI;
+  if (uri === undefined) throw new Error("testDb requires the Vitest Mongo global setup");
+  return uri;
 }
 
-/**
- * The server's own stop waits ten seconds on a graceful shutdown before it
- * kills mongod, longer than a hook may take under load. Its data is thrown
- * away, so a mongod still shutting down after a moment is killed at once.
- */
-const GRACE_MS = 1_000;
-
+/** Discard this file's databases and close its client; keep the run's server. */
 export async function stopTestDb(): Promise<void> {
   if (shared === undefined) return;
-  const { client, server } = await shared;
+  const client = await shared;
   shared = undefined;
-  await client.close();
-  const mongod = server.instanceInfo?.instance.mongodProcess;
-  const kill = setTimeout(() => mongod?.kill("SIGKILL"), GRACE_MS);
+  const discarded = owned.splice(0);
   try {
-    await server.stop();
+    for (const db of discarded) await db.dropDatabase();
   } finally {
-    clearTimeout(kill);
+    await client.close();
   }
 }

@@ -1,8 +1,13 @@
-import { afterAll, describe, expect, test } from "vite-plus/test";
-import { mongoImplementations } from "../../src/concepts.ts";
+import { createCommonsFixture, emptyFixture } from "../support/fixtures.ts";
+import { beforeAll, afterAll, describe, expect, test } from "vite-plus/test";
 import { invitationCredential } from "../../src/concepts/inviting/credential.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";
+
+const world = emptyFixture(() => createCommonsFixture());
+async function freshEdge() {
+  return (await world()).edge;
+}
 
 afterAll(stopTestDb);
 
@@ -70,7 +75,7 @@ const invitationFor = async (edge: ReturnType<typeof createEdge>, address: strin
 
 describe("the invitation a registration form arrives holding", () => {
   test("answers the invited address with the name the roster holds for it", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
 
     const imported = await post(
@@ -100,7 +105,7 @@ describe("the invitation a registration form arrives holding", () => {
   });
 
   test("an invitation the roster holds no seat for answers an empty name too", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
 
     const invited = await post(
@@ -120,7 +125,7 @@ describe("the invitation a registration form arrives holding", () => {
   });
 
   test("a name typed for one address never reaches another invitation", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
 
     await post(
@@ -147,7 +152,7 @@ describe("the invitation a registration form arrives holding", () => {
   });
 
   test("unknown, wrongly credentialed, and claimed invitations refuse alike", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
 
     await post(
@@ -179,7 +184,7 @@ describe("the invitation a registration form arrives holding", () => {
   });
 
   test("the read discloses nothing without the credential the mail carried", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const admin = await registerAdmin(edge);
 
     await post(
@@ -196,4 +201,8 @@ describe("the invitation a registration form arrives holding", () => {
       error: "UNAUTHORIZED",
     });
   });
+});
+
+beforeAll(async () => {
+  await world();
 });

@@ -1,4 +1,5 @@
-import { afterAll, expect, test } from "vite-plus/test";
+import { reusableFixture, refreshEdge } from "../support/fixtures.ts";
+import { beforeAll, afterAll, expect, test } from "vite-plus/test";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";
@@ -73,8 +74,11 @@ async function json<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
-async function fixture(name: string) {
-  const edge = createEdge(mongoImplementations(await testDb()), "http://127.0.0.1");
+async function buildFixture() {
+  const name = "assessment";
+  const db = await testDb();
+  const instances = mongoImplementations(db);
+  const edge = createEdge(instances, "http://127.0.0.1");
   const { concepts } = edge.application;
   async function post(path: string, input: unknown, cookie = "") {
     return edge.fetch(
@@ -176,6 +180,8 @@ async function fixture(name: string) {
     at,
   });
   return {
+    db,
+    resetEdge: () => refreshEdge(edge, instances, "http://127.0.0.1"),
     edge,
     concepts,
     post,
@@ -189,6 +195,7 @@ async function fixture(name: string) {
     otherAttempt: otherAttempt.submission,
   };
 }
+const fixture = reusableFixture(buildFixture);
 
 async function configure(
   post: (path: string, input: unknown, cookie?: string) => Promise<Response>,
@@ -215,7 +222,7 @@ async function record(
 }
 
 test("atomic setup validates nested input and returns correctly ordered expanded editions", async () => {
-  const { post, staff, item, editions } = await fixture("setup-validation");
+  const { post, staff, item, editions } = await fixture();
   const configured = await configure(post, staff, item, 0, [
     { kind: "COMPETENCY", basis: editions[0]!.edition, position: 1 },
     { kind: "COMPETENCY", basis: editions[1]!.edition, position: 0 },
@@ -252,7 +259,7 @@ test("atomic setup validates nested input and returns correctly ordered expanded
 });
 
 test("released competency attempts retain snapshots and every correction release", async () => {
-  const { post, staff, learner, item, editions, first, second } = await fixture("history");
+  const { post, staff, learner, item, editions, first, second } = await fixture();
   const configured = await configure(post, staff, item, 0, [
     { kind: "COMPETENCY", basis: editions[0]!.edition, position: 0 },
   ]);
@@ -369,7 +376,7 @@ test("released competency attempts retain snapshots and every correction release
 });
 
 test("stale setup and start writes conflict without changing existing assessments", async () => {
-  const { post, staff, learner, item, editions, first, second } = await fixture("conflicts");
+  const { post, staff, learner, item, editions, first, second } = await fixture();
   const initial = await configure(post, staff, item, 0, [
     { kind: "COMPETENCY", basis: editions[0]!.edition, position: 0 },
   ]);
@@ -425,8 +432,7 @@ test("stale setup and start writes conflict without changing existing assessment
 });
 
 test("assignment and attempt excusals remain distinct and private", async () => {
-  const { post, staff, learner, other, item, editions, first, otherAttempt } =
-    await fixture("excusals");
+  const { post, staff, learner, other, item, editions, first, otherAttempt } = await fixture();
   const setup = await configure(post, staff, item, 0, [
     { kind: "COMPETENCY", basis: editions[0]!.edition, position: 0 },
   ]);
@@ -511,4 +517,8 @@ test("assignment and attempt excusals remain distinct and private", async () => 
   expect(
     await json(await post("/grades/detail", { grade: attempt.body.grade }, other.cookie)),
   ).toEqual({ error: "NOT_FOUND" });
+});
+
+beforeAll(async () => {
+  await fixture();
 });

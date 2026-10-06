@@ -1,10 +1,7 @@
-import { mkdir, readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { readFile } from "node:fs/promises";
+
 import { type BrowserContext, expect, test } from "@playwright/test";
 import { invitationCredential } from "../../src/concepts/inviting/credential.ts";
-
-const shots =
-  process.env.DELEGATION_SCREENSHOT_DIR ?? resolve(import.meta.dirname, "../../test-results");
 
 function csvRow(csv: string, email: string): Record<string, string> {
   const [header = "", ...lines] = csv.trimEnd().split("\r\n");
@@ -18,7 +15,6 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
   browser,
 }, testInfo) => {
   test.setTimeout(180_000);
-  await mkdir(shots, { recursive: true });
   const origin = String(testInfo.project.use.baseURL);
   const staff = await browser.newContext();
   const noah = await browser.newContext();
@@ -335,11 +331,6 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
         exact: false,
       }),
     ).toBeVisible();
-    await page.screenshot({
-      path: resolve(shots, "grading-delegation-bulk-dialog-desktop.png"),
-      fullPage: false,
-      animations: "disabled",
-    });
     await dialog.getByRole("button", { name: "Assign unassigned" }).click();
     const bulkFeedback = page.getByText("1 learner assigned; 2 kept their current grader");
     await expect(bulkFeedback).toBeVisible();
@@ -493,11 +484,6 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
     await page.getByRole("tab", { name: "Submissions", exact: true }).click();
     await expect(page.getByRole("heading", { level: 1, name: revisedTitle })).toBeVisible();
     await expect(page.getByText("3 of 3 learners shown", { exact: true })).toBeVisible();
-    await page.screenshot({
-      path: resolve(shots, "grading-delegation-desktop.png"),
-      fullPage: true,
-      animations: "disabled",
-    });
 
     await filter.click();
     await page.getByRole("option", { name: "Taylor Grader (@taylor_grader)" }).click();
@@ -533,11 +519,6 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
     await expect(exportFeedback).toBeHidden({ timeout: 10_000 });
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.screenshot({
-      path: resolve(shots, "grading-delegation-mobile.png"),
-      fullPage: true,
-      animations: "disabled",
-    });
     await expect(page.getByRole("button", { name: "Export current view" })).toBeVisible();
   } finally {
     await Promise.all([staff.close(), noah.close(), priya.close()]);

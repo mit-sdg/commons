@@ -1,3 +1,4 @@
+import { clearFixtureDb, refreshFixture, refreshEdge } from "../support/fixtures.ts";
 import { afterAll, afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
@@ -14,18 +15,15 @@ const SECOND = 1_000;
 
 type Body = Record<string, unknown>;
 
-async function fixture({ domain = "mit-sdg.dev" }: { domain?: string } = {}) {
+async function buildFixture(domain: string) {
   vi.stubEnv("PUBLIC_ORIGIN", COMMONS);
   if (domain !== "") vi.stubEnv("CONNECT_APP_DOMAIN", domain);
   const db = await testDb();
   // Keep the HTTP package's real-clock cookie validation independent of the test clock.
   const startedAt = new Date(Date.now() + 60_000);
   let now = startedAt;
-  const edge = createEdge(
-    mongoImplementations(db, () => now),
-    COMMONS,
-    () => now,
-  );
+  const instances = mongoImplementations(db, () => now);
+  const edge = createEdge(instances, COMMONS, () => now);
   const { Authenticating, Profiling } = edge.application.concepts;
 
   const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
@@ -68,7 +66,11 @@ async function fixture({ domain = "mit-sdg.dev" }: { domain?: string } = {}) {
 
   return {
     db,
+    resetEdge: () => refreshEdge(edge, instances, COMMONS, () => now),
     edge,
+    resetClock: () => {
+      now = startedAt;
+    },
     person,
     approve,
     redeem,
@@ -76,6 +78,24 @@ async function fixture({ domain = "mit-sdg.dev" }: { domain?: string } = {}) {
       now = new Date(now.getTime() + ms);
     },
   };
+}
+
+const worlds = new Map<string, Awaited<ReturnType<typeof buildFixture>>>();
+async function fixture({ domain = "mit-sdg.dev" }: { domain?: string } = {}) {
+  vi.stubEnv("PUBLIC_ORIGIN", COMMONS);
+  if (domain !== "") vi.stubEnv("CONNECT_APP_DOMAIN", domain);
+  let world = worlds.get(domain);
+  if (world === undefined) {
+    world = await buildFixture(domain);
+    worlds.set(domain, world);
+  } else {
+    await world.edge.application.whenIdle();
+    await clearFixtureDb(world.db);
+    world.resetClock();
+    await refreshFixture(world.edge.application);
+    world.resetEdge();
+  }
+  return world;
 }
 
 async function expectRefused(response: Response) {

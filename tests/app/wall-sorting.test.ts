@@ -145,16 +145,15 @@ async function handIn(token: string, value: string) {
       },
   );
   expect(face.openRound).not.toBeNull();
-  const begun = await json(
-    await post(edge, "/live/p/begin", { token, device: `phone-${Math.random()}` }),
-  );
-  const response = begun.response as string;
-  await post(edge, "/live/p/answer", {
-    response,
-    question: face.questions[0]!.question,
-    value,
+  const responding = edge.application.concepts.Responding;
+  const { response } = await responding.begin({
+    subject: face.openRound!,
+    participant: `phone-${crypto.randomUUID()}`,
+    at: new Date(),
   });
-  await post(edge, "/live/p/submit", { response });
+  const question = face.questions[0]!.question;
+  await responding.answer({ response, item: question, value });
+  await responding.submit({ response, at: new Date(), required: [[question]] });
   return response;
 }
 

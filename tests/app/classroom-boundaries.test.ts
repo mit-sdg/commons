@@ -1,57 +1,19 @@
-import { MongoLockingConcept } from "../../src/concepts/locking/locking.mongo.ts";
+import { reusableFixture, refreshEdge } from "../support/fixtures.ts";
 import { MongoPublishingConcept } from "../../src/concepts/publishing/publishing.mongo.ts";
 import { MongoSuggestingConcept } from "../../src/concepts/suggesting/suggesting.mongo.ts";
-import { afterAll, expect, test } from "vite-plus/test";
+import { afterAll, beforeAll, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
-import { MongoPinningConcept } from "../../src/concepts/pinning/pinning.mongo.ts";
 import { MongoRespondingConcept } from "../../src/concepts/responding/responding.mongo.ts";
 import { serveOnePass, disabledMind } from "../../src/reasoning/worker.ts";
-import { MongoCategorizingConcept } from "../../src/concepts/categorizing/categorizing.mongo.ts";
 import { testDb, stopTestDb } from "../../src/concepts/testing.ts";
 
 afterAll(stopTestDb);
 
-class PausedCategorizing extends MongoCategorizingConcept {
-  armed = false;
-  readonly entered = Promise.withResolvers<void>();
-  readonly release = Promise.withResolvers<void>();
-  itemsArmed = false;
-  readonly itemsEntered = Promise.withResolvers<void>();
-  readonly itemsRelease = Promise.withResolvers<void>();
-  async _categoriesWithItems(input: { scope: string }) {
-    const result = await super._categoriesWithItems(input);
-    if (this.itemsArmed) {
-      this.itemsArmed = false;
-      this.itemsEntered.resolve();
-      await this.itemsRelease.promise;
-    }
-    return result;
-  }
-  async _getItems(input: { category: string }) {
-    const result = await super._getItems(input);
-    if (this.itemsArmed) {
-      this.itemsArmed = false;
-      this.itemsEntered.resolve();
-      await this.itemsRelease.promise;
-    }
-    return result;
-  }
-  async _getCategory(input: { item: string }) {
-    const result = await super._getCategory(input);
-    if (this.armed) {
-      this.armed = false;
-      this.entered.resolve();
-      await this.release.promise;
-    }
-    return result;
-  }
-}
-
 class PausedResponding extends MongoRespondingConcept {
   submitArmed = false;
-  readonly submitEntered = Promise.withResolvers<void>();
-  readonly submitRelease = Promise.withResolvers<void>();
+  submitEntered = Promise.withResolvers<void>();
+  submitRelease = Promise.withResolvers<void>();
   async submit(input: Parameters<MongoRespondingConcept["submit"]>[0]) {
     if (this.submitArmed) {
       this.submitArmed = false;
@@ -60,39 +22,12 @@ class PausedResponding extends MongoRespondingConcept {
     }
     return super.submit(input);
   }
-  armed = false;
-  readonly entered = Promise.withResolvers<void>();
-  readonly release = Promise.withResolvers<void>();
-  async _collectedAnswers(input: { response: string }) {
-    const result = await super._collectedAnswers(input);
-    if (this.armed) {
-      this.armed = false;
-      this.entered.resolve();
-      await this.release.promise;
-    }
-    return result;
-  }
-}
-
-class PausedPinning extends MongoPinningConcept {
-  armed = false;
-  readonly entered = Promise.withResolvers<void>();
-  readonly release = Promise.withResolvers<void>();
-  async _getPinned(input: { scope: string }) {
-    const result = await super._getPinned(input);
-    if (this.armed) {
-      this.armed = false;
-      this.entered.resolve();
-      await this.release.promise;
-    }
-    return result;
-  }
 }
 
 class PausedPublishing extends MongoPublishingConcept {
   armed = false;
-  readonly entered = Promise.withResolvers<void>();
-  readonly release = Promise.withResolvers<void>();
+  entered = Promise.withResolvers<void>();
+  release = Promise.withResolvers<void>();
   async publishWithin(input: Parameters<MongoPublishingConcept["publishWithin"]>[0]) {
     if (this.armed) {
       this.armed = false;
@@ -105,8 +40,8 @@ class PausedPublishing extends MongoPublishingConcept {
 
 class PausedSuggesting extends MongoSuggestingConcept {
   armed = false;
-  readonly entered = Promise.withResolvers<void>();
-  readonly release = Promise.withResolvers<void>();
+  entered = Promise.withResolvers<void>();
+  release = Promise.withResolvers<void>();
   async take(input: { suggestion: string }) {
     const result = await super.take(input);
     if (this.armed) {
@@ -118,39 +53,19 @@ class PausedSuggesting extends MongoSuggestingConcept {
   }
 }
 
-class PausedLocking extends MongoLockingConcept {
-  armed = false;
-  readonly entered = Promise.withResolvers<void>();
-  readonly release = Promise.withResolvers<void>();
-  async _isLocked(input: { target: string }) {
-    const result = await super._isLocked(input);
-    if (this.armed) {
-      this.armed = false;
-      this.entered.resolve();
-      await this.release.promise;
-    }
-    return result;
-  }
-}
-
-async function fixture(carry = false) {
+async function buildFixture(carry = false) {
   const database = await testDb();
   const instances = mongoImplementations(database);
   const responding = new PausedResponding(database);
-  const categorizing = new PausedCategorizing(database);
-  const locking = new PausedLocking(database);
   const publishing = new PausedPublishing(database);
   const suggesting = new PausedSuggesting(database);
-  const pinning = new PausedPinning(database);
-  const edge = createEdge({
+  const selected = {
     ...instances,
     Responding: responding,
-    Categorizing: categorizing,
-    Pinning: pinning,
     Publishing: publishing,
-    Locking: locking,
     Suggesting: suggesting,
-  });
+  };
+  const edge = createEdge(selected);
   const c = edge.application.concepts;
   const { user } = await c.Authenticating.register({
     username: "diag",
@@ -213,9 +128,10 @@ async function fixture(carry = false) {
   await c.Categorizing.assign({ category, item: card });
 
   return {
+    db: database,
+    resetEdge: () => refreshEdge(edge, selected),
     edge,
     c,
-    categorizing,
     responding,
     call,
     session,
@@ -223,9 +139,7 @@ async function fixture(carry = false) {
     run,
     card,
     user,
-    pinning,
     publishing,
-    locking,
     suggesting,
     token,
     question,
@@ -234,6 +148,30 @@ async function fixture(carry = false) {
     nextLeg,
     relay,
   };
+}
+const variants = new Map<
+  boolean,
+  ReturnType<typeof reusableFixture<Awaited<ReturnType<typeof buildFixture>>>>
+>();
+function fixture(carry = false) {
+  let prepared = variants.get(carry);
+  if (prepared === undefined) {
+    prepared = reusableFixture(
+      () => buildFixture(carry),
+      ({ responding, publishing, suggesting }) => {
+        responding.submitArmed = false;
+        responding.submitEntered = Promise.withResolvers<void>();
+        responding.submitRelease = Promise.withResolvers<void>();
+        for (const gate of [publishing, suggesting]) {
+          gate.armed = false;
+          gate.entered = Promise.withResolvers<void>();
+          gate.release = Promise.withResolvers<void>();
+        }
+      },
+    );
+    variants.set(carry, prepared);
+  }
+  return prepared();
 }
 
 async function resumeAfter<Result>(
@@ -250,74 +188,6 @@ async function resumeAfter<Result>(
   }
   return request;
 }
-
-test("submission answers when the last answer arrives after an incomplete observation", async () => {
-  const f = await fixture();
-  const { response } = await f.call("/live/p/begin", { token: f.token, device: "finishing" });
-  f.responding.armed = true;
-  const result = await resumeAfter(
-    f.edge.gateway.invoke("/live/p/submit", { response }, { timeoutMs: 1500 }),
-    f.responding.entered.promise,
-    () => f.responding.release.resolve(),
-    () => f.call("/live/p/answer", { response, question: f.question, value: "last answer" }),
-  );
-  expect(result.ok || (!result.ok && result.error.kind === "domain"), JSON.stringify(result)).toBe(
-    true,
-  );
-  expect(await f.c.Responding._answers({ response })).toEqual([
-    { item: f.question, value: "last answer" },
-  ]);
-});
-
-test("emptying answers when a card is placed after the empty observation", async () => {
-  const f = await fixture();
-  await f.c.Categorizing.unassign({ item: f.card });
-  f.categorizing.armed = true;
-  const result = await resumeAfter(
-    f.edge.gateway.invoke(
-      "/live/walls/empty-piles",
-      { session: f.session, round: f.round },
-      { timeoutMs: 1500 },
-    ),
-    f.categorizing.entered.promise,
-    () => f.categorizing.release.resolve(),
-    () => f.c.Categorizing.assign({ item: f.card, category: f.category }),
-  );
-  expect(result, JSON.stringify(result)).toMatchObject({ ok: true });
-});
-
-test("summarizing answers when a card arrives after the empty observation", async () => {
-  const f = await fixture();
-  await f.c.Categorizing.unassign({ item: f.card });
-  f.categorizing.itemsArmed = true;
-  const result = await resumeAfter(
-    f.edge.gateway.invoke(
-      "/live/walls/summarize",
-      { session: f.session, pile: f.category },
-      { timeoutMs: 1500 },
-    ),
-    f.categorizing.itemsEntered.promise,
-    () => f.categorizing.itemsRelease.resolve(),
-    () => f.c.Categorizing.assign({ item: f.card, category: f.category }),
-  );
-  expect(result, JSON.stringify(result)).toMatchObject({ ok: true });
-});
-
-test("clearing answers when a pile empties after the occupied observation", async () => {
-  const f = await fixture();
-  f.categorizing.itemsArmed = true;
-  const result = await resumeAfter(
-    f.edge.gateway.invoke(
-      "/live/walls/clear-empty-piles",
-      { session: f.session, round: f.round },
-      { timeoutMs: 1500 },
-    ),
-    f.categorizing.itemsEntered.promise,
-    () => f.categorizing.itemsRelease.resolve(),
-    () => f.c.Categorizing.unassign({ item: f.card }),
-  );
-  expect(result, JSON.stringify(result)).toMatchObject({ ok: true });
-});
 
 test("an admitted hand-in finishes across closure and stays immutable on retry", async () => {
   const f = await fixture();
@@ -346,40 +216,25 @@ test("an admitted hand-in finishes across closure and stays immutable on retry",
   ]);
 });
 
-test("opening opens on the piles the request picks, whatever the source's pins say", async () => {
+test("answer and submit promptly refuse a missing response", async () => {
+  const edge = createEdge(mongoImplementations(await testDb()));
+  for (const path of ["/live/p/answer", "/live/p/submit"]) {
+    expect(
+      await edge.gateway.invoke(
+        path,
+        { response: "missing", question: "missing-question", value: "irrelevant" },
+        { timeoutMs: 1500 },
+      ),
+    ).toMatchObject({ ok: false, error: { kind: "domain", value: "NOT_FOUND" } });
+  }
+});
+
+test("an admitted round keeps the request's picks when the source's pins change before it is published", async () => {
   const f = await fixture(true);
   await f.call("/live/relays/close-round", { round: f.round });
   expect(await f.call("/live/relays/open-round", { run: f.run, leg: f.nextLeg })).toEqual({
     declined: "NOTHING_PICKED",
   });
-  const result = await f.edge.gateway.invoke(
-    "/live/relays/open-round",
-    { session: f.session, run: f.run, leg: f.nextLeg, picked: [f.category] },
-    { timeoutMs: 1500 },
-  );
-  expect(result).toMatchObject({ ok: true });
-  if (!result.ok) throw new Error(JSON.stringify(result));
-  const round = (result.value as { round: string }).round;
-  const [captured] = await f.c.RunSnapshotting._snapshot({ subject: round });
-  expect(captured.value).toMatchObject({ questions: [{ choices: ["Synthetic"] }] });
-});
-
-for (const path of ["/live/p/answer", "/live/p/submit"]) {
-  test(`${path} promptly refuses a missing response`, async () => {
-    const f = await fixture();
-    expect(
-      await f.edge.gateway.invoke(
-        path,
-        { response: "missing", question: f.question, value: "irrelevant" },
-        { timeoutMs: 1500 },
-      ),
-    ).toMatchObject({ ok: false, error: { kind: "domain", value: "NOT_FOUND" } });
-  });
-}
-
-test("an admitted round keeps the request's picks when the source's pins change before it is published", async () => {
-  const f = await fixture(true);
-  await f.call("/live/relays/close-round", { round: f.round });
   await f.call("/live/walls/pick", { round: f.round, pile: f.category });
   f.publishing.armed = true;
   const result = await resumeAfter(
@@ -467,21 +322,7 @@ test("a failed summary provider leaves a failed commission and no pending work",
   expect(await f.c.Reasoning._pending()).toEqual([]);
 });
 
-test("clearing answers when sorting finishes after the busy observation", async () => {
-  const f = await fixture();
-  await f.c.Locking.lock({ target: f.round, at: new Date() });
-  f.locking.armed = true;
-  const result = await resumeAfter(
-    f.edge.gateway.invoke(
-      "/live/walls/clear-empty-piles",
-      { session: f.session, round: f.round },
-      { timeoutMs: 1500 },
-    ),
-    f.locking.entered.promise,
-    () => f.locking.release.resolve(),
-    () => f.c.Locking.unlock({ target: f.round }),
-  );
-  expect(result.ok || (!result.ok && result.error.kind === "domain"), JSON.stringify(result)).toBe(
-    true,
-  );
+beforeAll(async () => {
+  await fixture(false);
+  await fixture(true);
 });

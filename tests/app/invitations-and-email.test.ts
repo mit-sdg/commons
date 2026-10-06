@@ -1,8 +1,12 @@
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { mongoImplementations } from "../../src/concepts.ts";
-import { afterAll, describe, expect, test } from "vite-plus/test";
-import { createEdge } from "../../src/edge.ts";
+import { createCommonsFixture, emptyFixture } from "../support/fixtures.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
+import { beforeAll, afterAll, describe, expect, test } from "vite-plus/test";
 import { deliverPendingMail, type MailSender } from "../../src/email/worker.ts";
+
+const world = emptyFixture(() => createCommonsFixture());
+async function freshEdge() {
+  return (await world()).edge;
+}
 
 const configuration = {
   host: "smtp.example.edu",
@@ -13,7 +17,7 @@ const configuration = {
 
 describe("invitations and email", () => {
   test("the application renders invitation mail before the worker transports it", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const issued = await edge.application.concepts.Inviting.invite({
       channel: "email",
       address: "new@example.edu",
@@ -52,7 +56,7 @@ describe("invitations and email", () => {
   });
 
   test("the application renders notification mail before transport", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const registered = await edge.application.concepts.Authenticating.register({
       username: "notified_member",
       password: "permanent-password",
@@ -94,7 +98,7 @@ describe("invitations and email", () => {
   });
 
   test("an invalid invitation is rejected explicitly", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const result = await edge.gateway.invoke("/auth/accept-invitation", {
       invitation: "missing",
       temporaryPassword: "wrong",
@@ -109,7 +113,7 @@ describe("invitations and email", () => {
   });
 
   test("an administrator can retract an unaccepted invitation and invalidates its link", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const adminReg = await edge.application.concepts.Authenticating.register({
       username: "admin_user",
       password: "password123",
@@ -157,7 +161,7 @@ describe("invitations and email", () => {
   });
 
   test("retracting an invitation that is already gone refuses without ending the session", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const adminReg = await edge.application.concepts.Authenticating.register({
       username: "admin_user3",
       password: "password123",
@@ -202,7 +206,7 @@ describe("invitations and email", () => {
   });
 
   test("only administrators can list registered users", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const adminReg = await edge.application.concepts.Authenticating.register({
       username: "admin_user2",
       password: "password123",
@@ -255,7 +259,7 @@ describe("invitations and email", () => {
   });
 
   test("a failed delivery is recorded on the message and the outbox lists it for administrators", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const adminReg = await edge.application.concepts.Authenticating.register({
       username: "mail_admin",
       password: "password123",
@@ -319,7 +323,7 @@ describe("invitations and email", () => {
   });
 
   test("a non-administrator cannot read the mail outbox", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     const adminReg = await edge.application.concepts.Authenticating.register({
       username: "mail_admin2",
       password: "password123",
@@ -346,7 +350,7 @@ describe("invitations and email", () => {
   });
 
   test("the HTTP boundary denies every data route without a session", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
+    const edge = await freshEdge();
     expect([...edge.publicPaths].sort()).toEqual([
       "/auth/accept-invitation",
       // The invited person has no account yet, so the read that hands their
@@ -384,3 +388,7 @@ describe("invitations and email", () => {
 });
 
 afterAll(stopTestDb);
+
+beforeAll(async () => {
+  await world();
+});

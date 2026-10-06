@@ -1,4 +1,5 @@
-import { afterAll, expect, test } from "vite-plus/test";
+import { reusableFixture, refreshEdge } from "../support/fixtures.ts";
+import { beforeAll, afterAll, expect, test } from "vite-plus/test";
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";
@@ -59,8 +60,11 @@ async function body<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
-async function fixture(name: string) {
-  const edge = createEdge(mongoImplementations(await testDb()), "http://127.0.0.1");
+async function buildFixture() {
+  const name = "assessment";
+  const db = await testDb();
+  const instances = mongoImplementations(db);
+  const edge = createEdge(instances, "http://127.0.0.1");
   const concepts = edge.application.concepts;
   async function post(path: string, input: unknown, cookie = "") {
     return edge.fetch(
@@ -141,6 +145,9 @@ async function fixture(name: string) {
     at,
   });
   return {
+    db,
+    resetEdge: () => refreshEdge(edge, instances, "http://127.0.0.1"),
+    edge,
     concepts,
     post,
     staff,
@@ -154,6 +161,7 @@ async function fixture(name: string) {
     at,
   };
 }
+const fixture = reusableFixture(buildFixture);
 
 async function record(
   post: (path: string, input: unknown, cookie?: string) => Promise<Response>,
@@ -201,7 +209,7 @@ async function release(
 
 test("an archived assessment reopens, corrects, and rereleases its frozen denominator and history", async () => {
   const { post, staff, learner, other, item, revision, criterion, evidence, otherEvidence } =
-    await fixture("archived-correction");
+    await fixture();
   let grade = await record(post, staff, { learner: learner.user, item, evidence, revision });
   grade = await save(post, staff, grade, criterion, 8, "Initial score");
   grade = await release(post, staff, grade);
@@ -311,7 +319,7 @@ test("an archived assessment reopens, corrects, and rereleases its frozen denomi
 
 test("separate submission attempts create separate assessment identities", async () => {
   const { concepts, post, staff, learner, item, revision, criterion, evidence, at } =
-    await fixture("separate-attempts");
+    await fixture();
   const second = await concepts.Submitting.submit({
     assignment: item,
     submitter: learner.user,
@@ -360,7 +368,7 @@ test("blank and explicit zero differ while learner reads expose only their relea
     evidence,
     otherEvidence,
     at,
-  } = await fixture("zero-and-privacy");
+  } = await fixture();
   let zero = await record(post, staff, { learner: learner.user, item, evidence, revision });
 
   const blankDetail = await body<{ assessments: GradeRow[] }>(
@@ -440,8 +448,7 @@ test("blank and explicit zero differ while learner reads expose only their relea
 });
 
 test("new creation rejects evidence owned by another learner without creating or rebinding a grade", async () => {
-  const { post, staff, learner, item, revision, otherEvidence } =
-    await fixture("cross-student-evidence");
+  const { post, staff, learner, item, revision, otherEvidence } = await fixture();
   const rejected = await post(
     "/grades/record",
     { learner: learner.user, item, evidence: otherEvidence, revision },
@@ -453,4 +460,8 @@ test("new creation rejects evidence owned by another learner without creating or
   const itemGrades = await post("/grades/for-item", { item }, staff.cookie);
   expect(itemGrades.status).toBe(200);
   expect(await body<unknown>(itemGrades)).toEqual({ grades: [] });
+});
+
+beforeAll(async () => {
+  await fixture();
 });

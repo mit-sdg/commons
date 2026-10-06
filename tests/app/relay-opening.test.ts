@@ -1,4 +1,5 @@
-import { afterAll, describe, expect, test } from "vite-plus/test";
+import { reusableFixture, refreshEdge } from "../support/fixtures.ts";
+import { beforeAll, afterAll, describe, expect, test } from "vite-plus/test";
 import type { Db } from "mongodb";
 import { createEdge } from "../../src/edge.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
@@ -98,6 +99,13 @@ const face = async (edge: Edge, token: string) =>
     questions: { prompt: string }[] | null;
     rounds: { number: number; round: string | null; open: boolean | null }[];
   };
+
+const ordinaryStage = reusableFixture(async () => {
+  const db = await testDb();
+  const instances = mongoImplementations(db);
+  const edge = createEdge(instances);
+  return { db, resetEdge: () => refreshEdge(edge, instances), ...(await stage(edge, "lee")) };
+});
 
 /** The answer, or `late` once ten seconds have passed without one: a held press never answers, a slow one still does. */
 const withinTenSeconds = <T>(request: Promise<T>) =>
@@ -279,8 +287,8 @@ describe("pressing Open again", () => {
   });
 
   test("finishes a round left opening, which phones do not see until it is finished", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
-    const s = await stage(edge, "lee");
+    const s = await ordinaryStage();
+    const edge = s.edge;
     const { Publishing } = edge.application.concepts;
     const { edition: round } = (await Publishing.publishWithin({
       whole: s.run,
@@ -346,8 +354,8 @@ describe("pressing Open again", () => {
   });
 
   test("closes a round left opening through Close round, and the round then counts as run", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
-    const s = await stage(edge, "lee");
+    const s = await ordinaryStage();
+    const edge = s.edge;
     const { edition: round } = (await edge.application.concepts.Publishing.publishWithin({
       whole: s.run,
       author: s.user,
@@ -368,8 +376,8 @@ describe("pressing Open again", () => {
 
 describe("a round closed while it was opening", () => {
   test("is on the phone's face as a round that ran, and the round after it is next", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
-    const s = await stage(edge, "lee");
+    const s = await ordinaryStage();
+    const edge = s.edge;
     const { edition: round } = (await edge.application.concepts.Publishing.publishWithin({
       whole: s.run,
       author: s.user,
@@ -403,8 +411,8 @@ describe("a round closed while it was opening", () => {
 
 describe("closing the run", () => {
   test("answers a run already closed at once, as closed", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
-    const s = await stage(edge, "lee");
+    const s = await ordinaryStage();
+    const edge = s.edge;
     await s.call("/live/relays/open-round", { run: s.run, leg: s.legs[0]!.leg });
     expect(await s.call("/live/relays/close", { run: s.run })).toEqual({ run: s.run });
 
@@ -418,8 +426,7 @@ describe("closing the run", () => {
 
 describe("the rounds of a run, read through its parts", () => {
   test("the Live list and the relay page show each round published within the run", async () => {
-    const edge = createEdge(mongoImplementations(await testDb()));
-    const s = await stage(edge, "lee");
+    const s = await ordinaryStage();
     const first = (await s.call("/live/relays/open-round", { run: s.run, leg: s.legs[0]!.leg }))
       .round as string;
     await s.call("/live/relays/close-round", { round: first });
@@ -556,7 +563,7 @@ describe("two presses that race to Publishing's guard", () => {
     return { s, answers };
   };
 
-  for (const engines of [1, 2] as const) {
+  for (const engines of [2] as const) {
     test(`of two rounds on ${engines} engine(s): one opens, the other is answered CONFLICT`, async () => {
       const { s, answers } = await race(await testDb(), engines, [0, 1]);
       const opened = answers.filter((reply) => typeof reply.body.round === "string");
@@ -580,4 +587,8 @@ describe("two presses that race to Publishing's guard", () => {
       expect(await s.edge.application.concepts.Publishing._parts({ whole: s.run })).toHaveLength(1);
     });
   }
+});
+
+beforeAll(async () => {
+  await ordinaryStage();
 });

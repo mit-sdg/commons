@@ -91,7 +91,7 @@ const samples = [
 for (const [name, html, action] of samples) {
   test(`${name} email is readable on mobile and desktop without remote assets`, async ({
     page,
-  }, testInfo) => {
+  }) => {
     const requests: string[] = [];
     await page.route("**/*", (route) => route.abort());
     page.on("request", (request) => requests.push(request.url()));
@@ -118,7 +118,6 @@ for (const [name, html, action] of samples) {
             ),
           ),
       ).toBe(true);
-      await page.screenshot({ path: testInfo.outputPath(`${name}-${width}.png`), fullPage: true });
     }
     expect(requests).toEqual([]);
   });

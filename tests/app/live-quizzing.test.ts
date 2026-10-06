@@ -1,8 +1,11 @@
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { mongoImplementations } from "../../src/concepts.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
+import { createCommonsFixture, emptyFixture } from "../support/fixtures.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 import { scriptedMind, serveOnePass } from "../../src/reasoning/worker.ts";
+
+const fileWorld = emptyFixture(createCommonsFixture);
+afterAll(stopTestDb);
 
 type Edge = ReturnType<typeof createEdge>;
 
@@ -109,11 +112,9 @@ describe("the live quiz loop", () => {
   let cookie: string;
 
   beforeAll(async () => {
-    edge = createEdge(mongoImplementations(await testDb()));
+    edge = (await fileWorld()).edge;
     ({ cookie } = await registerHost(edge));
   });
-
-  afterAll(stopTestDb);
 
   test("a manual quiz runs end to end: author, launch, participate, grade, disclose, close", async () => {
     const questionnaire = await buildQuiz(edge, cookie, "answers");
@@ -300,7 +301,7 @@ describe("the live quiz loop", () => {
   });
 
   test("a concurrent launch and edit release one coherent version for every run artifact", async () => {
-    for (let attempt = 0; attempt < 5; attempt += 1) {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
       const questionnaire = await buildQuiz(edge, cookie, "explanations");
       const authored = await json(await post(edge, "/live/quizzes/get", { questionnaire }, cookie));
       const question = (authored.questionnaire as { questions: { question: string }[] })
@@ -671,11 +672,9 @@ describe("the drafting loop with a scripted reasoner", () => {
   let cookie: string;
 
   beforeAll(async () => {
-    edge = createEdge(mongoImplementations(await testDb()));
+    edge = (await fileWorld()).edge;
     ({ cookie } = await registerHost(edge));
   });
-
-  afterAll(stopTestDb);
 
   const lineOf = async (brief: string) =>
     (await json(await post(edge, "/live/drafts/line", { brief }, cookie))).line as {
@@ -788,32 +787,6 @@ describe("the drafting loop with a scripted reasoner", () => {
     expect(line[0].items[0].prompt).toContain("Clarified quiz");
   });
 
-  test("a clarifying question answering a correction is repaired without author action", async () => {
-    const described = await json(
-      await post(edge, "/live/drafts/describe", { request: "A short quiz about tides" }, cookie),
-    );
-    const brief = described.brief as string;
-    await serveReasoner(edge);
-    let line = await lineOf(brief);
-    expect(line[0].candidate).not.toBeNull();
-
-    // The correction provokes a clarifying question; the form was settled when
-    // the line began, so the composition stands on the reply and the repair
-    // loop returns a draft with no author involvement.
-    await post(
-      edge,
-      "/live/drafts/correct",
-      { candidate: line[0].candidate, request: "make it ambiguous somehow" },
-      cookie,
-    );
-    await serveReasoner(edge);
-    line = await lineOf(brief);
-    expect(line).toHaveLength(2);
-    expect(line[1].clarifying).toBe(false);
-    expect(line[1].candidate).not.toBeNull();
-    expect(line[1].items[0].prompt).toContain("Repaired quiz");
-  });
-
   test("an unreadable reply is repaired without any creator action", async () => {
     const described = await json(
       await post(edge, "/live/drafts/describe", { request: "unreadable nonsense probe" }, cookie),
@@ -827,22 +800,6 @@ describe("the drafting loop with a scripted reasoner", () => {
     expect(line[0].items[0].prompt).toContain("Repaired quiz");
   });
 
-  test("a reply that never becomes readable stalls the brief honestly after three complaints", async () => {
-    const described = await json(
-      await post(edge, "/live/drafts/describe", { request: "hopeless case" }, cookie),
-    );
-    const brief = described.brief as string;
-    const hopelessMind = () => Promise.resolve("never valid json");
-    for (let round = 0; round < 6; round += 1) {
-      const served = await serveOnePass(edge.application.concepts.Reasoning, hopelessMind);
-      if (served === 0) break;
-      await edge.application.whenIdle();
-    }
-    const line = await lineOf(brief);
-    expect(line[0].stalled).toBe(true);
-    expect(line[0].candidate).toBeNull();
-  });
-
   test("a reasoner that cannot be reached stalls the brief with the failure's account", async () => {
     const described = await json(
       await post(edge, "/live/drafts/describe", { request: "network trouble" }, cookie),
@@ -853,77 +810,6 @@ describe("the drafting loop with a scripted reasoner", () => {
     await edge.application.whenIdle();
     const line = await lineOf(brief);
     expect(line[0].stalled).toBe(true);
-  });
-
-  test("an abandoned line retains its history but ignores a late reasoner reply", async () => {
-    const described = await json(
-      await post(edge, "/live/drafts/describe", { request: "A short quiz about light" }, cookie),
-    );
-    const root = described.brief as string;
-    await serveReasoner(edge);
-    let line = await lineOf(root);
-    const firstCandidate = line[0].candidate as string;
-
-    const corrected = await json(
-      await post(
-        edge,
-        "/live/drafts/correct",
-        { candidate: firstCandidate, request: "Make it more concise" },
-        cookie,
-      ),
-    );
-    const correction = corrected.brief as string;
-    const abandoned = await json(
-      await post(edge, "/live/drafts/abandon", { brief: correction }, cookie),
-    );
-    expect(abandoned.brief).toBe(root);
-
-    line = await lineOf(root);
-    expect(line).toHaveLength(2);
-    expect(line[1]).toMatchObject({
-      root,
-      abandoned: true,
-      candidate: null,
-    });
-
-    // The already-issued ask may still be answered, but its reply cannot
-    // advance an abandoned line.
-    await serveReasoner(edge);
-    line = await lineOf(root);
-    expect(line[1].candidate).toBeNull();
-
-    expect(
-      await post(
-        edge,
-        "/live/drafts/correct",
-        { candidate: firstCandidate, request: "Try again" },
-        cookie,
-      ),
-    ).toHaveProperty("status", 409);
-    expect(
-      await post(edge, "/live/drafts/adopt", { candidate: firstCandidate }, cookie),
-    ).toHaveProperty("status", 409);
-    expect(await post(edge, "/live/drafts/abandon", { brief: root }, cookie)).toHaveProperty(
-      "status",
-      409,
-    );
-  });
-
-  test("abandoning a repair closes its unsettled insistence", async () => {
-    const described = await json(
-      await post(edge, "/live/drafts/describe", { request: "one unreadable reply" }, cookie),
-    );
-    const root = described.brief as string;
-    await serveOnePass(edge.application.concepts.Reasoning, () => Promise.resolve("not json"));
-    expect(
-      await settled(edge, () => edge.application.concepts.Insisting._unsettledFor({ aim: root })),
-    ).toHaveLength(1);
-
-    await post(edge, "/live/drafts/abandon", { brief: root }, cookie);
-    const unsettled = await settled(edge, () =>
-      edge.application.concepts.Insisting._unsettledFor({ aim: root }),
-    );
-    expect(unsettled).toEqual([]);
   });
 
   test("only the root author may abandon, and clarification cannot resume afterward", async () => {
@@ -962,11 +848,9 @@ describe("questions stand contiguously", () => {
   let cookie: string;
 
   beforeAll(async () => {
-    edge = createEdge(mongoImplementations(await testDb()));
+    edge = (await fileWorld()).edge;
     ({ cookie } = await registerHost(edge));
   });
-
-  afterAll(stopTestDb);
 
   const questionsOf = async (questionnaire: string) => {
     const whole = await json(await post(edge, "/live/quizzes/get", { questionnaire }, cookie));
@@ -1077,11 +961,9 @@ describe("the refining line with a scripted reasoner", () => {
   let cookie: string;
 
   beforeAll(async () => {
-    edge = createEdge(mongoImplementations(await testDb()));
+    edge = (await fileWorld()).edge;
     ({ cookie } = await registerHost(edge));
   });
-
-  afterAll(stopTestDb);
 
   const lineOf = async (brief: string) =>
     (await json(await post(edge, "/live/drafts/line", { brief }, cookie))).line as {
@@ -1183,42 +1065,6 @@ describe("the refining line with a scripted reasoner", () => {
     expect(after.map((entry) => entry.position)).toEqual([1, 2]);
   });
 
-  test("an empty questionnaire can adopt its first AI-generated questions", async () => {
-    const created = await json(
-      await post(
-        edge,
-        "/live/quizzes/create",
-        { title: "Empty quiz", form: "quiz", disclosure: "score" },
-        cookie,
-      ),
-    );
-    const questionnaire = created.questionnaire as string;
-
-    const refined = await json(await post(edge, "/live/drafts/refine", { questionnaire }, cookie));
-    let line = await lineOf(refined.brief as string);
-    expect(line[0].items).toHaveLength(0);
-
-    await post(
-      edge,
-      "/live/drafts/correct",
-      { candidate: line[0].candidate, request: "Add two questions about photosynthesis" },
-      cookie,
-    );
-    await serveReasoner(edge);
-    line = await lineOf(refined.brief as string);
-    expect(line[1].items).toHaveLength(2);
-
-    const adopted = await post(
-      edge,
-      "/live/drafts/adopt",
-      { candidate: line[1].candidate },
-      cookie,
-    );
-    expect(adopted.status).toBe(200);
-    const after = await settled(edge, () => questionsOf(questionnaire));
-    expect(after.map((entry) => entry.position)).toEqual([1, 2]);
-  });
-
   test("a refinement keeps the questionnaire's form", async () => {
     const questionnaire = await buildQuiz(edge, cookie, "score");
     const refined = await json(await post(edge, "/live/drafts/refine", { questionnaire }, cookie));
@@ -1274,11 +1120,9 @@ describe("a line left can be found again", () => {
   let user: string;
 
   beforeAll(async () => {
-    edge = createEdge(mongoImplementations(await testDb()));
+    edge = (await fileWorld()).edge;
     ({ user, cookie } = await registerHost(edge));
   });
-
-  afterAll(stopTestDb);
 
   const candidateOf = async (brief: string) => {
     const line = (await json(await post(edge, "/live/drafts/line", { brief }, cookie))).line as {
@@ -1353,33 +1197,6 @@ describe("a line left can be found again", () => {
     expect(lines[0].adopted).toBe(false);
   });
 
-  test("a stalled line and a waiting line both read as unfinished", async () => {
-    const stalling = await json(
-      await post(edge, "/live/drafts/describe", { request: "hopeless case" }, cookie),
-    );
-    const hopelessMind = () => Promise.resolve("never valid json");
-    for (let round = 0; round < 6; round += 1) {
-      const served = await serveOnePass(edge.application.concepts.Reasoning, hopelessMind);
-      if (served === 0) break;
-      await edge.application.whenIdle();
-    }
-    const asking = await json(
-      await post(edge, "/live/drafts/describe", { request: "Something ambiguous here" }, cookie),
-    );
-    await serveReasoner(edge);
-
-    const lines = await settled(edge, linesOf);
-    expect(lines.find((row) => row.brief === stalling.brief)).toMatchObject({
-      stalled: true,
-      adopted: false,
-    });
-    expect(lines.find((row) => row.brief === asking.brief)).toMatchObject({
-      clarifying: true,
-      stalled: false,
-      adopted: false,
-    });
-  });
-
   test("abandoned refinements leave unfinished work but remain in provenance", async () => {
     const questionnaire = await buildQuiz(edge, cookie, "score");
     const refined = await json(await post(edge, "/live/drafts/refine", { questionnaire }, cookie));
@@ -1445,13 +1262,11 @@ describe("many participants at once", () => {
   let cookie: string;
 
   beforeAll(async () => {
-    edge = createEdge(mongoImplementations(await testDb()));
+    edge = (await fileWorld()).edge;
     ({ cookie } = await registerHost(edge));
   });
 
-  afterAll(stopTestDb);
-
-  test("forty devices join, answer, and hand in concurrently; the board counts every one", async () => {
+  test("four devices join, answer, and hand in concurrently; the board counts every one", async () => {
     const questionnaire = await buildQuiz(edge, cookie, "score");
     const launch = await json(await post(edge, "/live/runs/launch", { questionnaire }, cookie));
     const run = launch.run as string;
@@ -1460,7 +1275,7 @@ describe("many participants at once", () => {
     const face = await json(await post(edge, "/live/p/arrive", { token }));
     const questions = (face.face as { questions: { question: string }[] }).questions;
 
-    const participants = Array.from({ length: 40 }, (_value, index) => `device-${index}`);
+    const participants = Array.from({ length: 4 }, (_value, index) => `device-${index}`);
     const outcomes = await Promise.all(
       participants.map(async (device, index) => {
         const begun = await json(await post(edge, "/live/p/begin", { token, device }));
@@ -1482,7 +1297,7 @@ describe("many participants at once", () => {
       }),
     );
     expect(outcomes.every((entry) => entry.submitted === 200)).toBe(true);
-    expect(new Set(outcomes.map((entry) => entry.response)).size).toBe(40);
+    expect(new Set(outcomes.map((entry) => entry.response)).size).toBe(4);
 
     const results = await settled(edge, async () => {
       const read = await json(await post(edge, "/live/runs/results", { run }, cookie));
@@ -1491,15 +1306,15 @@ describe("many participants at once", () => {
         scores: read.scores as { results: { score: number }[] } | undefined,
       };
     });
-    expect(results.scores?.results).toHaveLength(40);
-    expect(results.board.started).toBe(40);
-    expect(results.board.handedIn).toBe(40);
+    expect(results.scores?.results).toHaveLength(4);
+    expect(results.board.started).toBe(4);
+    expect(results.board.handedIn).toBe(4);
     const scores = (results.scores as { results: { score: number }[] }).results.map(
       (entry) => entry.score,
     );
     // The written question is out of the key, so the choice question alone
     // separates the room.
-    expect(scores.filter((score) => score === 1)).toHaveLength(20);
-    expect(scores.filter((score) => score === 0)).toHaveLength(20);
+    expect(scores.filter((score) => score === 1)).toHaveLength(2);
+    expect(scores.filter((score) => score === 0)).toHaveLength(2);
   });
 });

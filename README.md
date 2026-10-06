@@ -75,6 +75,7 @@ bun run build
 `check` validates the authored Markdown with `sync-engine check-design`, runs the
 registration-driven `sync-engine check --config generated.config.ts`, verifies
 generated artifacts and issue records, and then runs root and frontend static
-checks. Use `bun run artifacts pin` after changing
+checks. `test` runs only the backend and frontend unit suites, so run `check`
+alongside it. Use `bun run artifacts pin` after changing
 registered design or composition, and review the resulting files under
 [`generated/`](generated/).

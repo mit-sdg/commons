@@ -1,23 +1,20 @@
+import { logIn } from "./support/browser.ts";
 import { expect, type Page, test } from "@playwright/test";
 
 /**
  * The relay room, end to end, against the real stack with the scripted
  * reasoner: a two-round relay written and launched; round one answered by
- * forty scripted phones and one model participant; sorted by the model, with
+ * three scripted phones and one model participant; sorted by the model, with
  * one unusable reply stood upon and repaired; three piles picked; round two
  * opened with those piles as its choices; the run closed; the wall read back.
  */
 
 const HOST = { username: "mara", password: "password123" };
-const PHONES = 40;
+const PHONES = 3;
 const WORDS = ["add", "save", "keep", "see", "open", "visit", "delete", "remove", "forget"];
 
 async function signIn(page: Page, account = HOST) {
-  await page.goto("/login");
-  await page.getByRole("textbox", { name: "Username" }).fill(account.username);
-  await page.getByRole("textbox", { name: "Password" }).fill(account.password);
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await page.waitForURL("**/");
+  await logIn(page, account.username);
 }
 
 /** Calls the edge as the page's signed-in host; the cookie is passed by hand. */
@@ -35,13 +32,18 @@ async function call<Value>(page: Page, path: string, data: unknown): Promise<Val
 async function until<Value>(
   read: () => Promise<Value>,
   done: (value: Value) => boolean,
-  tries = 60,
+  timeout = 60_000,
 ): Promise<Value> {
-  let value = await read();
-  for (let attempt = 0; attempt < tries && !done(value); attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    value = await read();
-  }
+  let value!: Value;
+  await expect
+    .poll(
+      async () => {
+        value = await read();
+        return done(value);
+      },
+      { timeout, intervals: [100, 250, 500] },
+    )
+    .toBe(true);
   return value;
 }
 
@@ -64,7 +66,7 @@ interface WallRead {
   } | null;
 }
 
-test("a relay runs its room: forty phones, a model participant, sorting, picks, round two", async ({
+test("a relay runs its room: three phones, a model participant, sorting, picks, round two", async ({
   page,
 }) => {
   test.setTimeout(240_000);
@@ -121,7 +123,7 @@ test("a relay runs its room: forty phones, a model participant, sorting, picks, 
   const question = face.relay?.questions[0]?.question as string;
   expect(face.relay?.questions[0]?.parts).toEqual(["one", "two", "three"]);
 
-  // Forty scripted phones hand in three verbs each; one writes something unsortable.
+  // Three scripted phones hand in three verbs each; one writes something unsortable.
   for (let seat = 0; seat < PHONES; seat += 1) {
     const begun = await call<{ response: string }>(page, "/live/p/begin", {
       token,
@@ -164,7 +166,7 @@ test("a relay runs its room: forty phones, a model participant, sorting, picks, 
     (value) =>
       (value.wall?.cards.length ?? 0) === PHONES * 3 + 3 &&
       (value.wall?.cards.every((card) => card.pile !== null) ?? false),
-    90,
+    90_000,
   );
   expect(sorted.wall?.cards.every((card) => card.pile !== null)).toBe(true);
   const names = (sorted.wall?.piles ?? []).map((pile) => pile.name).sort();

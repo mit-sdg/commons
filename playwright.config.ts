@@ -14,12 +14,16 @@ export default defineConfig({
   testDir: "tests/e2e",
   timeout: 60_000,
   expect: { timeout: 15_000 },
+  // Specs mutate the seeded course. Shards own separate stacks; workers share one.
+  fullyParallel: false,
   workers: 1,
   retries: 0,
   reporter: [["list"]],
   use: {
     baseURL: `http://127.0.0.1:${WEB_PORT}`,
-    trace: "retain-on-failure",
+    // Keep DOM snapshots and network evidence without continuously recording frames.
+    trace: { mode: "retain-on-failure", screenshots: false },
+    screenshot: "only-on-failure",
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
@@ -35,7 +39,8 @@ export default defineConfig({
       : "bun scripts/stack-mongo.ts",
     url: `http://127.0.0.1:${WEB_PORT}`,
     reuseExistingServer: false,
-    timeout: standalone ? 300_000 : 180_000,
+    // Shared developer hosts can take longer to build than a dedicated CI runner.
+    timeout: standalone ? 600_000 : 180_000,
     env: {
       COMMONS_E2E_STANDALONE: standalone ? "1" : "0",
       BACKEND_ORIGIN: `http://127.0.0.1:${EDGE_PORT}`,

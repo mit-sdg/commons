@@ -1,5 +1,5 @@
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { mongoImplementations } from "../../src/concepts.ts";
+import { createCommonsFixture } from "../support/fixtures.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 import { scriptedMind, serveOnePass } from "../../src/reasoning/worker.ts";
@@ -172,7 +172,7 @@ describe("a seat on a questionnaire run", () => {
   let cookie: string;
 
   beforeAll(async () => {
-    edge = createEdge(mongoImplementations(await testDb()));
+    edge = (await createCommonsFixture()).edge;
     cookie = await registerHost(edge);
   });
 

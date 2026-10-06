@@ -1,3 +1,5 @@
+import { MongoClient } from "mongodb";
+import { constructConceptFloor } from "../../src/assembly/concept-floor.ts";
 import { describe, expect, test } from "vite-plus/test";
 import {
   configuredConnectAppDomain,
@@ -140,4 +142,56 @@ describe("deployment MongoDB configuration", () => {
       ),
     ).not.toThrow();
   });
+});
+
+test("requires MONGODB_URL", async () => {
+  await expect(constructConceptFloor()).rejects.toThrow("commons: MONGODB_URL is required.");
+});
+
+test("reads the database name from mongodb:// and mongodb+srv:// URL paths", async () => {
+  for (const [url, database] of [
+    ["mongodb://127.0.0.1:27017/commons", "commons"],
+    [
+      "mongodb+srv://operator:credential@cluster.example.test/hosted-commons?retryWrites=true&w=majority",
+      "hosted-commons",
+    ],
+  ]) {
+    let supplied = "";
+    const floor = await constructConceptFloor(url, async (candidate) => {
+      supplied = candidate;
+      return new MongoClient(candidate);
+    });
+    expect(supplied).toBe(url);
+    expect(floor.name).toBe("mongo");
+    expect(floor.resources).toEqual([`MongoDB database ${database}`]);
+    await floor.close();
+  }
+});
+
+test("requires a valid MongoDB URL with database selection without exposing credentials", async () => {
+  for (const [url, message] of [
+    [
+      "mongodb://operator:missing-database-secret@127.0.0.1:27017",
+      "commons: MONGODB_URL must select a database in its path.",
+    ],
+    [
+      "https://operator:invalid-url-secret@127.0.0.1:27017/commons",
+      "commons: MONGODB_URL is not a valid MongoDB connection URL.",
+    ],
+  ]) {
+    await expect(constructConceptFloor(url)).rejects.toThrow(message);
+    try {
+      await constructConceptFloor(url);
+    } catch (error) {
+      expect(String(error)).not.toContain("secret");
+    }
+  }
+}, 20_000);
+
+test("connection failures redact credentials before startup can log them", async () => {
+  await expect(
+    constructConceptFloor("mongodb://operator:connection-secret@127.0.0.1:1/commons", async () => {
+      throw new Error("connection-secret: simulated driver failure");
+    }),
+  ).rejects.toThrow("commons: could not connect to the configured MongoDB.");
 });

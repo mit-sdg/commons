@@ -1,17 +1,38 @@
-import { afterAll, describe, expect, test } from "vite-plus/test";
-import { mongoImplementations } from "../../src/concepts.ts";
+import { reusableFixture, createCommonsApplication } from "../support/fixtures.ts";
+import { beforeAll, afterAll, describe, expect, test } from "vite-plus/test";
 import { assembleCommons } from "../../src/assembly/application.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { stopTestDb } from "../../src/concepts/testing.ts";
 
 type App = ReturnType<typeof assembleCommons>;
 
 const WINDOW = { startsAt: "2026-08-19T16:00:00.000Z", endsAt: "2026-08-19T17:00:00.000Z" };
 
+const actors = new WeakMap<App, Map<string, Awaited<ReturnType<typeof buildActor>>>>();
+async function prepareActors() {
+  const { db, app } = await createCommonsApplication();
+  const records = new Map<string, Awaited<ReturnType<typeof buildActor>>>();
+  for (const username of [
+    "mara",
+    "noah",
+    "priya",
+    "outsider",
+    "personal-owner",
+    "personal-outsider",
+  ]) {
+    records.set(username, await buildActor(app, username));
+  }
+  actors.set(app, records);
+  return { db, edge: { application: app }, app };
+}
+const prepared = reusableFixture(prepareActors);
 async function newApp() {
-  return assembleCommons(mongoImplementations(await testDb()));
+  return (await prepared()).app;
+}
+async function actor(app: App, username: string) {
+  return actors.get(app)?.get(username) ?? (await buildActor(app, username));
 }
 
-async function actor(app: App, username: string) {
+async function buildActor(app: App, username: string) {
   const email = `${username}@example.edu`;
   const registered = await app.concepts.Authenticating.register({
     username,
@@ -98,8 +119,8 @@ afterAll(stopTestDb);
 describe("task-list membership notifications", () => {
   test("adding a person tells that person once, with an email naming the list", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_add");
-    const noah = await actor(app, "noah_add");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "Reading Group");
 
     const added = await call(app, "/tasklists/add-member", {
@@ -132,9 +153,9 @@ describe("task-list membership notifications", () => {
     expect(queued[0].text).toContain("Reading Group");
     // A group cannot say who changed your membership of it, so the notification records it.
     expect(noahRows[0].actor).toBe(mara.user);
-    expect(noahRows[0].actorLabel).toBe("mara_add (@mara_add)");
-    expect(queued[0].text).toContain("By: mara_add (@mara_add)");
-    expect(queued[0].html).toContain("By: <strong>mara_add (@mara_add)</strong>");
+    expect(noahRows[0].actorLabel).toBe("mara (@mara)");
+    expect(queued[0].text).toContain("By: mara (@mara)");
+    expect(queued[0].html).toContain("By: <strong>mara (@mara)</strong>");
     expect(queued[0].html).toContain("Reading Group");
     expect(queued[0].text.endsWith(`/groups/${list}?view=members`)).toBe(true);
     expect(queued[0].html).toContain(`/groups/${list}?view=members`);
@@ -143,8 +164,8 @@ describe("task-list membership notifications", () => {
 
   test("removing another member tells that member once, however many tasks are released", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_rm");
-    const noah = await actor(app, "noah_rm");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "Field Work");
     await call(app, "/tasklists/add-member", {
       session: mara.session,
@@ -178,9 +199,9 @@ describe("task-list membership notifications", () => {
     const lossMail = queued.filter((message) => message.key === losses[0].notification);
     expect(lossMail).toHaveLength(1);
     expect(lossMail[0].text).toContain("Field Work");
-    expect(losses[0].actorLabel).toBe("mara_rm (@mara_rm)");
-    expect(lossMail[0].text).toContain("By: mara_rm (@mara_rm)");
-    expect(lossMail[0].html).toContain("By: <strong>mara_rm (@mara_rm)</strong>");
+    expect(losses[0].actorLabel).toBe("mara (@mara)");
+    expect(lossMail[0].text).toContain("By: mara (@mara)");
+    expect(lossMail[0].html).toContain("By: <strong>mara (@mara)</strong>");
     expect(lossMail[0].text.endsWith("/groups")).toBe(true);
     expect(lossMail[0].html).not.toContain(`/groups/${list}`);
 
@@ -194,9 +215,9 @@ describe("task-list membership notifications", () => {
 
   test("leaving and removing yourself say nothing", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_quiet");
-    const noah = await actor(app, "noah_quiet");
-    const priya = await actor(app, "priya_quiet");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
+    const priya = await actor(app, "priya");
     const list = await makeList(app, mara, "Quiet List");
     await call(app, "/tasklists/add-member", {
       session: mara.session,
@@ -230,8 +251,8 @@ describe("task-list membership notifications", () => {
 describe("task assignment notifications", () => {
   test("assigning to another member tells them, with task, list, deadline and details in the mail", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_assign");
-    const noah = await actor(app, "noah_assign");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "Launch Plan");
     await call(app, "/tasklists/add-member", {
       session: mara.session,
@@ -283,8 +304,8 @@ describe("task assignment notifications", () => {
       term: "Fall 2026",
       timezone: "America/New_York",
     });
-    const mara = await actor(app, "mara_zone");
-    const noah = await actor(app, "noah_zone");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "Zoned Plan");
     await call(app, "/tasklists/add-member", {
       session: mara.session,
@@ -305,8 +326,8 @@ describe("task assignment notifications", () => {
 
   test("a task written with no details mails no empty detail block", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_nodetail");
-    const noah = await actor(app, "noah_nodetail");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "Bare Plan");
     await call(app, "/tasklists/add-member", {
       session: mara.session,
@@ -326,7 +347,7 @@ describe("task assignment notifications", () => {
 
   test("assigning to yourself says nothing", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_self");
+    const mara = await actor(app, "mara");
     const list = await makeList(app, mara, "Solo");
     const task = await makeTask(app, mara.session, list, "Mine");
 
@@ -342,8 +363,8 @@ describe("task assignment notifications", () => {
 
   test("assigning outside the list is still refused and tells nobody", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_out");
-    const noah = await actor(app, "noah_out");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "Closed");
     const task = await makeTask(app, mara.session, list, "Held");
 
@@ -359,8 +380,8 @@ describe("task assignment notifications", () => {
 
   test("assigning again to the person who already holds the task tells them again", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_again");
-    const noah = await actor(app, "noah_again");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "Repeat");
     await call(app, "/tasklists/add-member", {
       session: mara.session,
@@ -382,8 +403,8 @@ describe("task assignment notifications", () => {
 
   test("create, describe and release say nothing", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_silent");
-    const noah = await actor(app, "noah_silent");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "Silent Ops");
     await call(app, "/tasklists/add-member", {
       session: mara.session,
@@ -413,8 +434,8 @@ describe("task assignment notifications", () => {
 
   test("deleting a settled task tells nobody and leaves its archived row standing", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_del");
-    const noah = await actor(app, "noah_del");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "Delete Ops");
     await call(app, "/tasklists/add-member", {
       session: mara.session,
@@ -441,9 +462,9 @@ describe("task assignment notifications", () => {
 describe("changes to an assigned task", () => {
   const LATER = { startsAt: "2026-09-01T09:00:00.000Z", endsAt: "2026-09-02T17:00:00.000Z" };
 
-  async function watchedTask(app: App, suffix: string) {
-    const mara = await actor(app, `mara_${suffix}`);
-    const noah = await actor(app, `noah_${suffix}`);
+  async function watchedTask(app: App) {
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "State Ops");
     await call(app, "/tasklists/add-member", {
       session: mara.session,
@@ -468,7 +489,7 @@ describe("changes to an assigned task", () => {
 
   test("another member's retime, complete, reopen, cancel and uncancel each tell the assignee", async () => {
     const app = await newApp();
-    const { mara, noah, task } = await watchedTask(app, "state");
+    const { mara, noah, task } = await watchedTask(app);
 
     expect(await everyStateOperation(app, mara.session, task)).toEqual([
       { task },
@@ -514,7 +535,7 @@ describe("changes to an assigned task", () => {
 
   test("the assignee's own five operations tell nobody", async () => {
     const app = await newApp();
-    const { mara, noah, task } = await watchedTask(app, "selfstate");
+    const { mara, noah, task } = await watchedTask(app);
 
     const announced = (await inbox(app, noah.session)).length;
     const mailed = (await pending(app)).length;
@@ -534,8 +555,8 @@ describe("changes to an assigned task", () => {
 
   test("an unassigned task tells nobody, however it is moved", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_free");
-    const noah = await actor(app, "noah_free");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "Free Ops");
     await call(app, "/tasklists/add-member", {
       session: mara.session,
@@ -560,7 +581,7 @@ describe("changes to an assigned task", () => {
 
   test("a revived task naming somebody who has left the list tells nobody", async () => {
     const app = await newApp();
-    const { mara, noah, list, task } = await watchedTask(app, "left");
+    const { mara, noah, list, task } = await watchedTask(app);
 
     await call(app, "/tasks/complete", { session: mara.session, task });
     // a settled task keeps its assignee, so the departure sweep leaves this one naming Noah
@@ -585,8 +606,8 @@ describe("changes to an assigned task", () => {
 
   test("a refused state operation is refused identically and tells nobody", async () => {
     const app = await newApp();
-    const { mara, noah, task } = await watchedTask(app, "refused");
-    const outsider = await actor(app, "outsider_refused");
+    const { mara, noah, task } = await watchedTask(app);
+    const outsider = await actor(app, "outsider");
 
     const announced = (await inbox(app, noah.session)).length;
     const mailed = (await pending(app)).length;
@@ -620,8 +641,8 @@ describe("changes to an assigned task", () => {
 describe("the task inbox", () => {
   test("a row about a list the reader has left keeps its link and loses its content", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_gate");
-    const noah = await actor(app, "noah_gate");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "Gated List");
     await call(app, "/tasklists/add-member", {
       session: mara.session,
@@ -652,8 +673,8 @@ describe("the task inbox", () => {
 
   test("a row whose task has been deleted answers as a bare archived row", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_gone");
-    const noah = await actor(app, "noah_gone");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "Vanishing");
     await call(app, "/tasklists/add-member", {
       session: mara.session,
@@ -673,8 +694,8 @@ describe("the task inbox", () => {
 
   test("unread count, mark read, mark all read and dismiss are the recipient's alone", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_read");
-    const noah = await actor(app, "noah_read");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "Counted");
     await call(app, "/tasklists/add-member", {
       session: mara.session,
@@ -737,8 +758,8 @@ describe("the task inbox", () => {
 describe("the two notification instances stay apart", () => {
   test("a task notification queues its own mail and never the forum's one", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_apart");
-    const noah = await actor(app, "noah_apart");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "Apart");
 
     await call(app, "/tasklists/add-member", {
@@ -790,8 +811,8 @@ describe("the two notification instances stay apart", () => {
 
   test("a task settled and deleted before its message is built queues nothing", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_raced");
-    const noah = await actor(app, "noah_raced");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "Raced");
     await call(app, "/tasklists/add-member", {
       session: mara.session,
@@ -828,8 +849,8 @@ describe("the two notification instances stay apart", () => {
 
   test("a task message is withheld from a departed recipient while a membership message is not", async () => {
     const app = await newApp();
-    const mara = await actor(app, "mara_gateemail");
-    const noah = await actor(app, "noah_gateemail");
+    const mara = await actor(app, "mara");
+    const noah = await actor(app, "noah");
     const list = await makeList(app, mara, "Gated Mail");
     await call(app, "/tasklists/add-member", {
       session: mara.session,
@@ -887,7 +908,7 @@ describe("the two notification instances stay apart", () => {
 
   test("a task notification whose subject resolves through neither read queues nothing", async () => {
     const app = await newApp();
-    const noah = await actor(app, "noah_nowhere");
+    const noah = await actor(app, "noah");
 
     const raised = await app.concepts.TaskNotifying.notify({
       recipient: noah.user,
@@ -910,4 +931,8 @@ describe("the two notification instances stay apart", () => {
     });
     expect(withoutTaskPresentation(rows[0])).toEqual({ list: null, title: null });
   });
+});
+
+beforeAll(async () => {
+  await prepared();
 });

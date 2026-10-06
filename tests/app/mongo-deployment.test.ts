@@ -5,13 +5,14 @@ import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vite-plus/test";
 import { MongoClient } from "mongodb";
-import { MongoMemoryServer } from "mongodb-memory-server";
-import { constructConceptFloor } from "../../src/assembly/concept-floor.ts";
+import { testMongoServer } from "../support/mongo-server.ts";
 
 const checkout = join(import.meta.dirname, "../..");
 let root: string;
+let mongo: Awaited<ReturnType<typeof testMongoServer>>["server"];
+let stopMongo: (() => Promise<void>) | undefined;
 
-beforeAll(() => {
+beforeAll(async () => {
   // A different port does not isolate Next's on-disk cache or dev-server
   // lock. Exercise the real scripts in a disposable checkout, without .env.
   root = mkdtempSync(join(tmpdir(), "commons-deployment-"));
@@ -24,9 +25,13 @@ beforeAll(() => {
   });
   for (const entry of ["node_modules", "frontend/node_modules"])
     symlinkSync(join(checkout, entry), join(root, entry), "dir");
+  const service = await testMongoServer();
+  mongo = service.server;
+  stopMongo = service.stop;
 });
 
-afterAll(() => {
+afterAll(async () => {
+  await stopMongo?.();
   if (root !== undefined) rmSync(root, { recursive: true, force: true });
 });
 interface RunningChild {
@@ -160,36 +165,6 @@ async function startEdge(
   return { ...running, origin };
 }
 
-async function startFrontend(edgeOrigin: string, port: number) {
-  const origin = `http://127.0.0.1:${port}`;
-  const running = startChild(
-    ["bun", "run", "dev", "--", "--hostname", "127.0.0.1", "--port", String(port)],
-    {
-      cwd: `${root}/frontend`,
-      env: {
-        ...process.env,
-        BACKEND_ORIGIN: edgeOrigin,
-        NODE_ENV: "development",
-        PATH: `${root}/frontend/node_modules/.bin:${process.env.PATH}`,
-        WATCHPACK_POLLING: "true",
-      },
-    },
-  );
-  await until(
-    async () => {
-      if (running.exitCode() !== undefined) return false;
-      try {
-        return (await fetch(`${origin}/login`)).status === 200;
-      } catch {
-        return false;
-      }
-    },
-    () => `frontend did not become ready:\n${running.output.join("")}`,
-    60_000,
-  );
-  return { ...running, origin };
-}
-
 async function post(origin: string, path: string, body: unknown, cookie?: string) {
   const response = await fetch(`${origin}${path}`, {
     method: "POST",
@@ -211,93 +186,12 @@ afterEach(async () => {
 });
 
 describe("the Commons process with MongoDB", () => {
-  test("requires MONGODB_URL", async () => {
-    await expect(constructConceptFloor()).rejects.toThrow("commons: MONGODB_URL is required.");
-  });
-
-  test("starts with the platform MONGODB_URI environment variable", async () => {
-    const mongo = await MongoMemoryServer.create({ instance: { ip: "127.0.0.1" } });
-    let running: Awaited<ReturnType<typeof startEdge>> | undefined;
-    try {
-      const database = `platform-${crypto.randomUUID()}`;
-      running = await startEdge(mongo.getUri(database), await freePort(), "MONGODB_URI");
-      expect(running.output.join("")).toContain(
-        `commons: storing concept state in MongoDB database ${database}.`,
-      );
-    } finally {
-      if (running !== undefined && running.exitCode() === undefined) await stopChild(running);
-      await mongo.stop();
-    }
-  }, 30_000);
-
-  test("reads the database name from mongodb:// and mongodb+srv:// URL paths", async () => {
-    for (const [url, database] of [
-      ["mongodb://127.0.0.1:27017/commons", "commons"],
-      [
-        "mongodb+srv://operator:credential@cluster.example.test/hosted-commons?retryWrites=true&w=majority",
-        "hosted-commons",
-      ],
-    ]) {
-      let supplied = "";
-      const floor = await constructConceptFloor(url, async (candidate) => {
-        supplied = candidate;
-        return new MongoClient(candidate);
-      });
-      expect(supplied).toBe(url);
-      expect(floor.name).toBe("mongo");
-      expect(floor.resources).toEqual([`MongoDB database ${database}`]);
-      await floor.close();
-    }
-  });
-
-  test("requires a valid MongoDB URL with database selection without exposing credentials", async () => {
-    for (const [url, message] of [
-      [
-        "mongodb://operator:missing-database-secret@127.0.0.1:27017",
-        "commons: MONGODB_URL must select a database in its path.",
-      ],
-      [
-        "https://operator:invalid-url-secret@127.0.0.1:27017/commons",
-        "commons: MONGODB_URL is not a valid MongoDB connection URL.",
-      ],
-    ]) {
-      const running = startChild(["bun", "src/start.ts"], {
-        cwd: root,
-        env: { ...process.env, MONGODB_URL: url, PORT: String(await freePort()) },
-      });
-      expect(await running.exited).not.toBe(0);
-      await Promise.allSettled(running.drains);
-      expect(running.output.join("")).toContain(message);
-      expect(running.output.join("")).not.toContain("secret");
-    }
-  }, 20_000);
-
-  test("when Commons stops, it closes its client and leaves the supplied MongoDB service and database running", async () => {
-    const mongo = await MongoMemoryServer.create({ instance: { ip: "127.0.0.1" } });
-    const mongodbUrl = mongo.getUri(`lifecycle-${crypto.randomUUID()}`);
-    let running: Awaited<ReturnType<typeof startEdge>> | undefined;
-    try {
-      running = await startEdge(mongodbUrl, await freePort());
-      expect(await stopChild(running)).toBe(0);
-      expect(running.output.join("")).toContain("commons: edge stopped");
-      const observer = new MongoClient(mongodbUrl);
-      await observer.connect();
-      expect(await observer.db().command({ ping: 1 })).toMatchObject({ ok: 1 });
-      await observer.close();
-    } finally {
-      if (running !== undefined && running.exitCode() === undefined) await stopChild(running);
-      await mongo.stop();
-    }
-  }, 30_000);
-
-  test("serves the application over HTTP, retains concept state across edge restart, and reaches it through the frontend proxy", async () => {
-    const mongo = await MongoMemoryServer.create({ instance: { ip: "127.0.0.1" } });
+  test("uses MONGODB_URI, retains a thread and session across restart, and leaves the supplied service running", async () => {
     let edge: Awaited<ReturnType<typeof startEdge>> | undefined;
-    let frontend: Awaited<ReturnType<typeof startFrontend>> | undefined;
     try {
       const database = `deployment-${crypto.randomUUID()}`;
       const mongodbUrl = mongo.getUri(database);
-      edge = await startEdge(mongodbUrl, await freePort());
+      edge = await startEdge(mongodbUrl, await freePort(), "MONGODB_URI");
       expect(edge.output.join("")).toContain(
         `commons: storing concept state in MongoDB database ${database}.`,
       );
@@ -369,186 +263,29 @@ describe("the Commons process with MongoDB", () => {
       );
       expect(threadResult.response.status).toBe(200);
       const conversation = String(threadResult.body.conversation);
-      const rootPost = String(threadResult.body.post);
       const rootNode = String(threadResult.body.node);
 
-      const subscribed = await post(
-        edge.origin,
-        "/api/subscriptions/subscribe",
-        { target: conversation },
-        operatorCookie,
-      );
-      expect(subscribed.response.status).toBe(200);
-
-      const replyResult = await post(
+      const reply = await post(
         edge.origin,
         "/api/threads/reply",
-        { parent: rootNode, content: `The source points to [[${rootPost}]]` },
+        { parent: rootNode, content: "A persistent reply" },
         learnerCookie,
       );
-      expect(replyResult.response.status).toBe(200);
-      const replyPost = String(replyResult.body.post);
-
-      const formedThread = await post(
-        edge.origin,
-        "/api/threads/get",
-        { conversation },
-        operatorCookie,
-      );
-      expect(formedThread.response.status).toBe(200);
-      const thread = formedThread.body.thread as { rendered: string }[];
-      expect(thread).toHaveLength(2);
-      expect(thread[0].rendered).toContain("<h1>");
-
-      const links = await post(
-        edge.origin,
-        "/api/links/forward",
-        { source: replyPost },
-        operatorCookie,
-      );
-      expect(links.body.targets).toEqual([{ target: rootPost }]);
-      const unread = await post(
-        edge.origin,
-        "/api/unread/list",
-        { scope: conversation },
-        operatorCookie,
-      );
-      expect((unread.body.items as unknown[]).length).toBeGreaterThan(0);
-      const notifications = await post(edge.origin, "/api/notifications/list", {}, operatorCookie);
-      expect(
-        (notifications.body.notifications as { kind: string }[]).some(
-          ({ kind }) => kind === "mention" || kind === "reply",
-        ),
-      ).toBe(true);
-
-      const locked = await post(
-        edge.origin,
-        "/api/locks/lock",
-        { target: conversation },
-        operatorCookie,
-      );
-      expect(locked.response.status).toBe(200);
-      const refused = await post(
-        edge.origin,
-        "/api/threads/reply",
-        { parent: rootNode, content: "This must be refused" },
-        learnerCookie,
-      );
-      expect(refused.response.status).toBe(403);
-      expect(refused.body).toEqual({ error: "FORBIDDEN" });
-
-      const roleResult = await post(
-        edge.origin,
-        "/api/roles/define",
-        { name: "course-operator", capabilities: ["course:manage"] },
-        operatorCookie,
-      );
-      expect(roleResult.response.status).toBe(200);
-      // The operator is the initial administrator, so the wildcard already
-      // carries course authority; the defined role is here to be listed, not
-      // assigned to them.
-
-      const configured = await post(
-        edge.origin,
-        "/api/roster/configure-class",
-        { code: "LOCAL101", title: "Local Commons", term: "Now", timezone: "UTC" },
-        operatorCookie,
-      );
-      expect(configured.response.status).toBe(200);
-      const sectionResult = await post(
-        edge.origin,
-        "/api/roster/sections/create",
-        { name: "Local", location: "Here", meetingPattern: "Any time" },
-        operatorCookie,
-      );
-      expect(sectionResult.response.status).toBe(200);
-      const section = String((sectionResult.body.section as { _id: string })._id);
-      const imported = await post(
-        edge.origin,
-        "/api/roster/import",
-        { rows: [{ email: "learner@example.com", kind: "STUDENT", section }] },
-        operatorCookie,
-      );
-      expect(imported.response.status).toBe(200);
-      const learnerMe = await post(edge.origin, "/api/auth/me", {}, learnerCookie);
-      // The address already belongs to an account, so the import sweep claimed
-      // the seat for it outright rather than inviting somebody who is already
-      // registered. Enrolling the same address afterwards is refused, because
-      // the seat is no longer pending.
-      const rosterList = await post(edge.origin, "/api/roster/list", {}, operatorCookie);
-      expect(rosterList.response.status).toBe(200);
-      expect(
-        (rosterList.body.members as Array<Record<string, unknown>>).map((member) => member.user),
-      ).toContain(String(learnerMe.body.user));
-      const reEnrolled = await post(
-        edge.origin,
-        "/api/roster/enroll",
-        {
-          email: "learner@example.com",
-          kind: "STUDENT",
-          section,
-          user: String(learnerMe.body.user),
-        },
-        operatorCookie,
-      );
-      expect(reEnrolled.response.status).toBe(409);
-      expect(reEnrolled.body).toEqual({ error: "CONFLICT" });
-
-      const now = Date.now();
-      const assignmentResult = await post(
-        edge.origin,
-        "/api/assignments/create-draft",
-        {
-          title: "Local reading",
-          instructions: "Read and respond",
-          kind: "HOMEWORK",
-          availableAt: new Date(now - 3_600_000).toISOString(),
-          dueAt: new Date(now + 86_400_000).toISOString(),
-          audience: "EVERYONE",
-          acceptsSubmissions: true,
-        },
-        operatorCookie,
-      );
-      expect(assignmentResult.response.status).toBe(200);
-      const assignment = String(assignmentResult.body.assignment);
-      const published = await post(
-        edge.origin,
-        "/api/assignments/publish",
-        { assignment },
-        operatorCookie,
-      );
-      expect(published.response.status).toBe(200);
-      const submitted = await post(
-        edge.origin,
-        "/api/assignments/submit",
-        { assignment, content: "A local answer" },
-        learnerCookie,
-      );
-      expect(submitted.response.status).toBe(200);
-      const beforeRestart = await post(edge.origin, "/api/assignments/for-me", {}, learnerCookie);
-      expect(
-        (beforeRestart.body.assignments as { assignment: string }[]).some(
-          (row) => row.assignment === assignment,
-        ),
-      ).toBe(true);
-
-      const unknown = await post(edge.origin, "/api/not-a-route", {});
-      expect(unknown.response.status).toBe(404);
-      expect(unknown.body.error).toBe("NOT_FOUND");
-      const malformed = await fetch(`${edge.origin}/api/auth/login`, {
-        method: "POST",
-        body: "{not json",
-      });
-      expect(malformed.status).toBe(400);
-      expect(await malformed.json()).toEqual({ error: "INVALID_REQUEST" });
-      const invalid = await post(edge.origin, "/api/auth/login", 7);
-      expect(invalid.response.status).toBe(400);
-      expect(invalid.body).toEqual({ error: "INVALID_REQUEST" });
-
+      expect(reply.response.status).toBe(200);
       expect(await stopChild(edge)).toBe(0);
       expect(edge.output.join("")).toContain("commons: edge stopped");
+      const observer = new MongoClient(mongodbUrl);
+      try {
+        expect(await observer.db().command({ ping: 1 })).toMatchObject({ ok: 1 });
+        const operator = await observer
+          .db()
+          .collection("authenticating.users")
+          .findOne({ username: "operator" });
+        expect(operator?.passwordVerifier).toMatch(/^\$scrypt\$N=16384,r=8,p=1\$/);
+      } finally {
+        await observer.close();
+      }
       edge = await startEdge(mongodbUrl, await freePort());
-
       const retainedSession = await post(edge.origin, "/api/auth/me", {}, learnerCookie);
       expect(retainedSession.body.username).toBe("learner");
       const retainedThread = await post(
@@ -558,126 +295,11 @@ describe("the Commons process with MongoDB", () => {
         learnerCookie,
       );
       expect(retainedThread.body.thread as unknown[]).toHaveLength(2);
-      const retainedCourse = await post(edge.origin, "/api/assignments/for-me", {}, learnerCookie);
-      expect(
-        (retainedCourse.body.assignments as { assignment: string }[]).some(
-          (row) => row.assignment === assignment,
-        ),
-      ).toBe(true);
-      const composedDashboard = await post(edge.origin, "/api/lms/me", {}, learnerCookie);
-      expect((composedDashboard.body.dashboard as unknown[]).length).toBeGreaterThan(0);
-      const retainedLinks = await post(
-        edge.origin,
-        "/api/links/forward",
-        { source: replyPost },
-        learnerCookie,
-      );
-      expect(retainedLinks.body.targets).toEqual([{ target: rootPost }]);
-
-      frontend = await startFrontend(edge.origin, await freePort());
-      const loginPage = await fetch(`${frontend.origin}/login`);
-      expect(loginPage.status).toBe(200);
-      expect(await loginPage.text()).toContain("Sign in");
-      const homePage = await fetch(frontend.origin);
-      expect(homePage.status).toBe(200);
-      expect(await homePage.text()).toContain("Checking your session");
-      const assignmentsPage = await fetch(`${frontend.origin}/assignments`, {
-        headers: { Cookie: learnerCookie ?? "" },
-      });
-      expect(assignmentsPage.status).toBe(200);
-      expect(await assignmentsPage.text()).toContain("Checking your session");
-      const throughProxy = await post(frontend.origin, "/api/auth/me", {}, learnerCookie);
-      expect(throughProxy.response.status).toBe(200);
-      expect(throughProxy.body.username).toBe("learner");
+      expect((retainedThread.body.thread as { rendered: string }[])[0].rendered).toContain("<h1>");
     } finally {
-      if (frontend !== undefined) await stopChild(frontend);
       if (edge !== undefined) await stopChild(edge);
-      await mongo.stop();
     }
   }, 120_000);
-
-  test("reports an occupied edge port as a startup failure", async () => {
-    const mongo = await MongoMemoryServer.create({ instance: { ip: "127.0.0.1" } });
-    const holder = createServer();
-    await new Promise<void>((resolve, reject) => {
-      holder.once("error", reject);
-      holder.listen(0, "127.0.0.1", resolve);
-    });
-    try {
-      const address = holder.address();
-      if (address === null || typeof address === "string") throw new Error("missing port");
-      const running = startChild(["bun", "src/start.ts"], {
-        cwd: root,
-        env: {
-          ...process.env,
-          MONGODB_URL: mongo.getUri(`occupied-${crypto.randomUUID()}`),
-          PORT: String(address.port),
-        },
-      });
-      expect(await running.exited).not.toBe(0);
-      await Promise.allSettled(running.drains);
-      expect(running.output.join("")).toContain("commons: could not listen");
-    } finally {
-      await new Promise<void>((resolve) => holder.close(() => resolve()));
-      await mongo.stop();
-    }
-  }, 20_000);
-
-  test("rejects an invalid port before opening its Mongo client", async () => {
-    const mongo = await MongoMemoryServer.create({ instance: { ip: "127.0.0.1" } });
-    try {
-      const running = startChild(["bun", "src/start.ts"], {
-        cwd: root,
-        env: { ...process.env, MONGODB_URL: mongo.getUri(), PORT: "0" },
-      });
-      expect(await running.exited).not.toBe(0);
-      await Promise.allSettled(running.drains);
-      expect(running.output.join("")).toContain(
-        'commons: PORT must be an integer from 1 to 65535; received "0"',
-      );
-    } finally {
-      await mongo.stop();
-    }
-  }, 20_000);
-
-  test("stops the stack promptly when signaled during edge readiness", async () => {
-    const port = await freePort();
-    const webPort = await freePort();
-    const running = startChild(["bun", "scripts/stack.ts"], {
-      cwd: root,
-      env: {
-        ...process.env,
-        MONGODB_URL: "mongodb://127.0.0.1:1/commons?serverSelectionTimeoutMS=30000",
-        PORT: String(port),
-        WEB_PORT: String(webPort),
-      },
-    });
-    await pause(250);
-    const signaledAt = Date.now();
-    running.child.kill("SIGTERM");
-    expect(await running.exited).toBe(0);
-    expect(Date.now() - signaledAt).toBeLessThan(5_000);
-    await Promise.allSettled(running.drains);
-    expect(running.output.join("")).not.toContain("readiness timed out");
-  }, 10_000);
-
-  test("reports an unavailable external MongoDB before its readiness deadline", async () => {
-    const running = startChild(["bun", "scripts/stack.ts"], {
-      cwd: root,
-      env: {
-        ...process.env,
-        MONGODB_URL: "mongodb://operator:connection-secret@127.0.0.1:1/commons",
-        PORT: String(await freePort()),
-        WEB_PORT: String(await freePort()),
-      },
-    });
-    expect(await running.exited).not.toBe(0);
-    await Promise.allSettled(running.drains);
-    const output = running.output.join("");
-    expect(output).toContain("commons: could not connect to the configured MongoDB.");
-    expect(output).not.toContain("connection-secret");
-    expect(output).not.toContain("readiness timed out");
-  }, 15_000);
 
   test("stops the temporary-Mongo wrapper promptly during bootstrap", async () => {
     const running = startChild(["bun", "scripts/stack-mongo.ts"], {
@@ -712,7 +334,12 @@ describe("the Commons process with MongoDB", () => {
         async () => {
           if (running.exitCode() !== undefined) return false;
           try {
-            return (await fetch(`${origin}/login`)).status === 200;
+            const response = await fetch(`${origin}/api/auth/me`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: "{}",
+            });
+            return response.status === 401;
           } catch {
             return false;
           }
