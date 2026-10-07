@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   configuredConnectAppDomain,
   configuredPublicOrigin,
@@ -13,6 +14,15 @@ const LOOPBACK_APP = /^http:\/\/(?:localhost|127\.0\.0\.1):([1-9][0-9]{0,4})$/;
 
 /** A voucher and its credential joined by one dot, as `connectCode` writes them. */
 const CODE = /^([A-Za-z0-9_-]{1,64})\.([A-Za-z0-9_-]{1,63})$/;
+
+/** An S256 challenge: the unpadded base64url SHA-256 of a verifier. */
+const CHALLENGE = /^[A-Za-z0-9_-]{43}$/;
+
+/** A verifier as RFC 7636 allows one: 43 to 128 unreserved characters. */
+const VERIFIER = /^[A-Za-z0-9._~-]{43,128}$/;
+
+/** What a malformed verifier answers: present, and never a challenge. */
+const MALFORMED_VERIFIER = "malformed verifier";
 
 /** The longest display name an app is promised. */
 const DISPLAY_NAME_LIMIT = 256;
@@ -50,6 +60,51 @@ export function isConnectApp(
 
 export function connectAppAccepted({ app }: { app: string }): boolean {
   return isConnectApp(app, configuredConnectAppDomain(), configuredPublicOrigin());
+}
+
+/**
+ * Does this sign-in request carry a challenge Commons accepts?
+ *
+ * An app sends the S256 challenge of a verifier its server keeps, with
+ * `code_challenge_method=S256`; a missing method would mean `plain`, which is
+ * refused. Only the platform's owner portal, at the configured domain itself,
+ * may still ask without a challenge.
+ */
+export function isConnectChallenge(
+  app: string,
+  challenge: unknown,
+  method: unknown,
+  domain: string | undefined,
+): boolean {
+  if (challenge == null)
+    return method == null && domain !== undefined && app === `https://${domain}`;
+  return typeof challenge === "string" && CHALLENGE.test(challenge) && method === "S256";
+}
+
+export function connectChallengeAccepted({
+  app,
+  challenge,
+  method,
+}: {
+  app: string;
+  challenge?: string | null;
+  method?: string | null;
+}): boolean {
+  return isConnectChallenge(app, challenge, method, configuredConnectAppDomain());
+}
+
+/**
+ * The S256 challenge of a verifier: its hash, nothing when no verifier
+ * came, and a value that matches no challenge when the verifier is malformed.
+ */
+export function connectVerifierChallenge({
+  verifier,
+}: {
+  verifier?: string | null;
+}): string | null {
+  if (verifier == null) return null;
+  if (typeof verifier !== "string" || !VERIFIER.test(verifier)) return MALFORMED_VERIFIER;
+  return createHash("sha256").update(verifier).digest("base64url");
 }
 
 /** The host an accepted app is shown by, with its port when it names one. */

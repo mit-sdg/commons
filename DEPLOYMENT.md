@@ -53,31 +53,65 @@ The backend loopback port is internal and must not be published.
 ## Sign in with Commons for course apps
 
 Course apps, the owner portal among them, sign people in with their Commons
-account without ever handling a Commons password. An app sends the browser to
-`/connect?app=<its origin>&state=<its own value>`, where `state` is 16 to 256
-letters, digits, or `._~-`; Commons shows an error and sends the browser
-nowhere when either is missing or invalid. Commons asks the signed-in person,
-once, whether that app may learn their name, username, and email, remembers the
-answer, and sends the browser to `<app>/auth/commons/callback` with a `code` and
-the app's `state`, or with `error=access_denied` and the `state` when the
-person cancels. The app checks `state`, and its server then redeems the code:
+account without ever handling a Commons password. For each sign-in, the app's
+server makes a new random verifier and keeps it with that sign-in, beside the
+`state` it checks later. The verifier is a separate value from `state`, and it
+never leaves the server until the server redeems the code. The app sends the
+browser to
+
+```text
+/connect?app=<its origin>&state=<its own value>&code_challenge=<challenge>&code_challenge_method=S256
+```
+
+where `state` is 16 to 256 letters, digits, or `._~-`, and the challenge is the
+verifier's SHA-256 hash in base64url without padding, 43 characters. Commons
+shows an error and sends the browser nowhere when any of these is missing,
+repeated, or invalid. The only exception is the owner portal at
+`CONNECT_APP_DOMAIN` itself, which may still omit the challenge and its method
+until it sends them too. Commons asks the signed-in person, once, whether that
+app may learn their name, username, and email, remembers the answer, and sends
+the browser to `<app>/auth/commons/callback` with a `code` and the app's
+`state`, or with `error=access_denied` and the `state` when the person cancels.
+The app checks `state`, and its server then redeems the code with the verifier
+it kept for that sign-in:
 
 ```sh
 curl --request POST \
   --header "Content-Type: application/json" \
-  --data '{"code":"<code>","app":"https://mit-sdg.dev"}' \
+  --data '{"code":"<code>","app":"https://team-7.mit-sdg.dev","code_verifier":"<verifier>"}' \
   https://class.mit-sdg.dev/api/connect/redeem
 ```
 
+In Bun or Node, making a verifier and its challenge takes two lines:
+
+```ts
+import { createHash, randomBytes } from "node:crypto";
+
+const verifier = randomBytes(32).toString("base64url");
+const challenge = createHash("sha256").update(verifier).digest("base64url");
+```
+
+RFC 7636 gives a pair to test against: the verifier
+`dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk` has the challenge
+`E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM`. A challenge with `=` at the
+end or a hex digest is refused at `/connect`. A challenge that is not the
+verifier's hash, such as the verifier itself, passes there, and its code then
+fails to redeem with `CONNECT_CODE_INVALID`. Make a new verifier for every
+sign-in, never one per app.
+
 A redeemed code returns HTTP `200` with the person's stable `user` ID,
 `username`, `displayName`, and `email`. A code works once, lapses sixty seconds
-after it was issued, and only for the app it was issued to; it also stops
-working when its person withdraws the app's approval or their account is
-archived. Every one of those refusals returns HTTP `400` with
-`{"error":"CONNECT_CODE_INVALID"}`, and a request of the wrong shape returns
-`{"error":"INVALID_REQUEST"}`. Redemption needs no Commons session, and Commons
-sends no CORS headers, so only an app's server, not a page in a browser, can
-redeem a code. Once an app has started its own session, a Commons password
+after it was issued, only for the app it was issued to, and only with the
+verifier whose challenge it was issued for. It also stops working when its
+person withdraws the app's approval or their account is archived. A missing,
+wrong, or malformed verifier spends the code. A verifier sent for a code
+issued without a challenge is refused and spends the code too. Every one of
+those refusals returns HTTP `400` with `{"error":"CONNECT_CODE_INVALID"}`, and
+a request of the wrong shape returns `{"error":"INVALID_REQUEST"}`. Redemption
+needs no Commons session, and Commons sends no CORS headers, so only an app's
+server, not a page in a browser, can redeem a code. Serve the callback page
+with `Referrer-Policy: no-referrer`, so the code in its address is not sent on
+to other sites. Once an app has started its own session, a Commons password
 change or archive does not end it. People see and remove the apps they approved
 under **Settings > Connected apps**. The
 [Sign in with Commons explanation](design/compositions/access/connect.md)

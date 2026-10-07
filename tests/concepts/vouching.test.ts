@@ -86,6 +86,91 @@ for (const [floor, make] of floors) {
       await expectRefusal(() => vouching.redeem({ ...issued, at: afterExpiry }), VoucherInvalid);
     });
 
+    test("a voucher issued with a counterpart is honored only with that counterpart", async () => {
+      const vouching = await make();
+      const issued = await vouching.issue({
+        subject: "user-1",
+        at: issuedAt,
+        expiresAt,
+        counterpart: "counterpart-1",
+      });
+      expect(await vouching._getIssuedSince({ subject: "user-1", since: issuedAt })).toEqual([
+        { voucher: issued.voucher, issuedAt, expiresAt },
+      ]);
+
+      const presented = { ...issued, at: beforeExpiry, counterpart: "counterpart-1" };
+      expect(await vouching.verify(presented)).toEqual({
+        voucher: issued.voucher,
+        subject: "user-1",
+      });
+      expect(await vouching.redeem(presented)).toEqual({
+        voucher: issued.voucher,
+        subject: "user-1",
+      });
+      await expectRefusal(() => vouching.redeem(presented), VoucherInvalid);
+    });
+
+    test("a credential presented with another counterpart, or none, spends the voucher", async () => {
+      const vouching = await make();
+      for (const [action, counterpart] of [
+        ["redeem", "counterpart-2"],
+        ["redeem", null],
+        ["redeem", undefined],
+        ["verify", "counterpart-2"],
+        ["verify", null],
+      ] as const) {
+        const issued = await vouching.issue({
+          subject: "user-1",
+          at: issuedAt,
+          expiresAt,
+          counterpart: "counterpart-1",
+        });
+        await expectRefusal(
+          () => vouching[action]({ ...issued, at: beforeExpiry, counterpart }),
+          VoucherInvalid,
+        );
+        await expectRefusal(
+          () => vouching.redeem({ ...issued, at: beforeExpiry, counterpart: "counterpart-1" }),
+          VoucherInvalid,
+        );
+      }
+    });
+
+    test("a counterpart presented for a voucher issued without one is refused and spends it", async () => {
+      const vouching = await make();
+      for (const counterpart of ["counterpart-1", ""]) {
+        const issued = await vouching.issue({ subject: "user-1", at: issuedAt, expiresAt });
+        await expectRefusal(
+          () => vouching.redeem({ ...issued, at: beforeExpiry, counterpart }),
+          VoucherInvalid,
+        );
+        await expectRefusal(() => vouching.redeem({ ...issued, at: beforeExpiry }), VoucherInvalid);
+      }
+    });
+
+    test("a wrong credential spends nothing, whatever counterpart comes with it", async () => {
+      const vouching = await make();
+      const issued = await vouching.issue({
+        subject: "user-1",
+        at: issuedAt,
+        expiresAt,
+        counterpart: "counterpart-1",
+      });
+      await expectRefusal(
+        () =>
+          vouching.redeem({
+            voucher: issued.voucher,
+            credential: "R-guessed",
+            at: beforeExpiry,
+            counterpart: "counterpart-2",
+          }),
+        VoucherInvalid,
+      );
+      expect(
+        await vouching.redeem({ ...issued, at: beforeExpiry, counterpart: "counterpart-1" }),
+      ).toEqual({ voucher: issued.voucher, subject: "user-1" });
+    });
+
     test("issuing leaves one voucher behind, expired or not", async () => {
       const vouching = await make();
       const stale = await vouching.issue({ subject: "user-1", at: issuedAt, expiresAt });
