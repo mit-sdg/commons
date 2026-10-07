@@ -6,28 +6,47 @@ import { activeUser } from "./session.ts";
 
 const { Authenticating, Connecting, ConnectVouching, Profiling } = concepts;
 
-/** Admission takes exactly these fields, each holding text, before any read. */
-function textInput(...fields: string[]) {
+/**
+ * Admission takes the required fields, each holding text, and no fields but
+ * those and the optional ones, which hold text or nothing, before any read.
+ */
+function textInput(required: string[], optional: string[] = []) {
   return (value: unknown) => {
     if (value === null || typeof value !== "object" || Array.isArray(value)) return { ok: false };
     const input = value as Record<string, unknown>;
     return {
       ok:
-        Object.keys(input).length === fields.length &&
-        fields.every((field) => typeof input[field] === "string"),
+        Object.keys(input).every((field) => required.includes(field) || optional.includes(field)) &&
+        required.every((field) => typeof input[field] === "string") &&
+        optional.every((field) => input[field] === null || typeof input[field] === "string"),
     };
   };
 }
 
+/** A sign-in request names its app and may carry the challenge of a verifier. */
+const signInRequest = {
+  input: {
+    required: ["session", "app"],
+    defaults: { code_challenge: null, code_challenge_method: null },
+  },
+  validators: {
+    input: textInput(["session", "app"], ["code_challenge", "code_challenge_method"]),
+  },
+};
+
 export const DescribeApp = endpoint(
   "/connect/describe",
-  ({ session, app, user, accepted, host, callback }) =>
-    receive({ session, app })
-      .where(compute(computations.connectAppAccepted, { app }, accepted))
+  ({ session, app, challenge, method, user, accepted, challenged, host, callback }) =>
+    receive({ session, app, code_challenge: challenge, code_challenge_method: method })
+      .where(
+        compute(computations.connectAppAccepted, { app }, accepted),
+        compute(computations.connectChallengeAccepted, { app, challenge, method }, challenged),
+      )
       .then(
         where(
           activeUser({ session }).is({ user }),
           is.among(accepted, [true]),
+          is.among(challenged, [true]),
           compute(computations.connectAppHost, { app }, host),
           compute(computations.connectCallback, { app }, callback),
           Connecting._getApproval({ user, app }),
@@ -37,6 +56,7 @@ export const DescribeApp = endpoint(
         where(
           activeUser({ session }).is({ user }),
           is.among(accepted, [true]),
+          is.among(challenged, [true]),
           compute(computations.connectAppHost, { app }, host),
           compute(computations.connectCallback, { app }, callback),
           no(Connecting._getApproval({ user, app })),
@@ -46,11 +66,11 @@ export const DescribeApp = endpoint(
         where(activeUser({ session }), is.among(accepted, [false]))
           .then(respond({ error: "CONNECT_APP_INVALID" }))
           .named("refused"),
+        where(activeUser({ session }), is.among(accepted, [true]), is.among(challenged, [false]))
+          .then(respond({ error: "CONNECT_CHALLENGE_INVALID" }))
+          .named("unchallenged"),
       ),
-  {
-    input: { required: ["session", "app"] },
-    validators: { input: textInput("session", "app") },
-  },
+  signInRequest,
 );
 
 export const ApproveApp = endpoint(
@@ -58,8 +78,11 @@ export const ApproveApp = endpoint(
   ({
     session,
     app,
+    challenge,
+    method,
     user,
     accepted,
+    challenged,
     at,
     expiresAt,
     connection,
@@ -68,20 +91,24 @@ export const ApproveApp = endpoint(
     code,
     callback,
   }) =>
-    receive({ session, app })
+    receive({ session, app, code_challenge: challenge, code_challenge_method: method })
       .where(
         activeUser({ session }).is({ user }),
         compute(computations.connectAppAccepted, { app }, accepted),
         is.among(accepted, [true]),
+        compute(computations.connectChallengeAccepted, { app, challenge, method }, challenged),
+        is.among(challenged, [true]),
         now(at),
         compute(computations.connectCodeExpiry, { at }, expiresAt),
       )
       .then(Connecting.approve({ user, app, at }).responds({ connection }))
       .then(
-        ConnectVouching.issue({ subject: connection, at, expiresAt }).responds({
-          voucher,
-          credential,
-        }),
+        ConnectVouching.issue({
+          subject: connection,
+          at,
+          expiresAt,
+          counterpart: challenge,
+        }).responds({ voucher, credential }),
       )
       .then(
         where(
@@ -91,20 +118,26 @@ export const ApproveApp = endpoint(
           .then(respond({ code, callback }))
           .named("issued"),
       ),
-  {
-    input: { required: ["session", "app"] },
-    validators: { input: textInput("session", "app") },
-  },
+  signInRequest,
 );
 
-export const ApproveAppRefused = endpoint("/connect/approve", ({ session, app, accepted }) =>
-  receive({ session, app })
-    .where(
-      activeUser({ session }),
-      compute(computations.connectAppAccepted, { app }, accepted),
-      is.among(accepted, [false]),
-    )
-    .then(respond({ error: "CONNECT_APP_INVALID" })),
+export const ApproveAppRefused = endpoint(
+  "/connect/approve",
+  ({ session, app, challenge, method, accepted, challenged }) =>
+    receive({ session, app, code_challenge: challenge, code_challenge_method: method })
+      .where(
+        activeUser({ session }),
+        compute(computations.connectAppAccepted, { app }, accepted),
+        compute(computations.connectChallengeAccepted, { app, challenge, method }, challenged),
+      )
+      .then(
+        where(is.among(accepted, [false]))
+          .then(respond({ error: "CONNECT_APP_INVALID" }))
+          .named("refused"),
+        where(is.among(accepted, [true]), is.among(challenged, [false]))
+          .then(respond({ error: "CONNECT_CHALLENGE_INVALID" }))
+          .named("unchallenged"),
+      ),
 );
 
 export const RedeemCode = endpoint(
@@ -112,9 +145,11 @@ export const RedeemCode = endpoint(
   ({
     code,
     app,
+    verifier,
     at,
     voucher,
     credential,
+    counterpart,
     connection,
     user,
     username,
@@ -122,13 +157,18 @@ export const RedeemCode = endpoint(
     profileName,
     displayName,
   }) =>
-    receive({ code, app })
+    receive({ code, app, code_verifier: verifier })
       .where(
         now(at),
         compute(computations.connectCodeVoucher, { code }, voucher),
         compute(computations.connectCodeCredential, { code }, credential),
+        compute(computations.connectVerifierChallenge, { verifier }, counterpart),
       )
-      .then(ConnectVouching.redeem({ voucher, credential, at }).responds({ subject: connection }))
+      .then(
+        ConnectVouching.redeem({ voucher, credential, at, counterpart }).responds({
+          subject: connection,
+        }),
+      )
       .then(
         where(no(Connecting._getConnection({ connection }).is({ app })))
           .then(respond({ error: "CONNECT_CODE_INVALID" }))
@@ -151,8 +191,8 @@ export const RedeemCode = endpoint(
           .named("signed-in"),
       ),
   {
-    input: { required: ["code", "app"] },
-    validators: { input: textInput("code", "app") },
+    input: { required: ["code", "app"], defaults: { code_verifier: null } },
+    validators: { input: textInput(["code", "app"], ["code_verifier"]) },
   },
 );
 
@@ -193,6 +233,6 @@ export const WithdrawConnection = endpoint(
     ),
   {
     input: { required: ["session", "connection"] },
-    validators: { input: textInput("session", "connection") },
+    validators: { input: textInput(["session", "connection"]) },
   },
 );

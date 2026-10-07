@@ -17,6 +17,7 @@ import { api, isApiError, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import {
   approvedCallback,
+  type ConnectChallenge,
   connectRequest,
   deniedCallback,
 } from "@/lib/connect";
@@ -48,9 +49,10 @@ export function ConnectConsent() {
   // A new request starts its own exchange with Commons from the beginning.
   return (
     <ConsentFlow
-      key={`${request.app}\n${request.state}`}
+      key={`${request.app}\n${request.state}\n${request.challenge?.code_challenge ?? ""}`}
       app={request.app}
       state={request.state}
+      challenge={request.challenge}
     />
   );
 }
@@ -76,11 +78,24 @@ function InvalidRequest() {
           </Link>
         </CardFooter>
       </Card>
+      <p className="mt-6 text-center text-xs text-muted-foreground">
+        For the app&apos;s developer: a sign-in link names <code>app</code>,{" "}
+        <code>state</code>, and a <code>code_challenge</code> of 43 base64url
+        characters with <code>code_challenge_method=S256</code>.
+      </p>
     </ConnectShell>
   );
 }
 
-function ConsentFlow({ app, state }: { app: string; state: string }) {
+function ConsentFlow({
+  app,
+  state,
+  challenge,
+}: {
+  app: string;
+  state: string;
+  challenge: ConnectChallenge | null;
+}) {
   const { me, logout } = useAuth();
   const [stage, setStage] = useState<Stage>({ kind: "checking" });
   const [attempt, setAttempt] = useState(0);
@@ -91,7 +106,7 @@ function ConsentFlow({ app, state }: { app: string; state: string }) {
   async function approve(host: string) {
     setStage({ kind: "leaving", label: `Signing you in to ${host}…` });
     try {
-      const result = await api.connect.approve({ app });
+      const result = await api.connect.approve({ app, ...challenge });
       if (isApiError(result)) {
         if (result.error === "INVALID_REQUEST") setStage({ kind: "invalid" });
         else
@@ -112,13 +127,13 @@ function ConsentFlow({ app, state }: { app: string; state: string }) {
     }
   }
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: one look at the app per attempt; approve reads the same app and state.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one look at the app per attempt; approve reads the same app, state, and challenge.
   useEffect(() => {
     if (asked.current === attempt) return;
     asked.current = attempt;
     void (async () => {
       try {
-        const described = await api.connect.describe({ app });
+        const described = await api.connect.describe({ app, ...challenge });
         if (isApiError(described)) {
           setStage(
             described.error === "INVALID_REQUEST"

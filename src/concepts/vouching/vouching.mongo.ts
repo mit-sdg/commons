@@ -1,10 +1,11 @@
 import type { Collection, Db } from "mongodb";
-import { voucherCredential } from "./credential.ts";
+import { counterpartAgrees, sameText, voucherCredential } from "./credential.ts";
 import { VoucherExpiryInvalid, VoucherInvalid } from "./errors.ts";
 
 interface VoucherDoc {
   _id: string;
   subject: string;
+  counterpart?: string;
   issuedAt: Date;
   expiresAt: Date;
 }
@@ -18,32 +19,74 @@ export class MongoVouchingConcept {
     this.vouchers = db.collection<VoucherDoc>(`${prefix}.vouchers`);
   }
 
-  async issue({ subject, at, expiresAt }: { subject: string; at: Date; expiresAt: Date }) {
+  async issue({
+    subject,
+    at,
+    expiresAt,
+    counterpart,
+  }: {
+    subject: string;
+    at: Date;
+    expiresAt: Date;
+    counterpart?: string | null;
+  }) {
     await (this.index ??= this.vouchers.createIndex({ subject: 1 }));
     if (expiresAt.getTime() <= at.getTime()) {
       throw new VoucherExpiryInvalid(subject);
     }
     await this.vouchers.deleteMany({ subject });
     const voucher = crypto.randomUUID();
-    await this.vouchers.insertOne({ _id: voucher, subject, issuedAt: at, expiresAt });
+    await this.vouchers.insertOne({
+      _id: voucher,
+      subject,
+      ...(counterpart == null ? {} : { counterpart }),
+      issuedAt: at,
+      expiresAt,
+    });
     return { voucher, subject, credential: voucherCredential(voucher) };
   }
 
-  async verify({ voucher, credential, at }: { voucher: string; credential: string; at: Date }) {
-    if (voucherCredential(voucher) !== credential) {
+  async verify({
+    voucher,
+    credential,
+    at,
+    counterpart,
+  }: {
+    voucher: string;
+    credential: string;
+    at: Date;
+    counterpart?: string | null;
+  }) {
+    if (!sameText(voucherCredential(voucher), credential)) {
       throw new VoucherInvalid(voucher);
     }
     const doc = await this.vouchers.findOne({ _id: voucher, expiresAt: { $gt: at } });
     if (doc === null) throw new VoucherInvalid(voucher);
+    if (!counterpartAgrees(doc.counterpart, counterpart)) {
+      await this.vouchers.deleteOne({ _id: voucher });
+      throw new VoucherInvalid(voucher);
+    }
     return { voucher, subject: doc.subject };
   }
 
-  async redeem({ voucher, credential, at }: { voucher: string; credential: string; at: Date }) {
-    if (voucherCredential(voucher) !== credential) {
+  async redeem({
+    voucher,
+    credential,
+    at,
+    counterpart,
+  }: {
+    voucher: string;
+    credential: string;
+    at: Date;
+    counterpart?: string | null;
+  }) {
+    if (!sameText(voucherCredential(voucher), credential)) {
       throw new VoucherInvalid(voucher);
     }
     const doc = await this.vouchers.findOneAndDelete({ _id: voucher, expiresAt: { $gt: at } });
-    if (doc === null) throw new VoucherInvalid(voucher);
+    if (doc === null || !counterpartAgrees(doc.counterpart, counterpart)) {
+      throw new VoucherInvalid(voucher);
+    }
     return { voucher, subject: doc.subject };
   }
 

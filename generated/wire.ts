@@ -486,32 +486,36 @@ export type CommonsWire = {
   };
   "/connect/approve": {
     input: {
-      "app": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["approve"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>[0], ["app"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>]>>;
+      "app": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["approve"]>[0], ["app"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectChallengeAccepted"]["fn"]>[0], ["app"]>]>]>>;
+      "code_challenge"?: Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectChallengeAccepted"]["fn"]>[0], ["challenge"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConnectVouching"]["issue"]>[0], ["counterpart"]>]>>;
+      "code_challenge_method"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectChallengeAccepted"]["fn"]>[0], ["method"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
       "callback": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>>, []>>;
       "code": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectCode"]["fn"]>>, []>>;
     };
-    error: { error: AppWideError | "CONNECT_APP_INVALID" | "INVALID_INPUT" | "VOUCHER_EXPIRY_INVALID" };
+    error: { error: AppWideError | "CONNECT_APP_INVALID" | "CONNECT_CHALLENGE_INVALID" | "INVALID_INPUT" | "VOUCHER_EXPIRY_INVALID" };
   };
   "/connect/describe": {
     input: {
-      "app": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>>;
+      "app": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectChallengeAccepted"]["fn"]>[0], ["app"]>]>>;
+      "code_challenge"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectChallengeAccepted"]["fn"]>[0], ["challenge"]>>;
+      "code_challenge_method"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectChallengeAccepted"]["fn"]>[0], ["method"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
-      "app": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getApproval"]>[0], ["app"]>]>>;
+      "app": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectChallengeAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getApproval"]>[0], ["app"]>]>>;
       "approved": true;
       "callback": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>>, []>>;
       "host": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>>, []>>;
     } | {
-      "app": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getApproval"]>[0], ["app"]>]>>;
+      "app": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectChallengeAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getApproval"]>[0], ["app"]>]>>;
       "approved": false;
       "callback": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>>, []>>;
       "host": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>>, []>>;
     };
-    error: { error: AppWideError | "CONNECT_APP_INVALID" | "INVALID_INPUT" };
+    error: { error: AppWideError | "CONNECT_APP_INVALID" | "CONNECT_CHALLENGE_INVALID" | "INVALID_INPUT" };
   };
   "/connect/list": {
     input: {
@@ -530,6 +534,7 @@ export type CommonsWire = {
     input: {
       "app": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getConnection"]>>>, ["app"]>>;
       "code": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCodeCredential"]["fn"]>[0], ["code"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCodeVoucher"]["fn"]>[0], ["code"]>]>>;
+      "code_verifier"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectVerifierChallenge"]["fn"]>[0], ["verifier"]>>;
     };
     output: {
       "displayName": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectDisplayName"]["fn"]>>, []>>;
@@ -5437,7 +5442,9 @@ export type CommonsWireHttp = {
   };
   "/connect/approve": {
     input: {
-      "app": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["approve"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>[0], ["app"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>]>>;
+      "app": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["approve"]>[0], ["app"]>, AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectChallengeAccepted"]["fn"]>[0], ["app"]>]>]>>;
+      "code_challenge"?: Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectChallengeAccepted"]["fn"]>[0], ["challenge"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConnectVouching"]["issue"]>[0], ["counterpart"]>]>>;
+      "code_challenge_method"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectChallengeAccepted"]["fn"]>[0], ["method"]>>;
     };
     output: {
       "callback": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>>, []>>;
@@ -5447,15 +5454,17 @@ export type CommonsWireHttp = {
   };
   "/connect/describe": {
     input: {
-      "app": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>>;
+      "app": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectChallengeAccepted"]["fn"]>[0], ["app"]>]>>;
+      "code_challenge"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectChallengeAccepted"]["fn"]>[0], ["challenge"]>>;
+      "code_challenge_method"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectChallengeAccepted"]["fn"]>[0], ["method"]>>;
     };
     output: {
-      "app": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getApproval"]>[0], ["app"]>]>>;
+      "app": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectChallengeAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getApproval"]>[0], ["app"]>]>>;
       "approved": true;
       "callback": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>>, []>>;
       "host": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>>, []>>;
     } | {
-      "app": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getApproval"]>[0], ["app"]>]>>;
+      "app": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectChallengeAccepted"]["fn"]>[0], ["app"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getApproval"]>[0], ["app"]>]>>;
       "approved": false;
       "callback": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectCallback"]["fn"]>>, []>>;
       "host": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectAppHost"]["fn"]>>, []>>;
@@ -5477,6 +5486,7 @@ export type CommonsWireHttp = {
     input: {
       "app": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Connecting"]["_getConnection"]>>>, ["app"]>>;
       "code": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCodeCredential"]["fn"]>[0], ["code"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectCodeVoucher"]["fn"]>[0], ["code"]>]>>;
+      "code_verifier"?: Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["connectVerifierChallenge"]["fn"]>[0], ["verifier"]>>;
     };
     output: {
       "displayName": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["connectDisplayName"]["fn"]>>, []>>;

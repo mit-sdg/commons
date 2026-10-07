@@ -9,20 +9,52 @@ export function isConnectState(value: string): boolean {
   return STATE.test(value);
 }
 
+/** An S256 challenge: the unpadded base64url SHA-256 of the app's verifier. */
+const CHALLENGE = /^[A-Za-z0-9_-]{43}$/;
+
+/** The challenge a sign-in request carries, in the fields Commons reads. */
+export type ConnectChallenge = {
+  code_challenge: string;
+  code_challenge_method: "S256";
+};
+
 /**
- * The app and state a sign-in request names, or null when either is missing,
- * repeated, or the state is not one an app could have made. Commons checks
- * the app itself; the page never sends the browser anywhere it has not.
+ * The app, state, and challenge a sign-in request names, or null when the app
+ * or state is missing, any of them is repeated, the state is not one an app
+ * could have made, or the challenge is malformed or not `S256`. A request
+ * without a challenge passes here; Commons decides whether its app may ask
+ * without one. The page never sends the browser anywhere Commons has not
+ * accepted.
  */
-export function connectRequest(
-  params: Pick<URLSearchParams, "getAll">,
-): { app: string; state: string } | null {
+export function connectRequest(params: Pick<URLSearchParams, "getAll">): {
+  app: string;
+  state: string;
+  challenge: ConnectChallenge | null;
+} | null {
   const apps = params.getAll("app");
   const states = params.getAll("state");
+  const challenges = params.getAll("code_challenge");
+  const methods = params.getAll("code_challenge_method");
   if (apps.length !== 1 || states.length !== 1) return null;
+  if (challenges.length > 1 || methods.length > 1) return null;
   const [app] = apps as [string];
   const [state] = states as [string];
-  return app !== "" && isConnectState(state) ? { app, state } : null;
+  if (app === "" || !isConnectState(state)) return null;
+  const [challenge] = challenges;
+  const [method] = methods;
+  if (challenge === undefined && method === undefined)
+    return { app, state, challenge: null };
+  if (
+    challenge === undefined ||
+    !CHALLENGE.test(challenge) ||
+    method !== "S256"
+  )
+    return null;
+  return {
+    app,
+    state,
+    challenge: { code_challenge: challenge, code_challenge_method: "S256" },
+  };
 }
 
 /** Where the browser goes when the person allowed the app. */

@@ -7,7 +7,9 @@ import {
   connectCodeExpiry,
   connectCodeVoucher,
   connectDisplayName,
+  connectVerifierChallenge,
   isConnectApp,
+  isConnectChallenge,
 } from "../../src/computations/connect.ts";
 import { voucherCredential } from "../../src/concepts/vouching/credential.ts";
 
@@ -168,5 +170,61 @@ describe("the name an app is given", () => {
     );
     const astral = `${"a".repeat(255)}😀tail`;
     expect(connectDisplayName({ username: "ines", displayName: astral })).toBe("a".repeat(255));
+  });
+});
+
+describe("the challenge a sign-in carries", () => {
+  // RFC 7636, Appendix B.
+  const VERIFIER = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
+  const CHALLENGE = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM";
+
+  test("a verifier answers its unpadded base64url SHA-256", () => {
+    expect(connectVerifierChallenge({ verifier: VERIFIER })).toBe(CHALLENGE);
+    expect(connectVerifierChallenge({ verifier: `${"A".repeat(127)}~` })).toMatch(
+      /^[A-Za-z0-9_-]{43}$/,
+    );
+  });
+
+  test("no verifier answers nothing, and a malformed one answers no challenge", () => {
+    expect(connectVerifierChallenge({ verifier: null })).toBeNull();
+    expect(connectVerifierChallenge({})).toBeNull();
+    for (const verifier of ["", "a".repeat(42), "a".repeat(129), `${VERIFIER.slice(1)}+`]) {
+      const answered = connectVerifierChallenge({ verifier });
+      expect(answered, verifier).not.toBeNull();
+      expect(answered, verifier).not.toMatch(/^[A-Za-z0-9_-]{43}$/);
+    }
+  });
+
+  test("every app may send an S256 challenge, and only S256", () => {
+    for (const app of [
+      "https://mit-sdg.dev",
+      "https://team-7.mit-sdg.dev",
+      "http://localhost:4311",
+    ]) {
+      expect(isConnectChallenge(app, CHALLENGE, "S256", DOMAIN), app).toBe(true);
+      for (const [challenge, method] of [
+        [CHALLENGE, null],
+        [CHALLENGE, "plain"],
+        [CHALLENGE, "s256"],
+        [null, "S256"],
+        [`${CHALLENGE}=`, "S256"],
+        [CHALLENGE.slice(1), "S256"],
+        ["", "S256"],
+        [5, "S256"],
+      ]) {
+        expect(
+          isConnectChallenge(app, challenge, method, DOMAIN),
+          `${app} ${challenge} ${method}`,
+        ).toBe(false);
+      }
+    }
+  });
+
+  test("only the owner portal, at the configured domain itself, may ask without one", () => {
+    expect(isConnectChallenge("https://mit-sdg.dev", null, null, DOMAIN)).toBe(true);
+    expect(isConnectChallenge("https://mit-sdg.dev", undefined, undefined, DOMAIN)).toBe(true);
+    expect(isConnectChallenge("https://team-7.mit-sdg.dev", null, null, DOMAIN)).toBe(false);
+    expect(isConnectChallenge("http://localhost:4311", null, null, DOMAIN)).toBe(false);
+    expect(isConnectChallenge("https://mit-sdg.dev", null, null, undefined)).toBe(false);
   });
 });

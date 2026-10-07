@@ -1653,11 +1653,11 @@ Defined in [Vouching](../design/concepts/Vouching.md), line 1.
 
 #### Actions
 
-- `issue(subject: Subject, at: Date, expiresAt: Date) : return (voucher: Voucher, subject: Subject, credential: String)`
+- `issue(subject: Subject, at: Date, expiresAt: Date, counterpart?: String) : return (voucher: Voucher, subject: Subject, credential: String)`
   - Refuses `VOUCHER_EXPIRY_INVALID`: The voucher expiry must come after its issue time.
-- `verify(voucher: Voucher, credential: String, at: Date) : return (voucher: Voucher, subject: Subject)`
+- `verify(voucher: Voucher, credential: String, at: Date, counterpart?: String) : return (voucher: Voucher, subject: Subject)`
   - Refuses `VOUCHER_INVALID`: That voucher is not valid.
-- `redeem(voucher: Voucher, credential: String, at: Date) : return (voucher: Voucher, subject: Subject)`
+- `redeem(voucher: Voucher, credential: String, at: Date, counterpart?: String) : return (voucher: Voucher, subject: Subject)`
   - Refuses `VOUCHER_INVALID`: That voucher is not valid.
 
 #### Queries
@@ -1736,7 +1736,7 @@ Concrete types:
 - `cardStanding(card: String, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 78.
 - `carriesAdminister(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 570.
 - `carryUses() : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 92.
-- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 674.
+- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 685.
 - `cleanupAdmission(authorized: Json, openRun: Json, unlocked: Json, applied: Json, standing: Json) : String` — [The wall](../design/compositions/live/walls.md), line 40.
 - `cleanupBrief(account: String, candidates: Seq) : String` — [The wall](../design/compositions/live/walls.md), line 43.
 - `cleanupCategories(brief: String) : Seq` — [The wall](../design/compositions/live/walls.md), line 46.
@@ -1746,21 +1746,23 @@ Concrete types:
 - `competencyEditionIds(criteria: Json) : Strings` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 128.
 - `completeAddressing(user: String, holders: Strings, admitted: Number) : Bool` — [Commons application](../design/application.md), line 494.
 - `connectAppAccepted(app: String) : Bool` — [Commons application](../design/application.md), line 595.
-- `connectAppHost(app: String) : String` — [Commons application](../design/application.md), line 602.
-- `connectCallback(app: String) : String` — [Commons application](../design/application.md), line 605.
-- `connectCode(voucher: String, credential: String) : String` — [Commons application](../design/application.md), line 612.
-- `connectCodeCredential(code: String) : String` — [Commons application](../design/application.md), line 620.
-- `connectCodeExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 609.
-- `connectCodeVoucher(code: String) : String` — [Commons application](../design/application.md), line 616.
-- `connectDisplayName(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 624.
+- `connectAppHost(app: String) : String` — [Commons application](../design/application.md), line 608.
+- `connectCallback(app: String) : String` — [Commons application](../design/application.md), line 611.
+- `connectChallengeAccepted(app: String, challenge?: String, method?: String) : Bool` — [Commons application](../design/application.md), line 602.
+- `connectCode(voucher: String, credential: String) : String` — [Commons application](../design/application.md), line 618.
+- `connectCodeCredential(code: String) : String` — [Commons application](../design/application.md), line 626.
+- `connectCodeExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 615.
+- `connectCodeVoucher(code: String) : String` — [Commons application](../design/application.md), line 622.
+- `connectDisplayName(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 630.
+- `connectVerifierChallenge(verifier?: String) : String|Null` — [Commons application](../design/application.md), line 635.
 - `currentAddressing(user: String, holders: Strings, known: Bool, activePeople: Strings, staffPeople: Strings, trashed: Bool, groups: Bool, sections: Bool, ownSection: Any) : Bool` — [Commons application](../design/application.md), line 476.
 - `currentAudienceMembership(user: String, holders: Strings, groupMember: Bool, activeSections: Bool, section: Any, seatStatus: Any, activeStudent: Bool, capabilities: Any) : Bool` — [Commons application](../design/application.md), line 503.
 - `definedSortingPiles(categories: Json, texts: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 241.
 - `draftContext(references: Strings, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 134.
 - `draftReferences(context: String) : Strings` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 137.
 - `draftRequest(request: String, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 140.
-- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 660.
-- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 664.
+- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 671.
+- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 675.
 - `dueWallTime(dueAt: Any, detail: Any) : String` — [Commons application](../design/application.md), line 554.
 - `editApplied(kind: String, target: String, value: String, title: Json, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Boolean` — [Edits the model proposes](../design/compositions/live/edits.md), line 69.
 - `editCap(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 121.
@@ -1824,11 +1826,11 @@ Concrete types:
 - `notificationMailSubject(kind: String, title: String) : String` — [Commons application](../design/application.md), line 536.
 - `openingGroups(picked: Strings, categories: Json, values: Json, value: Json) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 71.
 - `ownsTaskScope(user: String, scope: String) : Boolean` — [Tasks](../design/compositions/tasks/tasks.md), line 116.
-- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 684.
-- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 688.
-- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 691.
-- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 695.
-- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 699.
+- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 695.
+- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 699.
+- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 702.
+- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 706.
+- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 710.
 - `participantAnswers(reply: String, value: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 182.
 - `participantPassage(value: Json, participant: String) : String` — [The wall](../design/compositions/live/walls.md), line 175.
 - `participantQuestions(value: LiveRunSnapshot) : Seq` — [Live runs](../design/compositions/live/runs.md), line 139.
@@ -1844,20 +1846,20 @@ Concrete types:
 - `placingReading(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 151.
 - `placingReason(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 162.
 - `placingRepairPassage(value: Json, categories: Json, values: Json, removed: Json, notes: String, offering: String, account: String) : String` — [The wall](../design/compositions/live/walls.md), line 143.
-- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 707.
-- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 712.
+- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 718.
+- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 723.
 - `postPreview(content: String) : Record` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 40.
 - `previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings` — [Commons application](../design/application.md), line 473.
-- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 716.
+- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 727.
 - `relayDraftPassage(request: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json, classDocuments: Json, relayDocuments: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 36.
 - `relayDraftReading(reply: String, passage: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 54.
 - `relayDraftReason(reply: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 59.
 - `relayDraftRepairPassage(passage: String, offering: String, account: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 50.
 - `relayEditLines(reply: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 63.
 - `relayGiven(relay: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 143.
-- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 679.
+- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 690.
 - `resolveGradingCriteria(criteria: Json, editions: Json) : Json` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 130.
-- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 669.
+- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 680.
 - `roomBegun(responses: Json) : Number` — [The wall](../design/compositions/live/walls.md), line 114.
 - `roomHandedIn(responses: Json) : Number` — [The wall](../design/compositions/live/walls.md), line 117.
 - `roomSince(at: Date) : Date` — [Relays and their runs](../design/compositions/live/relays.md), line 107.
@@ -1875,14 +1877,14 @@ Concrete types:
 - `samplingResolvedStanding(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 53.
 - `selectedIdentities(holders: Strings, kind: String) : Strings` — [Commons application](../design/application.md), line 482.
 - `selectedSection(section: Any) : Strings` — [Commons application](../design/application.md), line 506.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 629.
-- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 632.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 640.
+- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 643.
 - `snapshotForm(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 125.
 - `snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 128.
 - `snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 135.
 - `snapshotRequirements(value: Json) : Seq` — [Live runs](../design/compositions/live/runs.md), line 132.
 - `snapshotTitle(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 122.
-- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 703.
+- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 714.
 - `sorterNotes(relay: String, run: String) : String` — [The wall](../design/compositions/live/walls.md), line 126.
 - `sortingAdmission(mode: String, authorized: Boolean|Null, live: Boolean|Null, openRun: Boolean|Null, waiting: Boolean|Null, unlocked: Boolean|Null, answered: Boolean|Null, applied: Boolean|Null, ready: Boolean|Null, value: Json) : String` — [The wall](../design/compositions/live/walls.md), line 60.
 - `sortingBrief(account: String, value: Json, categories: Json, values: Json, removed: Json, notes: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 63.
@@ -1890,15 +1892,15 @@ Concrete types:
 - `sortingPileSubjects(categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 238.
 - `staffCapabilities(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 500.
 - `staffQuestion(holders: Seq, nonStaffAuthor: Any) : Boolean` — [Feeds and thread context](../design/compositions/forum/feed.md), line 32.
-- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 638.
+- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 649.
 - `submissionAllowed(detail: Json, section: String, at: Date) : Bool` — [Commons application](../design/application.md), line 449.
 - `summaryAdmission(items: Number) : String` — [The wall](../design/compositions/live/walls.md), line 50.
-- `taskListMailHtml(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 648.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 642.
-- `taskListMailText(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 645.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 657.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 651.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 654.
+- `taskListMailHtml(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 659.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 653.
+- `taskListMailText(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 656.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 668.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 662.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 665.
 - `threadLastActivity(posts: Rows) : Any` — [Commons application](../design/application.md), line 467.
 - `threadParticipants(posts: Rows) : Strings` — [Commons application](../design/application.md), line 470.
 - `threadPostIds(nodes: Rows) : Strings` — [Commons application](../design/application.md), line 458.
@@ -4743,7 +4745,7 @@ Former "the category of (item) for (reader)" — inputs (item, reader); bindings
 ### the connections of (user)
 
 Authored path: `Access.connect.theConnectionsOf`.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 87.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 125.
 
 ```former
 Former "the connections of (user)" — inputs (user); bindings (connection, app, approvedAt); promises exactly one record — forms:
@@ -7586,15 +7588,17 @@ then
 ### Access.connect.ApproveApp
 
 Authored path: `Access.connect.ApproveApp`.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 32.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 103.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 43.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 141.
 
 ```reaction
-when RequestBoundary.request (app, path: "/connect/approve", requestId, session)
+when RequestBoundary.request (app, code_challenge: challenge, code_challenge_method: method, path: "/connect/approve", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
   accepted is connectAppAccepted (app)
   accepted is among [true]
+  challenged is connectChallengeAccepted (app, challenge, method)
+  challenged is among [true]
   at is the current flow's instant
   expiresAt is connectCodeExpiry (at)
 then
@@ -7604,62 +7608,84 @@ then
 ### Access.connect.ApproveApp#2
 
 Authored path: `Access.connect.ApproveApp`.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 32.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 103.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 43.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 141.
 
 ```reaction
 when Connecting.approve (app, at, user, connection), asked by Access.connect.ApproveApp
 where
+  earlier, RequestBoundary.request (app, code_challenge: challenge, code_challenge_method: method, path: "/connect/approve", requestId, session)
   expiresAt is connectCodeExpiry (at)
 then
-  ConnectVouching.issue (at, expiresAt, subject: connection)
+  ConnectVouching.issue (at, counterpart: challenge, expiresAt, subject: connection)
 ```
 
 ### Access.connect.ApproveApp#3
 
 Authored path: `Access.connect.ApproveApp`.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 32.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 103.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 43.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 141.
 
 ```reaction
-when ConnectVouching.issue (at, expiresAt, subject: connection, credential, voucher), asked by Access.connect.ApproveApp#2
+when ConnectVouching.issue (at, counterpart: challenge, expiresAt, subject: connection, credential, voucher), asked by Access.connect.ApproveApp#2
 where
   code is connectCode (credential, voucher)
   earlier, Connecting.approve (app, at, user, connection), asked by Access.connect.ApproveApp
   callback is connectCallback (app)
-  earlier, RequestBoundary.request (app, path: "/connect/approve", requestId, session)
+  earlier, RequestBoundary.request (app, code_challenge: challenge, code_challenge_method: method, path: "/connect/approve", requestId, session)
 then
   RequestBoundary.respond (callback, code, requestId)
 ```
 
-### Access.connect.ApproveAppRefused
+### Access.connect.ApproveAppRefused:refused
 
 Authored path: `Access.connect.ApproveAppRefused`.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 33.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 104.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 45.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 142.
 
 ```reaction
-when RequestBoundary.request (app, path: "/connect/approve", requestId, session)
+when RequestBoundary.request (app, code_challenge: challenge, code_challenge_method: method, path: "/connect/approve", requestId, session)
 where
   view "the active user of (session)" with (session)
   accepted is connectAppAccepted (app)
+  challenged is connectChallengeAccepted (app, challenge, method)
   accepted is among [false]
 then
   RequestBoundary.respond (error: "CONNECT_APP_INVALID", requestId)
 ```
 
+### Access.connect.ApproveAppRefused:unchallenged
+
+Authored path: `Access.connect.ApproveAppRefused`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 45.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 142.
+
+```reaction
+when RequestBoundary.request (app, code_challenge: challenge, code_challenge_method: method, path: "/connect/approve", requestId, session)
+where
+  view "the active user of (session)" with (session)
+  accepted is connectAppAccepted (app)
+  challenged is connectChallengeAccepted (app, challenge, method)
+  accepted is among [true]
+  challenged is among [false]
+then
+  RequestBoundary.respond (error: "CONNECT_CHALLENGE_INVALID", requestId)
+```
+
 ### Access.connect.DescribeApp:approved
 
 Authored path: `Access.connect.DescribeApp`.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 25.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 105.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 35.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 143.
 
 ```reaction
-when RequestBoundary.request (app, path: "/connect/describe", requestId, session)
+when RequestBoundary.request (app, code_challenge: challenge, code_challenge_method: method, path: "/connect/describe", requestId, session)
 where
   accepted is connectAppAccepted (app)
+  challenged is connectChallengeAccepted (app, challenge, method)
   view "the active user of (session)" with (session) has (user)
   accepted is among [true]
+  challenged is among [true]
   host is connectAppHost (app)
   callback is connectCallback (app)
   Connecting._getApproval (app, user)
@@ -7670,13 +7696,14 @@ then
 ### Access.connect.DescribeApp:refused
 
 Authored path: `Access.connect.DescribeApp`.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 25.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 105.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 35.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 143.
 
 ```reaction
-when RequestBoundary.request (app, path: "/connect/describe", requestId, session)
+when RequestBoundary.request (app, code_challenge: challenge, code_challenge_method: method, path: "/connect/describe", requestId, session)
 where
   accepted is connectAppAccepted (app)
+  challenged is connectChallengeAccepted (app, challenge, method)
   view "the active user of (session)" with (session)
   accepted is among [false]
 then
@@ -7686,15 +7713,17 @@ then
 ### Access.connect.DescribeApp:unapproved
 
 Authored path: `Access.connect.DescribeApp`.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 25.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 105.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 35.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 143.
 
 ```reaction
-when RequestBoundary.request (app, path: "/connect/describe", requestId, session)
+when RequestBoundary.request (app, code_challenge: challenge, code_challenge_method: method, path: "/connect/describe", requestId, session)
 where
   accepted is connectAppAccepted (app)
+  challenged is connectChallengeAccepted (app, challenge, method)
   view "the active user of (session)" with (session) has (user)
   accepted is among [true]
+  challenged is among [true]
   host is connectAppHost (app)
   callback is connectCallback (app)
   no Connecting._getApproval (app, user)
@@ -7702,11 +7731,29 @@ then
   RequestBoundary.respond (app, approved: false, callback, host, requestId)
 ```
 
+### Access.connect.DescribeApp:unchallenged
+
+Authored path: `Access.connect.DescribeApp`.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 35.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 143.
+
+```reaction
+when RequestBoundary.request (app, code_challenge: challenge, code_challenge_method: method, path: "/connect/describe", requestId, session)
+where
+  accepted is connectAppAccepted (app)
+  challenged is connectChallengeAccepted (app, challenge, method)
+  view "the active user of (session)" with (session)
+  accepted is among [true]
+  challenged is among [false]
+then
+  RequestBoundary.respond (error: "CONNECT_CHALLENGE_INVALID", requestId)
+```
+
 ### Access.connect.ListConnections
 
 Authored path: `Access.connect.ListConnections`.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 86.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 106.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 124.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 144.
 
 ```reaction
 when RequestBoundary.request (path: "/connect/list", requestId, session)
@@ -7719,31 +7766,32 @@ then
 ### Access.connect.RedeemCode
 
 Authored path: `Access.connect.RedeemCode`.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 55.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 107.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 67.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 145.
 
 ```reaction
-when RequestBoundary.request (app, code, path: "/connect/redeem", requestId)
+when RequestBoundary.request (app, code, code_verifier: verifier, path: "/connect/redeem", requestId)
 where
   at is the current flow's instant
   voucher is connectCodeVoucher (code)
   credential is connectCodeCredential (code)
+  counterpart is connectVerifierChallenge (verifier)
 then
-  ConnectVouching.redeem (at, credential, voucher)
+  ConnectVouching.redeem (at, counterpart, credential, voucher)
 ```
 
 ### Access.connect.RedeemCode:archived#2
 
 Authored path: `Access.connect.RedeemCode`.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 55.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 107.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 67.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 145.
 
 ```reaction
-when ConnectVouching.redeem (at, credential, voucher, subject: connection), asked by Access.connect.RedeemCode
+when ConnectVouching.redeem (at, counterpart, credential, voucher, subject: connection), asked by Access.connect.RedeemCode
 where
   Connecting._getConnection (connection) has (app, user)
   view "(user) is archived" with (user)
-  earlier, RequestBoundary.request (app, code, path: "/connect/redeem", requestId)
+  earlier, RequestBoundary.request (app, code, code_verifier: verifier, path: "/connect/redeem", requestId)
 then
   RequestBoundary.respond (error: "CONNECT_CODE_INVALID", requestId)
 ```
@@ -7751,18 +7799,18 @@ then
 ### Access.connect.RedeemCode:signed-in#2
 
 Authored path: `Access.connect.RedeemCode`.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 55.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 107.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 67.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 145.
 
 ```reaction
-when ConnectVouching.redeem (at, credential, voucher, subject: connection), asked by Access.connect.RedeemCode
+when ConnectVouching.redeem (at, counterpart, credential, voucher, subject: connection), asked by Access.connect.RedeemCode
 where
   Connecting._getConnection (connection) has (app, user)
   no view "(user) is archived" with (user)
   Authenticating._getById (user) has (email, username)
   whether Profiling._getProfileFields (user) has (displayName: profileName)
   displayName is connectDisplayName (displayName: profileName, username)
-  earlier, RequestBoundary.request (app, code, path: "/connect/redeem", requestId)
+  earlier, RequestBoundary.request (app, code, code_verifier: verifier, path: "/connect/redeem", requestId)
 then
   RequestBoundary.respond (displayName, email, requestId, user, username)
 ```
@@ -7770,13 +7818,13 @@ then
 ### Access.connect.RedeemCode:unapproved#2
 
 Authored path: `Access.connect.RedeemCode`.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 55.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 107.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 67.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 145.
 
 ```reaction
-when ConnectVouching.redeem (at, credential, voucher, subject: connection), asked by Access.connect.RedeemCode
+when ConnectVouching.redeem (at, counterpart, credential, voucher, subject: connection), asked by Access.connect.RedeemCode
 where
-  earlier, RequestBoundary.request (app, code, path: "/connect/redeem", requestId)
+  earlier, RequestBoundary.request (app, code, code_verifier: verifier, path: "/connect/redeem", requestId)
   no Connecting._getConnection (connection) has (app)
 then
   RequestBoundary.respond (error: "CONNECT_CODE_INVALID", requestId)
@@ -7785,8 +7833,8 @@ then
 ### Access.connect.WithdrawConnection:unknown
 
 Authored path: `Access.connect.WithdrawConnection`.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 89.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 108.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 127.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 146.
 
 ```reaction
 when RequestBoundary.request (connection, path: "/connect/withdraw", requestId, session)
@@ -7800,8 +7848,8 @@ then
 ### Access.connect.WithdrawConnection:withdrawn
 
 Authored path: `Access.connect.WithdrawConnection`.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 89.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 108.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 127.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 146.
 
 ```reaction
 when RequestBoundary.request (connection, path: "/connect/withdraw", requestId, session)
@@ -7815,8 +7863,8 @@ then
 ### Access.connect.WithdrawConnection:withdrawn#2
 
 Authored path: `Access.connect.WithdrawConnection`.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 89.
-- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 108.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 127.
+- Covered by [Sign in with Commons](../design/compositions/access/connect.md), line 146.
 
 ```reaction
 when Connecting.withdraw (connection), asked by Access.connect.WithdrawConnection:withdrawn
@@ -30250,10 +30298,10 @@ not listed here have no explicit input contract.
 - `/categories/items` — requires `category`, `session`
 - `/categories/list` — requires `session`
 - `/categories/unassign` — requires `item`, `session`
-- `/connect/approve` — requires `session`, `app`
-- `/connect/describe` — requires `session`, `app`
+- `/connect/approve` — requires `session`, `app`; fills `code_challenge` with null when absent; fills `code_challenge_method` with null when absent
+- `/connect/describe` — requires `session`, `app`; fills `code_challenge` with null when absent; fills `code_challenge_method` with null when absent
 - `/connect/list` — requires `session`
-- `/connect/redeem` — requires `code`, `app`
+- `/connect/redeem` — requires `code`, `app`; fills `code_verifier` with null when absent
 - `/connect/withdraw` — requires `session`, `connection`
 - `/delegation/clear` — requires `session`, `item`, `learner`
 - `/delegation/clear-item` — requires `session`, `item`

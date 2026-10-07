@@ -10,14 +10,21 @@ const app = (port: number) => `http://localhost:${port}`;
 const callbackOf = (origin: string) => `${origin}/auth/commons/callback`;
 const newState = () => `e2e-${crypto.randomUUID()}`;
 
+/** RFC 7636, Appendix B: the verifier an app keeps, and the challenge it sends. */
+const VERIFIER = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
+const CHALLENGE = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM";
+
 async function arriveAtApps(page: Page) {
   await page.route("http://localhost:*/auth/commons/callback**", (route) =>
     route.fulfill({ contentType: "text/html", body: "<p>Back at the app</p>" }),
   );
 }
 
-function connectPath(origin: string, state: string) {
-  return `/connect?app=${encodeURIComponent(origin)}&state=${encodeURIComponent(state)}`;
+function connectPath(origin: string, state: string, challenge: string | null = CHALLENGE) {
+  const path = `/connect?app=${encodeURIComponent(origin)}&state=${encodeURIComponent(state)}`;
+  return challenge === null
+    ? path
+    : `${path}&code_challenge=${challenge}&code_challenge_method=S256`;
 }
 
 test("a person allows an app once, and later sign-ins go straight through", async ({ page }) => {
@@ -49,11 +56,12 @@ test("a person allows an app once, and later sign-ins go straight through", asyn
   const code = allowed.searchParams.get("code");
   expect(code).toMatch(/^[A-Za-z0-9._-]{1,128}$/);
 
-  // The app's server trades the code for the person, once.
-  const redeemed = await page.request.post("/api/connect/redeem", { data: { code, app: origin } });
+  // The app's server trades the code and its verifier for the person, once.
+  const redemption = { code, app: origin, code_verifier: VERIFIER };
+  const redeemed = await page.request.post("/api/connect/redeem", { data: redemption });
   expect(redeemed.status()).toBe(200);
   expect(await redeemed.json()).toMatchObject({ username: "mara", email: "mara@example.edu" });
-  const again = await page.request.post("/api/connect/redeem", { data: { code, app: origin } });
+  const again = await page.request.post("/api/connect/redeem", { data: redemption });
   expect(again.status()).toBe(400);
   expect(await again.json()).toEqual({ error: "CONNECT_CODE_INVALID" });
 
@@ -91,6 +99,8 @@ test("a request naming no acceptable app or state goes nowhere", async ({ page }
   for (const path of [
     connectPath("https://evil.example", newState()),
     connectPath(app(4793), "too-short"),
+    connectPath(app(4793), newState(), null),
+    connectPath(app(4793), newState(), CHALLENGE.slice(1)),
     `/connect?app=${encodeURIComponent(app(4793))}`,
     "/connect",
   ]) {

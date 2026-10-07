@@ -8,6 +8,8 @@ import {
 } from "./connect.ts";
 
 const STATE = "Abc123._~-xyz7890";
+// RFC 7636, Appendix B.
+const CHALLENGE = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM";
 
 describe("an app's sign-in state", () => {
   test("is 16 to 256 letters, digits, or ._~-", () => {
@@ -40,7 +42,44 @@ describe("a sign-in request", () => {
       connectRequest(
         new URLSearchParams({ app: "https://mit-sdg.dev", state: STATE }),
       ),
-    ).toEqual({ app: "https://mit-sdg.dev", state: STATE });
+    ).toEqual({ app: "https://mit-sdg.dev", state: STATE, challenge: null });
+  });
+
+  test("carries an S256 challenge through", () => {
+    expect(
+      connectRequest(
+        new URLSearchParams({
+          app: "https://team-7.mit-sdg.dev",
+          state: STATE,
+          code_challenge: CHALLENGE,
+          code_challenge_method: "S256",
+        }),
+      ),
+    ).toEqual({
+      app: "https://team-7.mit-sdg.dev",
+      state: STATE,
+      challenge: { code_challenge: CHALLENGE, code_challenge_method: "S256" },
+    });
+  });
+
+  test("is refused when the challenge is malformed, repeated, or not S256", () => {
+    const base = `app=https%3A%2F%2Fteam-7.mit-sdg.dev&state=${STATE}`;
+    for (const challenge of [
+      `code_challenge=${CHALLENGE}`,
+      "code_challenge_method=S256",
+      `code_challenge=${CHALLENGE}&code_challenge_method=plain`,
+      `code_challenge=${CHALLENGE}&code_challenge_method=s256`,
+      `code_challenge=${CHALLENGE}%3D&code_challenge_method=S256`,
+      `code_challenge=${CHALLENGE.slice(1)}&code_challenge_method=S256`,
+      `code_challenge=${"a".repeat(64)}&code_challenge_method=S256`,
+      `code_challenge=${CHALLENGE}&code_challenge=${CHALLENGE}&code_challenge_method=S256`,
+      `code_challenge=${CHALLENGE}&code_challenge_method=S256&code_challenge_method=S256`,
+    ]) {
+      expect(
+        connectRequest(new URLSearchParams(`${base}&${challenge}`)),
+        challenge,
+      ).toBeNull();
+    }
   });
 
   test("is refused when either is missing, repeated, empty, or invalid", () => {

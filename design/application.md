@@ -599,6 +599,12 @@ connectAppAccepted(app: String) : Bool
   is written in lowercase with no path, query, fragment, credentials, or
   trailing slash, and it is never Commons' own public origin.
 
+connectChallengeAccepted(app: String, challenge?: String, method?: String) : Bool
+  Reports whether a sign-in request carries a challenge Commons accepts: 43
+  base64url characters with the method `S256`. A missing method would mean
+  `plain`, and is refused. Only the owner portal, at the configured
+  `CONNECT_APP_DOMAIN` itself, may ask without a challenge and without a method.
+
 connectAppHost(app: String) : String
   Answers the host an accepted app is shown by, with its port when it names one.
 
@@ -625,6 +631,11 @@ connectDisplayName(username: String, displayName: Any) : String
   Answers the name an app is given for a person: the profile's display name,
   cut to 256 characters, or the username when there is no profile or its name
   is blank.
+
+connectVerifierChallenge(verifier?: String) : String|Null
+  Answers the S256 challenge of a verifier: the unpadded base64url SHA-256 of a
+  verifier of 43 to 128 unreserved characters, nothing when no verifier came,
+  and a value no challenge equals when the verifier is malformed.
 
 setupSecretMatches(secret: String) : Bool
   Reports whether the candidate matches the configured setup-secret verifier.

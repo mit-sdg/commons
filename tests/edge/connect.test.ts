@@ -3,6 +3,7 @@ import { afterAll, afterEach, describe, expect, test, vi } from "vite-plus/test"
 import { mongoImplementations } from "../../src/concepts.ts";
 import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { createEdge } from "../../src/edge.ts";
+import { inspectAssembly } from "@mit-sdg/sync-engine/tooling";
 
 afterAll(stopTestDb);
 afterEach(() => vi.unstubAllEnvs());
@@ -13,7 +14,15 @@ const TEAM_APP = "https://team-7.mit-sdg.dev";
 const LOCAL_APP = "http://localhost:4311";
 const SECOND = 1_000;
 
+/** RFC 7636, Appendix B: a verifier and the S256 challenge it hashes to. */
+const VERIFIER = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
+const CHALLENGE = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM";
+const CHALLENGED = { code_challenge: CHALLENGE, code_challenge_method: "S256" };
+
 type Body = Record<string, unknown>;
+
+/** A sign-in request as an app writes it: every app but the owner portal sends a challenge. */
+const asking = (app: string): Body => (app === PORTAL ? { app } : { app, ...CHALLENGED });
 
 async function buildFixture(domain: string) {
   vi.stubEnv("PUBLIC_ORIGIN", COMMONS);
@@ -54,8 +63,9 @@ async function buildFixture(domain: string) {
   async function approve(
     as: { call: (path: string, body: Body) => Promise<Response> },
     app: string,
+    request: Body = asking(app),
   ) {
-    const response = await as.call("/connect/approve", { app });
+    const response = await as.call("/connect/approve", request);
     expect(response.status).toBe(200);
     return (await response.json()) as { code: string; callback: string };
   }
@@ -132,7 +142,7 @@ describe("signing in with Commons", () => {
       [LOCAL_APP, "localhost:4311"],
       ["http://127.0.0.1:8080", "127.0.0.1:8080"],
     ] as const) {
-      const before = await ines.call("/connect/describe", { app });
+      const before = await ines.call("/connect/describe", asking(app));
       expect(before.status).toBe(200);
       expect(await before.json()).toEqual({
         app,
@@ -141,7 +151,7 @@ describe("signing in with Commons", () => {
         approved: false,
       });
       await f.approve(ines, app);
-      const after = await ines.call("/connect/describe", { app });
+      const after = await ines.call("/connect/describe", asking(app));
       expect(await after.json()).toMatchObject({ app, approved: true });
     }
   });
@@ -175,7 +185,7 @@ describe("signing in with Commons", () => {
     expect(await f.db.collection("connectVouching.vouchers").countDocuments()).toBe(0);
   });
 
-  test("describing, approving, and withdrawing take exactly their one field, as text", async () => {
+  test("describing and approving take an app and an optional challenge, as text; withdrawing takes one field", async () => {
     const f = await fixture();
     const ines = await f.person("ines");
     for (const body of [
@@ -184,6 +194,9 @@ describe("signing in with Commons", () => {
       { app: null },
       { app: [PORTAL] },
       { app: PORTAL, user: "x" },
+      { app: TEAM_APP, code_challenge: 5, code_challenge_method: "S256" },
+      { app: TEAM_APP, code_challenge: CHALLENGE, code_challenge_method: ["S256"] },
+      { app: TEAM_APP, ...CHALLENGED, code_verifier: VERIFIER },
     ]) {
       for (const path of ["/connect/describe", "/connect/approve"]) {
         const response = await ines.call(path, body);
@@ -202,19 +215,110 @@ describe("signing in with Commons", () => {
     const f = await fixture({ domain: "" });
     const ines = await f.person("ines");
     expect((await ines.call("/connect/describe", { app: PORTAL })).status).toBe(400);
-    expect((await ines.call("/connect/describe", { app: LOCAL_APP })).status).toBe(200);
+    expect((await ines.call("/connect/describe", asking(LOCAL_APP))).status).toBe(200);
+    // With no configured domain there is no owner portal to let through without a challenge.
+    expect((await ines.call("/connect/describe", { app: LOCAL_APP })).status).toBe(400);
   });
 
   test("a page on another origin cannot approve an app on somebody's behalf", async () => {
     const f = await fixture();
     const ines = await f.person("ines");
     for (const origin of [TEAM_APP, PORTAL, "null"]) {
-      const response = await ines.call("/connect/approve", { app: TEAM_APP }, origin);
+      const response = await ines.call("/connect/approve", asking(TEAM_APP), origin);
       expect(response.status, origin).toBe(403);
       expect(await response.json()).toEqual({ error: "FORBIDDEN" });
     }
     expect(await f.db.collection("connecting.connections").countDocuments()).toBe(0);
     expect(await f.db.collection("connectVouching.vouchers").countDocuments()).toBe(0);
+  });
+
+  test("an app other than the owner portal must send an S256 challenge, and nothing is remembered without one", async () => {
+    const f = await fixture();
+    const ines = await f.person("ines");
+    const malformed: Body[] = [
+      { code_challenge: CHALLENGE },
+      { code_challenge: CHALLENGE, code_challenge_method: "plain" },
+      { code_challenge: CHALLENGE, code_challenge_method: "s256" },
+      { code_challenge_method: "S256" },
+      { code_challenge: CHALLENGE.slice(1), code_challenge_method: "S256" },
+      { code_challenge: `${CHALLENGE}=`, code_challenge_method: "S256" },
+      { code_challenge: CHALLENGE.replace("-", "+"), code_challenge_method: "S256" },
+      { code_challenge: "a".repeat(64), code_challenge_method: "S256" },
+      { code_challenge: "", code_challenge_method: "S256" },
+    ];
+    for (const [app, requests] of [
+      [TEAM_APP, [{}, ...malformed]],
+      [LOCAL_APP, [{}, ...malformed]],
+      [PORTAL, malformed],
+    ] as const) {
+      for (const request of requests) {
+        for (const path of ["/connect/describe", "/connect/approve"]) {
+          const response = await ines.call(path, { app, ...request });
+          expect(response.status, `${path} ${app} ${JSON.stringify(request)}`).toBe(400);
+          expect(await response.json()).toEqual({ error: "INVALID_REQUEST" });
+        }
+      }
+    }
+    expect(await f.db.collection("connecting.connections").countDocuments()).toBe(0);
+    expect(await f.db.collection("connectVouching.vouchers").countDocuments()).toBe(0);
+  });
+
+  test("a code issued with a challenge redeems only with its verifier", async () => {
+    const f = await fixture();
+    const ines = await f.person("ines", "Ines Duarte");
+    for (const app of [TEAM_APP, LOCAL_APP, PORTAL]) {
+      const { code } = await f.approve(ines, app, { app, ...CHALLENGED });
+      const redeemed = await f.redeem({ code, app, code_verifier: VERIFIER });
+      expect(redeemed.status, app).toBe(200);
+      expect(await redeemed.json()).toMatchObject({ user: ines.user, displayName: "Ines Duarte" });
+      await expectRefused(await f.redeem({ code, app, code_verifier: VERIFIER }));
+    }
+  });
+
+  test("a missing, wrong, or malformed verifier is refused and spends the code", async () => {
+    const f = await fixture();
+    const ines = await f.person("ines");
+    for (const verifier of [
+      undefined,
+      null,
+      "a".repeat(43),
+      CHALLENGE,
+      VERIFIER.slice(1),
+      `${VERIFIER}!`,
+      "",
+      "x".repeat(129),
+    ]) {
+      const { code } = await f.approve(ines, TEAM_APP);
+      const body =
+        verifier === undefined
+          ? { code, app: TEAM_APP }
+          : { code, app: TEAM_APP, code_verifier: verifier };
+      await expectRefused(await f.redeem(body));
+      await expectRefused(await f.redeem({ code, app: TEAM_APP, code_verifier: VERIFIER }));
+    }
+  });
+
+  test("a verifier sent for a code issued without a challenge is refused and spends the code", async () => {
+    const f = await fixture();
+    const ines = await f.person("ines");
+    for (const verifier of [VERIFIER, "malformed"]) {
+      const { code } = await f.approve(ines, PORTAL);
+      await expectRefused(await f.redeem({ code, app: PORTAL, code_verifier: verifier }));
+      await expectRefused(await f.redeem({ code, app: PORTAL }));
+    }
+  });
+
+  test("retained records hold neither a verifier nor a voucher's credential field", async () => {
+    const f = await fixture();
+    const ines = await f.person("ines");
+    const { code } = await f.approve(ines, TEAM_APP);
+    expect((await f.redeem({ code, app: TEAM_APP, code_verifier: VERIFIER })).status).toBe(200);
+    const occurrences = inspectAssembly(f.edge.application).occurrences;
+    expect(JSON.stringify(occurrences)).not.toContain(VERIFIER);
+    const issued = occurrences.find(
+      (entry) => entry.concept === "ConnectVouching" && entry.action === "issue",
+    );
+    expect(issued?.output).toMatchObject({ credential: "[redacted]" });
   });
 
   test("an app's server redeems a code once for the person's identity", async () => {
@@ -311,7 +415,9 @@ describe("signing in with Commons", () => {
 
     const portal = await f.approve(ines, PORTAL);
     const team = await f.approve(ines, TEAM_APP);
-    expect((await f.redeem({ code: team.code, app: TEAM_APP })).status).toBe(200);
+    expect(
+      (await f.redeem({ code: team.code, app: TEAM_APP, code_verifier: VERIFIER })).status,
+    ).toBe(200);
     expect((await f.redeem({ code: portal.code, app: PORTAL })).status).toBe(200);
 
     // Another person's code for the same app is theirs alone.
