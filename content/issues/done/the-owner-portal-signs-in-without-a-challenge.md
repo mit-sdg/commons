@@ -18,10 +18,11 @@ matching `code_verifier`.
 
 ## Decision at completion
 
-The portal's maintainers have implemented PKCE: the portal sends a challenge
-and its method on every sign-in and redeems with `{code, app, code_verifier}`.
-Merge only after the owner portal release that sends a challenge is live;
-until then the portal's sign-in would be refused.
+The owner portal sends a challenge and its method on every sign-in and redeems
+with `{code, app, code_verifier}` since mit-sdg/openstack-deployment-infra#90.
+Its verifier is derived from the signed binder cookie, as the open issue
+suggested, so the portal still stores nothing per sign-in. The exception was
+removed once that portal release was live, so no portal sign-in was refused.
 
 The challenge check no longer takes an app or a configured domain. Vouching
 keeps its generic counterpart rules, including vouchers issued without a
