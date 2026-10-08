@@ -28,9 +28,7 @@ the origin the person was shown.
 Every app sends a challenge with each sign-in: 43 base64url characters and
 `code_challenge_method=S256`. A challenge with no method is
 [not accepted](computation:connectChallengeAccepted), because RFC 7636 reads a
-missing method as `plain`, and neither is any method but `S256`. The one exception is the platform's owner portal at the configured
-domain itself, which signed people in before challenges existed. It may still
-ask without one until it sends one too.
+missing method as `plain`, and neither is any method but `S256`.
 
 The consent page first reads [Access.connect.DescribeApp](reaction:Access.connect.DescribeApp).
 It answers an accepted app with [the host it is shown by](computation:connectAppHost),
@@ -71,10 +69,9 @@ and the verifier. It [reads the voucher](computation:connectCodeVoucher) and
 [hashes the verifier](computation:connectVerifierChallenge) into the challenge
 it answers, and redeems the voucher with that counterpart before checking
 anything else, so a code is spent the first time anybody presents it, whatever
-then fails. ConnectVouching honors it only when the counterpart agrees: a code
-issued with a challenge needs the verifier that hashes to it, and a code issued
-without one, for the owner portal, is refused when any verifier comes with it. It answers only when the connection
-the voucher was issued for still stands, belongs to the app presenting the code,
+then fails. ConnectVouching honors it only when the counterpart agrees: every
+code needs the verifier that hashes to its challenge. It answers only when the
+connection the voucher was issued for still stands, belongs to the app presenting the code,
 and names an account that is not archived. The answer is the account's stable
 `user`, its `username` and `email`, and [the name to show](computation:connectDisplayName):
 the profile's display name, or the username when there is no profile or its
@@ -118,8 +115,7 @@ page in a browser cannot redeem a code and read the answer; an app's server can.
 The engine's records redact the `credential` and `code_verifier` fields
 (`src/assembly/application.ts`). They keep the `code` field, which contains the
 credential, because class codes and live-room codes share that name. A code
-issued with a challenge is useless without its verifier, so only the owner
-portal's codes stay redeemable from the records, for their sixty seconds.
+is useless without its verifier.
 
 [Access.connect.ListConnections](reaction:Access.connect.ListConnections) shows
 the caller [the apps they have approved](former:Access.connect.theConnectionsOf),
