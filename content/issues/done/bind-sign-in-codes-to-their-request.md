@@ -45,7 +45,7 @@ The challenge is required from the start for every app but the owner portal,
 because no other app had signed anyone in yet. Making it optional would have
 left a breaking change for later, once student apps were deployed. Removing the
 portal's exception is
-[its own issue](../open/the-owner-portal-signs-in-without-a-challenge.md).
+[its own issue](the-owner-portal-signs-in-without-a-challenge.md).
 
 The engine's records redact `credential`, `code_verifier`, and `verifier` by
 field name. The `code` field is not redacted, because class codes and live-room

@@ -195,36 +195,24 @@ describe("the challenge a sign-in carries", () => {
     }
   });
 
-  test("every app may send an S256 challenge, and only S256", () => {
-    for (const app of [
-      "https://mit-sdg.dev",
-      "https://team-7.mit-sdg.dev",
-      "http://localhost:4311",
+  test("every app must send an S256 challenge, and only S256", () => {
+    expect(isConnectChallenge(CHALLENGE, "S256")).toBe(true);
+    for (const [challenge, method] of [
+      [CHALLENGE, null],
+      [CHALLENGE, "plain"],
+      [CHALLENGE, "s256"],
+      [null, "S256"],
+      [`${CHALLENGE}=`, "S256"],
+      [CHALLENGE.slice(1), "S256"],
+      ["", "S256"],
+      [5, "S256"],
     ]) {
-      expect(isConnectChallenge(app, CHALLENGE, "S256", DOMAIN), app).toBe(true);
-      for (const [challenge, method] of [
-        [CHALLENGE, null],
-        [CHALLENGE, "plain"],
-        [CHALLENGE, "s256"],
-        [null, "S256"],
-        [`${CHALLENGE}=`, "S256"],
-        [CHALLENGE.slice(1), "S256"],
-        ["", "S256"],
-        [5, "S256"],
-      ]) {
-        expect(
-          isConnectChallenge(app, challenge, method, DOMAIN),
-          `${app} ${challenge} ${method}`,
-        ).toBe(false);
-      }
+      expect(isConnectChallenge(challenge, method), `${challenge} ${method}`).toBe(false);
     }
   });
 
-  test("only the owner portal, at the configured domain itself, may ask without one", () => {
-    expect(isConnectChallenge("https://mit-sdg.dev", null, null, DOMAIN)).toBe(true);
-    expect(isConnectChallenge("https://mit-sdg.dev", undefined, undefined, DOMAIN)).toBe(true);
-    expect(isConnectChallenge("https://team-7.mit-sdg.dev", null, null, DOMAIN)).toBe(false);
-    expect(isConnectChallenge("http://localhost:4311", null, null, DOMAIN)).toBe(false);
-    expect(isConnectChallenge("https://mit-sdg.dev", null, null, undefined)).toBe(false);
+  test("no app may ask without a challenge", () => {
+    expect(isConnectChallenge(null, null)).toBe(false);
+    expect(isConnectChallenge(undefined, undefined)).toBe(false);
   });
 });

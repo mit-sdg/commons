@@ -23,7 +23,7 @@ function textInput(required: string[], optional: string[] = []) {
   };
 }
 
-/** A sign-in request names its app and may carry the challenge of a verifier. */
+/** A sign-in request names its app and carries the challenge of a verifier. */
 const signInRequest = {
   input: {
     required: ["session", "app"],
@@ -40,7 +40,7 @@ export const DescribeApp = endpoint(
     receive({ session, app, code_challenge: challenge, code_challenge_method: method })
       .where(
         compute(computations.connectAppAccepted, { app }, accepted),
-        compute(computations.connectChallengeAccepted, { app, challenge, method }, challenged),
+        compute(computations.connectChallengeAccepted, { challenge, method }, challenged),
       )
       .then(
         where(
@@ -96,7 +96,7 @@ export const ApproveApp = endpoint(
         activeUser({ session }).is({ user }),
         compute(computations.connectAppAccepted, { app }, accepted),
         is.among(accepted, [true]),
-        compute(computations.connectChallengeAccepted, { app, challenge, method }, challenged),
+        compute(computations.connectChallengeAccepted, { challenge, method }, challenged),
         is.among(challenged, [true]),
         now(at),
         compute(computations.connectCodeExpiry, { at }, expiresAt),
@@ -128,7 +128,7 @@ export const ApproveAppRefused = endpoint(
       .where(
         activeUser({ session }),
         compute(computations.connectAppAccepted, { app }, accepted),
-        compute(computations.connectChallengeAccepted, { app, challenge, method }, challenged),
+        compute(computations.connectChallengeAccepted, { challenge, method }, challenged),
       )
       .then(
         where(is.among(accepted, [false]))

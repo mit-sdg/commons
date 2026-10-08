@@ -67,30 +67,20 @@ export function connectAppAccepted({ app }: { app: string }): boolean {
  *
  * An app sends the S256 challenge of a verifier its server keeps, with
  * `code_challenge_method=S256`; a missing method would mean `plain`, which is
- * refused. Only the platform's owner portal, at the configured domain itself,
- * may still ask without a challenge.
+ * refused. Every app must send a challenge.
  */
-export function isConnectChallenge(
-  app: string,
-  challenge: unknown,
-  method: unknown,
-  domain: string | undefined,
-): boolean {
-  if (challenge == null)
-    return method == null && domain !== undefined && app === `https://${domain}`;
+export function isConnectChallenge(challenge: unknown, method: unknown): boolean {
   return typeof challenge === "string" && CHALLENGE.test(challenge) && method === "S256";
 }
 
 export function connectChallengeAccepted({
-  app,
   challenge,
   method,
 }: {
-  app: string;
   challenge?: string | null;
   method?: string | null;
 }): boolean {
-  return isConnectChallenge(app, challenge, method, configuredConnectAppDomain());
+  return isConnectChallenge(challenge, method);
 }
 
 /**

@@ -66,9 +66,7 @@ browser to
 where `state` is 16 to 256 letters, digits, or `._~-`, and the challenge is the
 verifier's SHA-256 hash in base64url without padding, 43 characters. Commons
 shows an error and sends the browser nowhere when any of these is missing,
-repeated, or invalid. The only exception is the owner portal at
-`CONNECT_APP_DOMAIN` itself, which may still omit the challenge and its method
-until it sends them too. Commons asks the signed-in person, once, whether that
+repeated, or invalid. Commons asks the signed-in person, once, whether that
 app may learn their name, username, and email, remembers the answer, and sends
 the browser to `<app>/auth/commons/callback` with a `code` and the app's
 `state`, or with `error=access_denied` and the `state` when the person cancels.
@@ -104,9 +102,8 @@ A redeemed code returns HTTP `200` with the person's stable `user` ID,
 after it was issued, only for the app it was issued to, and only with the
 verifier whose challenge it was issued for. It also stops working when its
 person withdraws the app's approval or their account is archived. A missing,
-wrong, or malformed verifier spends the code. A verifier sent for a code
-issued without a challenge is refused and spends the code too. Every one of
-those refusals returns HTTP `400` with `{"error":"CONNECT_CODE_INVALID"}`, and
+wrong, or malformed verifier spends the code. Every one of those refusals
+returns HTTP `400` with `{"error":"CONNECT_CODE_INVALID"}`, and
 a request of the wrong shape returns `{"error":"INVALID_REQUEST"}`. Redemption
 needs no Commons session, and Commons sends no CORS headers, so only an app's
 server, not a page in a browser, can redeem a code. Serve the callback page

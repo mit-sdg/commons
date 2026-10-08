@@ -599,11 +599,10 @@ connectAppAccepted(app: String) : Bool
   is written in lowercase with no path, query, fragment, credentials, or
   trailing slash, and it is never Commons' own public origin.
 
-connectChallengeAccepted(app: String, challenge?: String, method?: String) : Bool
+connectChallengeAccepted(challenge?: String, method?: String) : Bool
   Reports whether a sign-in request carries a challenge Commons accepts: 43
   base64url characters with the method `S256`. A missing method would mean
-  `plain`, and is refused. Only the owner portal, at the configured
-  `CONNECT_APP_DOMAIN` itself, may ask without a challenge and without a method.
+  `plain`, and is refused. Every app must send a challenge.
 
 connectAppHost(app: String) : String
   Answers the host an accepted app is shown by, with its port when it names one.

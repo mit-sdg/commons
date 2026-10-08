@@ -22,9 +22,8 @@ export type ConnectChallenge = {
  * The app, state, and challenge a sign-in request names, or null when the app
  * or state is missing, any of them is repeated, the state is not one an app
  * could have made, or the challenge is malformed or not `S256`. A request
- * without a challenge passes here; Commons decides whether its app may ask
- * without one. The page never sends the browser anywhere Commons has not
- * accepted.
+ * without a challenge passes here; Commons refuses it. The page never sends
+ * the browser anywhere Commons has not accepted.
  */
 export function connectRequest(params: Pick<URLSearchParams, "getAll">): {
   app: string;

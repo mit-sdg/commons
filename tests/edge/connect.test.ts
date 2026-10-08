@@ -21,8 +21,8 @@ const CHALLENGED = { code_challenge: CHALLENGE, code_challenge_method: "S256" };
 
 type Body = Record<string, unknown>;
 
-/** A sign-in request as an app writes it: every app but the owner portal sends a challenge. */
-const asking = (app: string): Body => (app === PORTAL ? { app } : { app, ...CHALLENGED });
+/** A sign-in request as an app writes it: every app sends a challenge. */
+const asking = (app: string): Body => ({ app, ...CHALLENGED });
 
 async function buildFixture(domain: string) {
   vi.stubEnv("PUBLIC_ORIGIN", COMMONS);
@@ -56,7 +56,13 @@ async function buildFixture(domain: string) {
     const cookie = login.headers.get("set-cookie")!.split(";")[0]!;
     const call = (path: string, body: Body = {}, origin: string | null = COMMONS) =>
       post(path, body, { Cookie: cookie, ...(origin === null ? {} : { Origin: origin }) });
-    return { user, username, email: `${username}@example.edu`, call };
+    return {
+      user,
+      session: cookie.slice(cookie.indexOf("=") + 1),
+      username,
+      email: `${username}@example.edu`,
+      call,
+    };
   }
 
   /** Approve an app as this person, the way the consent page does, and take the code. */
@@ -185,7 +191,7 @@ describe("signing in with Commons", () => {
     expect(await f.db.collection("connectVouching.vouchers").countDocuments()).toBe(0);
   });
 
-  test("describing and approving take an app and an optional challenge, as text; withdrawing takes one field", async () => {
+  test("describing and approving take an app and challenge fields as text; withdrawing takes one field", async () => {
     const f = await fixture();
     const ines = await f.person("ines");
     for (const body of [
@@ -214,9 +220,8 @@ describe("signing in with Commons", () => {
   test("without CONNECT_APP_DOMAIN only an app on this machine is accepted", async () => {
     const f = await fixture({ domain: "" });
     const ines = await f.person("ines");
-    expect((await ines.call("/connect/describe", { app: PORTAL })).status).toBe(400);
+    expect((await ines.call("/connect/describe", asking(PORTAL))).status).toBe(400);
     expect((await ines.call("/connect/describe", asking(LOCAL_APP))).status).toBe(200);
-    // With no configured domain there is no owner portal to let through without a challenge.
     expect((await ines.call("/connect/describe", { app: LOCAL_APP })).status).toBe(400);
   });
 
@@ -232,7 +237,31 @@ describe("signing in with Commons", () => {
     expect(await f.db.collection("connectVouching.vouchers").countDocuments()).toBe(0);
   });
 
-  test("an app other than the owner portal must send an S256 challenge, and nothing is remembered without one", async () => {
+  test("the owner portal without a challenge is refused at describe and approve, with nothing remembered", async () => {
+    const f = await fixture();
+    const ines = await f.person("ines");
+    for (const request of [
+      { app: PORTAL },
+      { app: PORTAL, code_challenge: null, code_challenge_method: null },
+    ]) {
+      for (const path of ["/connect/describe", "/connect/approve"]) {
+        expect(
+          await f.edge.application.invoker.invoke(path, { session: ines.session, ...request }),
+        ).toMatchObject({
+          ok: false,
+          error: { kind: "domain", value: "CONNECT_CHALLENGE_INVALID" },
+        });
+        // The HTTP boundary exposes the public category of the domain refusal.
+        const response = await ines.call(path, request);
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({ error: "INVALID_REQUEST" });
+      }
+    }
+    expect(await f.db.collection("connecting.connections").countDocuments()).toBe(0);
+    expect(await f.db.collection("connectVouching.vouchers").countDocuments()).toBe(0);
+  });
+
+  test("every app must send an S256 challenge, and nothing is remembered without one", async () => {
     const f = await fixture();
     const ines = await f.person("ines");
     const malformed: Body[] = [
@@ -249,7 +278,7 @@ describe("signing in with Commons", () => {
     for (const [app, requests] of [
       [TEAM_APP, [{}, ...malformed]],
       [LOCAL_APP, [{}, ...malformed]],
-      [PORTAL, malformed],
+      [PORTAL, [{}, ...malformed]],
     ] as const) {
       for (const request of requests) {
         for (const path of ["/connect/describe", "/connect/approve"]) {
@@ -298,16 +327,6 @@ describe("signing in with Commons", () => {
     }
   });
 
-  test("a verifier sent for a code issued without a challenge is refused and spends the code", async () => {
-    const f = await fixture();
-    const ines = await f.person("ines");
-    for (const verifier of [VERIFIER, "malformed"]) {
-      const { code } = await f.approve(ines, PORTAL);
-      await expectRefused(await f.redeem({ code, app: PORTAL, code_verifier: verifier }));
-      await expectRefused(await f.redeem({ code, app: PORTAL }));
-    }
-  });
-
   test("retained records hold neither a verifier nor a voucher's credential field", async () => {
     const f = await fixture();
     const ines = await f.person("ines");
@@ -328,7 +347,7 @@ describe("signing in with Commons", () => {
     expect(callback).toBe(`${PORTAL}/auth/commons/callback`);
     expect(code).toMatch(/^[A-Za-z0-9._-]{1,128}$/);
 
-    const redeemed = await f.redeem({ code, app: PORTAL });
+    const redeemed = await f.redeem({ code, app: PORTAL, code_verifier: VERIFIER });
     expect(redeemed.status).toBe(200);
     expect(redeemed.headers.get("Content-Type")).toMatch(/^application\/json/);
     expect(redeemed.headers.get("Cache-Control")).toBe("no-store");
@@ -340,7 +359,7 @@ describe("signing in with Commons", () => {
       email: "ines@example.edu",
     });
 
-    await expectRefused(await f.redeem({ code, app: PORTAL }));
+    await expectRefused(await f.redeem({ code, app: PORTAL, code_verifier: VERIFIER }));
     // Redeeming creates no Commons session for anybody.
     expect(await f.db.collection("sessioning.sessions").countDocuments()).toBe(1);
   });
@@ -351,7 +370,7 @@ describe("signing in with Commons", () => {
     const blank = await f.person("blank", "   ");
     for (const person of [noProfile, blank]) {
       const { code } = await f.approve(person, PORTAL);
-      const redeemed = await f.redeem({ code, app: PORTAL });
+      const redeemed = await f.redeem({ code, app: PORTAL, code_verifier: VERIFIER });
       expect(await redeemed.json()).toMatchObject({ displayName: person.username });
     }
   });
@@ -361,19 +380,21 @@ describe("signing in with Commons", () => {
     const ines = await f.person("ines");
     const inTime = await f.approve(ines, PORTAL);
     f.advance(59 * SECOND);
-    expect((await f.redeem({ code: inTime.code, app: PORTAL })).status).toBe(200);
+    expect(
+      (await f.redeem({ code: inTime.code, app: PORTAL, code_verifier: VERIFIER })).status,
+    ).toBe(200);
 
     const late = await f.approve(ines, PORTAL);
     f.advance(60 * SECOND);
-    await expectRefused(await f.redeem({ code: late.code, app: PORTAL }));
+    await expectRefused(await f.redeem({ code: late.code, app: PORTAL, code_verifier: VERIFIER }));
   });
 
   test("a code is spent when presented by another app, and never redeems for it", async () => {
     const f = await fixture();
     const ines = await f.person("ines");
     const { code } = await f.approve(ines, PORTAL);
-    await expectRefused(await f.redeem({ code, app: TEAM_APP }));
-    await expectRefused(await f.redeem({ code, app: PORTAL }));
+    await expectRefused(await f.redeem({ code, app: TEAM_APP, code_verifier: VERIFIER }));
+    await expectRefused(await f.redeem({ code, app: PORTAL, code_verifier: VERIFIER }));
   });
 
   test("withdrawing an approval voids its unredeemed code and asks again next time", async () => {
@@ -386,8 +407,8 @@ describe("signing in with Commons", () => {
     const [{ connection }] = listed.connections as [{ connection: string }];
     expect((await ines.call("/connect/withdraw", { connection })).status).toBe(200);
 
-    await expectRefused(await f.redeem({ code, app: PORTAL }));
-    expect(await (await ines.call("/connect/describe", { app: PORTAL })).json()).toMatchObject({
+    await expectRefused(await f.redeem({ code, app: PORTAL, code_verifier: VERIFIER }));
+    expect(await (await ines.call("/connect/describe", asking(PORTAL))).json()).toMatchObject({
       approved: false,
     });
   });
@@ -402,7 +423,7 @@ describe("signing in with Commons", () => {
       by: admin.user,
       at: new Date(),
     });
-    await expectRefused(await f.redeem({ code, app: PORTAL }));
+    await expectRefused(await f.redeem({ code, app: PORTAL, code_verifier: VERIFIER }));
   });
 
   test("a new code for an approval retires its older code; two apps' codes stand together", async () => {
@@ -410,24 +431,32 @@ describe("signing in with Commons", () => {
     const ines = await f.person("ines");
     const older = await f.approve(ines, PORTAL);
     const newer = await f.approve(ines, PORTAL);
-    await expectRefused(await f.redeem({ code: older.code, app: PORTAL }));
-    expect((await f.redeem({ code: newer.code, app: PORTAL })).status).toBe(200);
+    await expectRefused(await f.redeem({ code: older.code, app: PORTAL, code_verifier: VERIFIER }));
+    expect(
+      (await f.redeem({ code: newer.code, app: PORTAL, code_verifier: VERIFIER })).status,
+    ).toBe(200);
 
     const portal = await f.approve(ines, PORTAL);
     const team = await f.approve(ines, TEAM_APP);
     expect(
       (await f.redeem({ code: team.code, app: TEAM_APP, code_verifier: VERIFIER })).status,
     ).toBe(200);
-    expect((await f.redeem({ code: portal.code, app: PORTAL })).status).toBe(200);
+    expect(
+      (await f.redeem({ code: portal.code, app: PORTAL, code_verifier: VERIFIER })).status,
+    ).toBe(200);
 
     // Another person's code for the same app is theirs alone.
     const paul = await f.person("paul");
     const ines2 = await f.approve(ines, PORTAL);
     const pauls = await f.approve(paul, PORTAL);
-    expect(await (await f.redeem({ code: pauls.code, app: PORTAL })).json()).toMatchObject({
+    expect(
+      await (await f.redeem({ code: pauls.code, app: PORTAL, code_verifier: VERIFIER })).json(),
+    ).toMatchObject({
       user: paul.user,
     });
-    expect(await (await f.redeem({ code: ines2.code, app: PORTAL })).json()).toMatchObject({
+    expect(
+      await (await f.redeem({ code: ines2.code, app: PORTAL, code_verifier: VERIFIER })).json(),
+    ).toMatchObject({
       user: ines.user,
     });
   });
@@ -449,15 +478,17 @@ describe("signing in with Commons", () => {
       ` ${code}`,
       "x".repeat(10_000),
     ]) {
-      await expectRefused(await f.redeem({ code: malformed, app: PORTAL }));
+      await expectRefused(
+        await f.redeem({ code: malformed, app: PORTAL, code_verifier: VERIFIER }),
+      );
     }
-    expect((await f.redeem({ code, app: PORTAL })).status).toBe(200);
+    expect((await f.redeem({ code, app: PORTAL, code_verifier: VERIFIER })).status).toBe(200);
 
     for (const body of [
       { code },
       { app: PORTAL },
       { code, app: PORTAL, user: ines.user },
-      { code: 1, app: PORTAL },
+      { code: 1, app: PORTAL, code_verifier: VERIFIER },
       { code, app: null },
       [code, PORTAL],
       "not json",
@@ -467,9 +498,12 @@ describe("signing in with Commons", () => {
       expect(await response.json()).toEqual({ error: "INVALID_REQUEST" });
       expect(response.headers.get("Cache-Control")).toMatch(/no-store/);
     }
-    const plainText = await f.redeem(JSON.stringify({ code, app: PORTAL }), {
-      "Content-Type": "text/plain",
-    });
+    const plainText = await f.redeem(
+      JSON.stringify({ code, app: PORTAL, code_verifier: VERIFIER }),
+      {
+        "Content-Type": "text/plain",
+      },
+    );
     expect(plainText.status).toBe(400);
     expect(await plainText.json()).toEqual({ error: "INVALID_REQUEST" });
   });
@@ -478,7 +512,10 @@ describe("signing in with Commons", () => {
     const f = await fixture();
     const ines = await f.person("ines");
     const { code } = await f.approve(ines, PORTAL);
-    const redeemed = await f.redeem({ code, app: PORTAL }, { Origin: PORTAL });
+    const redeemed = await f.redeem(
+      { code, app: PORTAL, code_verifier: VERIFIER },
+      { Origin: PORTAL },
+    );
     expect(redeemed.status).toBe(200);
     expect(redeemed.headers.get("Access-Control-Allow-Origin")).toBeNull();
 
