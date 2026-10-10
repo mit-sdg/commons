@@ -137,6 +137,7 @@ async function startEdge(
   };
   delete env.MONGODB_URI;
   delete env.MONGODB_URL;
+  delete env.SLOW_REQUEST_MS;
   if (mongodbUrl !== undefined) env[mongodbVariable] = mongodbUrl;
   const running = startChild(["bun", "src/start.ts"], {
     cwd: root,
@@ -197,6 +198,9 @@ describe("the Commons process with MongoDB", () => {
       );
       expect(edge.output.join("")).toMatch(
         /commons: a MongoDB round trip takes [\d.]+ ms \(median\), [\d.]+ ms \(95th percentile\) over 20 pings\./,
+      );
+      expect(edge.output.join("")).toContain(
+        "commons: logging requests that take 1000 ms or longer.",
       );
 
       const closedRegistration = await post(edge.origin, "/api/auth/register", {

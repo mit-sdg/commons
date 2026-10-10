@@ -22,7 +22,7 @@ const validateConceptFloor = conceptFloor as unknown as (
   floor: CommonsConceptFloor,
 ) => CommonsConceptFloor;
 
-type MongoClientFactory = (url: string) => Promise<MongoClient>;
+type MongoClientFactory = (url: string, monitorCommands: boolean) => Promise<MongoClient>;
 
 const INVALID_MONGODB_URL = "commons: MONGODB_URL is not a valid MongoDB connection URL.";
 const MONGODB_CONNECTION_FAILED = "commons: could not connect to the configured MongoDB.";
@@ -38,13 +38,14 @@ const noDatabaseSelection = (url: string): boolean => {
   return url.slice(path + 1, end) === "";
 };
 
-async function connectMongo(url: string): Promise<MongoClient> {
+async function connectMongo(url: string, monitorCommands: boolean): Promise<MongoClient> {
   const { MongoClient } = await import("mongodb");
   let client: MongoClient;
   try {
     client = new MongoClient(url, {
       connectTimeoutMS: 5_000,
       serverSelectionTimeoutMS: 5_000,
+      monitorCommands,
     });
   } catch {
     throw new Error(INVALID_MONGODB_URL);
@@ -58,9 +59,14 @@ async function connectMongo(url: string): Promise<MongoClient> {
   }
 }
 
+/**
+ * `countCommand` is called as each MongoDB command starts. Without it the
+ * client is created without command monitoring, which costs nothing.
+ */
 export async function constructConceptFloor(
   mongodbUrl?: string,
   createClient: MongoClientFactory = connectMongo,
+  countCommand?: () => void,
 ): Promise<CommonsConceptFloor> {
   if (mongodbUrl === undefined) {
     throw new Error("commons: MONGODB_URL is required.");
@@ -74,7 +80,7 @@ export async function constructConceptFloor(
 
   let client: MongoClient;
   try {
-    client = await createClient(mongodbUrl);
+    client = await createClient(mongodbUrl, countCommand !== undefined);
   } catch (error) {
     if (
       error instanceof Error &&
@@ -84,6 +90,8 @@ export async function constructConceptFloor(
     }
     throw new Error(MONGODB_CONNECTION_FAILED);
   }
+
+  if (countCommand !== undefined) client.on("commandStarted", countCommand);
 
   let database: Db;
   try {

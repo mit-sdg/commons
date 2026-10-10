@@ -8,11 +8,14 @@ import { startReasonerWorker } from "../reasoning/worker.ts";
 import { commonsMigrations, runMigrations } from "../migrations/index.ts";
 import type { Db } from "mongodb";
 import { constructConceptFloor } from "./concept-floor.ts";
+import { slowRequestLog } from "./slow-requests.ts";
 
 export interface CommonsProcessConfiguration {
   host?: string;
   port: number;
   mongodbUrl?: string;
+  /** Requests that take this many milliseconds or longer are logged; unset, none are. */
+  slowRequestMs?: number;
   mail?: MailConfiguration;
   reasoner?: ReasonerConfiguration;
   bootstrap?: {
@@ -47,13 +50,22 @@ async function roundTrip(database: Db, pings = 20): Promise<string> {
 }
 
 export async function runCommonsProcess(configuration: CommonsProcessConfiguration) {
-  const { host = "127.0.0.1", port, mongodbUrl, mail, reasoner, bootstrap } = configuration;
+  const {
+    host = "127.0.0.1",
+    port,
+    mongodbUrl,
+    slowRequestMs,
+    mail,
+    reasoner,
+    bootstrap,
+  } = configuration;
   if (host.trim() === "") throw new Error("commons: host must not be empty");
   if (!Number.isInteger(port) || port < 1 || port > 65_535) {
     throw new Error(`commons: port must be an integer from 1 to 65535; received "${port}"`);
   }
 
-  const floor = await constructConceptFloor(mongodbUrl);
+  const slowRequests = slowRequestMs === undefined ? undefined : slowRequestLog(slowRequestMs);
+  const floor = await constructConceptFloor(mongodbUrl, undefined, slowRequests?.countCommand);
 
   // Stored state is brought up to the current contracts before anything reads or
   // writes it: before the bootstrap registration below, which would otherwise
@@ -70,7 +82,7 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
 
   let edge: ReturnType<typeof createEdge>;
   try {
-    edge = createEdge(floor.instances);
+    edge = createEdge(floor.instances, undefined, undefined, slowRequests);
   } catch (error) {
     await floor.close().catch(() => undefined);
     throw new Error(`commons: could not start Commons: ${messageOf(error)}`);
@@ -114,6 +126,11 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
   const resource = floor.resources.length === 0 ? floor.name : floor.resources.join(", ");
   console.log(`commons: storing concept state in ${resource}.`);
   console.log(await roundTrip(floor.database));
+  console.log(
+    slowRequests === undefined
+      ? "commons: slow-request logging is off."
+      : `commons: logging requests that take ${slowRequests.thresholdMs} ms or longer.`,
+  );
   console.log(
     mailWorker === undefined
       ? "commons: SMTP email is disabled."

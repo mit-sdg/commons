@@ -1,5 +1,9 @@
 import { runCommonsProcess } from "./assembly/process.ts";
-import { configuredMongodbUrl, validateDeploymentConfiguration } from "./deployment.ts";
+import {
+  configuredMongodbUrl,
+  configuredSlowRequestMs,
+  validateDeploymentConfiguration,
+} from "./deployment.ts";
 import { mailConfigurationFromEnv } from "./email/configuration.ts";
 import { reasonerConfigurationFromEnv } from "./reasoning/configuration.ts";
 
@@ -14,12 +18,14 @@ try {
   }
   validateDeploymentConfiguration();
   const mongodbUrl = configuredMongodbUrl();
+  const slowRequestMs = configuredSlowRequestMs();
   const mail = mailConfigurationFromEnv();
   const reasoner = reasonerConfigurationFromEnv();
   const running = await runCommonsProcess({
     host,
     port,
     ...(mongodbUrl === undefined ? {} : { mongodbUrl }),
+    ...(slowRequestMs === undefined ? {} : { slowRequestMs }),
     ...(mail === undefined ? {} : { mail }),
     ...(reasoner === undefined ? {} : { reasoner }),
     ...(process.env.COMMONS_TEST_BOOTSTRAP === undefined

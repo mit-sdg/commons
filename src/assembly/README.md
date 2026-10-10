@@ -9,9 +9,11 @@ have distinct responsibilities:
   owns the MongoDB client lifecycle;
 - `http-policy.ts` defines the `/api` base path, public error categories, and
   session-cookie binding;
-- `slow-requests.ts` reports every request the gateway held past two seconds
-  as one log line naming the route, its duration, how it ended, and its
-  correlation id, so a slow endpoint is named before anything is changed; and
+- `slow-requests.ts` logs each request the edge took `SLOW_REQUEST_MS` or
+  longer to serve (one second unless set) as one line naming the endpoint
+  path, its time, and the MongoDB commands issued while serving it, counted
+  through the client's command monitoring and attributed to the request by
+  its async context; and
 - `process.ts` starts the edge listener and closes its selected resources.
 
 ## Concept state

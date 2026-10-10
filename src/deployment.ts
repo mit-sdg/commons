@@ -1,3 +1,4 @@
+import { SLOW_REQUEST_MS } from "./assembly/slow-requests.ts";
 import { isPasswordVerifier } from "./concepts/authenticating/password-verifier.ts";
 
 export function configuredPublicOrigin(env: NodeJS.ProcessEnv = process.env): string {
@@ -36,6 +37,20 @@ export function configuredMongodbUrl(env: NodeJS.ProcessEnv = process.env): stri
   return uri ?? url;
 }
 
+/** Requests that take this many milliseconds or longer are logged; `0` or `off` logs none. */
+export function configuredSlowRequestMs(env: NodeJS.ProcessEnv = process.env): number | undefined {
+  const source = env.SLOW_REQUEST_MS?.trim() ?? "";
+  if (source === "") return SLOW_REQUEST_MS;
+  if (source.toLowerCase() === "off") return undefined;
+  const ms = /^\d+$/.test(source) ? Number(source) : Number.NaN;
+  if (!Number.isSafeInteger(ms)) {
+    throw new Error(
+      `commons: SLOW_REQUEST_MS must be a whole number of milliseconds, 0, or off; received "${source}"`,
+    );
+  }
+  return ms === 0 ? undefined : ms;
+}
+
 export function configuredAdminSetupSecretVerifier(
   env: NodeJS.ProcessEnv = process.env,
 ): string | undefined {
@@ -66,6 +81,7 @@ function configuredDerivationSecret(env: NodeJS.ProcessEnv, name: string): strin
 export function validateDeploymentConfiguration(env: NodeJS.ProcessEnv = process.env): void {
   configuredAdminSetupSecretVerifier(env);
   configuredConnectAppDomain(env);
+  configuredSlowRequestMs(env);
   const mongodbUrl = configuredMongodbUrl(env);
   if (env.NODE_ENV !== "production") return;
   if (env.PUBLIC_ORIGIN === undefined) {

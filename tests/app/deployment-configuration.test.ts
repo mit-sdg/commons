@@ -168,6 +168,23 @@ test("reads the database name from mongodb:// and mongodb+srv:// URL paths", asy
   }
 });
 
+test("monitors MongoDB commands only when a counter is supplied", async () => {
+  const url = "mongodb://127.0.0.1:27017/commons";
+  for (const countCommand of [undefined, () => {}]) {
+    let monitored: boolean | undefined;
+    const floor = await constructConceptFloor(
+      url,
+      async (candidate, monitorCommands) => {
+        monitored = monitorCommands;
+        return new MongoClient(candidate, { monitorCommands });
+      },
+      countCommand,
+    );
+    expect(monitored).toBe(countCommand !== undefined);
+    await floor.close();
+  }
+});
+
 test("requires a valid MongoDB URL with database selection without exposing credentials", async () => {
   for (const [url, message] of [
     [

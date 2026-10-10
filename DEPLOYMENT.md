@@ -39,6 +39,14 @@ facilities:
 | `GEMINI_MODEL`            | Optional model name; `gemini-3.7-flash` when unset                                                                           |
 | `REASONER`                | Optional; `gemini` is the default with a key. `scripted` is refused in production                                            |
 | `SMTP_*`                  | Optional existing SMTP configuration described below                                                                         |
+| `SLOW_REQUEST_MS`         | Optional; a request that takes this many milliseconds or longer is logged. `1000` when unset; `0` or `off` logs none         |
+
+Each slow request is logged as one `[edge]` line with the endpoint path, the
+time taken, and the number of MongoDB commands issued while serving it, such
+as `commons: slow request /threads/index took 1840 ms and 296 MongoDB commands.`
+The line never carries a query string, request body, session, or user. Startup
+logs the threshold in use beside the time of one MongoDB round trip, the number
+to read a slow request against.
 
 `MONGODB_URL` remains a supported legacy alias. If both MongoDB variables are
 nonempty, they must contain the same value. Commons refuses conflicting values
@@ -210,7 +218,7 @@ prefixed `[edge]` and `[web]`, so the platform's log for the workload holds
 the reason. Startup refuses, with a one-line message, on: a missing
 `MONGODB_URI`; conflicting `MONGODB_URI` and `MONGODB_URL`; a missing
 `PUBLIC_ORIGIN` or one with a trailing slash; a `CONNECT_APP_DOMAIN` that is
-not a bare hostname; an `INVITATION_SECRET` or `VOUCHER_SECRET` under 32
+not a bare hostname; a `SLOW_REQUEST_MS` that is not a whole number or `off`; an `INVITATION_SECRET` or `VOUCHER_SECRET` under 32
 characters, or the two equal; and `REASONER=scripted` in production. A start that reaches the migrations and
 stops there names the migration and its reason; follow that diagnostic and the
 migration guidance above before restarting or restoring a backup. A running

@@ -1,84 +1,103 @@
-import { afterAll, afterEach, expect, test, vi } from "vite-plus/test";
+import { MongoClient } from "mongodb";
+import { afterAll, beforeAll, expect, test, vi } from "vite-plus/test";
 import { createEdge } from "../../src/edge.ts";
 import { mongoImplementations } from "../../src/concepts.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
-import { slowRequestObserver } from "../../src/assembly/slow-requests.ts";
+import { testDbUri } from "../../src/concepts/testing.ts";
+import { slowRequestLog, type SlowRequestLog } from "../../src/assembly/slow-requests.ts";
+import { configuredSlowRequestMs } from "../../src/deployment.ts";
 
-afterAll(stopTestDb);
-afterEach(() => vi.restoreAllMocks());
+const databaseName = `slow-requests-${crypto.randomUUID()}`;
+let client: MongoClient;
+let currentLog: SlowRequestLog | undefined;
 
-const settled = (durationMs: number, route = "/live/p/wall-signed") =>
-  ({
-    type: "invocation-settled",
-    at: Date.now(),
-    route,
-    correlationId: "corr-1",
-    result: "success",
-    durationMs,
-  }) as const;
-
-test("a request held past the threshold prints one line with route, duration, and correlation id", () => {
-  const lines: string[] = [];
-  const observe = slowRequestObserver((line) => lines.push(line));
-  observe(settled(2_345.6));
-  expect(lines).toEqual([
-    "commons: slow request /live/p/wall-signed took 2346 ms (success, correlation corr-1)",
-  ]);
+beforeAll(async () => {
+  client = new MongoClient(await testDbUri(), { monitorCommands: true });
+  client.on("commandStarted", () => currentLog?.countCommand());
+  await client.connect();
 });
 
-test("a request that settled in time prints nothing, as does any other event", () => {
+afterAll(async () => {
+  await client.db(databaseName).dropDatabase();
+  await client.close();
+});
+
+/** An edge whose requests are timed by a log at `thresholdMs`, printing into `lines`. */
+function edgeLoggingAt(thresholdMs: number | undefined) {
   const lines: string[] = [];
-  const observe = slowRequestObserver((line) => lines.push(line));
-  observe(settled(1_999));
-  observe(settled(2_000));
-  observe({ type: "drain-state", at: Date.now(), state: "idle" });
+  currentLog =
+    thresholdMs === undefined ? undefined : slowRequestLog(thresholdMs, (line) => lines.push(line));
+  const instances = mongoImplementations(client.db(databaseName));
+  const edge = createEdge(instances, "https://commons.test", undefined, currentLog);
+  const login = (query = "") =>
+    edge.fetch(
+      new Request(`https://commons.test/api/auth/login${query}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: "nobody", password: "password123" }),
+      }),
+    );
+  const holdLookups = (ms: number) => {
+    const lookup = instances.Authenticating._getByUsername.bind(instances.Authenticating);
+    vi.spyOn(instances.Authenticating, "_getByUsername").mockImplementation(async (input) => {
+      await new Promise((wake) => setTimeout(wake, ms));
+      return lookup(input);
+    });
+  };
+  return { edge, lines, login, holdLookups };
+}
+
+test("a request over the threshold logs one line with its logical path, time, and MongoDB commands", async () => {
+  const { lines, login, holdLookups } = edgeLoggingAt(200);
+  holdLookups(250);
+  expect((await login("?session=query-secret&user=maya")).status).toBe(401);
+  expect(lines).toHaveLength(1);
+  const [, ms, commands] =
+    /^commons: slow request \/auth\/login took (\d+) ms and (\d+) MongoDB commands\.$/.exec(
+      lines[0],
+    ) ?? [];
+  expect(Number(ms)).toBeGreaterThanOrEqual(200);
+  expect(Number(commands)).toBeGreaterThan(0);
+  expect(lines[0]).not.toMatch(/\?|query-secret|maya|nobody/);
+});
+
+test("a request under the threshold logs nothing", async () => {
+  const { lines, login } = edgeLoggingAt(10_000);
+  expect((await login()).status).toBe(401);
   expect(lines).toEqual([]);
 });
 
-test("a timed-out request is reported with the gateway's code", () => {
-  const lines: string[] = [];
-  const observe = slowRequestObserver((line) => lines.push(line));
-  observe({
-    ...settled(30_000, "/live/walls/read"),
-    result: "framework-error",
-    frameworkCode: "TIMED_OUT",
-  });
-  expect(lines).toEqual([
-    "commons: slow request /live/walls/read took 30000 ms (TIMED_OUT, correlation corr-1)",
+test("a path outside the served routes is logged without its text", async () => {
+  const { edge, lines } = edgeLoggingAt(0);
+  await edge.fetch(
+    new Request("https://commons.test/api/reset/tok-123?code=9", { method: "POST" }),
+  );
+  await edge.fetch(new Request("https://commons.test/health/live"));
+  expect(lines.map((line) => line.replace(/ took .*/, ""))).toEqual([
+    "commons: slow request (unserved)",
+    "commons: slow request /health/live",
   ]);
 });
 
-test("the edge reports a slow request and stays quiet about a fast one", async () => {
-  const instances = mongoImplementations(await testDb());
-  const edge = createEdge(instances, "https://commons.test");
+test("with logging off, a slow request logs nothing", async () => {
+  expect(configuredSlowRequestMs({ SLOW_REQUEST_MS: "off" })).toBeUndefined();
+  expect(configuredSlowRequestMs({ SLOW_REQUEST_MS: "0" })).toBeUndefined();
   const warned = vi.spyOn(console, "warn").mockImplementation(() => {});
-  const lookup = instances.Authenticating._getByUsername.bind(instances.Authenticating);
-  const held = vi
-    .spyOn(instances.Authenticating, "_getByUsername")
-    .mockImplementation(async (input) => {
-      await new Promise((wake) => setTimeout(wake, 2_100));
-      return lookup(input);
-    });
-  const login = (username: string) =>
-    edge.fetch(
-      new Request("https://commons.test/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password: "password123" }),
-      }),
+  const logged = vi.spyOn(console, "log").mockImplementation(() => {});
+  const { login, holdLookups } = edgeLoggingAt(undefined);
+  holdLookups(250);
+  expect((await login()).status).toBe(401);
+  const printed = [...warned.mock.calls, ...logged.mock.calls].map((call) => String(call[0]));
+  expect(printed.filter((line) => line.includes("slow request"))).toEqual([]);
+});
+
+test("SLOW_REQUEST_MS defaults to one second and refuses anything but whole milliseconds or off", () => {
+  expect(configuredSlowRequestMs({})).toBe(1_000);
+  expect(configuredSlowRequestMs({ SLOW_REQUEST_MS: "" })).toBe(1_000);
+  expect(configuredSlowRequestMs({ SLOW_REQUEST_MS: " 250 " })).toBe(250);
+  expect(configuredSlowRequestMs({ SLOW_REQUEST_MS: "OFF" })).toBeUndefined();
+  for (const value of ["-1", "1.5", "1e3", "fast", "on"]) {
+    expect(() => configuredSlowRequestMs({ SLOW_REQUEST_MS: value })).toThrow(
+      `commons: SLOW_REQUEST_MS must be a whole number of milliseconds, 0, or off; received "${value}"`,
     );
-  expect((await login("nobody")).status).toBe(401);
-  const slow = warned.mock.calls
-    .map((call) => String(call[0]))
-    .filter((line) => line.startsWith("commons: slow request"));
-  expect(slow).toHaveLength(1);
-  expect(slow[0]).toMatch(
-    /^commons: slow request \/auth\/login took 2\d{3} ms \(domain-error, correlation [0-9a-f-]{36}\)$/,
-  );
-  held.mockRestore();
-  warned.mockClear();
-  expect((await login("nobody-else")).status).toBe(401);
-  expect(
-    warned.mock.calls.map((call) => String(call[0])).filter((line) => line.startsWith("commons:")),
-  ).toEqual([]);
-}, 20_000);
+  }
+});
