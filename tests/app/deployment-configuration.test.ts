@@ -1,6 +1,7 @@
 import { MongoClient } from "mongodb";
 import { constructConceptFloor } from "../../src/assembly/concept-floor.ts";
 import { describe, expect, test } from "vite-plus/test";
+import { testDbUri } from "../../src/concepts/testing.ts";
 import {
   configuredConnectAppDomain,
   configuredMongodbUrl,
@@ -168,19 +169,17 @@ test("reads the database name from mongodb:// and mongodb+srv:// URL paths", asy
   }
 });
 
-test("monitors MongoDB commands only when an observer is supplied", async () => {
-  const url = "mongodb://127.0.0.1:27017/commons";
-  for (const observe of [undefined, () => {}]) {
-    let monitored: boolean | undefined;
-    const floor = await constructConceptFloor(
-      url,
-      async (candidate, monitorCommands) => {
-        monitored = monitorCommands;
-        return new MongoClient(candidate, { monitorCommands });
-      },
-      observe,
-    );
-    expect(monitored).toBe(observe !== undefined);
+test("hands the client to an observer without turning on command monitoring", async () => {
+  const url = new URL(await testDbUri());
+  url.pathname = `/observed-${crypto.randomUUID()}`;
+  let observed: MongoClient | undefined;
+  const floor = await constructConceptFloor(url.toString(), undefined, (client) => {
+    observed = client;
+  });
+  try {
+    expect(observed?.options.monitorCommands).toBe(false);
+  } finally {
+    await floor.database.dropDatabase();
     await floor.close();
   }
 });

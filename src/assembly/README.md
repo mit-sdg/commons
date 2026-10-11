@@ -12,9 +12,9 @@ have distinct responsibilities:
 - `slow-requests.ts` logs each request the edge took `SLOW_REQUEST_MS` or
   longer to serve (one second unless set) as one line naming the endpoint
   path, its time, the MongoDB commands issued while serving it, and the time
-  it spent waiting for a pool connection, read from the client's command and
-  connection-pool events and attributed to the request by its async context;
-  and
+  it spent waiting for a pool connection, read from the client's
+  connection-pool events and attributed to the request whose async context
+  started each checkout; and
 - `process.ts` starts the edge listener and closes its selected resources.
 
 ## Concept state

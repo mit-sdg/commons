@@ -6,7 +6,7 @@ export const SLOW_REQUEST_MS = 1_000;
 
 export interface SlowRequestLog {
   readonly thresholdMs: number;
-  /** Follows the commands and connection checkouts of a client created with `monitorCommands`. */
+  /** Follows the connection checkouts of the client's pools. */
   observe(client: MongoClient): void;
   /** Serves a request and logs one line when it took `thresholdMs` or longer. */
   measure(path: string, serve: () => Promise<Response>): Promise<Response>;
@@ -17,6 +17,20 @@ interface Wait {
   start: number;
   end: number;
 }
+
+interface Request {
+  commands: number;
+  waits: Wait[];
+}
+
+/** A checkout still waiting, with the whole millisecond the driver stamped on it. */
+interface Checkout {
+  request: Request | undefined;
+  startedMs: number;
+}
+
+/** Checkouts kept per pool before the oldest is dropped; reached only if events go missing. */
+const PENDING_LIMIT = 10_000;
 
 /** Milliseconds between `from` and `to` covered by at least one wait, so overlapping waits count once. */
 function waitedMs(waits: readonly Wait[], from: number, to: number): number {
@@ -35,57 +49,68 @@ function waitedMs(waits: readonly Wait[], from: number, to: number): number {
 
 /**
  * Logs each slow request with its logical path, its time, the MongoDB commands
- * issued while serving it, and how much of that time at least one of its
- * commands was waiting for a pool connection. A command counts against the
- * request whose async context issued it. The driver emits a finished wait from
- * the context that freed the connection, often another request's, so the wait
- * is held under the connection's id until the first command on that connection
- * starts, and counts against that command's request. Connection ids are
- * numbered per server, so the match is exact with one server; with several
- * serving at once, two waits could change places. A wait that times out is
- * emitted in the waiting request's own context.
+ * issued while serving it, and how much of that time at least one of them was
+ * waiting for a pool connection. Each command checks out one connection, and
+ * the checkout starts in the async context of the request that issued it, so
+ * checkouts are counted and remembered there. The end of a wait is emitted from
+ * whatever context freed or opened the connection, and not always in the order
+ * the checkouts started, so it is matched back to its checkout by pool and by the
+ * millisecond the checkout started, which is the end's time less its duration.
+ * Checkouts that started in the same millisecond on one pool are told apart by
+ * age only, so their waits can change places between requests.
  */
 export function slowRequestLog(
   thresholdMs: number,
   print: (line: string) => void = (line) => console.warn(line),
 ): SlowRequestLog {
-  const requests = new AsyncLocalStorage<{ commands: number; waits: Wait[] }>();
-  const checkedOut = new Map<string | number, Wait & { pool: string }>();
+  const requests = new AsyncLocalStorage<Request>();
+  const pools = new Map<string, Checkout[]>();
+
+  const settle = (
+    address: string,
+    durationMS: number,
+    eligible: (checkout: Checkout) => boolean = () => true,
+  ) => {
+    const pending = pools.get(address);
+    if (pending === undefined) return;
+    const end = performance.now();
+    const startedMs = Math.floor(end) - durationMS;
+    let index = pending.findIndex(
+      (checkout) => checkout.startedMs === startedMs && eligible(checkout),
+    );
+    if (index === -1) {
+      index = pending.findIndex(
+        (checkout) => Math.abs(checkout.startedMs - startedMs) <= 1 && eligible(checkout),
+      );
+    }
+    if (index === -1) return;
+    const [checkout] = pending.splice(index, 1);
+    checkout.request?.waits.push({ start: end - durationMS, end });
+  };
+
   return {
     thresholdMs,
     observe(client) {
-      client.on("connectionCheckedOut", (event) => {
-        const end = performance.now();
-        checkedOut.set(event.connectionId, {
-          pool: event.address,
-          start: end - event.durationMS,
-          end,
-        });
+      client.on("connectionCheckOutStarted", (event) => {
+        const request = requests.getStore();
+        if (request !== undefined) request.commands += 1;
+        let pending = pools.get(event.address);
+        if (pending === undefined) pools.set(event.address, (pending = []));
+        pending.push({ request, startedMs: Math.floor(performance.now()) });
+        if (pending.length > PENDING_LIMIT) pending.shift();
       });
-      client.on("connectionCheckedIn", (event) => {
-        if (checkedOut.get(event.connectionId)?.pool === event.address) {
-          checkedOut.delete(event.connectionId);
-        }
-      });
+      client.on("connectionCheckedOut", (event) => settle(event.address, event.durationMS));
       client.on("connectionCheckOutFailed", (event) => {
-        if (event.reason !== "timeout") return;
-        const end = performance.now();
-        requests.getStore()?.waits.push({ start: end - event.durationMS, end });
-      });
-      client.on("commandStarted", (event) => {
-        let wait: Wait | undefined;
-        if (event.connectionId !== undefined) {
-          wait = checkedOut.get(event.connectionId);
-          checkedOut.delete(event.connectionId);
+        if (event.reason !== "timeout") {
+          settle(event.address, event.durationMS);
+          return;
         }
         const request = requests.getStore();
-        if (request === undefined) return;
-        request.commands += 1;
-        if (wait !== undefined) request.waits.push(wait);
+        settle(event.address, event.durationMS, (checkout) => checkout.request === request);
       });
     },
     async measure(path, serve) {
-      const request = { commands: 0, waits: [] as Wait[] };
+      const request: Request = { commands: 0, waits: [] };
       const start = performance.now();
       try {
         return await requests.run(request, serve);

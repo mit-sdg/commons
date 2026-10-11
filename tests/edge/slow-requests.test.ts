@@ -28,9 +28,9 @@ afterAll(async () => {
 /** A client of its own, followed by `log`, that the test closes afterwards. */
 async function observedClient(
   log: ReturnType<typeof slowRequestLog>,
-  options: { maxPoolSize?: number } = {},
+  options: { maxPoolSize?: number; monitorCommands?: boolean } = {},
 ) {
-  const own = new MongoClient(await testDbUri(), { ...options, monitorCommands: true });
+  const own = new MongoClient(await testDbUri(), options);
   observed.push(own);
   log.observe(own);
   await own.connect();
@@ -64,7 +64,6 @@ async function edgeLoggingAt(thresholdMs: number | undefined) {
 }
 
 const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms));
-const withoutTime = (line: string) => line.replace(/ took \d+ ms/, "");
 
 test("a request over the threshold logs one line with its logical path, time, and MongoDB commands", async () => {
   const { lines, login, holdLookups } = await edgeLoggingAt(200);
@@ -111,62 +110,130 @@ test("with logging off, a slow request logs nothing", async () => {
   expect(printed.filter((line) => line.includes("slow request"))).toEqual([]);
 });
 
-test("SLOW_REQUEST_MS defaults to one second and refuses anything but whole milliseconds or off", () => {
-  expect(configuredSlowRequestMs({})).toBe(1_000);
-  expect(configuredSlowRequestMs({ SLOW_REQUEST_MS: "" })).toBe(1_000);
-  expect(configuredSlowRequestMs({ SLOW_REQUEST_MS: " 250 " })).toBe(250);
-  expect(configuredSlowRequestMs({ SLOW_REQUEST_MS: "OFF" })).toBeUndefined();
+test("SLOW_REQUEST_MS defaults to one second, and anything but whole milliseconds turns the log off with one warning", () => {
+  const warnings: string[] = [];
+  const configured = (value: string | undefined) =>
+    configuredSlowRequestMs({ SLOW_REQUEST_MS: value }, (line) => warnings.push(line));
+  expect(configured(undefined)).toBe(1_000);
+  expect(configured("")).toBe(1_000);
+  expect(configured(" 250 ")).toBe(250);
+  expect(configured("OFF")).toBeUndefined();
+  expect(configured("0")).toBeUndefined();
+  expect(warnings).toEqual([]);
   for (const value of ["-1", "1.5", "1e3", "fast", "on"]) {
-    expect(() => configuredSlowRequestMs({ SLOW_REQUEST_MS: value })).toThrow(
-      `commons: SLOW_REQUEST_MS must be a whole number of milliseconds, 0, or off; received "${value}"`,
-    );
+    expect(configured(value)).toBeUndefined();
   }
+  expect(warnings).toEqual(
+    ["-1", "1.5", "1e3", "fast", "on"].map(
+      (value) =>
+        `commons: SLOW_REQUEST_MS "${value}" is not a number of milliseconds; slow requests are not logged.`,
+    ),
+  );
 });
 
-test("a connection wait counts once, against the request whose command ran on the connection", async () => {
+/** Reads the figures from each logged line, by path. */
+function figures(lines: readonly string[]) {
+  return new Map(
+    lines.map((line) => {
+      const [, path, ms, commands, waited] =
+        /^commons: slow request (\S+) took (\d+) ms and (\d+) MongoDB commands, (\d+) ms of it waiting for a connection\.$/.exec(
+          line,
+        ) ?? [];
+      return [path, { ms: Number(ms), commands: Number(commands), waited: Number(waited) }];
+    }),
+  );
+}
+
+test("a connection wait counts once, against the request whose checkout it ends, in whatever order waits end", async () => {
   const lines: string[] = [];
   const log = slowRequestLog(0, (line) => lines.push(line));
   const driver = new EventEmitter();
   log.observe(driver as unknown as MongoClient);
-  const checkedOut = (connectionId: number, durationMS: number) =>
-    driver.emit("connectionCheckedOut", { address: "db:27017", connectionId, durationMS });
-  const commandStarted = (connectionId: number) =>
-    driver.emit("commandStarted", { address: "10.0.0.1:27017", connectionId });
-  const checkOutFailed = (reason: string, durationMS: number) =>
-    driver.emit("connectionCheckOutFailed", { address: "db:27017", reason, durationMS });
+  const address = "db:27017";
+  // Like the driver: a checkout is stamped with the whole millisecond it
+  // started, and its end reports the whole milliseconds since then.
+  const checkOutStarted = () => {
+    driver.emit("connectionCheckOutStarted", { address });
+    return Math.floor(performance.now());
+  };
+  const since = (started: number) => Math.floor(performance.now()) - started;
+  const checkedOut = (started: number) =>
+    driver.emit("connectionCheckedOut", { address, connectionId: 1, durationMS: since(started) });
+  const checkOutFailed = (started: number, reason: string) =>
+    driver.emit("connectionCheckOutFailed", { address, reason, durationMS: since(started) });
 
   let release = () => {};
   const released = new Promise<void>((wake) => (release = wake));
+  const checkouts: number[] = [];
   await Promise.all([
-    log.measure("/waiting", async () => {
+    log.measure("/early", async () => {
+      checkouts[0] = checkOutStarted();
       await released;
-      commandStarted(1);
-      commandStarted(2);
       return new Response();
     }),
-    // The driver emits a finished wait from the context of the request that
-    // freed the connection, so the other request's waits are emitted here.
-    log.measure("/freeing", async () => {
-      await sleep(80);
-      checkedOut(1, 60);
-      checkedOut(2, 40);
-      checkedOut(3, 0);
-      commandStarted(3);
-      release();
+    log.measure("/late", async () => {
+      await sleep(40);
+      checkouts[1] = checkOutStarted();
+      await released;
       return new Response();
     }),
     log.measure("/timing-out", async () => {
-      await sleep(80);
-      checkOutFailed("timeout", 30);
-      checkOutFailed("poolClosed", 50);
+      const started = checkOutStarted();
+      await sleep(50);
+      checkOutFailed(started, "timeout");
+      await released;
+      return new Response();
+    }),
+    // The driver ends waits from the context of whatever freed or opened a
+    // connection, and a connection opened for the earlier checkout can arrive
+    // after a later checkout was served.
+    log.measure("/freeing", async () => {
+      await sleep(100);
+      checkOutFailed(checkouts[1], "connectionError");
+      checkedOut(checkouts[0]);
+      checkedOut(checkOutStarted());
+      release();
       return new Response();
     }),
   ]);
-  expect(lines.map(withoutTime).sort()).toEqual([
-    "commons: slow request /freeing and 1 MongoDB commands, 0 ms of it waiting for a connection.",
-    "commons: slow request /timing-out and 0 MongoDB commands, 30 ms of it waiting for a connection.",
-    "commons: slow request /waiting and 2 MongoDB commands, 60 ms of it waiting for a connection.",
+  const by = figures(lines);
+  const early = by.get("/early");
+  const late = by.get("/late");
+  const timingOut = by.get("/timing-out");
+  const freeing = by.get("/freeing");
+  expect([early, late, timingOut, freeing].map((request) => request?.commands)).toEqual([
+    1, 1, 1, 1,
   ]);
+  expect(early?.waited).toBeGreaterThanOrEqual(90);
+  expect(late?.waited).toBeGreaterThanOrEqual(40);
+  expect(late?.waited).toBeLessThanOrEqual((early?.waited ?? 0) - 30);
+  expect(timingOut?.waited).toBeGreaterThanOrEqual(45);
+  expect(timingOut?.waited).toBeLessThanOrEqual(timingOut?.ms ?? 0);
+  expect(freeing?.waited).toBeLessThanOrEqual(2);
+});
+
+test("overlapping waits count once", async () => {
+  const lines: string[] = [];
+  const log = slowRequestLog(0, (line) => lines.push(line));
+  const driver = new EventEmitter();
+  log.observe(driver as unknown as MongoClient);
+  const address = "db:27017";
+  await log.measure("/overlapping", async () => {
+    const started = Math.floor(performance.now());
+    for (let checkout = 0; checkout < 3; checkout += 1) {
+      driver.emit("connectionCheckOutStarted", { address });
+    }
+    await sleep(60);
+    for (let checkout = 0; checkout < 3; checkout += 1) {
+      const durationMS = Math.floor(performance.now()) - started;
+      driver.emit("connectionCheckedOut", { address, connectionId: checkout, durationMS });
+    }
+    return new Response();
+  });
+  const overlapping = figures(lines).get("/overlapping");
+  expect(overlapping?.commands).toBe(3);
+  expect(overlapping?.waited).toBeGreaterThanOrEqual(55);
+  expect(overlapping?.waited).toBeLessThanOrEqual(overlapping?.ms ?? 0);
 });
 
 test("with one pooled connection, a request's queued reads are its own wait, not the wait of the request holding the connection", async () => {
@@ -176,31 +243,74 @@ test("with one pooled connection, a request's queued reads are its own wait, not
   const documents = pooled.db(databaseName).collection("pool-waits");
   await documents.insertOne({ kind: "pool-wait" });
 
+  const held = new Promise((wake) => pooled.once("connectionCheckedOut", wake));
   const holding = log.measure("/holding", async () => {
     await documents.find({ $where: "sleep(300) || true" }).toArray();
     return new Response();
   });
-  await new Promise((wake) => pooled.once("commandStarted", wake));
+  await held;
   const queued = log.measure("/queued", async () => {
     await Promise.all([1, 2, 3, 4].map(() => documents.findOne({ kind: "pool-wait" })));
     return new Response();
   });
   await Promise.all([holding, queued]);
 
-  const parsed = new Map(
-    lines.map((line) => {
-      const [, path, ms, commands, waited] =
-        /^commons: slow request (\S+) took (\d+) ms and (\d+) MongoDB commands, (\d+) ms of it waiting for a connection\.$/.exec(
-          line,
-        ) ?? [];
-      return [path, { ms: Number(ms), commands: Number(commands), waited: Number(waited) }];
-    }),
-  );
-  const holder = parsed.get("/holding");
-  const waiter = parsed.get("/queued");
+  const by = figures(lines);
+  const holder = by.get("/holding");
+  const waiter = by.get("/queued");
   expect(holder?.commands).toBe(1);
   expect(holder?.waited).toBeLessThan(50);
   expect(waiter?.commands).toBe(4);
   expect(waiter?.waited).toBeGreaterThanOrEqual(200);
   expect(waiter?.waited).toBeLessThanOrEqual(waiter?.ms ?? 0);
+});
+
+test("the commands counted from checkouts match the commands the driver sends", async () => {
+  const lines: string[] = [];
+  const log = slowRequestLog(0, (line) => lines.push(line));
+  const monitored = await observedClient(log, { monitorCommands: true });
+  let sent = 0;
+  monitored.on("commandStarted", () => (sent += 1));
+  const documents = monitored.db(databaseName).collection("counted");
+  const login = createEdge(
+    mongoImplementations(monitored.db(databaseName)),
+    "https://commons.test",
+    undefined,
+    log,
+  ).fetch(
+    new Request("https://commons.test/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: "nobody", password: "password123" }),
+    }),
+  );
+  expect((await login).status).toBe(401);
+  await log.measure("/mixed", async () => {
+    await documents.createIndex({ thread: 1 });
+    await documents.insertMany(
+      Array.from({ length: 7 }, (_, index) => ({ thread: index % 2, index })),
+    );
+    await documents.find({}).batchSize(2).toArray();
+    const cursor = documents.find({}).batchSize(2);
+    await cursor.next();
+    await cursor.close();
+    await documents.findOne({ index: 3 });
+    await documents.findOneAndUpdate({ index: 3 }, { $set: { seen: true } });
+    await documents.updateOne({ index: 4 }, { $set: { seen: true } });
+    await documents.countDocuments({ thread: 1 });
+    await documents.distinct("thread");
+    await documents.aggregate([{ $group: { _id: "$thread", count: { $sum: 1 } } }]).toArray();
+    await documents.bulkWrite([
+      { updateOne: { filter: { index: 5 }, update: { $set: { seen: true } } } },
+      { deleteOne: { filter: { index: 6 } } },
+    ]);
+    await documents.deleteMany({ seen: true });
+    return new Response();
+  });
+  const counted = [...figures(lines).values()].reduce(
+    (total, request) => total + request.commands,
+    0,
+  );
+  expect(counted).toBe(sent);
+  expect(figures(lines).get("/mixed")?.commands).toBeGreaterThan(14);
 });

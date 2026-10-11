@@ -22,7 +22,7 @@ const validateConceptFloor = conceptFloor as unknown as (
   floor: CommonsConceptFloor,
 ) => CommonsConceptFloor;
 
-type MongoClientFactory = (url: string, monitorCommands: boolean) => Promise<MongoClient>;
+type MongoClientFactory = (url: string) => Promise<MongoClient>;
 
 const INVALID_MONGODB_URL = "commons: MONGODB_URL is not a valid MongoDB connection URL.";
 const MONGODB_CONNECTION_FAILED = "commons: could not connect to the configured MongoDB.";
@@ -38,14 +38,13 @@ const noDatabaseSelection = (url: string): boolean => {
   return url.slice(path + 1, end) === "";
 };
 
-async function connectMongo(url: string, monitorCommands: boolean): Promise<MongoClient> {
+async function connectMongo(url: string): Promise<MongoClient> {
   const { MongoClient } = await import("mongodb");
   let client: MongoClient;
   try {
     client = new MongoClient(url, {
       connectTimeoutMS: 5_000,
       serverSelectionTimeoutMS: 5_000,
-      monitorCommands,
     });
   } catch {
     throw new Error(INVALID_MONGODB_URL);
@@ -59,11 +58,7 @@ async function connectMongo(url: string, monitorCommands: boolean): Promise<Mong
   }
 }
 
-/**
- * `observe` is handed the client to follow its commands and connection
- * checkouts. Without it the client is created without command monitoring,
- * which costs nothing.
- */
+/** `observe` is handed the client to follow its connection pools. */
 export async function constructConceptFloor(
   mongodbUrl?: string,
   createClient: MongoClientFactory = connectMongo,
@@ -81,7 +76,7 @@ export async function constructConceptFloor(
 
   let client: MongoClient;
   try {
-    client = await createClient(mongodbUrl, observe !== undefined);
+    client = await createClient(mongodbUrl);
   } catch (error) {
     if (
       error instanceof Error &&

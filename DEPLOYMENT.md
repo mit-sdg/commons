@@ -39,15 +39,19 @@ facilities:
 | `GEMINI_MODEL`            | Optional model name; `gemini-3.7-flash` when unset                                                                           |
 | `REASONER`                | Optional; `gemini` is the default with a key. `scripted` is refused in production                                            |
 | `SMTP_*`                  | Optional existing SMTP configuration described below                                                                         |
-| `SLOW_REQUEST_MS`         | Optional; a request that takes this many milliseconds or longer is logged. `1000` when unset; `0` or `off` logs none         |
+| `SLOW_REQUEST_MS`         | Optional; a request this many milliseconds or longer is logged. `1000` when unset; `0`, `off`, or a non-number logs none     |
 
-Each slow request is logged as one `[edge]` line with the endpoint path, the
+Each slow request is logged as one backend line with the endpoint path, the
 time taken, the number of MongoDB commands issued while serving it, and how
 long it waited for a MongoDB connection, such as
 `commons: slow request /threads/index took 1840 ms and 296 MongoDB commands, 420 ms of it waiting for a connection.`
 The line never carries a query string, request body, session, or user. Startup
 logs the threshold in use beside the time of one MongoDB round trip, the number
-to read a slow request against.
+to read a slow request against. A value of `SLOW_REQUEST_MS` that is not a whole
+number turns the log off and prints one warning line at startup, such as
+`commons: SLOW_REQUEST_MS "abc" is not a number of milliseconds; slow requests are not logged.`
+To measure requests, the backend listens to the MongoDB driver's connection pool
+events, a small cost on each MongoDB operation; `off` removes it.
 
 The waiting time counts the milliseconds of the request during which at least
 one of its commands was waiting for a connection from the driver's pool, either
@@ -223,17 +227,17 @@ MongoDB path are ready. An unreachable backend or failed MongoDB check returns
 
 ## When a start fails
 
-The supervisor prints both processes' output to its own standard output,
-prefixed `[edge]` and `[web]`, so the platform's log for the workload holds
-the reason. Startup refuses, with a one-line message, on: a missing
+The supervisor passes both processes' output through unchanged, so the
+platform's log for the workload holds the reason. Lines from the backend begin
+with `commons:`. Startup refuses, with a one-line message, on: a missing
 `MONGODB_URI`; conflicting `MONGODB_URI` and `MONGODB_URL`; a missing
 `PUBLIC_ORIGIN` or one with a trailing slash; a `CONNECT_APP_DOMAIN` that is
-not a bare hostname; a `SLOW_REQUEST_MS` that is not a whole number or `off`; an `INVITATION_SECRET` or `VOUCHER_SECRET` under 32
+not a bare hostname; an `INVITATION_SECRET` or `VOUCHER_SECRET` under 32
 characters, or the two equal; and `REASONER=scripted` in production. A start that reaches the migrations and
 stops there names the migration and its reason; follow that diagnostic and the
 migration guidance above before restarting or restoring a backup. A running
 stack whose `/health` answers `503` has a frontend up and a backend or
-MongoDB down: read the `[edge]` lines. Terminate TLS at the reverse proxy and
+MongoDB down: read the backend's `commons:` lines. Terminate TLS at the reverse proxy and
 forward to the declared application port; every other combination fails the
 session check at the end of this guide.
 
