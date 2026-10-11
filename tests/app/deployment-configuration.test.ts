@@ -4,6 +4,10 @@ import { describe, expect, test } from "vite-plus/test";
 import { testDbUri } from "../../src/concepts/testing.ts";
 import {
   configuredConnectAppDomain,
+  configuredQueryCache,
+  configuredReadAhead,
+  queryCacheWarning,
+  readAheadWarning,
   configuredMongodbUrl,
   validateDeploymentConfiguration,
 } from "../../src/deployment.ts";
@@ -210,4 +214,50 @@ test("connection failures redact credentials before startup can log them", async
       throw new Error("connection-secret: simulated driver failure");
     }),
   ).rejects.toThrow("commons: could not connect to the configured MongoDB.");
+});
+
+test("reads a list's rows thirty-two at a time unless READ_AHEAD says otherwise", () => {
+  expect(configuredReadAhead({})).toBe(32);
+  expect(configuredReadAhead({ READ_AHEAD: " 4 " })).toBe(4);
+  for (const source of ["0", "1", "off", "OFF"]) {
+    expect(configuredReadAhead({ READ_AHEAD: source })).toBe(1);
+    expect(readAheadWarning({ READ_AHEAD: source })).toBeUndefined();
+  }
+});
+
+test("a READ_AHEAD that is not a number of rows reads one at a time and never stops startup", () => {
+  for (const source of ["-2", "2.5", "false", "lots", "1e3"]) {
+    expect(configuredReadAhead({ READ_AHEAD: source })).toBe(1);
+    expect(readAheadWarning({ READ_AHEAD: source })).toBe(
+      `commons: READ_AHEAD "${source}" is not a number of rows or off; reading the rows of a list one at a time.`,
+    );
+    expect(() =>
+      validateDeploymentConfiguration({
+        READ_AHEAD: source,
+        MONGODB_URI: "mongodb://127.0.0.1/commons",
+      }),
+    ).not.toThrow();
+  }
+});
+
+test("keeps answers since each request arrived unless QUERY_CACHE says memoize", () => {
+  expect(configuredQueryCache({})).toBe("since-dispatch");
+  expect(configuredQueryCache({ QUERY_CACHE: " since-dispatch " })).toBe("since-dispatch");
+  expect(configuredQueryCache({ QUERY_CACHE: "memoize" })).toBe("memoize");
+  expect(queryCacheWarning({ QUERY_CACHE: "memoize" })).toBeUndefined();
+});
+
+test("a QUERY_CACHE that is neither mode clears every cache per request and never stops startup", () => {
+  for (const source of ["off", "none", "Since-Dispatch", "yes"]) {
+    expect(configuredQueryCache({ QUERY_CACHE: source })).toBe("memoize");
+    expect(queryCacheWarning({ QUERY_CACHE: source })).toBe(
+      `commons: QUERY_CACHE "${source}" is not since-dispatch or memoize; clearing every query cache when a request arrives.`,
+    );
+    expect(() =>
+      validateDeploymentConfiguration({
+        QUERY_CACHE: source,
+        MONGODB_URI: "mongodb://127.0.0.1/commons",
+      }),
+    ).not.toThrow();
+  }
 });

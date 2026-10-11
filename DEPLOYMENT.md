@@ -40,6 +40,8 @@ facilities:
 | `REASONER`                | Optional; `gemini` is the default with a key. `scripted` is refused in production                                            |
 | `SMTP_*`                  | Optional existing SMTP configuration described below                                                                         |
 | `SLOW_REQUEST_MS`         | Optional; a request this many milliseconds or longer is logged. `1000` when unset; `0`, `off`, or a non-number logs none     |
+| `READ_AHEAD`              | Optional; rows of one list read from MongoDB at once. `32` when unset; `0`, `1`, `off`, or a non-number read one at a time   |
+| `QUERY_CACHE`             | Optional; `since-dispatch` when unset keeps running requests' answers; `memoize` or any other value clears them per request  |
 
 Each slow request is logged as one backend line with the endpoint path, the
 time taken, the number of MongoDB commands issued while serving it, and how
@@ -81,6 +83,37 @@ no pool size. Two numbers decide whether the pool is large enough:
   2,000 to 3,000 commands a second in testing: about 12 busy connections at a
   4 ms round trip, about 60 at 20 ms. A pool smaller than that makes requests
   wait; a larger one helps only if the database accepts it.
+
+### Reading ahead and reusing answers
+
+`READ_AHEAD` reads the rows of a list together, so a page that lists threads,
+notifications, or grades waits on a few MongoDB round trips rather than one per
+row. Answers are the same as reading one row at a time.
+
+- **Is it on?** Startup logs either `commons: reading up to 32 rows of a list
+at once.` or `commons: reading the rows of a list one at a time.`
+- **Turning it off.** Set `READ_AHEAD=off` in the owner portal. Saving a
+  variable restarts the backend, and a restart during a live class loses the
+  class ([CLASS-DAY.md](CLASS-DAY.md)), so change it between classes. A value
+  that is not a whole number also reads one row at a time and logs a warning;
+  it never stops the server.
+- **MongoDB load.** However many requests are under way, the backend keeps at
+  most 64 rows read ahead at once, plus one row for each request being served,
+  within the driver's pool of 100 connections. On the platform the connection
+  string comes from the storage binding, so raising `maxPoolSize` needs a
+  redeploy; if waits for a connection grow at busy times, set `READ_AHEAD=off`.
+- **Reusing answers.** Every request reads only MongoDB answers fetched since
+  it arrived, so it sees every change made before it. With `QUERY_CACHE` unset
+  (`since-dispatch`), requests already running keep the answers they fetched
+  when another request arrives, instead of fetching them again. Startup then
+  logs a line beginning `commons: each request reuses answers`. Set
+  `QUERY_CACHE=memoize` to clear every answer when a request arrives, as before;
+  like `READ_AHEAD`, it restarts the backend.
+- **Exactly as before.** `READ_AHEAD=off` with `QUERY_CACHE=memoize` reads as
+  the previous release did.
+- **Rolling back the release.** It adds no migration and writes nothing new to
+  MongoDB. Redeploying the previous commit is safe without restoring a backup,
+  and old and new backends may overlap during the redeploy.
 
 `MONGODB_URL` remains a supported legacy alias. If both MongoDB variables are
 nonempty, they must contain the same value. Commons refuses conflicting values
