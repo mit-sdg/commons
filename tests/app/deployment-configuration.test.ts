@@ -168,9 +168,9 @@ test("reads the database name from mongodb:// and mongodb+srv:// URL paths", asy
   }
 });
 
-test("monitors MongoDB commands only when a counter is supplied", async () => {
+test("monitors MongoDB commands only when an observer is supplied", async () => {
   const url = "mongodb://127.0.0.1:27017/commons";
-  for (const countCommand of [undefined, () => {}]) {
+  for (const observe of [undefined, () => {}]) {
     let monitored: boolean | undefined;
     const floor = await constructConceptFloor(
       url,
@@ -178,9 +178,9 @@ test("monitors MongoDB commands only when a counter is supplied", async () => {
         monitored = monitorCommands;
         return new MongoClient(candidate, { monitorCommands });
       },
-      countCommand,
+      observe,
     );
-    expect(monitored).toBe(countCommand !== undefined);
+    expect(monitored).toBe(observe !== undefined);
     await floor.close();
   }
 });

@@ -65,7 +65,7 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
   }
 
   const slowRequests = slowRequestMs === undefined ? undefined : slowRequestLog(slowRequestMs);
-  const floor = await constructConceptFloor(mongodbUrl, undefined, slowRequests?.countCommand);
+  const floor = await constructConceptFloor(mongodbUrl, undefined, slowRequests?.observe);
 
   // Stored state is brought up to the current contracts before anything reads or
   // writes it: before the bootstrap registration below, which would otherwise

@@ -42,11 +42,21 @@ facilities:
 | `SLOW_REQUEST_MS`         | Optional; a request that takes this many milliseconds or longer is logged. `1000` when unset; `0` or `off` logs none         |
 
 Each slow request is logged as one `[edge]` line with the endpoint path, the
-time taken, and the number of MongoDB commands issued while serving it, such
-as `commons: slow request /threads/index took 1840 ms and 296 MongoDB commands.`
+time taken, the number of MongoDB commands issued while serving it, and how
+long it waited for a MongoDB connection, such as
+`commons: slow request /threads/index took 1840 ms and 296 MongoDB commands, 420 ms of it waiting for a connection.`
 The line never carries a query string, request body, session, or user. Startup
 logs the threshold in use beside the time of one MongoDB round trip, the number
 to read a slow request against.
+
+The waiting time counts the milliseconds of the request during which at least
+one of its commands was waiting for a connection from the driver's pool, either
+queued behind other commands or while a new connection opened. Overlapping waits
+count once, so the figure is never more than the request's time. A large wait
+means the pool was full: every connection was busy with other commands. Raise
+`maxPoolSize` in the MongoDB connection string (the driver's default is 100) if
+the database accepts more connections. When the wait is small, the time went to
+MongoDB round trips or to the backend's CPU.
 
 `MONGODB_URL` remains a supported legacy alias. If both MongoDB variables are
 nonempty, they must contain the same value. Commons refuses conflicting values

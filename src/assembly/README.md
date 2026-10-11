@@ -11,9 +11,10 @@ have distinct responsibilities:
   session-cookie binding;
 - `slow-requests.ts` logs each request the edge took `SLOW_REQUEST_MS` or
   longer to serve (one second unless set) as one line naming the endpoint
-  path, its time, and the MongoDB commands issued while serving it, counted
-  through the client's command monitoring and attributed to the request by
-  its async context; and
+  path, its time, the MongoDB commands issued while serving it, and the time
+  it spent waiting for a pool connection, read from the client's command and
+  connection-pool events and attributed to the request by its async context;
+  and
 - `process.ts` starts the edge listener and closes its selected resources.
 
 ## Concept state

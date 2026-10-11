@@ -60,13 +60,14 @@ async function connectMongo(url: string, monitorCommands: boolean): Promise<Mong
 }
 
 /**
- * `countCommand` is called as each MongoDB command starts. Without it the
- * client is created without command monitoring, which costs nothing.
+ * `observe` is handed the client to follow its commands and connection
+ * checkouts. Without it the client is created without command monitoring,
+ * which costs nothing.
  */
 export async function constructConceptFloor(
   mongodbUrl?: string,
   createClient: MongoClientFactory = connectMongo,
-  countCommand?: () => void,
+  observe?: (client: MongoClient) => void,
 ): Promise<CommonsConceptFloor> {
   if (mongodbUrl === undefined) {
     throw new Error("commons: MONGODB_URL is required.");
@@ -80,7 +81,7 @@ export async function constructConceptFloor(
 
   let client: MongoClient;
   try {
-    client = await createClient(mongodbUrl, countCommand !== undefined);
+    client = await createClient(mongodbUrl, observe !== undefined);
   } catch (error) {
     if (
       error instanceof Error &&
@@ -91,7 +92,7 @@ export async function constructConceptFloor(
     throw new Error(MONGODB_CONNECTION_FAILED);
   }
 
-  if (countCommand !== undefined) client.on("commandStarted", countCommand);
+  observe?.(client);
 
   let database: Db;
   try {
