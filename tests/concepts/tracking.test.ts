@@ -83,6 +83,29 @@ for (const [floor, make] of floors) {
       expect(await tracking.markAllSeen({ user: "bob", scope: "c1" })).toEqual({ user: "bob" });
     });
 
+    test("markEachSeen marks the listed registered items once and skips the rest", async () => {
+      const tracking = await make();
+      await tracking.register({ item: "p1", scope: "c1" });
+      await tracking.register({ item: "p2", scope: "c1" });
+      await tracking.register({ item: "p3", scope: "c1" });
+      await tracking.markSeen({ user: "bob", item: "p1" });
+      expect(
+        await tracking.markEachSeen({
+          user: "bob",
+          items: [{ item: "p1" }, { item: "p2" }, { item: "p2" }, { item: "ghost" }],
+        }),
+      ).toEqual({ user: "bob" });
+      expect(await tracking._getUnread({ user: "bob", scope: "c1" })).toEqual([{ item: "p3" }]);
+      expect(await tracking._getUnreadCount({ user: "ann", scope: "c1" })).toEqual({ count: 3 });
+      expect(await tracking.markEachSeen({ user: "bob", items: [] })).toEqual({ user: "bob" });
+      await expect(tracking.markEachSeen({ user: "bob", items: [{ post: "p3" }] })).rejects.toThrow(
+        "every row needs an item",
+      );
+      await tracking.unregister({ item: "p2" });
+      await tracking.register({ item: "p2", scope: "c1" });
+      expect(await tracking._getUnreadCount({ user: "bob", scope: "c1" })).toEqual({ count: 2 });
+    });
+
     test("unregister also clears the item's seen-marks", async () => {
       const tracking = await make();
       await tracking.register({ item: "p1", scope: "c1" });

@@ -12,6 +12,16 @@ interface SeenDoc {
   item: string;
 }
 
+/** The item of each row, or a refusal to guess when the rows are malformed. */
+function itemsOf(rows: unknown): string[] {
+  if (!Array.isArray(rows)) throw new TypeError("markEachSeen: items must be a list of rows.");
+  return rows.map((row: unknown) => {
+    const item = (row as { item?: unknown } | null)?.item;
+    if (typeof item !== "string") throw new TypeError("markEachSeen: every row needs an item.");
+    return item;
+  });
+}
+
 export class MongoTrackingConcept {
   private readonly registered: Collection<RegisteredDoc>;
   private readonly seen: Collection<SeenDoc>;
@@ -69,6 +79,31 @@ export class MongoTrackingConcept {
         await this.seen.insertOne({ user, item: doc._id });
       }
     }
+    return { user };
+  }
+
+  /**
+   * Mark every listed item seen at once; unregistered and already seen items
+   * are skipped. `items` is typed loosely because compositions pass a former,
+   * which the engine's types do not yet accept for a typed list.
+   */
+  async markEachSeen({ user, items }: { user: string; items: unknown }) {
+    const wanted = [...new Set(itemsOf(items))];
+    if (wanted.length === 0) return { user };
+    const registered = await this.registered
+      .find({ _id: { $in: wanted } }, { projection: { _id: 1 } })
+      .toArray();
+    if (registered.length === 0) return { user };
+    await this.seen.bulkWrite(
+      registered.map(({ _id: item }) => ({
+        updateOne: {
+          filter: { user, item },
+          update: { $setOnInsert: { user, item } },
+          upsert: true,
+        },
+      })),
+      { ordered: false },
+    );
     return { user };
   }
 

@@ -9,7 +9,8 @@ Record which items belong to each scope and which items each user has seen.
 Dana registers a discussion in the Algebra course. It is unread for Bob until
 he marks it seen. Marking it seen again or marking an unregistered item is
 refused. Marking the whole scope seen records every remaining item and succeeds
-when none remain. Unregistering the discussion removes it and all of its seen
+when none remain. Marking a list of items seen records the registered ones Bob
+has not seen and skips the rest. Unregistering the discussion removes it and all of its seen
 marks; unregistering it again succeeds. Registering it twice is refused.
 
 ## Types
@@ -78,6 +79,13 @@ markAllSeen(user: User, scope: Scope) : return (user: User)
   where true
   then
     for every registered item in scope the user has not seen,
+      add a seen-mark with user and that item
+    return user
+
+markEachSeen(user: User, items: Rows) : return (user: User)
+  where true
+  then
+    for every row's item that is registered and the user has not seen,
       add a seen-mark with user and that item
     return user
 ```
