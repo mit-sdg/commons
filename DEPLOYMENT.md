@@ -98,10 +98,16 @@ at once.` or `commons: reading the rows of a list one at a time.`
   that is not a whole number also reads one row at a time and logs a warning;
   it never stops the server.
 - **MongoDB load.** However many requests are under way, the backend keeps at
-  most 64 rows read ahead at once, plus one row for each request being served,
-  within the driver's pool of 100 connections. On the platform the connection
-  string comes from the storage binding, so raising `maxPoolSize` needs a
-  redeploy; if waits for a connection grow at busy times, set `READ_AHEAD=off`.
+  most 64 rows read ahead at once, plus one row for each request being served.
+  Each read in flight holds one of the driver's 100 pooled connections, and
+  opened connections stay open, so after the first few pages the backend holds
+  about 64 connections where the previous release held about 7. Once about 36
+  requests are under way, commands can wait for a free connection; the
+  slow-request line shows this as time waiting for a connection. At class start
+  that wait is expected, and the front page still shows sooner than with
+  `READ_AHEAD=off`. On the platform the connection string comes from the
+  storage binding, so raising `maxPoolSize` needs a redeploy. Set
+  `READ_AHEAD=off` if MongoDB refuses connections.
 - **Reusing answers.** Every request reads only MongoDB answers fetched since
   it arrived, so it sees every change made before it. With `QUERY_CACHE` unset
   (`since-dispatch`), requests already running keep the answers they fetched
