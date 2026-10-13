@@ -44,11 +44,11 @@
 
     "@mit-sdg/sync-engine": ["@mit-sdg/sync-engine@./vendor/mit-sdg-sync-engine-1.0.0-beta.18.tgz", { "dependencies": { "mdast-util-from-markdown": "^2.0.3", "semver": "^7.7.3", "typescript": ">=6 <7" }, "bin": { "sync-engine": "./dist/command/main.js" } }, "sha512-Xd2A8B2I21eiJ4DmtDf8Nm4nrlK09QjOkeyKtryXELGK3nyr/ZCHEOUMnHpIOUA1iGZnEH9/YTK/q32c1XFwLg=="],
 
-    "@mit-sdg/sync-engine-analysis": ["@mit-sdg/sync-engine-analysis@./vendor/mit-sdg-sync-engine-analysis-1.0.0-beta.18.tgz", { "dependencies": { "typescript": ">=6 <7" }, "peerDependencies": { "@mit-sdg/sync-engine": "1.0.0-beta.17" }, "bin": { "sync-engine-analysis": "./dist/command.js" } }, "sha512-AHPAnssM6qNChM6jwuJl6mAw8IMxYMDA1x0+7i5uPg3flRihs3QH2FsC//uGWg/3D2YXa7OXgSZTVCjFTt7wqQ=="],
+    "@mit-sdg/sync-engine-analysis": ["@mit-sdg/sync-engine-analysis@./vendor/mit-sdg-sync-engine-analysis-1.0.0-beta.18.tgz", { "dependencies": { "typescript": ">=6 <7" }, "peerDependencies": { "@mit-sdg/sync-engine": "1.0.0-beta.18" }, "bin": { "sync-engine-analysis": "./dist/command.js" } }, "sha512-AHPAnssM6qNChM6jwuJl6mAw8IMxYMDA1x0+7i5uPg3flRihs3QH2FsC//uGWg/3D2YXa7OXgSZTVCjFTt7wqQ=="],
 
     "@mit-sdg/sync-engine-catalog": ["@mit-sdg/sync-engine-catalog@./vendor/mit-sdg-sync-engine-catalog-1.0.0-beta.18.tgz", { "bin": { "sync-engine-catalog": "./dist/command.js" } }, "sha512-9/FmwXw6p/xyAc6VXt0omkNie1X2q6brXJmiKZ+QnLtqyzsDwc5fMJQC9Xt1Xy6lwZWzTjO178God9aA1Wz5Jg=="],
 
-    "@mit-sdg/sync-engine-http": ["@mit-sdg/sync-engine-http@./vendor/mit-sdg-sync-engine-http-1.0.0-beta.18.tgz", { "peerDependencies": { "@mit-sdg/sync-engine": "1.0.0-beta.17" } }, "sha512-nEjkwdBiOs0k0W4lqnW1FfZEY4oALG4k8nUXMHOl2bOHL0jc0IeAO4/OJgR7kyTQ0YZKMBuIXQvXOLd/Jvombw=="],
+    "@mit-sdg/sync-engine-http": ["@mit-sdg/sync-engine-http@./vendor/mit-sdg-sync-engine-http-1.0.0-beta.18.tgz", { "peerDependencies": { "@mit-sdg/sync-engine": "1.0.0-beta.18" } }, "sha512-nEjkwdBiOs0k0W4lqnW1FfZEY4oALG4k8nUXMHOl2bOHL0jc0IeAO4/OJgR7kyTQ0YZKMBuIXQvXOLd/Jvombw=="],
 
     "@mongodb-js/saslprep": ["@mongodb-js/saslprep@1.4.12", "", { "dependencies": { "sparse-bitfield": "^3.0.3" } }, "sha512-QAfAMwNgnYxZ2C6D1HgeP7Gc4i/uvJRim415PCIL9ptRxWMNbWeLBYb2/9R4pGKny/s1FVu2JA2cxCUBUOggrA=="],
 
