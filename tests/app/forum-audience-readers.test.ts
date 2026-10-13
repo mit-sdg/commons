@@ -112,6 +112,7 @@ test("production target routes hide private posts from authors and moderators ou
     ["/locks/lock", { target: conversation }],
     ["/trash/trash", { item: post }],
     ["/unread/markSeen", { item: post }],
+    ["/unread/markAllSeen", { scope: conversation }],
     ["/bookmarks/save", { item: post }],
     ["/bookmarks/unsave", { item: post }],
     ["/bookmarks/isSaved", { item: post }],
@@ -144,6 +145,10 @@ test("production target routes hide private posts from authors and moderators ou
         path,
       ).toMatchObject(missing);
     }
+  for (const person of [f.author, f.moderator, f.reader])
+    expect(
+      await f.instances.Tracking._getUnreadCount({ user: person.user, scope: conversation }),
+    ).toEqual({ count: 1 });
   expect(await f.invoke("/posts/get", { session: f.reader.session, post })).toMatchObject({
     ok: true,
     value: { post: { content: "SECRET audience body" } },
