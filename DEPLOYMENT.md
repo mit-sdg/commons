@@ -108,7 +108,10 @@ at once.` or `commons: reading the rows of a list one at a time.`
   when another request arrives, instead of fetching them again. Startup then
   logs a line beginning `commons: each request reuses answers`. Set
   `QUERY_CACHE=memoize` to clear every answer when a request arrives, as before;
-  like `READ_AHEAD`, it restarts the backend.
+  like `READ_AHEAD`, it restarts the backend. Set it only together with
+  `READ_AHEAD=off`: reading ahead while clearing answers issues about twice the
+  MongoDB commands of the previous release when a class arrives at once. A
+  mistyped value also clears answers and leaves `READ_AHEAD` as it is.
 - **Exactly as before.** `READ_AHEAD=off` with `QUERY_CACHE=memoize` reads as
   the previous release did. Marking a thread seen stays one write whatever
   they are set to; only redeploying the previous release brings back one write
