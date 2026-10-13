@@ -110,7 +110,9 @@ at once.` or `commons: reading the rows of a list one at a time.`
   `QUERY_CACHE=memoize` to clear every answer when a request arrives, as before;
   like `READ_AHEAD`, it restarts the backend.
 - **Exactly as before.** `READ_AHEAD=off` with `QUERY_CACHE=memoize` reads as
-  the previous release did.
+  the previous release did. Marking a thread seen stays one write whatever
+  they are set to; only redeploying the previous release brings back one write
+  per post.
 - **Rolling back the release.** It adds no migration and writes nothing new to
   MongoDB. Redeploying the previous commit is safe without restoring a backup.
   As with any release, stop the running backend before the other one starts.
