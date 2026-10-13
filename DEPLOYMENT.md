@@ -112,8 +112,8 @@ at once.` or `commons: reading the rows of a list one at a time.`
 - **Exactly as before.** `READ_AHEAD=off` with `QUERY_CACHE=memoize` reads as
   the previous release did.
 - **Rolling back the release.** It adds no migration and writes nothing new to
-  MongoDB. Redeploying the previous commit is safe without restoring a backup,
-  and old and new backends may overlap during the redeploy.
+  MongoDB. Redeploying the previous commit is safe without restoring a backup.
+  As with any release, stop the running backend before the other one starts.
 
 `MONGODB_URL` remains a supported legacy alias. If both MongoDB variables are
 nonempty, they must contain the same value. Commons refuses conflicting values
