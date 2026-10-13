@@ -42,7 +42,7 @@ async function roundTrip(database: Db, pings = 20): Promise<string> {
       times.push(performance.now() - start);
     }
     times.sort((a, b) => a - b);
-    const at = (share: number) => times[Math.min(pings - 1, Math.floor(share * pings))].toFixed(1);
+    const at = (share: number) => times[Math.max(0, Math.ceil(share * pings) - 1)].toFixed(1);
     return `commons: a MongoDB round trip takes ${at(0.5)} ms (median), ${at(0.95)} ms (95th percentile) over ${pings} pings.`;
   } catch (error) {
     return `commons: could not time a MongoDB round trip: ${messageOf(error)}`;
