@@ -57,10 +57,23 @@ The waiting time counts the milliseconds of the request during which at least
 one of its commands was waiting for a connection from the driver's pool, either
 queued behind other commands or while a new connection opened. Overlapping waits
 count once, so the figure is never more than the request's time. A large wait
-means the pool was full: every connection was busy with other commands. Raise
-`maxPoolSize` in the MongoDB connection string (the driver's default is 100) if
-the database accepts more connections. When the wait is small, the time went to
-MongoDB round trips or to the backend's CPU.
+means the pool was full: every connection was busy with other commands. When
+the wait is small, the time went to MongoDB round trips or to the backend's CPU.
+
+The pool's size is `maxPoolSize` in the MongoDB connection string; the driver's
+default is 100. On the platform the connection string comes from the storage
+binding, so changing it needs a redeploy. Two numbers decide it:
+
+- **The database's connection limit.** The pool must fit under it, with room
+  for the driver's monitoring, operators, and the platform: `maxPoolSize=48`
+  under a limit of 64 leaves 16. A request fails when the database refuses a
+  connection the pool asks for, but only waits when the pool is full. Stop the
+  running backend before the next one starts, or both pools must fit.
+- **The round trip.** The connections busy at once are about the commands
+  issued per second times the round trip. A class arriving together issued
+  2,000 to 3,000 commands a second in testing: about 12 busy connections at a
+  4 ms round trip, about 60 at 20 ms. A pool smaller than that makes requests
+  wait; a larger one helps only if the database accepts it.
 
 `MONGODB_URL` remains a supported legacy alias. If both MongoDB variables are
 nonempty, they must contain the same value. Commons refuses conflicting values
