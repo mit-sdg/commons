@@ -205,9 +205,7 @@ describe("the Commons process with MongoDB", () => {
       expect(edge.output.join("")).toContain(
         "commons: logging requests that take 1000 ms or longer.",
       );
-      expect(edge.output.join("")).toContain(
-        "commons: reading up to 32 rows of a list at once, at most 50 ahead across requests (half the MongoDB pool of 100).",
-      );
+      expect(edge.output.join("")).toContain("commons: reading up to 32 rows of a list at once.");
 
       const closedRegistration = await post(edge.origin, "/api/auth/register", {
         username: "anyone",
@@ -298,13 +296,7 @@ describe("the Commons process with MongoDB", () => {
       } finally {
         await observer.close();
       }
-      // The restart sets a smaller pool in the connection string, as the platform's binding can.
-      const pooledUrl = new URL(mongodbUrl);
-      pooledUrl.searchParams.set("maxPoolSize", "48");
-      edge = await startEdge(pooledUrl.href, await freePort());
-      expect(edge.output.join("")).toContain(
-        "at most 24 ahead across requests (half the MongoDB pool of 48).",
-      );
+      edge = await startEdge(mongodbUrl, await freePort());
       const retainedSession = await post(edge.origin, "/api/auth/me", {}, learnerCookie);
       expect(retainedSession.body.username).toBe("learner");
       const retainedThread = await post(

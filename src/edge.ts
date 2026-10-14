@@ -115,9 +115,8 @@ export function createEdge(
   origin: string = configuredPublicOrigin(),
   clock?: () => Date,
   slowRequests?: SlowRequestLog,
-  maxPoolSize?: number,
 ) {
-  const application = assembleCommons(instances, clock, maxPoolSize);
+  const application = assembleCommons(instances, clock);
   return createEdgeForApplication(application, instances, origin, clock, slowRequests);
 }
 

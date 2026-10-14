@@ -8,7 +8,6 @@ import {
   configuredReadAhead,
   queryCacheWarning,
   readAheadWarning,
-  rowsAheadFor,
   configuredMongodbUrl,
   validateDeploymentConfiguration,
 } from "../../src/deployment.ts";
@@ -224,15 +223,6 @@ test("reads a list's rows thirty-two at a time unless READ_AHEAD says otherwise"
     expect(configuredReadAhead({ READ_AHEAD: source })).toBe(1);
     expect(readAheadWarning({ READ_AHEAD: source })).toBeUndefined();
   }
-});
-
-test("reads ahead across requests with at most half the MongoDB pool", () => {
-  expect(rowsAheadFor(100)).toBe(50);
-  expect(rowsAheadFor(48)).toBe(24);
-  expect(rowsAheadFor(5)).toBe(2);
-  expect(rowsAheadFor(1)).toBe(1);
-  // maxPoolSize=0 sets no pool limit, so the engine's own bound applies.
-  expect(rowsAheadFor(0)).toBeUndefined();
 });
 
 test("a READ_AHEAD that is not a number of rows reads one at a time and never stops startup", () => {

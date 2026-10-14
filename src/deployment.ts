@@ -57,18 +57,6 @@ export function configuredReadAhead(env: NodeJS.ProcessEnv = process.env): numbe
   return Math.max(readAheadRows(source) ?? 1, 1);
 }
 
-/** The MongoDB driver's connection pool when the connection string sets no `maxPoolSize`. */
-export const MONGODB_POOL = 100;
-
-/**
- * Rows read ahead at once across every request: half the MongoDB connection
- * pool, so the requests being served always find connections for their own
- * reads. A pool of 0 has no limit, and the engine's own bound applies.
- */
-export function rowsAheadFor(maxPoolSize: number): number | undefined {
-  return maxPoolSize > 0 ? Math.max(Math.floor(maxPoolSize / 2), 1) : undefined;
-}
-
 /** The startup warning for a `READ_AHEAD` that is neither a whole number nor `off`. */
 export function readAheadWarning(env: NodeJS.ProcessEnv = process.env): string | undefined {
   const source = env.READ_AHEAD?.trim() ?? "";
