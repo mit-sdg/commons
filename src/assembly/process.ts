@@ -13,6 +13,7 @@ import {
   configuredReadAhead,
   queryCacheWarning,
   readAheadWarning,
+  rowsAheadFor,
 } from "../deployment.ts";
 import { slowRequestLog } from "./slow-requests.ts";
 
@@ -98,9 +99,10 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
     throw error;
   }
 
+  const { maxPoolSize } = floor.database.client.options;
   let edge: ReturnType<typeof createEdge>;
   try {
-    edge = createEdge(floor.instances, undefined, undefined, slowRequests);
+    edge = createEdge(floor.instances, undefined, undefined, slowRequests, maxPoolSize);
   } catch (error) {
     await floor.close().catch(() => undefined);
     throw new Error(`commons: could not start Commons: ${messageOf(error)}`);
@@ -151,11 +153,16 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
       : `commons: logging requests that take ${slowRequests.thresholdMs} ms or longer.`,
   );
   const readAhead = configuredReadAhead();
+  const rowsAhead = rowsAheadFor(maxPoolSize);
+  const ahead =
+    rowsAhead === undefined
+      ? ""
+      : `, at most ${rowsAhead} ahead across requests (half the MongoDB pool of ${maxPoolSize})`;
   const readAheadIgnored = readAheadWarning();
   if (readAheadIgnored !== undefined) console.warn(readAheadIgnored);
   console.log(
     readAhead > 1
-      ? `commons: reading up to ${readAhead} rows of a list at once.`
+      ? `commons: reading up to ${readAhead} rows of a list at once${ahead}.`
       : "commons: reading the rows of a list one at a time.",
   );
   const queryCacheIgnored = queryCacheWarning();

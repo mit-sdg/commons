@@ -90,23 +90,21 @@ no pool size. Two numbers decide whether the pool is large enough:
 notifications, or grades waits on a few MongoDB round trips rather than one per
 row. Answers are the same as reading one row at a time.
 
-- **Is it on?** Startup logs either `commons: reading up to 32 rows of a list
-at once.` or `commons: reading the rows of a list one at a time.`
+- **Is it on?** Startup logs either
+  `commons: reading up to 32 rows of a list at once, at most 50 ahead across requests (half the MongoDB pool of 100).`
+  or `commons: reading the rows of a list one at a time.`
 - **Turning it off.** Set `READ_AHEAD=off` in the owner portal. Saving a
   variable restarts the backend, and a restart during a live class loses the
   class ([CLASS-DAY.md](CLASS-DAY.md)), so change it between classes. A value
   that is not a whole number also reads one row at a time and logs a warning;
   it never stops the server.
-- **MongoDB load.** However many requests are under way, the backend keeps at
-  most 64 rows read ahead at once, plus one row for each request being served.
-  Each read in flight holds one of the driver's 100 pooled connections, and
-  opened connections stay open, so after the first few pages the backend holds
-  about 64 connections where the previous release held about 7. Once about 36
-  requests are under way, commands can wait for a free connection; the
-  slow-request line shows this as time waiting for a connection. At class start
-  that wait is expected, and the front page still shows sooner than with
-  `READ_AHEAD=off`. On the platform the connection string comes from the
-  storage binding, so raising `maxPoolSize` needs a redeploy. Set
+- **MongoDB load.** Rows read ahead across all requests hold at most half the
+  MongoDB pool's connections, leaving the other half for the row each request
+  is on. Opened connections stay open, so after the first few pages the backend
+  keeps up to about half the pool open where the previous release kept about 7.
+  At class start the pool fills, as it did before, and commands wait for a free
+  connection; the slow-request line shows the wait. Size the pool by the
+  database's connection limit, as described for slow requests above. Set
   `READ_AHEAD=off` if MongoDB refuses connections.
 - **Reusing answers.** Every request reads only MongoDB answers fetched since
   it arrived, so it sees every change made before it. With `QUERY_CACHE` unset
