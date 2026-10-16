@@ -8,6 +8,12 @@ import { startReasonerWorker } from "../reasoning/worker.ts";
 import { commonsMigrations, runMigrations } from "../migrations/index.ts";
 import type { Db } from "mongodb";
 import { constructConceptFloor } from "./concept-floor.ts";
+import {
+  configuredQueryCache,
+  configuredReadAhead,
+  queryCacheWarning,
+  readAheadWarning,
+} from "../deployment.ts";
 import { slowRequestLog } from "./slow-requests.ts";
 
 export interface CommonsProcessConfiguration {
@@ -143,6 +149,21 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
     slowRequests === undefined
       ? "commons: slow-request logging is off."
       : `commons: logging requests that take ${slowRequests.thresholdMs} ms or longer.`,
+  );
+  const readAhead = configuredReadAhead();
+  const readAheadIgnored = readAheadWarning();
+  if (readAheadIgnored !== undefined) console.warn(readAheadIgnored);
+  console.log(
+    readAhead > 1
+      ? `commons: reading up to ${readAhead} rows of a list at once.`
+      : "commons: reading the rows of a list one at a time.",
+  );
+  const queryCacheIgnored = queryCacheWarning();
+  if (queryCacheIgnored !== undefined) console.warn(queryCacheIgnored);
+  console.log(
+    configuredQueryCache() === "since-dispatch"
+      ? "commons: each request reuses answers read since it arrived; requests already running keep theirs."
+      : "commons: every query cache is cleared when a request arrives.",
   );
   console.log(
     mailWorker === undefined

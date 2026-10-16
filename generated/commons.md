@@ -1,5 +1,5 @@
 <!-- Generated from the Commons assembly. Do not edit. -->
-<!-- Manifest producer: @mit-sdg/sync-engine@1.0.0-beta.16; concept specification: sync-engine.concept-specification@1; renderer: @mit-sdg/sync-engine@1.0.0-beta.16. -->
+<!-- Manifest producer: @mit-sdg/sync-engine@1.0.0-beta.18; concept specification: sync-engine.concept-specification@1; renderer: @mit-sdg/sync-engine@1.0.0-beta.18. -->
 
 # Commons — assembled read-back
 
@@ -1600,6 +1600,7 @@ Defined in [Tracking](../design/concepts/Tracking.md), line 1.
   - Refuses `ITEM_NOT_REGISTERED`: This item is not being tracked.
   - Refuses `ITEM_ALREADY_SEEN`: This user has already seen this item.
 - `markAllSeen(user: User, scope: Scope) : return (user: User)`
+- `markEachSeen(user: User, items: Rows) : return (user: User)`
 
 #### Queries
 
@@ -17881,9 +17882,9 @@ Authored path: `Forum.unread.MarkAllSeen`.
 when RequestBoundary.request (path: "/unread/markAllSeen", requestId, scope, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "the unread items for (user) in (scope)" with (scope, user) has (item)
+  view "(user) may read audience conversation (conversation)" with (conversation: scope, user)
 then
-  Tracking.markSeen (item, user)
+  Tracking.markEachSeen (items: former "the unread of (user) in (scope)" with (scope, user), user)
 ```
 
 ### Forum.unread.MarkAllSeenResult:seen

@@ -37,6 +37,59 @@ export function configuredMongodbUrl(env: NodeJS.ProcessEnv = process.env): stri
   return uri ?? url;
 }
 
+/** Rows of one list read at once unless `READ_AHEAD` says otherwise. */
+export const READ_AHEAD = 32;
+
+/** A whole number of rows from `READ_AHEAD`, or undefined when it is not one. */
+function readAheadRows(source: string): number | undefined {
+  const rows = /^\d+$/.test(source) ? Number(source) : Number.NaN;
+  return Number.isSafeInteger(rows) ? rows : undefined;
+}
+
+/**
+ * How many rows of one list are read at once. `0`, `1`, `off`, and any value
+ * that is not a whole number read them one after another, so a mistyped value
+ * turns read-ahead off rather than stopping the server.
+ */
+export function configuredReadAhead(env: NodeJS.ProcessEnv = process.env): number {
+  const source = env.READ_AHEAD?.trim() ?? "";
+  if (source === "") return READ_AHEAD;
+  return Math.max(readAheadRows(source) ?? 1, 1);
+}
+
+/** The startup warning for a `READ_AHEAD` that is neither a whole number nor `off`. */
+export function readAheadWarning(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  const source = env.READ_AHEAD?.trim() ?? "";
+  if (source === "" || source.toLowerCase() === "off" || readAheadRows(source) !== undefined) {
+    return undefined;
+  }
+  return `commons: READ_AHEAD "${source}" is not a number of rows or off; reading the rows of a list one at a time.`;
+}
+
+/** How query answers are reused unless `QUERY_CACHE` says otherwise. */
+export const QUERY_CACHE = "since-dispatch";
+
+/**
+ * The engine's query cache. Under `since-dispatch` a request reuses only
+ * answers read since it arrived, and requests already running keep theirs;
+ * `memoize` clears every query cache whenever a request arrives, as before, and
+ * so does any other value, so a mistyped value never stops the server.
+ */
+export function configuredQueryCache(
+  env: NodeJS.ProcessEnv = process.env,
+): "since-dispatch" | "memoize" {
+  const source = env.QUERY_CACHE?.trim() ?? "";
+  if (source === "") return QUERY_CACHE;
+  return source === "since-dispatch" ? "since-dispatch" : "memoize";
+}
+
+/** The startup warning for a `QUERY_CACHE` that is neither `since-dispatch` nor `memoize`. */
+export function queryCacheWarning(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  const source = env.QUERY_CACHE?.trim() ?? "";
+  if (source === "" || source === "since-dispatch" || source === "memoize") return undefined;
+  return `commons: QUERY_CACHE "${source}" is not since-dispatch or memoize; clearing every query cache when a request arrives.`;
+}
+
 /**
  * Requests that take this many milliseconds or longer are logged. `0`, `off`,
  * and any value that is not a whole number of milliseconds log none; an

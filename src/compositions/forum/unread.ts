@@ -61,10 +61,10 @@ export const MarkSeen = endpoint("/unread/markSeen", ({ session, item, user }) =
         .named("unavailable"),
     ),
 );
-export const MarkAllSeen = endpoint("/unread/markAllSeen", ({ session, scope, user, item }) =>
+export const MarkAllSeen = endpoint("/unread/markAllSeen", ({ session, scope, user }) =>
   receive({ session, scope })
-    .where(activeUser({ session }).is({ user }), visibleUnread({ user, scope }).is({ item }))
-    .then(Tracking.markSeen({ user, item })),
+    .where(activeUser({ session }).is({ user }), conversationReader({ user, conversation: scope }))
+    .then(Tracking.markEachSeen({ user, items: theUnreadOf({ user, scope }) })),
 );
 export const MarkAllSeenResult = endpoint("/unread/markAllSeen", ({ session, scope, user }) =>
   receive({ session, scope })
