@@ -99,12 +99,13 @@ at once.` or `commons: reading the rows of a list one at a time.`
   it never stops the server.
 - **MongoDB load.** However many requests are under way, the backend keeps at
   most 64 rows read ahead at once, plus one row for each request being served.
-  Each read in flight holds one of the driver's pooled connections, and opened
-  connections stay open, so after the first few pages the backend holds about
-  64 connections, or the whole pool if it is smaller, where the previous release
-  held about 7. When every pooled connection is busy, commands wait for one
-  rather than fail; the slow-request line shows the wait. At class start that
-  wait is expected, and the front page still shows sooner than with
+  Each read in flight holds one of the driver's pooled connections, so while
+  pages are being read the backend holds up to 64 connections, or the whole
+  pool if it is smaller, where the previous release held about 7. Connections
+  idle longer than the connection string's `maxIdleTimeMS` close; with no such
+  setting they stay open. When every pooled connection is busy, commands wait
+  for one rather than fail; the slow-request line shows the wait. At class
+  start that wait is expected, and the front page still shows sooner than with
   `READ_AHEAD=off`, with a pool of 48 as with 100. Size the pool by the
   database's connection limit, as described for slow requests above. Set
   `READ_AHEAD=off` if MongoDB refuses connections.
@@ -124,7 +125,8 @@ at once.` or `commons: reading the rows of a list one at a time.`
   per post.
 - **Rolling back the release.** It adds no migration and writes nothing new to
   MongoDB. Redeploying the previous commit is safe without restoring a backup.
-  As with any release, stop the running backend before the other one starts.
+  As with any release, replace the running backend in one step rather than
+  starting the other one alongside it.
 
 `MONGODB_URL` remains a supported legacy alias. If both MongoDB variables are
 nonempty, they must contain the same value. Commons refuses conflicting values
