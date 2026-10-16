@@ -10,6 +10,7 @@ import {
 } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { startPolling } from "@/lib/poll";
 import {
   applyUnreadCounts,
   readUnreadCounts,
@@ -41,20 +42,25 @@ export function NotificationCountProvider({
   useEffect(() => {
     if (!session) return;
     let active = true;
-    const poll = async () => {
-      const update = await readUnreadCounts(
-        () => api.notifications.unreadCount({}),
-        () => api.tasknotifications.unreadCount({}),
-      );
-      // Each half stands on its own: one instance failing leaves the other's
-      // figure applied and the badge stale until the next poll or a retry.
-      if (active) setCounts((previous) => applyUnreadCounts(previous, update));
-    };
-    void poll();
-    const id = setInterval(poll, 30_000);
+    // A tab off the screen asks nothing, and asks as soon as it is shown: one
+    // reader shows one tab at a time, so the wake needs no scatter.
+    const stop = startPolling(
+      async () => {
+        const update = await readUnreadCounts(
+          () => api.notifications.unreadCount({}),
+          () => api.tasknotifications.unreadCount({}),
+        );
+        // Each half stands on its own: one instance failing leaves the other's
+        // figure applied and the badge stale until the next poll or a retry.
+        if (active)
+          setCounts((previous) => applyUnreadCounts(previous, update));
+        return update.forum !== null || update.task !== null;
+      },
+      { everyMs: 30_000, pauseWhileHidden: true, scatter: () => 0 },
+    );
     return () => {
       active = false;
-      clearInterval(id);
+      stop();
     };
   }, [session]);
 
