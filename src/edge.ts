@@ -3,7 +3,7 @@ import { createHttpHandler } from "@mit-sdg/sync-engine-http/handler";
 import type { CommonsApp, CommonsImplementations } from "./assembly/application.ts";
 import { assembleCommons } from "./assembly/application.ts";
 import { commonsHttpPolicy } from "./assembly/http-policy.ts";
-import { slowRequestObserver } from "./assembly/slow-requests.ts";
+import type { SlowRequestLog } from "./assembly/slow-requests.ts";
 import { hasSafeKeys, hasTextWriteInputs } from "./assembly/security.ts";
 import { configuredPublicOrigin } from "./deployment.ts";
 
@@ -114,9 +114,10 @@ export function createEdge(
   instances: CommonsImplementations,
   origin: string = configuredPublicOrigin(),
   clock?: () => Date,
+  slowRequests?: SlowRequestLog,
 ) {
   const application = assembleCommons(instances, clock);
-  return createEdgeForApplication(application, instances, origin, clock);
+  return createEdgeForApplication(application, instances, origin, clock, slowRequests);
 }
 
 /** Attach fresh transport state to an existing application (used by test fixtures). */
@@ -125,8 +126,9 @@ export function createEdgeForApplication(
   instances: CommonsImplementations,
   origin: string = configuredPublicOrigin(),
   clock?: () => Date,
+  slowRequests?: SlowRequestLog,
 ) {
-  const gateway = createGateway({ application, observers: [slowRequestObserver()] });
+  const gateway = createGateway({ application });
   const policy = commonsHttpPolicy(origin);
   const handler = createHttpHandler({ application, gateway, policy });
   const clearingPaths = new Set(policy.cookies?.session?.clear ?? []);
@@ -137,8 +139,7 @@ export function createEdgeForApplication(
       .filter(([, contract]) => contract.required?.includes("session"))
       .map(([path]) => path),
   );
-  const fetch = async (request: Request): Promise<Response> => {
-    const path = new URL(request.url).pathname;
+  const serve = async (request: Request, path: string): Promise<Response> => {
     if (request.method === "GET" && path === "/health/live") {
       return Response.json({ status: "ok" }, { headers: { "Cache-Control": "no-store" } });
     }
@@ -222,6 +223,19 @@ export function createEdgeForApplication(
     }
     return response;
   };
+  // A path outside the served routes may carry anything a caller typed, so it is never logged.
+  const loggedPath = (path: string) => {
+    if (path === "/health/live" || path === "/health/ready") return path;
+    const logicalPath = path.startsWith("/api/") ? path.slice(4) : undefined;
+    return logicalPath !== undefined && servedPaths.has(logicalPath) ? logicalPath : "(unserved)";
+  };
+  const fetch =
+    slowRequests === undefined
+      ? (request: Request) => serve(request, new URL(request.url).pathname)
+      : (request: Request) => {
+          const path = new URL(request.url).pathname;
+          return slowRequests.measure(loggedPath(path), () => serve(request, path));
+        };
 
   return {
     application,

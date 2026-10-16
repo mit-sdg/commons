@@ -1,3 +1,4 @@
+import { SLOW_REQUEST_MS } from "./assembly/slow-requests.ts";
 import { isPasswordVerifier } from "./concepts/authenticating/password-verifier.ts";
 
 export function configuredPublicOrigin(env: NodeJS.ProcessEnv = process.env): string {
@@ -34,6 +35,28 @@ export function configuredMongodbUrl(env: NodeJS.ProcessEnv = process.env): stri
     throw new Error("commons: MONGODB_URI and MONGODB_URL must not conflict.");
   }
   return uri ?? url;
+}
+
+/**
+ * Requests that take this many milliseconds or longer are logged. `0`, `off`,
+ * and any value that is not a whole number of milliseconds log none; an
+ * unrecognised value is reported once through `warn` rather than stopping startup.
+ */
+export function configuredSlowRequestMs(
+  env: NodeJS.ProcessEnv = process.env,
+  warn: (line: string) => void = (line) => console.warn(line),
+): number | undefined {
+  const source = env.SLOW_REQUEST_MS?.trim() ?? "";
+  if (source === "") return SLOW_REQUEST_MS;
+  if (source.toLowerCase() === "off") return undefined;
+  const ms = /^\d+$/.test(source) ? Number(source) : Number.NaN;
+  if (!Number.isSafeInteger(ms)) {
+    warn(
+      `commons: SLOW_REQUEST_MS "${source}" is not a number of milliseconds; slow requests are not logged.`,
+    );
+    return undefined;
+  }
+  return ms === 0 ? undefined : ms;
 }
 
 export function configuredAdminSetupSecretVerifier(

@@ -12,6 +12,8 @@ export interface CommonsConceptFloor {
    * through their instances rather than through this handle.
    */
   database: Db;
+  /** The driver's pool as the connection string set it, for the startup log. */
+  pool?: { maxSize: number; idleMs: number };
   close(): Promise<void>;
 }
 
@@ -58,9 +60,11 @@ async function connectMongo(url: string): Promise<MongoClient> {
   }
 }
 
+/** `observe` is handed the client to follow its connection pools. */
 export async function constructConceptFloor(
   mongodbUrl?: string,
   createClient: MongoClientFactory = connectMongo,
+  observe?: (client: MongoClient) => void,
 ): Promise<CommonsConceptFloor> {
   if (mongodbUrl === undefined) {
     throw new Error("commons: MONGODB_URL is required.");
@@ -85,6 +89,8 @@ export async function constructConceptFloor(
     throw new Error(MONGODB_CONNECTION_FAILED);
   }
 
+  observe?.(client);
+
   let database: Db;
   try {
     database = client.db();
@@ -107,6 +113,9 @@ export async function constructConceptFloor(
     instances,
     resources: [`MongoDB database ${database.databaseName}`],
     database,
+    ...(client.options === undefined
+      ? {}
+      : { pool: { maxSize: client.options.maxPoolSize, idleMs: client.options.maxIdleTimeMS } }),
     async close() {
       if (closed) return;
       closed = true;

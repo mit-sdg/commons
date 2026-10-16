@@ -1,6 +1,7 @@
 import { MongoClient } from "mongodb";
 import { constructConceptFloor } from "../../src/assembly/concept-floor.ts";
 import { describe, expect, test } from "vite-plus/test";
+import { testDbUri } from "../../src/concepts/testing.ts";
 import {
   configuredConnectAppDomain,
   configuredMongodbUrl,
@@ -164,6 +165,21 @@ test("reads the database name from mongodb:// and mongodb+srv:// URL paths", asy
     expect(supplied).toBe(url);
     expect(floor.name).toBe("mongo");
     expect(floor.resources).toEqual([`MongoDB database ${database}`]);
+    await floor.close();
+  }
+});
+
+test("hands the client to an observer without turning on command monitoring", async () => {
+  const url = new URL(await testDbUri());
+  url.pathname = `/observed-${crypto.randomUUID()}`;
+  let observed: MongoClient | undefined;
+  const floor = await constructConceptFloor(url.toString(), undefined, (client) => {
+    observed = client;
+  });
+  try {
+    expect(observed?.options.monitorCommands).toBe(false);
+  } finally {
+    await floor.database.dropDatabase();
     await floor.close();
   }
 });
