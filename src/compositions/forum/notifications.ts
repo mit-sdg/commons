@@ -336,13 +336,22 @@ export const AcceptNotifiesAnswerAuthor = reaction(({ answer, by, answerAuthor, 
     ),
 );
 
+/** A row already read from the inbox needs only its subject and link admitted. */
+export const readableNotificationEntry = view(
+  "(user) may read a notification about (subject) linking (link)",
+  ({ user, subject, link }, _out, _vars) =>
+    where(
+      notificationSubjectReader({ user, subject }),
+      notificationSubjectReader({ user, subject: link }),
+    ),
+).holds();
+
 export const readableNotification = view(
   "(notification) is available to (user)",
   ({ notification, user }, _out, { subject, link }) =>
     where(
-      Notifying._getInbox({ recipient: user }).is({ notification, subject, link }),
-      notificationSubjectReader({ user, subject }),
-      notificationSubjectReader({ user, subject: link }),
+      Notifying._getNotification({ notification, recipient: user }).is({ subject, link }),
+      readableNotificationEntry({ user, subject, link }),
     ),
 ).holds();
 /** Which notifications belong to this recipient? */
@@ -359,7 +368,7 @@ export const theNotificationsOf = former(
         read,
       }),
     )
-      .where(readableNotification({ notification, user }))
+      .where(readableNotificationEntry({ user, subject, link }))
       .form({ notification, kind, subject, link, createdAt, read }),
 );
 
@@ -381,17 +390,18 @@ export const theNotificationPresentationOf = former(
 /** What is this recipient's notification inbox? */
 export const theInboxOf = former(
   "the inbox of (user)",
-  ({ user }, { notification, kind, link, createdAt, read }) =>
+  ({ user }, { notification, kind, subject, link, createdAt, read }) =>
     each(
       Notifying._getInbox({ recipient: user }).is({
         notification,
         kind,
+        subject,
         link,
         createdAt,
         read,
       }),
     )
-      .where(readableNotification({ notification, user }))
+      .where(readableNotificationEntry({ user, subject, link }))
       .form({ notification, kind, link, createdAt, read })
       .splicing(whether(theNotificationPresentationOf({ item: link, reader: user })))
       .splicing(whether(theDiscussionNotificationPresentation({ post: link, reader: user })))
@@ -412,9 +422,9 @@ export const ReadInbox = endpoint("/notifications/inbox", ({ session, user }) =>
 
 export const theUnreadCount = former(
   "the visible unread notifications of (user)",
-  ({ user }, { notification }) =>
-    each(Notifying._getInbox({ recipient: user }).is({ notification, read: false }))
-      .where(readableNotification({ user, notification }))
+  ({ user }, { notification, subject, link }) =>
+    each(Notifying._getInbox({ recipient: user }).is({ notification, subject, link, read: false }))
+      .where(readableNotificationEntry({ user, subject, link }))
       .count(),
 );
 export const UnreadCount = endpoint("/notifications/unreadCount", ({ session, user }) =>
@@ -443,13 +453,13 @@ export const MarkRead = endpoint(
 );
 export const MarkAllRead = endpoint(
   "/notifications/markAllRead",
-  ({ session, user, notification }) =>
+  ({ session, user, notification, subject, link }) =>
     receive({ session })
       .where(activeUser({ session }).is({ user }))
       .then(
         where(
-          Notifying._getInbox({ recipient: user }).is({ notification, read: false }),
-          readableNotification({ notification, user }),
+          Notifying._getInbox({ recipient: user }).is({ notification, subject, link, read: false }),
+          readableNotificationEntry({ user, subject, link }),
         )
           .then(Notifying.markRead({ notification, recipient: user }))
           .named("visible"),

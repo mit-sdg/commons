@@ -183,6 +183,14 @@ test("production feeds, nested links, notification counts and unread marks filte
     actor: null,
     at,
   });
+  await f.instances.Notifying.notify({
+    recipient: f.author.user,
+    subject: f.privateThread.post,
+    link: f.shared.post,
+    kind: "mention",
+    actor: null,
+    at,
+  });
   const { notification } = await f.instances.Notifying.notify({
     recipient: f.author.user,
     subject: f.shared.post,
@@ -238,6 +246,37 @@ test("production feeds, nested links, notification counts and unread marks filte
       scope: f.privateThread.conversation,
     }),
   ).toEqual({ count: 1 });
+});
+
+test("a notification the reader owns but may not read cannot be marked read or dismissed", async () => {
+  const f = await fixture();
+  const at = new Date();
+  const hidden = [
+    { subject: f.privateThread.post, link: f.privateThread.post },
+    { subject: f.shared.post, link: f.privateThread.post },
+    { subject: f.privateThread.post, link: f.shared.post },
+  ];
+  const owned: string[] = [];
+  for (const { subject, link } of hidden) {
+    const { notification } = await f.instances.Notifying.notify({
+      recipient: f.author.user,
+      subject,
+      link,
+      kind: "mention",
+      actor: null,
+      at,
+    });
+    owned.push(notification);
+  }
+  for (const notification of owned) {
+    for (const path of ["/notifications/markRead", "/notifications/dismiss"])
+      expect(await f.invoke(path, { session: f.author.session, notification }), path).toMatchObject(
+        missing,
+      );
+  }
+  const inbox = await f.instances.Notifying._getInbox({ recipient: f.author.user });
+  expect(inbox.map((n) => n.notification).sort()).toEqual([...owned].sort());
+  expect(inbox.every((n) => !n.read)).toBe(true);
 });
 
 test("unread counts equal the visible list with multiple rows and after marking", async () => {

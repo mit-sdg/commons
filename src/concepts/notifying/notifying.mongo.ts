@@ -123,6 +123,15 @@ export class MongoNotifyingConcept {
     }));
   }
 
+  async _getNotification({ notification, recipient }: { notification: string; recipient: string }) {
+    if (typeof notification !== "string" || typeof recipient !== "string") return [];
+    await this.#ready();
+    const doc = await this.notifications.findOne({ _id: notification, recipient });
+    if (doc === null) return [];
+    const { kind, subject, link, actor, createdAt, read } = doc;
+    return [{ kind, subject, link, actor, createdAt, read }];
+  }
+
   async _hasFor({ user, subject }: { user: string; subject: string }) {
     await this.#ready();
     const doc = await this.notifications.findOne({ recipient: user, subject });
