@@ -196,6 +196,9 @@ describe("the Commons process with MongoDB", () => {
       expect(edge.output.join("")).toContain(
         `commons: storing concept state in MongoDB database ${database}.`,
       );
+      expect(edge.output.join("")).toContain(
+        "commons: the MongoDB pool opens up to 100 connections and keeps idle ones open.",
+      );
       expect(edge.output.join("")).toMatch(
         /commons: a MongoDB round trip takes [\d.]+ ms \(median\), [\d.]+ ms \(95th percentile\) over 20 pings\./,
       );

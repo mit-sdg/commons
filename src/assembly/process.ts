@@ -49,6 +49,18 @@ async function roundTrip(database: Db, pings = 20): Promise<string> {
   }
 }
 
+/**
+ * The pool's size and idle timeout come from the connection string; on the
+ * platform the storage binding sets both, so the log is where to read them.
+ */
+export function poolLine({ maxSize, idleMs }: { maxSize: number; idleMs: number }): string {
+  const idle =
+    idleMs > 0
+      ? `closes those idle for ${idleMs % 1000 === 0 ? `${idleMs / 1000} s` : `${idleMs} ms`}`
+      : "keeps idle ones open";
+  return `commons: the MongoDB pool opens up to ${maxSize} connections and ${idle}.`;
+}
+
 export async function runCommonsProcess(configuration: CommonsProcessConfiguration) {
   const {
     host = "127.0.0.1",
@@ -125,6 +137,7 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
     reasoner === undefined ? undefined : startParticipantWorker(edge.application.concepts);
   const resource = floor.resources.length === 0 ? floor.name : floor.resources.join(", ");
   console.log(`commons: storing concept state in ${resource}.`);
+  if (floor.pool !== undefined) console.log(poolLine(floor.pool));
   console.log(await roundTrip(floor.database));
   console.log(
     slowRequests === undefined

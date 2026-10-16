@@ -6,6 +6,7 @@ import { mongoImplementations } from "../../src/concepts.ts";
 import { testDbUri } from "../../src/concepts/testing.ts";
 import { slowRequestLog } from "../../src/assembly/slow-requests.ts";
 import { configuredSlowRequestMs } from "../../src/deployment.ts";
+import { poolLine } from "../../src/assembly/process.ts";
 
 const databaseName = `slow-requests-${crypto.randomUUID()}`;
 let client: MongoClient;
@@ -313,4 +314,20 @@ test("the commands counted from checkouts match the commands the driver sends", 
   );
   expect(counted).toBe(sent);
   expect(figures(lines).get("/mixed")?.commands).toBeGreaterThan(14);
+});
+
+test("startup logs the pool the connection string sets, as the platform's storage binding does", () => {
+  const pool = (uri: string) => {
+    const { maxPoolSize, maxIdleTimeMS } = new MongoClient(uri).options;
+    return poolLine({ maxSize: maxPoolSize, idleMs: maxIdleTimeMS });
+  };
+  expect(pool("mongodb://storage.internal:27017/commons?maxPoolSize=64&maxIdleTimeMS=60000")).toBe(
+    "commons: the MongoDB pool opens up to 64 connections and closes those idle for 60 s.",
+  );
+  expect(pool("mongodb://storage.internal:27017/commons")).toBe(
+    "commons: the MongoDB pool opens up to 100 connections and keeps idle ones open.",
+  );
+  expect(poolLine({ maxSize: 8, idleMs: 1500 })).toBe(
+    "commons: the MongoDB pool opens up to 8 connections and closes those idle for 1500 ms.",
+  );
 });

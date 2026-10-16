@@ -61,14 +61,21 @@ means the pool was full: every connection was busy with other commands. When
 the wait is small, the time went to MongoDB round trips or to the backend's CPU.
 
 The pool's size is `maxPoolSize` in the MongoDB connection string; the driver's
-default is 100. On the platform the connection string comes from the storage
-binding, so changing it needs a redeploy. Two numbers decide it:
+default is 100. On the platform the storage binding writes the connection
+string: it sets `maxPoolSize` to the database's connection limit and
+`maxIdleTimeMS=60000`, and the database accepts ten connections beyond that
+limit. To change the pool, change the database's connection limit on the
+platform. Startup logs the pool in use, such as
+`commons: the MongoDB pool opens up to 64 connections and closes those idle for 60 s.`
+A pool of 100 that keeps idle connections open means the connection string sets
+no pool size. Two numbers decide whether the pool is large enough:
 
-- **The database's connection limit.** The pool must fit under it, with room
-  for the driver's monitoring, operators, and the platform: `maxPoolSize=48`
-  under a limit of 64 leaves 16. A request fails when the database refuses a
-  connection the pool asks for, but only waits when the pool is full. Stop the
-  running backend before the next one starts, or both pools must fit.
+- **The database's connection limit.** A request fails when the database
+  refuses a connection the pool asks for, but only waits when the pool is full.
+  Each backend has its own pool, and ten spare connections do not cover a second
+  backend under load. An ordinary platform deploy starts the new version
+  alongside the old one, so deploy Commons by replacing the running app in one
+  step, between classes.
 - **The round trip.** The connections busy at once are about the commands
   issued per second times the round trip. A class arriving together issued
   2,000 to 3,000 commands a second in testing: about 12 busy connections at a

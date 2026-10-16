@@ -12,6 +12,8 @@ export interface CommonsConceptFloor {
    * through their instances rather than through this handle.
    */
   database: Db;
+  /** The driver's pool as the connection string set it, for the startup log. */
+  pool?: { maxSize: number; idleMs: number };
   close(): Promise<void>;
 }
 
@@ -111,6 +113,9 @@ export async function constructConceptFloor(
     instances,
     resources: [`MongoDB database ${database.databaseName}`],
     database,
+    ...(client.options === undefined
+      ? {}
+      : { pool: { maxSize: client.options.maxPoolSize, idleMs: client.options.maxIdleTimeMS } }),
     async close() {
       if (closed) return;
       closed = true;
