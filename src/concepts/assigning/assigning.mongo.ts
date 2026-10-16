@@ -1,4 +1,5 @@
 import type { Collection, Db } from "mongodb";
+import { speedIndexes } from "../indexes.ts";
 import {
   AssignmentAudienceInvalid,
   AssignmentEveryoneNoTargets,
@@ -46,11 +47,18 @@ export class MongoAssigningConcept {
   private readonly assignments: Collection<AssignmentDoc>;
   private readonly releases: Collection<ReleaseDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
+  readonly #ready: () => Promise<void>;
 
   constructor(db: Db) {
     this.assignments = db.collection<AssignmentDoc>("assigning.assignments");
     this.releases = db.collection<ReleaseDoc>("assigning.releases");
     this.counters = db.collection("assigning.counters");
+    this.#ready = speedIndexes("Assigning", () =>
+      this.releases.createIndexes([
+        { key: { assignee: 1 } },
+        { key: { assignment: 1, assignee: 1 } },
+      ]),
+    );
   }
 
   async #nextSeq(name: string): Promise<number> {
@@ -234,6 +242,7 @@ export class MongoAssigningConcept {
   }
 
   async assign({ assignment, assignee, at }: { assignment: string; assignee: string; at: Date }) {
+    await this.#ready();
     const doc = await this.assignments.findOne({ _id: assignment });
     if (doc === null) {
       throw new AssignmentNotFound(assignment);
@@ -267,6 +276,7 @@ export class MongoAssigningConcept {
     assignee: string;
     dueAt: string;
   }) {
+    await this.#ready();
     const rel = await this.releases.findOne({ assignment, assignee });
     if (rel === null) {
       throw new ReleaseNotFound(`${assignee} <- ${assignment}`);
@@ -276,6 +286,7 @@ export class MongoAssigningConcept {
   }
 
   async clearDueOverride({ assignment, assignee }: { assignment: string; assignee: string }) {
+    await this.#ready();
     const rel = await this.releases.findOne({ assignment, assignee });
     if (rel === null) {
       throw new ReleaseNotFound(`${assignee} <- ${assignment}`);
@@ -330,6 +341,7 @@ export class MongoAssigningConcept {
   }
 
   async _getAssigned({ assignee }: { assignee: string }) {
+    await this.#ready();
     const docs = await this.releases.find({ assignee }).sort({ seq: 1 }).toArray();
     return docs.map((rel) => ({
       assignment: rel.assignment,
@@ -340,16 +352,19 @@ export class MongoAssigningConcept {
   }
 
   async _getAssignees({ assignment }: { assignment: string }) {
+    await this.#ready();
     const docs = await this.releases.find({ assignment }).sort({ seq: 1 }).toArray();
     return docs.map((rel) => ({ assignee: rel.assignee }));
   }
 
   async _isAssigned({ assignment, assignee }: { assignment: string; assignee: string }) {
+    await this.#ready();
     const rel = await this.releases.findOne({ assignment, assignee });
     return { assigned: rel !== null };
   }
 
   async _assignedAmong({ assignment, assignees }: { assignment: string; assignees: string[] }) {
+    await this.#ready();
     const docs = await this.releases
       .find({ assignment, assignee: { $in: assignees } })
       .sort({ seq: 1 })

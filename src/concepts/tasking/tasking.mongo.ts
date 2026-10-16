@@ -1,4 +1,5 @@
 import type { Collection, Db } from "mongodb";
+import { speedIndexes } from "../indexes.ts";
 import {
   TaskAlreadyCanceled,
   TaskAlreadyComplete,
@@ -57,11 +58,15 @@ const answering = (assignee: string | null): { assignee?: string } =>
 export class MongoTaskingConcept {
   private readonly tasks: Collection<TaskDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
+  readonly #ready: () => Promise<void>;
 
   constructor(db: Db, instance = "Tasking") {
     const prefix = `${instance[0]?.toLowerCase() ?? ""}${instance.slice(1)}`;
     this.tasks = db.collection<TaskDoc>(`${prefix}.tasks`);
     this.counters = db.collection(`${prefix}.counters`);
+    this.#ready = speedIndexes(instance, () =>
+      this.tasks.createIndexes([{ key: { scope: 1 } }, { key: { assignee: 1 } }]),
+    );
   }
 
   async #nextSeq(name: string): Promise<number> {
@@ -74,6 +79,7 @@ export class MongoTaskingConcept {
   }
 
   async #require(task: string): Promise<TaskDoc> {
+    await this.#ready();
     const doc = await this.tasks.findOne({ _id: task });
     if (doc === null) throw new TaskNotFound(task);
     return doc;
@@ -81,6 +87,7 @@ export class MongoTaskingConcept {
 
   /** Applies a change and reads back the task as it stands once that change is recorded. */
   async #record(task: string, change: Partial<TaskDoc>, fallback: TaskDoc): Promise<TaskDoc> {
+    await this.#ready();
     const settled = await this.tasks.findOneAndUpdate(
       { _id: task },
       { $set: change },
@@ -109,6 +116,7 @@ export class MongoTaskingConcept {
     if (!wellFormedWindow(startsAt, endsAt)) {
       throw new TaskWindowInvalid("A task's window cannot end before it begins.");
     }
+    await this.#ready();
     const task = crypto.randomUUID();
     const seq = await this.#nextSeq("tasks");
     await this.tasks.insertOne({
@@ -218,11 +226,13 @@ export class MongoTaskingConcept {
   }
 
   async _getTask({ task, at }: { task: string; at: Date }) {
+    await this.#ready();
     const doc = await this.tasks.findOne({ _id: task });
     return doc === null ? [] : [row(doc, at)];
   }
 
   async _getTasksInScope({ scope, at }: { scope: string; at: Date }) {
+    await this.#ready();
     const docs = await this.tasks.find({ scope }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => {
       const { scope: _scope, ...fields } = row(doc, at);
@@ -231,6 +241,7 @@ export class MongoTaskingConcept {
   }
 
   async _getAssigned({ assignee, at }: { assignee: string; at: Date }) {
+    await this.#ready();
     const docs = await this.tasks.find({ assignee }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => {
       const { assignee: _recorded, ...fields } = row(doc, at);

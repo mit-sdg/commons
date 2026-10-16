@@ -1,4 +1,5 @@
 import type { Collection, Db } from "mongodb";
+import { speedIndexes } from "../indexes.ts";
 import {
   ClassAlreadyConfigured,
   ClassNotConfigured,
@@ -64,12 +65,14 @@ export class MongoRosteringConcept {
   private readonly sections: Collection<SectionDoc>;
   private readonly seats: Collection<SeatDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
+  readonly #ready: () => Promise<void>;
 
   constructor(db: Db) {
     this.classes = db.collection<ClassDoc>("rostering.classes");
     this.sections = db.collection<SectionDoc>("rostering.sections");
     this.seats = db.collection<SeatDoc>("rostering.seats");
     this.counters = db.collection("rostering.counters");
+    this.#ready = speedIndexes("Rostering", () => this.seats.createIndex({ user: 1, status: 1 }));
   }
 
   async #nextSeq(name: string): Promise<number> {
@@ -217,6 +220,7 @@ export class MongoRosteringConcept {
       displayName?: string;
     }[];
   }) {
+    await this.#ready();
     const sectionIds = [
       ...new Set(
         rows
@@ -279,6 +283,7 @@ export class MongoRosteringConcept {
     section: string | null;
     user: string;
   }) {
+    await this.#ready();
     const address = email.trim().toLowerCase();
     const existing = await this.seats.findOne({ email: address });
     if (existing !== null && existing.status !== "PENDING") {
@@ -316,6 +321,7 @@ export class MongoRosteringConcept {
   }
 
   async claimSeat({ seat, user }: { seat: string; user: string }) {
+    await this.#ready();
     const doc = await this.seats.findOne({ _id: seat });
     if (doc === null) {
       throw new SeatNotFound(seat);
@@ -333,6 +339,7 @@ export class MongoRosteringConcept {
   }
 
   async dropSeat({ seat }: { seat: string }) {
+    await this.#ready();
     const doc = await this.seats.findOne({ _id: seat });
     if (doc === null) {
       throw new SeatNotFound(seat);
@@ -346,6 +353,7 @@ export class MongoRosteringConcept {
   }
 
   async reinstateSeat({ seat }: { seat: string }) {
+    await this.#ready();
     const doc = await this.seats.findOne({ _id: seat });
     if (doc === null) {
       throw new SeatNotFound(seat);
@@ -367,6 +375,7 @@ export class MongoRosteringConcept {
   }
 
   async removeSeat({ seat }: { seat: string }) {
+    await this.#ready();
     // Deleting the seat outright is what frees its address: after this the
     // address carries no seat, so it can be imported or enrolled again.
     const doc = await this.seats.findOneAndDelete({ _id: seat });
@@ -377,6 +386,7 @@ export class MongoRosteringConcept {
   }
 
   async moveSection({ seat, section }: { seat: string; section: string }) {
+    await this.#ready();
     const doc = await this.seats.findOne({ _id: seat });
     if (doc === null) {
       throw new SeatNotFound(seat);
@@ -415,11 +425,13 @@ export class MongoRosteringConcept {
   }
 
   async _getSeatByEmail({ email }: { email: string }) {
+    await this.#ready();
     const seat = await this.seats.findOne({ email: email.trim().toLowerCase() });
     return seat === null ? [] : [{ seat: seat._id, email: seat.email }];
   }
 
   async _getPendingSeatByEmail({ email }: { email: string }) {
+    await this.#ready();
     const seat = await this.seats.findOne({
       email: email.trim().toLowerCase(),
       status: "PENDING",
@@ -463,6 +475,7 @@ export class MongoRosteringConcept {
   }
 
   async _getActiveMembers(_: Record<string, never>) {
+    await this.#ready();
     const docs = await this.seats.find({ status: "ACTIVE" }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => ({
       user: doc.user,
@@ -474,11 +487,13 @@ export class MongoRosteringConcept {
   }
 
   async _isActiveStudent({ user }: { user: string }) {
+    await this.#ready();
     const doc = await this.seats.findOne({ user, status: "ACTIVE", kind: "STUDENT" });
     return { active: doc !== null };
   }
 
   async _getActiveStudents(_: Record<string, never>) {
+    await this.#ready();
     const docs = await this.seats
       .find({ status: "ACTIVE", kind: "STUDENT", user: { $ne: null } })
       .sort({ seq: 1 })
@@ -492,6 +507,7 @@ export class MongoRosteringConcept {
   }
 
   async _getUnclaimedSeats(_: Record<string, never>) {
+    await this.#ready();
     const docs = await this.seats
       .find({ status: "PENDING", user: null })
       .sort({ seq: 1 })
@@ -506,6 +522,7 @@ export class MongoRosteringConcept {
   }
 
   async _getDroppedSeats(_: Record<string, never>) {
+    await this.#ready();
     const docs = await this.seats.find({ status: "DROPPED" }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => ({
       user: doc.user,
@@ -517,6 +534,7 @@ export class MongoRosteringConcept {
   }
 
   async #preferredSeatFor(user: string): Promise<SeatDoc | null> {
+    await this.#ready();
     const active = await this.seats.findOne({ user, status: "ACTIVE" }, { sort: { seq: -1 } });
     return active ?? this.seats.findOne({ user }, { sort: { seq: -1 } });
   }
@@ -532,6 +550,7 @@ export class MongoRosteringConcept {
     };
   }
   async _activeUsers({ users }: { users: string[] }) {
+    await this.#ready();
     const rows = await this.seats
       .find({ user: { $in: users }, status: "ACTIVE" }, { projection: { user: 1 } })
       .toArray();

@@ -1,4 +1,5 @@
 import type { Collection, Db } from "mongodb";
+import { speedIndexes } from "../indexes.ts";
 import { ItemAlreadyRegistered, ItemAlreadySeen, ItemNotRegistered } from "./errors.ts";
 
 interface RegisteredDoc {
@@ -26,11 +27,18 @@ export class MongoTrackingConcept {
   private readonly registered: Collection<RegisteredDoc>;
   private readonly seen: Collection<SeenDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
+  readonly #ready: () => Promise<void>;
 
   constructor(db: Db) {
     this.registered = db.collection<RegisteredDoc>("tracking.registered");
     this.seen = db.collection<SeenDoc>("tracking.seen");
     this.counters = db.collection("tracking.counters");
+    this.#ready = speedIndexes("Tracking", () =>
+      Promise.all([
+        this.registered.createIndex({ scope: 1, seq: 1 }),
+        this.seen.createIndex({ user: 1, item: 1 }),
+      ]),
+    );
   }
 
   async #nextSeq(): Promise<number> {
@@ -43,6 +51,7 @@ export class MongoTrackingConcept {
   }
 
   async register({ item, scope }: { item: string; scope: string }) {
+    await this.#ready();
     const existing = await this.registered.findOne({ _id: item });
     if (existing !== null) {
       throw new ItemAlreadyRegistered(`${item} is already tracked`);
@@ -53,12 +62,14 @@ export class MongoTrackingConcept {
   }
 
   async unregister({ item }: { item: string }) {
+    await this.#ready();
     await this.registered.deleteOne({ _id: item });
     await this.seen.deleteMany({ item });
     return { item };
   }
 
   async markSeen({ user, item }: { user: string; item: string }) {
+    await this.#ready();
     const doc = await this.registered.findOne({ _id: item });
     if (doc === null) {
       throw new ItemNotRegistered(`${item} is not tracked`);
@@ -72,6 +83,7 @@ export class MongoTrackingConcept {
   }
 
   async markAllSeen({ user, scope }: { user: string; scope: string }) {
+    await this.#ready();
     const docs = await this.registered.find({ scope }).sort({ seq: 1 }).toArray();
     for (const doc of docs) {
       const already = await this.seen.findOne({ user, item: doc._id });
@@ -108,18 +120,23 @@ export class MongoTrackingConcept {
   }
 
   async _inScope({ scope }: { scope: string }) {
+    await this.#ready();
     const docs = await this.registered.find({ scope }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => ({ item: doc._id }));
   }
 
   async _getUnread({ user, scope }: { user: string; scope: string }) {
+    await this.#ready();
     const docs = await this.registered.find({ scope }).sort({ seq: 1 }).toArray();
-    const rows: { item: string }[] = [];
-    for (const doc of docs) {
-      const seen = await this.seen.findOne({ user, item: doc._id });
-      if (seen === null) rows.push({ item: doc._id });
-    }
-    return rows;
+    if (docs.length === 0) return [];
+    const marks = await this.seen
+      .find(
+        { user, item: { $in: docs.map((doc) => doc._id) } },
+        { projection: { _id: 0, item: 1 } },
+      )
+      .toArray();
+    const seen = new Set(marks.map((mark) => mark.item));
+    return docs.filter((doc) => !seen.has(doc._id)).map((doc) => ({ item: doc._id }));
   }
 
   async _getUnreadCount({ user, scope }: { user: string; scope: string }) {
