@@ -95,6 +95,10 @@ _getInbox (recipient: String) : many (notification: String, kind: String, subjec
   answers the recipient's notifications newest first, with later arrivals breaking equal-time ties
   answers no rows when none match
 
+_getNotification (notification: String, recipient: String) : optional (kind: String, subject: Subject, link: Link|Null, actor: Person|Null, createdAt: Date, read: Boolean)
+  answers the notification when it belongs to the recipient
+  answers no rows when it is missing or belongs to someone else
+
 _hasFor (user: String, subject: Subject) : one (notified: Boolean)
   answers whether the User has a Notification with this subject
 

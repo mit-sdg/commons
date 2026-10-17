@@ -780,6 +780,7 @@ Defined in [Notifying](../design/concepts/Notifying.md), line 1.
 #### Queries
 
 - `_getInbox(recipient: String) : many (notification: String, kind: String, subject: Subject, link: Link | Null, actor: Person | Null, createdAt: Date, read: Boolean)`
+- `_getNotification(notification: String, recipient: String) : optional (kind: String, subject: Subject, link: Link | Null, actor: Person | Null, createdAt: Date, read: Boolean)`
 - `_hasFor(user: String, subject: Subject) : one (notified: Boolean)`
 - `_getUnreadCount(recipient: String) : one (count: Number)`
 
@@ -2451,6 +2452,18 @@ Authored path: `Forum.notifications.notificationSubjectReader`.
     Assigning._getAssignments () has (assignment: subject, status: "PUBLISHED")
 ```
 
+### (user) may read a notification about (subject) linking (link)
+
+Authored path: `Forum.notifications.readableNotificationEntry`.
+- Covered by [Notifications](../design/compositions/forum/notifications.md), line 78.
+
+```view
+(user) may read a notification about (subject) linking (link) — inputs (user, subject, link); outputs (); bindings ()
+  where
+    view "(user) may read notification subject (subject)" with (subject, user)
+    view "(user) may read notification subject (subject)" with (subject: link, user)
+```
+
 ### (notification) is available to (user)
 
 Authored path: `Forum.notifications.readableNotification`.
@@ -2459,9 +2472,8 @@ Authored path: `Forum.notifications.readableNotification`.
 ```view
 (notification) is available to (user) — inputs (notification, user); outputs (); bindings (subject, link)
   where
-    Notifying._getInbox (recipient: user) has (link, notification, subject)
-    view "(user) may read notification subject (subject)" with (subject, user)
-    view "(user) may read notification subject (subject)" with (subject: link, user)
+    Notifying._getNotification (notification, recipient: user) has (link, subject)
+    view "(user) may read a notification about (subject) linking (link)" with (link, subject, user)
 ```
 
 ### (participant) holds a seat on (run)
@@ -5356,9 +5368,9 @@ Authored path: `Forum.notifications.theInboxOf`.
 - Covered by [Notifications](../design/compositions/forum/notifications.md), line 48.
 
 ```former
-Former "the inbox of (user)" — inputs (user); bindings (notification, kind, link, createdAt, read); promises exactly one record — forms:
-  each Notifying._getInbox (recipient: user) has (createdAt, kind, link, notification, read)
-    where view "(notification) is available to (user)" with (notification, user)
+Former "the inbox of (user)" — inputs (user); bindings (notification, kind, subject, link, createdAt, read); promises exactly one record — forms:
+  each Notifying._getInbox (recipient: user) has (createdAt, kind, link, notification, read, subject)
+    where view "(user) may read a notification about (subject) linking (link)" with (link, subject, user)
     form a record of
       createdAt
       kind
@@ -5619,7 +5631,7 @@ Authored path: `Forum.notifications.theNotificationsOf`.
 ```former
 Former "the notifications of (user)" — inputs (user); bindings (notification, kind, subject, link, createdAt, read); promises exactly one record — forms:
   each Notifying._getInbox (recipient: user) has (createdAt, kind, link, notification, read, subject)
-    where view "(notification) is available to (user)" with (notification, user)
+    where view "(user) may read a notification about (subject) linking (link)" with (link, subject, user)
     form a record of
       createdAt
       kind
@@ -6808,9 +6820,9 @@ Authored path: `Forum.notifications.theUnreadCount`.
 - Covered by [Notifications](../design/compositions/forum/notifications.md), line 78.
 
 ```former
-Former "the visible unread notifications of (user)" — inputs (user); bindings (notification); promises exactly one record — forms:
-  the count of Notifying._getInbox (recipient: user) has (notification, read: false)
-    where view "(notification) is available to (user)" with (notification, user)
+Former "the visible unread notifications of (user)" — inputs (user); bindings (notification, subject, link); promises exactly one record — forms:
+  the count of Notifying._getInbox (recipient: user) has (link, notification, read: false, subject)
+    where view "(user) may read a notification about (subject) linking (link)" with (link, subject, user)
 ```
 
 ### the wall of (round) as (viewer) sees it
@@ -15355,8 +15367,8 @@ Authored path: `Forum.notifications.MarkAllRead`.
 when RequestBoundary.request (path: "/notifications/markAllRead", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  Notifying._getInbox (recipient: user) has (notification, read: false)
-  view "(notification) is available to (user)" with (notification, user)
+  Notifying._getInbox (recipient: user) has (link, notification, read: false, subject)
+  view "(user) may read a notification about (subject) linking (link)" with (link, subject, user)
 then
   Notifying.markRead (notification, recipient: user)
 ```

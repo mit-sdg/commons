@@ -176,6 +176,33 @@ for (const [floor, make] of floors) {
       );
     });
 
+    test("_getNotification answers one notification only to its recipient", async () => {
+      const notifying = await make();
+      const { notification } = await notifying.notify({
+        recipient: "mara",
+        kind: "reply",
+        subject: "p1",
+        link: "/p1",
+        actor: "noah",
+        at,
+      });
+      expect(await notifying._getNotification({ notification, recipient: "mara" })).toEqual([
+        { kind: "reply", subject: "p1", link: "/p1", actor: "noah", createdAt: at, read: false },
+      ]);
+      expect(await notifying._getNotification({ notification, recipient: "noah" })).toEqual([]);
+      expect(
+        await notifying._getNotification({ notification: "missing", recipient: "mara" }),
+      ).toEqual([]);
+      for (const probe of [{ $ne: "" }, 7, null])
+        expect(
+          await notifying._getNotification({ notification: probe as never, recipient: "mara" }),
+        ).toEqual([]);
+      await notifying.markRead({ notification, recipient: "mara" });
+      expect(await notifying._getNotification({ notification, recipient: "mara" })).toMatchObject([
+        { read: true },
+      ]);
+    });
+
     test("_getUnreadCount always answers with a single row", async () => {
       const notifying = await make();
       expect(await notifying._getUnreadCount({ recipient: "mara" })).toEqual({ count: 0 });

@@ -1,4 +1,5 @@
 import type { Collection, Db } from "mongodb";
+import { speedIndexes } from "../indexes.ts";
 import { PostNotFound } from "./errors.ts";
 
 interface PostDoc {
@@ -13,10 +14,12 @@ interface PostDoc {
 export class MongoPostingConcept {
   private readonly posts: Collection<PostDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
+  readonly #ready: () => Promise<void>;
 
   constructor(db: Db) {
     this.posts = db.collection<PostDoc>("posting.posts");
     this.counters = db.collection("posting.counters");
+    this.#ready = speedIndexes("Posting", () => this.posts.createIndex({ author: 1 }));
   }
 
   async #nextSeq(): Promise<number> {
@@ -29,6 +32,7 @@ export class MongoPostingConcept {
   }
 
   async create({ author, content, at }: { author: string; content: string; at: Date }) {
+    await this.#ready();
     const post = crypto.randomUUID();
     const seq = await this.#nextSeq();
     await this.posts.insertOne({
@@ -43,6 +47,7 @@ export class MongoPostingConcept {
   }
 
   async edit({ post, content, at }: { post: string; content: string; at: Date }) {
+    await this.#ready();
     const updated = await this.posts.updateOne({ _id: post }, { $set: { content, editedAt: at } });
     if (updated.matchedCount === 0) {
       throw new PostNotFound(`No post named ${post}`);
@@ -51,6 +56,7 @@ export class MongoPostingConcept {
   }
 
   async delete({ post }: { post: string }) {
+    await this.#ready();
     const deleted = await this.posts.deleteOne({ _id: post });
     if (deleted.deletedCount === 0) {
       throw new PostNotFound(`No post named ${post}`);
@@ -59,6 +65,7 @@ export class MongoPostingConcept {
   }
 
   async _getPost({ post }: { post: string }) {
+    await this.#ready();
     const doc = await this.posts.findOne({ _id: post });
     return doc === null
       ? []
@@ -73,11 +80,13 @@ export class MongoPostingConcept {
   }
 
   async _getByAuthor({ author }: { author: string }) {
+    await this.#ready();
     const docs = await this.posts.find({ author }).sort({ createdAt: -1, seq: -1 }).toArray();
     return docs.map((doc) => ({ post: doc._id }));
   }
 
   async _getMentions({ post }: { post: string }) {
+    await this.#ready();
     const doc = await this.posts.findOne({ _id: post });
     if (doc === null) return [];
     const found = [...doc.content.matchAll(/@([a-zA-Z0-9_]+)/g)].map((match) => match[1]);
@@ -85,6 +94,7 @@ export class MongoPostingConcept {
   }
 
   async _isMentioned({ post, handle }: { post: string; handle: string }) {
+    await this.#ready();
     const doc = await this.posts.findOne({ _id: post });
     const mentioned =
       doc !== null &&
@@ -92,6 +102,7 @@ export class MongoPostingConcept {
     return { mentioned };
   }
   async _postMetadata({ posts }: { posts: string[] }) {
+    await this.#ready();
     const rows = await this.posts
       .find({ _id: { $in: posts } })
       .project<{ _id: string; author: string; createdAt: Date }>({

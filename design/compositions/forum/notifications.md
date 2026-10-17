@@ -75,7 +75,7 @@ Forum.notifications.ReadInbox at /notifications/inbox
 Forum.notifications.UnreadCount at /notifications/unreadCount
 ```
 
-[Current notification admission](view:Forum.notifications.readableNotification) filters inbox actions and [unread counts](former:Forum.notifications.theUnreadCount). [Mail eligibility](former:Forum.notifications.theMailEligibility) checks the recipient’s current audience access and queued address before dispatch.
+[Current notification admission](view:Forum.notifications.readableNotification) looks up the one notification an action names, for its recipient, and admits it by [its subject and link](view:Forum.notifications.readableNotificationEntry); the inbox, [unread counts](former:Forum.notifications.theUnreadCount), and mark-all-read apply that same entry admission to the rows they read. [Mail eligibility](former:Forum.notifications.theMailEligibility) checks the recipient’s current audience access and queued address before dispatch.
 
 ```computations
 forumMailKey(notification: String, recipient: String, post: String) : String

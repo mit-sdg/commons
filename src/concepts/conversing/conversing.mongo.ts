@@ -1,4 +1,5 @@
 import type { Collection, Db } from "mongodb";
+import { speedIndexes } from "../indexes.ts";
 import {
   ConversationNotFound,
   ItemAlreadyInConversation,
@@ -44,11 +45,19 @@ export class MongoConversingConcept {
   private readonly conversations: Collection<ConversationDoc>;
   private readonly nodes: Collection<NodeDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
+  readonly #ready: () => Promise<void>;
 
   constructor(db: Db) {
     this.conversations = db.collection<ConversationDoc>("conversing.conversations");
     this.nodes = db.collection<NodeDoc>("conversing.nodes");
     this.counters = db.collection("conversing.counters");
+    this.#ready = speedIndexes("Conversing", () =>
+      this.nodes.createIndexes([
+        { key: { item: 1 } },
+        { key: { conversation: 1, createdAt: 1, seq: 1 } },
+        { key: { parent: 1 } },
+      ]),
+    );
   }
 
   async #nextSeq(): Promise<number> {
@@ -61,6 +70,7 @@ export class MongoConversingConcept {
   }
 
   async start({ item, at }: { item: string; at: Date }) {
+    await this.#ready();
     if ((await this.#placementOf(item)) !== undefined) {
       throw new ItemAlreadyInConversation(`Item ${item} is already placed in a conversation`);
     }
@@ -81,6 +91,7 @@ export class MongoConversingConcept {
   }
 
   async reply({ item, parent, at }: { item: string; parent: string; at: Date }) {
+    await this.#ready();
     const parentDoc = await this.nodes.findOne({ _id: parent });
     if (parentDoc === null) {
       throw new ParentNodeNotFound(`No node named ${parent}`);
@@ -110,6 +121,7 @@ export class MongoConversingConcept {
   }
 
   async _getThread({ conversation }: { conversation: string }) {
+    await this.#ready();
     const docs = await this.nodes.find({ conversation }).sort({ createdAt: 1, seq: 1 }).toArray();
     return docs.map((doc) => ({
       node: doc._id,
@@ -120,6 +132,7 @@ export class MongoConversingConcept {
   }
 
   async _getRoot({ conversation }: { conversation: string }) {
+    await this.#ready();
     const doc = await this.conversations.findOne({ _id: conversation });
     if (doc === null) return [];
     const root = await this.nodes.findOne({ _id: doc.root });
@@ -127,11 +140,13 @@ export class MongoConversingConcept {
   }
 
   async _getConversation({ node }: { node: string }) {
+    await this.#ready();
     const doc = await this.nodes.findOne({ _id: node });
     return doc === null ? [] : [{ conversation: doc.conversation }];
   }
 
   async remove({ node }: { node: string }) {
+    await this.#ready();
     const doc = await this.nodes.findOne({ _id: node });
     if (doc === null) {
       throw new NodeNotFound(`No node named ${node}`);
@@ -146,6 +161,7 @@ export class MongoConversingConcept {
   }
 
   async dissolve({ conversation }: { conversation: string }) {
+    await this.#ready();
     const doc = await this.conversations.findOne({ _id: conversation }, { projection: { _id: 1 } });
     if (doc === null) {
       throw new ConversationNotFound(`No conversation named ${conversation}`);
@@ -161,16 +177,19 @@ export class MongoConversingConcept {
   }
 
   async _parentOf({ node }: { node: string }) {
+    await this.#ready();
     const doc = await this.nodes.findOne({ _id: node });
     return doc === null || doc.parent === null ? [] : [{ parent: doc.parent }];
   }
 
   async _getItem({ node }: { node: string }) {
+    await this.#ready();
     const doc = await this.nodes.findOne({ _id: node });
     return doc === null ? [] : [{ item: doc.item }];
   }
 
   async _hasChildren({ node }: { node: string }) {
+    await this.#ready();
     const present = (await this.nodes.countDocuments({ parent: node })) > 0;
     return { present };
   }
@@ -192,11 +211,13 @@ export class MongoConversingConcept {
   }
 
   async #placementOf(item: string): Promise<string | undefined> {
+    await this.#ready();
     const doc = await this.nodes.findOne({ item });
     return doc === null ? undefined : doc._id;
   }
 
   async #conversationRows(): Promise<(ConversationRow & { seqOf: number; lastSeq: number })[]> {
+    await this.#ready();
     const conversations = await this.conversations.find({}).toArray();
     const nodes = await this.nodes.find({}).toArray();
     const rows = new Map(
