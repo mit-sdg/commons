@@ -40,9 +40,15 @@ export class MongoTrashingConcept {
     return { item };
   }
 
-  async _isTrashed({ item }: { item: string }) {
-    const doc = await this.trashed.findOne({ _id: item });
-    return { trashed: doc !== null };
+  /** Whether each item is trashed, in the order given, from one read. */
+  async _isTrashed(inputs: readonly { item: string }[]) {
+    const items = [...new Set(inputs.map(({ item }) => item))];
+    if (items.length === 0) return [];
+    const docs = await this.trashed
+      .find({ _id: { $in: items } }, { projection: { _id: 1 } })
+      .toArray();
+    const found = new Set(docs.map((doc) => doc._id));
+    return inputs.map(({ item }) => ({ trashed: found.has(item) }));
   }
 
   async _getTrashed(_: Record<string, never>) {

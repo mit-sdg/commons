@@ -5,6 +5,22 @@ import { configuredQueryCache, configuredReadAhead } from "../deployment.ts";
 
 export type CommonsImplementations = ReturnType<typeof mongoImplementations>;
 
+/**
+ * Assembled concepts with each action typed as its class declares it and each query as the
+ * engine asks it, so a batched query takes one input here though its class takes a list.
+ */
+type CommonsConcepts<Asked> = {
+  [K in keyof CommonsImplementations]: {
+    [M in keyof CommonsImplementations[K]]: M extends `_${string}`
+      ? K extends keyof Asked
+        ? M extends keyof Asked[K]
+          ? Asked[K][M]
+          : never
+        : never
+      : CommonsImplementations[K][M];
+  };
+};
+
 /** Field names whose values sign someone in, beyond the engine's own patterns. */
 const SIGN_IN_FIELDS = ["credential", "code_verifier", "verifier"];
 
@@ -22,7 +38,7 @@ export function assembleCommons(instances: CommonsImplementations, clock?: () =>
     ...(clock === undefined ? {} : { clock }),
   });
   return application as Omit<typeof application, "concepts"> & {
-    concepts: CommonsImplementations;
+    concepts: CommonsConcepts<typeof application.concepts>;
   };
 }
 

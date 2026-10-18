@@ -41,7 +41,7 @@ test("an interrupted migration preserves an already-established thread marker", 
     trashedBy: "thread-moderator",
     trashedAt: later,
   });
-  expect(await f.floor.Trashing._isTrashed({ item: f.post })).toEqual({ trashed: false });
+  expect(await f.floor.Trashing._isTrashed([{ item: f.post }])).toEqual([{ trashed: false }]);
 });
 
 test("already-destroyed openings require explicit repair rather than destroying or exposing surviving replies", async () => {

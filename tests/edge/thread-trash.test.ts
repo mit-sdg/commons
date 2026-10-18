@@ -236,7 +236,7 @@ test.each([
     }
     // The thread marker is the whole switch: no post inside gained its own.
     for (const post of [root.post, middle.post, leaf.post])
-      expect(await floor.Trashing._isTrashed({ item: post })).toEqual({ trashed: false });
+      expect(await floor.Trashing._isTrashed([{ item: post }])).toEqual([{ trashed: false }]);
 
     await ok("/trash/restore", { item: root.conversation }, moderator);
     const restored = await ok("/threads/get", { conversation: root.conversation }, reader);
@@ -279,7 +279,7 @@ test.each([
     });
     for (const post of [root.post, middle.post, leaf.post]) {
       expect(await floor.Posting._getPost({ post })).toEqual([]);
-      expect(await floor.Trashing._isTrashed({ item: post })).toEqual({ trashed: false });
+      expect(await floor.Trashing._isTrashed([{ item: post }])).toEqual([{ trashed: false }]);
       expect(await call("/moderation/posts/get", { item: post }, moderator)).toEqual(missing);
     }
     expect(await floor.Locking._isLocked({ target: root.conversation })).toEqual({

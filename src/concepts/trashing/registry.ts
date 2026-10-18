@@ -7,6 +7,7 @@ import { ItemAlreadyTrashed, ItemNotTrashed } from "./errors.ts";
 export const trashing = registerConcept({
   class: MongoTrashingConcept,
   spec,
+  batched: ["_isTrashed"],
   refusals: {
     ITEM_ALREADY_TRASHED: ItemAlreadyTrashed,
     ITEM_NOT_TRASHED: ItemNotTrashed,

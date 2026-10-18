@@ -1,4 +1,6 @@
+import { checkBatchedQuery } from "@mit-sdg/sync-engine/assembly";
 import { type Db, MongoClient } from "mongodb";
+import { isDeepStrictEqual } from "node:util";
 
 export async function caughtError(fn: () => unknown): Promise<Error> {
   try {
@@ -8,6 +10,30 @@ export async function caughtError(fn: () => unknown): Promise<Error> {
     throw error;
   }
   throw new Error("expected an error");
+}
+
+/**
+ * Check a batched query's list form: the engine's law for it, and that each input
+ * answers as the single form it replaced did, given here as `single`.
+ */
+export async function checkListForm<Input extends Record<string, unknown>>(
+  concept: object,
+  query: string,
+  inputs: readonly Input[],
+  single: (input: Input) => Promise<unknown>,
+): Promise<void> {
+  await checkBatchedQuery(concept, query, inputs);
+  const list = (concept as Record<string, (inputs: readonly Input[]) => Promise<unknown[]>>)[query];
+  const answers = await list!.call(concept, inputs);
+  for (const [position, input] of inputs.entries()) {
+    const expected = await single(input);
+    if (!isDeepStrictEqual(answers[position], expected)) {
+      throw new Error(
+        `${query}(${JSON.stringify(input)}) answered ${JSON.stringify(answers[position])} ` +
+          `in list form but ${JSON.stringify(expected)} in single form.`,
+      );
+    }
+  }
 }
 
 let shared: Promise<MongoClient> | undefined;
