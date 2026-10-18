@@ -138,6 +138,9 @@ async function startEdge(
   delete env.MONGODB_URI;
   delete env.MONGODB_URL;
   delete env.SLOW_REQUEST_MS;
+  delete env.READ_AHEAD;
+  delete env.QUERY_CACHE;
+  delete env.BATCHED_QUERIES;
   if (mongodbUrl !== undefined) env[mongodbVariable] = mongodbUrl;
   const running = startChild(["bun", "src/start.ts"], {
     cwd: root,
