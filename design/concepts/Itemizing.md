@@ -24,7 +24,7 @@ external Basis
 Method is COMPETENCY or POINTS
   How an item is assessed, and how each criterion is rated: by competency or by points.
 opaque CriteriaSetup
-  The selected criteria as one setup document lists them, in position order.
+  Criteria as one setup document lists them, in position order; a proposed setup may leave identities to be allocated.
 ```
 
 ## State

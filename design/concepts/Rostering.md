@@ -34,7 +34,7 @@ external User
 opaque Seq
   An ordered list of the values its argument names.
 opaque ImportRow
-  One roster line as `{ email, kind, section, displayName }`.
+  One previewed roster line: a field for each CSV header, such as `email`, `kind`, `section` and `displayName`, plus `sectionName`, and `sectionError` when its section is unknown or ambiguous.
 ```
 
 ## State

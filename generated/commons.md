@@ -417,7 +417,7 @@ Defined in [Flagging](../design/concepts/Flagging.md), line 1.
 
 #### Actions
 
-- `flag(reporter: User, target: Target, reason: String, at: Date) : returns (flag: Flag)`
+- `flag(reporter: User, target: Target, reason: String, at: Date) : returns (flag: Report)`
   - Refuses `FLAG_ALREADY_EXISTS`: You already have an open flag on this.
 - `resolve(target: Target, outcome: String) : returns (target: Target)`
   - Refuses `VALIDATION_FAILED`: An outcome must be upheld or dismissed.
