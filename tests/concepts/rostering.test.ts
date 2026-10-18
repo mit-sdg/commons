@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/rostering/errors.ts";
-import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { caughtError, checkListForm, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoRosteringConcept } from "../../src/concepts/rostering/rostering.mongo.ts";
 
 const floors: [string, () => Promise<MongoRosteringConcept>][] = [
@@ -149,7 +149,7 @@ for (const [floor, make] of floors) {
         email: "ana@example.edu",
       });
       expect(await rostering._getActiveMembers({})).toEqual([]);
-      expect(await rostering._getSeatByUser({ user: "ana" })).toEqual([]);
+      expect(await rostering._getSeatByUser([{ user: "ana" }])).toEqual([[]]);
       expect(await rostering._isActiveStudent({ user: "ana" })).toEqual({ active: false });
 
       const fresh = await rostering.enrol({
@@ -282,15 +282,17 @@ for (const [floor, make] of floors) {
       });
       expect(result).toMatchObject({ kind: "STAFF", user: "cai" });
       expect(result.seat).toMatchObject({ status: "ACTIVE", email: "cai@example.edu" });
-      expect(await rostering._getSeatByUser({ user: "cai" })).toEqual([
-        {
-          seat: result.seat._id,
-          user: "cai",
-          email: "cai@example.edu",
-          kind: "STAFF",
-          section: null,
-          status: "ACTIVE",
-        },
+      expect(await rostering._getSeatByUser([{ user: "cai" }])).toEqual([
+        [
+          {
+            seat: result.seat._id,
+            user: "cai",
+            email: "cai@example.edu",
+            kind: "STAFF",
+            section: null,
+            status: "ACTIVE",
+          },
+        ],
       ]);
     });
 
@@ -456,6 +458,63 @@ for (const [floor, make] of floors) {
       expect(await rostering._getSeatDetail({ user: "nobody" })).toEqual([]);
     });
 
+    test("_getSeatByUser answers a list as its single form did, preferring seats the same way", async () => {
+      const database = await testDb();
+      const rostering = new MongoRosteringConcept(database);
+      const { created } = await rostering.importSeats({
+        rows: ["ana", "ana2", "ben", "ben2", "ben3", "cai"].map((name) => ({
+          email: `${name}@example.edu`,
+          kind: "STUDENT",
+        })),
+      });
+      const [ana, ana2, ben, ben2, ben3, cai] = created.map((seat) => seat._id);
+      // Ana holds a newer dropped seat and an older active one.
+      await rostering.claimSeat({ seat: ana2!, user: "ana" });
+      await rostering.dropSeat({ seat: ana2! });
+      await rostering.claimSeat({ seat: ana!, user: "ana" });
+      // Ben holds only dropped seats, and the highest seq is not the newest stored.
+      for (const seat of [ben!, ben2!, ben3!]) {
+        await rostering.claimSeat({ seat, user: "ben" });
+        await rostering.dropSeat({ seat });
+      }
+      await database
+        .collection<{ _id: string; seq: number }>("rostering.seats")
+        .updateOne({ _id: ben! }, { $set: { seq: 1000 } });
+      // Cai's seat waits for a holder, so nobody holds it.
+      expect(cai).toBeDefined();
+      const seats = database.collection<{
+        _id: string;
+        user: string | null;
+        email: string;
+        kind: string;
+        section: string | null;
+        status: string;
+        seq: number;
+      }>("rostering.seats");
+      const samples = ["ana", "ben", "dee", "ana", "", "cai"].map((user) => ({ user }));
+      // The single form the list form replaced.
+      await checkListForm(rostering, "_getSeatByUser", samples, async ({ user }) => {
+        const active = await seats.findOne({ user, status: "ACTIVE" }, { sort: { seq: -1 } });
+        const doc = active ?? (await seats.findOne({ user }, { sort: { seq: -1 } }));
+        if (doc === null) return [];
+        return [
+          {
+            seat: doc._id,
+            user: doc.user,
+            email: doc.email,
+            kind: doc.kind,
+            section: doc.section,
+            status: doc.status,
+          },
+        ];
+      });
+      const answers = await rostering._getSeatByUser(samples);
+      expect(answers[0]).toEqual([expect.objectContaining({ seat: ana, status: "ACTIVE" })]);
+      expect(answers[1]).toEqual([expect.objectContaining({ seat: ben, status: "DROPPED" })]);
+      expect(answers[2]).toEqual([]);
+      expect(await rostering._getSeatByUser([])).toEqual([]);
+    });
+
     test("seat queries prefer the active seat, then the newest held seat", async () => {
       const rostering = await make();
       const { created } = await rostering.importSeats({ rows: [anaRow, benRow] });
@@ -466,16 +525,16 @@ for (const [floor, make] of floors) {
       await rostering.dropSeat({ seat: first });
       await rostering.claimSeat({ seat: second, user: "ana" });
 
-      expect(await rostering._getSeatByUser({ user: "ana" })).toEqual([
-        expect.objectContaining({ seat: second, status: "ACTIVE" }),
+      expect(await rostering._getSeatByUser([{ user: "ana" }])).toEqual([
+        [expect.objectContaining({ seat: second, status: "ACTIVE" })],
       ]);
       expect(await rostering._getSeatDetail({ user: "ana" })).toEqual([
         { detail: expect.objectContaining({ seat: second, status: "ACTIVE" }) },
       ]);
 
       await rostering.dropSeat({ seat: second });
-      expect(await rostering._getSeatByUser({ user: "ana" })).toEqual([
-        expect.objectContaining({ seat: second, status: "DROPPED" }),
+      expect(await rostering._getSeatByUser([{ user: "ana" }])).toEqual([
+        [expect.objectContaining({ seat: second, status: "DROPPED" })],
       ]);
     });
 
@@ -606,15 +665,17 @@ for (const [floor, make] of floors) {
       expect(created[0]).not.toHaveProperty("displayName");
 
       await rostering.claimSeat({ seat, user: "ben" });
-      expect(await rostering._getSeatByUser({ user: "ben" })).toEqual([
-        {
-          seat,
-          user: "ben",
-          email: "ben@example.edu",
-          kind: "STUDENT",
-          section: null,
-          status: "ACTIVE",
-        },
+      expect(await rostering._getSeatByUser([{ user: "ben" }])).toEqual([
+        [
+          {
+            seat,
+            user: "ben",
+            email: "ben@example.edu",
+            kind: "STUDENT",
+            section: null,
+            status: "ACTIVE",
+          },
+        ],
       ]);
       expect(await rostering._getSeatDetail({ user: "ben" })).toEqual([
         {

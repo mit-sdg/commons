@@ -274,11 +274,11 @@ test.each([
     expect(await call("/trash/restore", { item: root.conversation }, moderator)).toEqual(missing);
     expect(await call("/trash/restore", { item: middle.post }, moderator)).toEqual(missing);
     expect(await ok("/trash/list", {}, moderator)).toEqual({ trashed: [] });
-    expect(await floor.Conversing._exists({ conversation: root.conversation })).toEqual({
+    expect((await floor.Conversing._exists([{ conversation: root.conversation }]))[0]).toEqual({
       exists: false,
     });
     for (const post of [root.post, middle.post, leaf.post]) {
-      expect(await floor.Posting._getPost({ post })).toEqual([]);
+      expect((await floor.Posting._getPost([{ post }]))[0]).toEqual([]);
       expect(await floor.Trashing._isTrashed([{ item: post }])).toEqual([{ trashed: false }]);
       expect(await call("/moderation/posts/get", { item: post }, moderator)).toEqual(missing);
     }
@@ -286,7 +286,7 @@ test.each([
       locked: false,
     });
     expect(await floor.Subscribing._getSubscribers({ target: root.conversation })).toEqual([]);
-    expect(await floor.Accessing._holders({ resource: root.conversation })).toEqual([]);
+    expect((await floor.Accessing._holders([{ resource: root.conversation }]))[0]).toEqual([]);
     expect(await floor.Revising._getRevisions({ item: leaf.post })).toEqual([]);
     // The other discussion is untouched.
     expect(

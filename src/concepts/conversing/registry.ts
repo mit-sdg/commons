@@ -13,6 +13,7 @@ import {
 export const conversing = registerConcept({
   class: MongoConversingConcept,
   spec,
+  batched: ["_getNodeByItem", "_getConversation", "_exists"],
   refusals: {
     ITEM_ALREADY_IN_CONVERSATION: ItemAlreadyInConversation,
     PARENT_NODE_NOT_FOUND: ParentNodeNotFound,

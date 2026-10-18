@@ -1,7 +1,7 @@
 import { afterAll, expect, test, vi } from "vite-plus/test";
 import { MongoAccessingConcept } from "../../src/concepts/accessing/accessing.mongo.ts";
 import { AccessAlreadyEstablished } from "../../src/concepts/accessing/errors.ts";
-import { stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { checkListForm, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 
 afterAll(stopTestDb);
 
@@ -28,10 +28,10 @@ test("readers see no choice before its write and the entire choice before acknow
   const writing = writer.establish({ resource: "room", holders: ["omar", "lee"] });
   try {
     await beforeWrite.promise;
-    expect(await reader._holders({ resource: "room" })).toEqual([]);
+    expect(await reader._holders([{ resource: "room" }])).toEqual([[]]);
     allowWrite.resolve();
     await afterWrite.promise;
-    expect(await reader._holders({ resource: "room" })).toEqual([{ holders: ["lee", "omar"] }]);
+    expect(await reader._holders([{ resource: "room" }])).toEqual([[{ holders: ["lee", "omar"] }]]);
   } finally {
     allowWrite.resolve();
     allowReturn.resolve();
@@ -43,16 +43,18 @@ test("readers see no choice before its write and the entire choice before acknow
 test("a complete choice survives duplicate establishment and retirement prevents reopening", async () => {
   const db = await testDb();
   const c = new MongoAccessingConcept(db);
-  expect(await c._holders({ resource: "room" })).toEqual([]);
+  expect(await c._holders([{ resource: "room" }])).toEqual([[]]);
   await c.establish({ resource: "room", holders: ["omar", "lee", "omar"] });
   await expect(c.establish({ resource: "room", holders: ["ravi"] })).rejects.toBeInstanceOf(
     AccessAlreadyEstablished,
   );
   const restarted = new MongoAccessingConcept(db);
-  expect(await restarted._holders({ resource: "room" })).toEqual([{ holders: ["lee", "omar"] }]);
+  expect(await restarted._holders([{ resource: "room" }])).toEqual([
+    [{ holders: ["lee", "omar"] }],
+  ]);
   await restarted.retire({ resource: "room" });
   await restarted.retire({ resource: "room" });
-  expect(await restarted._holders({ resource: "room" })).toEqual([]);
+  expect(await restarted._holders([{ resource: "room" }])).toEqual([[]]);
   await expect(c.establish({ resource: "room", holders: ["ravi"] })).rejects.toBeInstanceOf(
     AccessAlreadyEstablished,
   );
@@ -71,7 +73,9 @@ test("competing instances publish exactly one complete set", async () => {
   );
   expect(outcomes.filter((result) => result.status === "fulfilled")).toHaveLength(1);
   const winner = outcomes.findIndex((result) => result.status === "fulfilled");
-  expect(await instances[0]._holders({ resource: "room" })).toEqual([{ holders: sets[winner] }]);
+  expect(await instances[0]._holders([{ resource: "room" }])).toEqual([
+    [{ holders: sets[winner] }],
+  ]);
 });
 
 test("establishment racing retirement always leaves access retired", async () => {
@@ -83,7 +87,7 @@ test("establishment racing retirement always leaves access retired", async () =>
     second.retire({ resource: "room" }),
   ]);
   expect(outcomes[1].status).toBe("fulfilled");
-  expect(await first._holders({ resource: "room" })).toEqual([]);
+  expect(await first._holders([{ resource: "room" }])).toEqual([[]]);
   await expect(first.establish({ resource: "room", holders: ["lee"] })).rejects.toBeInstanceOf(
     AccessAlreadyEstablished,
   );
@@ -92,8 +96,33 @@ test("establishment racing retirement always leaves access retired", async () =>
 test("an empty established set remains distinct from missing access", async () => {
   const c = new MongoAccessingConcept(await testDb());
   await c.establish({ resource: "empty", holders: [] });
-  expect(await c._holders({ resource: "empty" })).toEqual([{ holders: [] }]);
+  expect(await c._holders([{ resource: "empty" }])).toEqual([[{ holders: [] }]]);
   await expect(c.establish({ resource: "empty", holders: ["omar"] })).rejects.toBeInstanceOf(
     AccessAlreadyEstablished,
   );
+});
+
+test("_holders answers a list as its single form did, and _grants still reads one resource", async () => {
+  const db = await testDb();
+  const c = new MongoAccessingConcept(db);
+  await c.establish({ resource: "room", holders: ["omar", "lee"] });
+  await c.establish({ resource: "empty", holders: [] });
+  await c.establish({ resource: "closed", holders: ["ravi"] });
+  await c.retire({ resource: "closed" });
+  await c.retire({ resource: "never-opened" });
+  const resources = db.collection<{ _id: string; retired: boolean; holders?: string[] }>(
+    "accessing.resources",
+  );
+  const samples = ["room", "empty", "closed", "never-opened", "never-established", "room"].map(
+    (resource) => ({ resource }),
+  );
+  // The single form the list form replaced.
+  await checkListForm(c, "_holders", samples, async ({ resource }) => {
+    const doc = await resources.findOne({ _id: resource });
+    return doc === null || doc.retired ? [] : [{ holders: doc.holders }];
+  });
+  expect(await c._holders([])).toEqual([]);
+  expect(await c._grants({ resource: "room" })).toEqual([{ holder: "lee" }, { holder: "omar" }]);
+  expect(await c._grants({ resource: "closed" })).toEqual([]);
+  expect(await c._grants({ resource: "never-established" })).toEqual([]);
 });

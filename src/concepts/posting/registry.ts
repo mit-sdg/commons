@@ -7,6 +7,7 @@ import { PostNotFound } from "./errors.ts";
 export const posting = registerConcept({
   class: MongoPostingConcept,
   spec,
+  batched: ["_getPost"],
   refusals: {
     POST_NOT_FOUND: PostNotFound,
   },

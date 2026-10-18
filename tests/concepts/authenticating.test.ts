@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/authenticating/errors.ts";
-import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { caughtError, checkListForm, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoAuthenticatingConcept } from "../../src/concepts/authenticating/authenticating.mongo.ts";
 
 const floors: [string, () => Promise<MongoAuthenticatingConcept>][] = [
@@ -22,8 +22,8 @@ for (const [floor, make] of floors) {
     test("register creates a user with the given username and email", async () => {
       const auth = await make();
       const { user } = await auth.register(good);
-      expect(await auth._getById({ user })).toEqual([
-        { username: "nadia", email: "nadia@example.edu" },
+      expect(await auth._getById([{ user }])).toEqual([
+        [{ username: "nadia", email: "nadia@example.edu" }],
       ]);
       expect(await auth._getByUsername({ username: "nadia" })).toEqual([{ user }]);
 
@@ -35,6 +35,27 @@ for (const [floor, make] of floors) {
       expect(stored).not.toHaveProperty("password");
       expect(stored?.passwordVerifier).toMatch(/^\$scrypt\$/);
       expect(JSON.stringify(stored)).not.toContain(good.password);
+    });
+
+    test("_getById answers a list as its single form did, reading only the answered fields", async () => {
+      const database = await testDb();
+      const auth = new MongoAuthenticatingConcept(database);
+      const { user: nadia } = await auth.register(good);
+      const { user: omar } = await auth.register({
+        username: "omar",
+        password: "another-long-secret",
+        email: "Omar@Example.edu",
+      });
+      const users = database.collection<{ _id: string; username: string; email: string }>(
+        "authenticating.users",
+      );
+      const samples = [nadia, "missing", omar, nadia].map((user) => ({ user }));
+      // The single form the list form replaced.
+      await checkListForm(auth, "_getById", samples, async ({ user }) => {
+        const doc = await users.findOne({ _id: user });
+        return doc === null ? [] : [{ username: doc.username, email: doc.email }];
+      });
+      expect(await auth._getById([])).toEqual([]);
     });
 
     test("register refuses an address without exactly one @", async () => {
@@ -57,8 +78,8 @@ for (const [floor, make] of floors) {
     test("register stores the address trimmed and lower-cased", async () => {
       const auth = await make();
       const { user } = await auth.register({ ...good, email: "  Nadia@Example.COM " });
-      expect(await auth._getById({ user })).toEqual([
-        { username: "nadia", email: "nadia@example.com" },
+      expect(await auth._getById([{ user }])).toEqual([
+        [{ username: "nadia", email: "nadia@example.com" }],
       ]);
       expect(await auth._getUsers({})).toEqual([
         { user, username: "nadia", email: "nadia@example.com" },

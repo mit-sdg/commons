@@ -112,12 +112,15 @@ export class MongoConversingConcept {
     return { node };
   }
 
-  async _exists({ conversation }: { conversation: string }) {
-    return {
-      exists:
-        (await this.conversations.findOne({ _id: conversation }, { projection: { _id: 1 } })) !==
-        null,
-    };
+  /** Whether each conversation exists, in the order given, from one read. */
+  async _exists(inputs: readonly { conversation: string }[]) {
+    const ids = [...new Set(inputs.map(({ conversation }) => conversation))];
+    if (ids.length === 0) return [];
+    const docs = await this.conversations
+      .find({ _id: { $in: ids } }, { projection: { _id: 1 } })
+      .toArray();
+    const found = new Set(docs.map((doc) => doc._id));
+    return inputs.map(({ conversation }) => ({ exists: found.has(conversation) }));
   }
 
   async _getThread({ conversation }: { conversation: string }) {
@@ -139,10 +142,19 @@ export class MongoConversingConcept {
     return root === null ? [] : [{ item: root.item }];
   }
 
-  async _getConversation({ node }: { node: string }) {
+  /** The conversation holding each node, in the order given, from one read. */
+  async _getConversation(inputs: readonly { node: string }[]) {
+    const ids = [...new Set(inputs.map(({ node }) => node))];
+    if (ids.length === 0) return [];
     await this.#ready();
-    const doc = await this.nodes.findOne({ _id: node });
-    return doc === null ? [] : [{ conversation: doc.conversation }];
+    const docs = await this.nodes
+      .find({ _id: { $in: ids } }, { projection: { _id: 1, conversation: 1 } })
+      .toArray();
+    const conversationOf = new Map(docs.map((doc) => [doc._id, doc.conversation]));
+    return inputs.map(({ node }) => {
+      const conversation = conversationOf.get(node);
+      return conversation === undefined ? [] : [{ conversation }];
+    });
   }
 
   async remove({ node }: { node: string }) {
@@ -171,9 +183,23 @@ export class MongoConversingConcept {
     return { conversation };
   }
 
-  async _getNodeByItem({ item }: { item: string }) {
-    const node = await this.#placementOf(item);
-    return node === undefined ? [] : [{ node }];
+  /**
+   * The node placing each item, in the order given, from one read. Should an item have several,
+   * the first the read returns answers, as `findOne` chose in the single form.
+   */
+  async _getNodeByItem(inputs: readonly { item: string }[]) {
+    const items = [...new Set(inputs.map(({ item }) => item))];
+    if (items.length === 0) return [];
+    await this.#ready();
+    const docs = await this.nodes
+      .find({ item: { $in: items } }, { projection: { _id: 1, item: 1 } })
+      .toArray();
+    const nodeOf = new Map<string, string>();
+    for (const doc of docs) if (!nodeOf.has(doc.item)) nodeOf.set(doc.item, doc._id);
+    return inputs.map(({ item }) => {
+      const node = nodeOf.get(item);
+      return node === undefined ? [] : [{ node }];
+    });
   }
 
   async _parentOf({ node }: { node: string }) {

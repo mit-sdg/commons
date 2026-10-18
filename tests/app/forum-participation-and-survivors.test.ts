@@ -239,13 +239,13 @@ test("reply trash and purge leave a removed position; thread trash, restore and 
       conversation: root.conversation,
     }),
   ).toEqual(missing);
-  expect(await instances.Conversing._exists({ conversation: root.conversation })).toEqual({
+  expect((await instances.Conversing._exists([{ conversation: root.conversation }]))[0]).toEqual({
     exists: false,
   });
   for (const post of [root.post, middle.post, leaf.post])
-    expect(await instances.Posting._getPost({ post })).toEqual([]);
+    expect((await instances.Posting._getPost([{ post }]))[0]).toEqual([]);
   expect(await instances.Subscribing._getSubscribers({ target: root.conversation })).toEqual([]);
-  expect(await instances.Accessing._holders({ resource: root.conversation })).toEqual([]);
+  expect((await instances.Accessing._holders([{ resource: root.conversation }]))[0]).toEqual([]);
   expect(await call("/trash/list", a.session)).toEqual({ trashed: [] });
   expect(await call("/subscriptions/mine", b.session)).toEqual({ subscriptions: [] });
 });

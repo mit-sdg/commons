@@ -115,11 +115,11 @@ describe("migrating a database written before this release", () => {
     expect(await authenticating._getByEmail({ email: "  NADIA@EXAMPLE.com " })).toEqual([
       { user: "u1" },
     ]);
-    expect(await authenticating._getById({ user: "u1" })).toEqual([
+    expect((await authenticating._getById([{ user: "u1" }]))[0]).toEqual([
       { username: "nadia", email: "nadia@example.com" },
     ]);
     // The already-normalized row is left alone.
-    expect(await authenticating._getById({ user: "u2" })).toEqual([
+    expect((await authenticating._getById([{ user: "u2" }]))[0]).toEqual([
       { username: "omar", email: "omar@example.com" },
     ]);
   });

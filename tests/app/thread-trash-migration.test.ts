@@ -25,8 +25,8 @@ test("old opening markers become whole-thread markers, preserving attribution an
     { item: f.reply, trashedBy: "other-moderator", trashedAt: at },
     { item: f.conversation, trashedBy: "moderator", trashedAt: at },
   ]);
-  expect(await f.floor.Posting._getPost({ post: f.post })).toHaveLength(1);
-  expect(await f.floor.Posting._getPost({ post: f.reply })).toHaveLength(1);
+  expect((await f.floor.Posting._getPost([{ post: f.post }]))[0]).toHaveLength(1);
+  expect((await f.floor.Posting._getPost([{ post: f.reply }]))[0]).toHaveLength(1);
   expect(await threadTrash.up(f.database)).not.toHaveProperty("blocked");
   expect(await f.floor.Trashing._getTrashed({})).toHaveLength(2);
 });
@@ -51,6 +51,6 @@ test("already-destroyed openings require explicit repair rather than destroying 
   const result = await threadTrash.up(f.database);
   expect(result.blocked).toContain(f.conversation);
   expect(await f.floor.Trashing._getTrashed({})).toEqual(before);
-  expect(await f.floor.Posting._getPost({ post: f.reply })).toHaveLength(1);
+  expect((await f.floor.Posting._getPost([{ post: f.reply }]))[0]).toHaveLength(1);
   expect(await f.floor.Conversing._getThread({ conversation: f.conversation })).toHaveLength(2);
 });

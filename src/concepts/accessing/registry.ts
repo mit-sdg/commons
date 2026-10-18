@@ -7,6 +7,7 @@ import { AccessAlreadyEstablished } from "./errors.ts";
 export const accessing = registerConcept({
   class: MongoAccessingConcept,
   spec,
+  batched: ["_holders"],
   refusals: { ACCESS_ALREADY_ESTABLISHED: AccessAlreadyEstablished },
   floors: { mongo: ({ database }: { database: Db }) => new MongoAccessingConcept(database) },
 });

@@ -132,12 +132,33 @@ export class MongoSubmittingConcept {
     return best === undefined ? [] : [{ latest: this.#row(best) }];
   }
 
-  async _getAttempts({ assignment, submitter }: { assignment: string; submitter: string }) {
+  /**
+   * Each learner's attempts at each assignment by number, in the order given, from one read.
+   */
+  async _getAttempts(inputs: readonly { assignment: string; submitter: string }[]) {
+    if (inputs.length === 0) return [];
+    const keyOf = (assignment: string, submitter: string) =>
+      JSON.stringify([assignment, submitter]);
+    const pairs = new Map(
+      inputs.map(({ assignment, submitter }) => [
+        keyOf(assignment, submitter),
+        { assignment, submitter },
+      ]),
+    );
     const docs = await this.submissions
-      .find({ assignment, submitter })
+      .find({ $or: [...pairs.values()] })
       .sort({ number: 1 })
       .toArray();
-    return docs.map((doc) => this.#row(doc));
+    const byPair = new Map<string, SubmissionDoc[]>();
+    for (const doc of docs) {
+      const key = keyOf(doc.assignment, doc.submitter);
+      const attempts = byPair.get(key);
+      if (attempts === undefined) byPair.set(key, [doc]);
+      else attempts.push(doc);
+    }
+    return inputs.map(({ assignment, submitter }) =>
+      (byPair.get(keyOf(assignment, submitter)) ?? []).map((doc) => this.#row(doc)),
+    );
   }
 
   async _getSubmissionsForAssignment({ assignment }: { assignment: string }) {

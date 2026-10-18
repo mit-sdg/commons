@@ -46,9 +46,9 @@ test("feed metadata avoids bodies and selected summaries bound enrichment and re
     }
     const bodies: string[] = [];
     const get = floor.Posting._getPost.bind(floor.Posting);
-    floor.Posting._getPost = async (input) => {
-      bodies.push(input.post);
-      return get(input);
+    floor.Posting._getPost = async (inputs) => {
+      bodies.push(...inputs.map(({ post }) => post));
+      return get(inputs);
     };
     const locks: string[] = [];
     const locked = floor.Locking._isLocked.bind(floor.Locking);

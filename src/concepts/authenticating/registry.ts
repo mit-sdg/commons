@@ -15,6 +15,7 @@ import {
 export const authenticating = registerConcept({
   class: MongoAuthenticatingConcept,
   spec,
+  batched: ["_getById"],
   refusals: {
     INVALID_BODY: EmailInvalid,
     USERNAME_INVALID_LENGTH: UsernameInvalidLength,

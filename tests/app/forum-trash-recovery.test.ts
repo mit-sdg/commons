@@ -64,7 +64,7 @@ for (const failure of ["all", "reply", "trash-record"] as const) {
     const failing = assembleCommons(f.instances);
     expect(await failing.invoker.invoke("/trash/purge", input)).toMatchObject({ ok: false });
     await failing.whenIdle();
-    expect(await f.instances.Conversing._exists({ conversation: input.item })).toEqual({
+    expect((await f.instances.Conversing._exists([{ conversation: input.item }]))[0]).toEqual({
       exists: true,
     });
     expect(await f.instances.Trashing._isTrashed([{ item: input.item }])).toEqual([
@@ -92,11 +92,11 @@ for (const failure of ["all", "reply", "trash-record"] as const) {
     const retry = assembleCommons(f.instances);
     expect(await retry.invoker.invoke("/trash/purge", input)).toMatchObject({ ok: true });
     await retry.whenIdle();
-    expect(await f.instances.Conversing._exists({ conversation: input.item })).toEqual({
+    expect((await f.instances.Conversing._exists([{ conversation: input.item }]))[0]).toEqual({
       exists: false,
     });
     for (const post of [f.root.post, f.reply.post]) {
-      expect(await f.instances.Posting._getPost({ post })).toEqual([]);
+      expect((await f.instances.Posting._getPost([{ post }]))[0]).toEqual([]);
       expect(await f.instances.Trashing._isTrashed([{ item: post }])).toEqual([{ trashed: false }]);
     }
     expect(await retry.invoker.invoke("/trash/list", { session: f.session })).toMatchObject({
@@ -117,7 +117,7 @@ test("a reply purge with deleted content remains in the bin and can finish after
   const failing = assembleCommons(f.instances);
   expect(await failing.invoker.invoke("/trash/purge", input)).toMatchObject({ ok: false });
   await failing.whenIdle();
-  expect(await f.instances.Posting._getPost({ post: f.reply.post })).toEqual([]);
+  expect((await f.instances.Posting._getPost([{ post: f.reply.post }]))[0]).toEqual([]);
   expect(await failing.invoker.invoke("/trash/list", { session: f.session })).toMatchObject({
     ok: true,
     value: { trashed: [expect.objectContaining({ item: f.reply.post, thread: false })] },
@@ -152,7 +152,7 @@ test("a reply purge with deleted content remains in the bin and can finish after
     { trashed: false },
   ]);
   expect(await f.instances.Revising._getRevisions({ item: f.reply.post })).toEqual([]);
-  expect(await f.instances.Posting._getPost({ post: f.root.post })).toHaveLength(1);
+  expect((await f.instances.Posting._getPost([{ post: f.root.post }]))[0]).toHaveLength(1);
 });
 
 test("moderators can review all retained thread content without widening ordinary reads or audiences", async () => {
@@ -232,8 +232,8 @@ test("permanently deleting a leaf reply preserves its removed slot", async () =>
   const input = { session: f.session, item: f.reply.post };
   await f.app.invoker.invoke("/trash/trash", input);
   expect(await f.app.invoker.invoke("/trash/purge", input)).toMatchObject({ ok: true });
-  expect(await f.instances.Posting._getPost({ post: f.reply.post })).toEqual([]);
-  expect(await f.instances.Conversing._getNodeByItem({ item: f.reply.post })).toEqual([
+  expect((await f.instances.Posting._getPost([{ post: f.reply.post }]))[0]).toEqual([]);
+  expect((await f.instances.Conversing._getNodeByItem([{ item: f.reply.post }]))[0]).toEqual([
     { node: f.reply.node },
   ]);
   expect(

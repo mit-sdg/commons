@@ -18,6 +18,7 @@ import {
 export const rostering = registerConcept({
   class: MongoRosteringConcept,
   spec,
+  batched: ["_getSeatByUser"],
   refusals: {
     CLASS_ALREADY_CONFIGURED: ClassAlreadyConfigured,
     CLASS_NOT_CONFIGURED: ClassNotConfigured,
