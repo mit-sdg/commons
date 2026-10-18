@@ -148,6 +148,7 @@ function QuestionnaireOverviewContent() {
             <ArrowLeft className="size-3" /> Live
           </Link>
         }
+        tab={[sheet.title, "Live"]}
         title={
           <span className="flex flex-wrap items-center gap-3">
             {sheet.title}

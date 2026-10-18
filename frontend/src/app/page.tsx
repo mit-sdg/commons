@@ -12,6 +12,7 @@ import { AudienceFilter } from "@/components/forum/audience-picker";
 import { CategoryDot } from "@/components/forum/badges";
 import { TopicList } from "@/components/forum/topic-list";
 import { Link } from "@/components/link";
+import { PageTitle } from "@/components/page-title";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -304,6 +305,7 @@ export default function HomePage() {
 
   return (
     <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_18rem] lg:py-10">
+      <PageTitle parts={["Discussions"]} />
       <section className="min-w-0">
         {showLms && (
           <div className="mb-8">

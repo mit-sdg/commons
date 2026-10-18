@@ -123,6 +123,7 @@ function RelayOverviewContent() {
             <ArrowLeft className="size-3" /> Live
           </Link>
         }
+        tab={[found.title, "Live"]}
         title={
           <span className="flex flex-wrap items-center gap-3">
             {found.title}

@@ -15,6 +15,7 @@ import {
 import { LateDayControls } from "@/components/lms/late-day-controls";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { PageContainer } from "@/components/page";
+import { PageTitle } from "@/components/page-title";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -234,6 +235,7 @@ export default function AssignmentDetailPage({
 
   return (
     <PageContainer>
+      <PageTitle parts={[detail.title, "Assignments"]} />
       <div className="mb-4">
         <Link
           href="/assignments"

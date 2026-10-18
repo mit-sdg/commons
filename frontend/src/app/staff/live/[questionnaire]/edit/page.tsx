@@ -298,6 +298,7 @@ function QuestionnaireDesk({
             <ArrowLeft className="size-3" /> Overview
           </Link>
         }
+        tab={["Edit", sheet.title, "Live"]}
         title={
           <span className="flex flex-wrap items-center gap-3">
             {sheet.title}
