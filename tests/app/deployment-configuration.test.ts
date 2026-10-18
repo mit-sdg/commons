@@ -3,6 +3,8 @@ import { constructConceptFloor } from "../../src/assembly/concept-floor.ts";
 import { describe, expect, test } from "vite-plus/test";
 import { testDbUri } from "../../src/concepts/testing.ts";
 import {
+  batchedQueriesWarning,
+  configuredBatchedQueries,
   configuredConnectAppDomain,
   configuredQueryCache,
   configuredReadAhead,
@@ -234,6 +236,30 @@ test("a READ_AHEAD that is not a number of rows reads one at a time and never st
     expect(() =>
       validateDeploymentConfiguration({
         READ_AHEAD: source,
+        MONGODB_URI: "mongodb://127.0.0.1/commons",
+      }),
+    ).not.toThrow();
+  }
+});
+
+test("batched queries read rows together unless BATCHED_QUERIES says off", () => {
+  expect(configuredBatchedQueries({})).toBe(true);
+  expect(configuredBatchedQueries({ BATCHED_QUERIES: " on " })).toBe(true);
+  for (const source of ["off", "OFF", " off "]) {
+    expect(configuredBatchedQueries({ BATCHED_QUERIES: source })).toBe(false);
+    expect(batchedQueriesWarning({ BATCHED_QUERIES: source })).toBeUndefined();
+  }
+});
+
+test("a BATCHED_QUERIES that is neither on nor off asks one row at a time and never stops startup", () => {
+  for (const source of ["false", "0", "yes", "none"]) {
+    expect(configuredBatchedQueries({ BATCHED_QUERIES: source })).toBe(false);
+    expect(batchedQueriesWarning({ BATCHED_QUERIES: source })).toBe(
+      `commons: BATCHED_QUERIES "${source}" is not on or off; asking batched queries one row at a time.`,
+    );
+    expect(() =>
+      validateDeploymentConfiguration({
+        BATCHED_QUERIES: source,
         MONGODB_URI: "mongodb://127.0.0.1/commons",
       }),
     ).not.toThrow();

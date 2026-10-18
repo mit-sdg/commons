@@ -206,6 +206,9 @@ describe("the Commons process with MongoDB", () => {
         "commons: logging requests that take 1000 ms or longer.",
       );
       expect(edge.output.join("")).toContain("commons: reading up to 32 rows of a list at once.");
+      expect(edge.output.join("")).toContain(
+        "commons: batched queries read the rows asked together in one call.",
+      );
 
       const closedRegistration = await post(edge.origin, "/api/auth/register", {
         username: "anyone",

@@ -42,6 +42,7 @@ facilities:
 | `SLOW_REQUEST_MS`         | Optional; a request this many milliseconds or longer is logged. `1000` when unset; `0`, `off`, or a non-number logs none     |
 | `READ_AHEAD`              | Optional; rows of one list read from MongoDB at once. `32` when unset; `0`, `1`, `off`, or a non-number read one at a time   |
 | `QUERY_CACHE`             | Optional; `since-dispatch` when unset keeps running requests' answers; `memoize` or any other value clears them per request  |
+| `BATCHED_QUERIES`         | Optional; `on` when unset reads the rows a batched query is asked for together; `off` or any other value asks one at a time  |
 
 Each slow request is logged as one backend line with the endpoint path, the
 time taken, the number of MongoDB commands issued while serving it, and how
@@ -119,14 +120,27 @@ at once.` or `commons: reading the rows of a list one at a time.`
   `READ_AHEAD=off`: reading ahead while clearing answers issues about twice the
   MongoDB commands of the previous release when a class arrives at once. A
   mistyped value also clears answers and leaves `READ_AHEAD` as it is.
-- **Exactly as before.** `READ_AHEAD=off` with `QUERY_CACHE=memoize` reads as
-  the previous release did. Marking a thread seen stays one write whatever
-  they are set to; only redeploying the previous release brings back one write
-  per post.
+- **Batched queries.** The queries a page asks for many rows, such as whether
+  each post is trashed or each node's conversation, answer all the rows a page
+  asks for together in one MongoDB command. Startup logs either
+  `commons: batched queries read the rows asked together in one call.` or
+  `commons: batched queries read one row at a time.` Set `BATCHED_QUERIES=off`
+  to ask one row at a time; like `READ_AHEAD`, it restarts the backend, so
+  change it between classes. `READ_AHEAD=off` also asks one row at a time. A
+  value that is neither `on` nor `off` asks one row at a time and logs a
+  warning. Either way each query reads through the same code, so these
+  settings are for MongoDB load, not for wrong answers.
+- **Closest to before.** `READ_AHEAD=off` with `QUERY_CACHE=memoize` reads one
+  row at a time and clears answers per request, as the release before engine
+  1.2.0 did, though requests that overlap may still interleave differently.
+  Marking a thread seen stays one write whatever they are set to; only
+  redeploying an older release brings back one write per post.
 - **Rolling back the release.** It adds no migration and writes nothing new to
   MongoDB. Redeploying the previous commit is safe without restoring a backup.
-  As with any release, replace the running backend in one step rather than
-  starting the other one alongside it.
+  If a page shows a wrong answer, redeploy the previous commit at once: the
+  settings above change how much is read together, not what is read. As with
+  any release, replace the running backend in one step rather than starting
+  the other one alongside it.
 
 `MONGODB_URL` remains a supported legacy alias. If both MongoDB variables are
 nonempty, they must contain the same value. Commons refuses conflicting values

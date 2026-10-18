@@ -1,7 +1,11 @@
 import { assemble } from "@mit-sdg/sync-engine/assembly";
 import { learningConcepts, mongoImplementations } from "../concepts.ts";
 import { composition } from "../compositions/index.ts";
-import { configuredQueryCache, configuredReadAhead } from "../deployment.ts";
+import {
+  configuredBatchedQueries,
+  configuredQueryCache,
+  configuredReadAhead,
+} from "../deployment.ts";
 
 export type CommonsImplementations = ReturnType<typeof mongoImplementations>;
 
@@ -35,6 +39,8 @@ export function assembleCommons(instances: CommonsImplementations, clock?: () =>
     // A request reuses only answers read since it arrived; QUERY_CACHE=memoize clears them all instead.
     queryCache: configuredQueryCache(),
     ...(rowsAtOnce > 1 ? { concurrentReads: { rowsAtOnce } } : {}),
+    // Batched queries read the rows asked together in one call; BATCHED_QUERIES=off asks each alone.
+    ...(configuredBatchedQueries() ? {} : { groupBatchedQueries: false }),
     ...(clock === undefined ? {} : { clock }),
   });
   return application as Omit<typeof application, "concepts"> & {

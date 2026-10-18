@@ -66,6 +66,23 @@ export function readAheadWarning(env: NodeJS.ProcessEnv = process.env): string |
   return `commons: READ_AHEAD "${source}" is not a number of rows or off; reading the rows of a list one at a time.`;
 }
 
+/**
+ * Whether batched queries read the rows asked together in one call. `off` asks
+ * each row alone, and so does any value but `on`, so a mistyped value turns
+ * grouping off rather than stopping the server. Grouping also needs `READ_AHEAD`.
+ */
+export function configuredBatchedQueries(env: NodeJS.ProcessEnv = process.env): boolean {
+  const source = env.BATCHED_QUERIES?.trim().toLowerCase() ?? "";
+  return source === "" || source === "on";
+}
+
+/** The startup warning for a `BATCHED_QUERIES` that is neither `on` nor `off`. */
+export function batchedQueriesWarning(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  const source = env.BATCHED_QUERIES?.trim() ?? "";
+  if (source === "" || ["on", "off"].includes(source.toLowerCase())) return undefined;
+  return `commons: BATCHED_QUERIES "${source}" is not on or off; asking batched queries one row at a time.`;
+}
+
 /** How query answers are reused unless `QUERY_CACHE` says otherwise. */
 export const QUERY_CACHE = "since-dispatch";
 

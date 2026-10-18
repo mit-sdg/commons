@@ -9,6 +9,8 @@ import { commonsMigrations, runMigrations } from "../migrations/index.ts";
 import type { Db } from "mongodb";
 import { constructConceptFloor } from "./concept-floor.ts";
 import {
+  batchedQueriesWarning,
+  configuredBatchedQueries,
   configuredQueryCache,
   configuredReadAhead,
   queryCacheWarning,
@@ -157,6 +159,13 @@ export async function runCommonsProcess(configuration: CommonsProcessConfigurati
     readAhead > 1
       ? `commons: reading up to ${readAhead} rows of a list at once.`
       : "commons: reading the rows of a list one at a time.",
+  );
+  const batchedQueriesIgnored = batchedQueriesWarning();
+  if (batchedQueriesIgnored !== undefined) console.warn(batchedQueriesIgnored);
+  console.log(
+    readAhead > 1 && configuredBatchedQueries()
+      ? "commons: batched queries read the rows asked together in one call."
+      : "commons: batched queries read one row at a time.",
   );
   const queryCacheIgnored = queryCacheWarning();
   if (queryCacheIgnored !== undefined) console.warn(queryCacheIgnored);
