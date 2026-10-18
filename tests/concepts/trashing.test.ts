@@ -44,14 +44,17 @@ for (const [floor, make] of floors) {
       const instances = ["Trashing", "Archiving", "DraftTrashing"].map(
         (name) => [name, new MongoTrashingConcept(database, name)] as const,
       );
-      const [[, trashing], [, archiving]] = instances;
+      const [[, trashing], [, archiving], [, draftTrashing]] = instances;
       await trashing.trash({ item: "both", by: "maya", at });
       await archiving.trash({ item: "both", by: "admin", at });
       await trashing.trash({ item: "trashed-only", by: "maya", at });
       await archiving.trash({ item: "archived-only", by: "admin", at });
-      const samples = ["both", "trashed-only", "archived-only", "missing"].map((item) => ({
-        item,
-      }));
+      await draftTrashing.trash({ item: "draft-only", by: "maya", at });
+      const samples = ["both", "trashed-only", "archived-only", "draft-only", "missing"].map(
+        (item) => ({
+          item,
+        }),
+      );
       for (const [name, concept] of instances) {
         const items = database.collection<{ _id: string }>(
           `${name[0]!.toLowerCase()}${name.slice(1)}.items`,

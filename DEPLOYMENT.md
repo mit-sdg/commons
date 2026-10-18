@@ -129,16 +129,19 @@ at once.` or `commons: reading the rows of a list one at a time.`
   change it between classes. `READ_AHEAD=off` also asks one row at a time. A
   value that is neither `on` nor `off` asks one row at a time and logs a
   warning. Either way each query reads through the same code, so these
-  settings are for MongoDB load, not for wrong answers.
+  settings are for MongoDB load, not for wrong answers. A thread page loads its
+  posts' controls in batches; adding `?postControls=single` to its address
+  loads them one post at a time.
 - **Closest to before.** `READ_AHEAD=off` with `QUERY_CACHE=memoize` reads one
   row at a time and clears answers per request, as the release before engine
   1.2.0 did, though requests that overlap may still interleave differently.
   Marking a thread seen stays one write whatever they are set to; only
   redeploying an older release brings back one write per post.
 - **Rolling back the release.** It adds no migration and writes nothing new to
-  MongoDB. Redeploying the previous commit is safe without restoring a backup.
-  If a page shows a wrong answer, redeploy the previous commit at once: the
-  settings above change how much is read together, not what is read. As with
+  MongoDB. Redeploying the commit `main` held before the release is safe
+  without restoring a backup. If a page shows a wrong answer, redeploy that
+  commit at once: the settings above change how much is read together, not
+  what is read. As with
   any release, replace the running backend in one step rather than starting
   the other one alongside it.
 
