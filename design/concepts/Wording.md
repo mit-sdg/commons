@@ -47,21 +47,21 @@ Rule: Wording keeps words. It does not render them, interpret anything inside th
 ## Actions
 
 ```actions
-word (place: Place, heading: String, passage: String) : return (heading: String, passage: String)
+word (place: Place, heading: String, passage: String) : returns (heading: String, passage: String)
   where heading and passage are valid
   then
     replace the wording standing in place with the trimmed heading and passage together
-    return heading, passage
+    returns heading, passage
   where heading or passage is not valid
   then
     leave the wording standing in place unchanged
-    refuse INVALID_WORDING "Use a one-line heading of up to 200 characters and a passage of up to 20000 characters."
+    refuses INVALID_WORDING "Use a one-line heading of up to 200 characters and a passage of up to 20000 characters."
 
-withdraw (place: Place) : return (place: Place)
+withdraw (place: Place) : returns (place: Place)
   where always
   then
     remove any wording standing in place
-    return place
+    returns place
 ```
 
 ## Queries

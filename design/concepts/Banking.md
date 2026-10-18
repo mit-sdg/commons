@@ -26,7 +26,7 @@ external Item
 ## State
 
 ```state
-an element of Terms with
+a Terms with
   an allowance    Number
   a perItemLimit  Number
   a unitHours     Number
@@ -43,8 +43,8 @@ a set of Uses with
   a days      Number
   an appliedAt Date
 
-an Applied  set of Uses
-a Canceled  set of Uses
+a set of Applied Uses
+a set of Canceled Uses
 
 Rule: the terms are absent until they are set.
 Rule: until terms are set, the allowance is zero, the per-item limit is five days, and each late day represents twenty-four hours.
@@ -59,68 +59,68 @@ Rule: items are opaque identities; Banking neither creates nor validates them, a
 ## Actions
 
 ```actions
-setTerms(allowance: Number, perItemLimit: Number, unitHours: Number) : return (allowance: Number, perItemLimit: Number, unitHours: Number)
+setTerms(allowance: Number, perItemLimit: Number, unitHours: Number) : returns (allowance: Number, perItemLimit: Number, unitHours: Number)
   where true
   then
     set the terms' allowance, perItemLimit, and unitHours from the inputs
-    return allowance, perItemLimit, unitHours
-grant(learner: Learner, days: Number, reason: String, at: Date) : return (grant: Grant)
+    returns allowance, perItemLimit, unitHours
+grant(learner: Learner, days: Number, reason: String, at: Date) : returns (grant: Grant)
   where days is a finite number greater than zero
   then
     add a new grant with learner, days, and reason
     set grant's grantedAt to at
-    return grant
+    returns grant
   where days is not a finite number greater than zero
   then
-    refuse LATE_DAYS_MUST_BE_POSITIVE "A grant must be for a finite positive number of days."
+    refuses LATE_DAYS_MUST_BE_POSITIVE "A grant must be for a finite positive number of days."
 
-apply(learner: Learner, item: Item, days: Number, at: Date) : return (use: Use)
+apply(learner: Learner, item: Item, days: Number, at: Date) : returns (use: Use)
   where days is a finite number greater than zero, days is at most the terms' perItemLimit, learner has no applied use for item, and days is at most the balance of learner
   then
     add a new use with learner, item, and days
     set use's appliedAt to at
     add use to applied
-    return use
+    returns use
   where days is not a finite number greater than zero
   then
-    refuse LATE_DAYS_MUST_BE_POSITIVE "Late days must be a finite positive number."
+    refuses LATE_DAYS_MUST_BE_POSITIVE "Late days must be a finite positive number."
   where days is greater than the terms' perItemLimit
   then
-    refuse LATE_DAYS_EXCEED_MAX "That is more late days than any one item may absorb."
+    refuses LATE_DAYS_EXCEED_MAX "That is more late days than any one item may absorb."
   where learner has an applied use for item
   then
-    refuse LATE_USE_ALREADY_EXISTS "Late days already stand applied to this item."
+    refuses LATE_USE_ALREADY_EXISTS "Late days already stand applied to this item."
   where days is greater than the balance of learner
   then
-    refuse INSUFFICIENT_BALANCE "The learner's balance is short of the days requested."
+    refuses INSUFFICIENT_BALANCE "The learner's balance is short of the days requested."
 
-change(learner: Learner, item: Item, days: Number) : return (use: Use)
+change(learner: Learner, item: Item, days: Number) : returns (use: Use)
   where the applied use of learner and item stands, days is a finite number at least zero, days is at most the terms' perItemLimit, and the increase over the use's days is at most the balance of learner
   then
     set use's days to days
-    return use
+    returns use
   where learner has no applied use for item
   then
-    refuse LATE_USE_NOT_FOUND "No late days stand applied to this item."
+    refuses LATE_USE_NOT_FOUND "No late days stand applied to this item."
   where days is not a finite number at least zero
   then
-    refuse LATE_DAYS_NEGATIVE "Late days must be a finite non-negative number."
+    refuses LATE_DAYS_NEGATIVE "Late days must be a finite non-negative number."
   where days is greater than the terms' perItemLimit
   then
-    refuse LATE_DAYS_EXCEED_MAX "That is more late days than any one item may absorb."
+    refuses LATE_DAYS_EXCEED_MAX "That is more late days than any one item may absorb."
   where the increase over the use's days is greater than the balance of learner
   then
-    refuse INSUFFICIENT_BALANCE "The learner's balance is short of the increase requested."
+    refuses INSUFFICIENT_BALANCE "The learner's balance is short of the increase requested."
 
-cancel(learner: Learner, item: Item) : return (use: Use)
+cancel(learner: Learner, item: Item) : returns (use: Use)
   where the applied use of learner and item stands
   then
     remove use from applied
     add use to canceled
-    return use
+    returns use
   where learner has no applied use for item
   then
-    refuse LATE_USE_NOT_FOUND "No late days stand applied to this item."
+    refuses LATE_USE_NOT_FOUND "No late days stand applied to this item."
 ```
 
 ## Queries

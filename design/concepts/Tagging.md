@@ -35,48 +35,48 @@ Rule: targets are opaque identities; Tagging neither creates nor validates them.
 ## Actions
 
 ```actions
-createTag(name: String) : return (tag: Tag)
+createTag(name: String) : returns (tag: Tag)
   where no tag has this name
   then
     add a new tag with name
-    return tag
+    returns tag
   where some tag has this name
   then
-    refuse TAG_ALREADY_EXISTS "A tag with this name already exists."
+    refuses TAG_ALREADY_EXISTS "A tag with this name already exists."
 
-addTag(target: Target, tag: Tag) : return (target: Target)
+addTag(target: Target, tag: Tag) : returns (target: Target)
   where tag in tags and tag not in target's applied
   then
     append tag to target's applied
-    return target
+    returns target
   where tag not in tags
   then
-    refuse TAG_NOT_FOUND "There is no such tag."
+    refuses TAG_NOT_FOUND "There is no such tag."
   where tag in target's applied
   then
-    refuse TAG_ALREADY_APPLIED "This tag is already applied to the target."
-removeTag(target: Target, tag: Tag) : return (target: Target)
+    refuses TAG_ALREADY_APPLIED "This tag is already applied to the target."
+removeTag(target: Target, tag: Tag) : returns (target: Target)
   where tag in target's applied
   then
     remove tag from target's applied
-    return target
+    returns target
   where tag not in target's applied
   then
-    refuse TAG_NOT_APPLIED "This tag is not applied to the target."
-deleteTag(tag: Tag) : return (tag: Tag)
+    refuses TAG_NOT_APPLIED "This tag is not applied to the target."
+deleteTag(tag: Tag) : returns (tag: Tag)
   where tag in tags
   then
     remove tag from every target's applied
     delete tag
-    return tag
+    returns tag
   where tag not in tags
   then
-    refuse TAG_NOT_FOUND "There is no such tag."
-clearTarget(target: Target) : return (target: Target)
+    refuses TAG_NOT_FOUND "There is no such tag."
+clearTarget(target: Target) : returns (target: Target)
   where true
   then
     remove target from tagged
-    return target
+    returns target
 ```
 
 ## Queries

@@ -36,22 +36,22 @@ Rule: Locating does not render codes, decide who may see one, or interpret the s
 ## Actions
 
 ```actions
-ensure (subject: Subject) : return (location: Location, code: String)
+ensure (subject: Subject) : returns (location: Location, code: String)
   where a location has subject subject
   then
-    return location, code
+    returns location, code
   where no location has subject subject
   then
     add a location with subject and a freshly minted unique code
-    return location, code
+    returns location, code
 
-locate (code: String) : return (subject: Subject)
+locate (code: String) : returns (subject: Subject)
   where trimming code and changing letters to uppercase yields the code of a location
   then
-    return subject
+    returns subject
   where it does not yield the code of a location
   then
-    refuse NOTHING_LOCATED "Nothing is located there."
+    refuses NOTHING_LOCATED "Nothing is located there."
 ```
 
 ## Queries

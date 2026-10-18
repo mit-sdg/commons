@@ -63,34 +63,34 @@ Rule: presenting a standing voucher's credential with a counterpart that does no
 ## Actions
 
 ```actions
-issue(subject: Subject, at: Date, expiresAt: Date, counterpart?: String) : return (voucher: Voucher, subject: Subject, credential: String)
+issue(subject: Subject, at: Date, expiresAt: Date, counterpart?: String) : returns (voucher: Voucher, subject: Subject, credential: String)
   where expiresAt is after at
   then
     discard the subject's vouchers
     add a new voucher with subject, counterpart when given, issuedAt at, and expiresAt
-    return voucher, subject, credential
+    returns voucher, subject, credential
   where expiresAt is not after at
   then
-    refuse VOUCHER_EXPIRY_INVALID "The voucher expiry must come after its issue time."
+    refuses VOUCHER_EXPIRY_INVALID "The voucher expiry must come after its issue time."
 
-verify(voucher: Voucher, credential: String, at: Date, counterpart?: String) : return (voucher: Voucher, subject: Subject)
+verify(voucher: Voucher, credential: String, at: Date, counterpart?: String) : returns (voucher: Voucher, subject: Subject)
   where voucher exists, credential matches, at is before its expiresAt, and counterpart agrees with the voucher's
   then
-    return voucher, subject
+    returns voucher, subject
   where no voucher matches, credential does not match, at is not before its expiresAt, or counterpart does not agree with the voucher's
   then
     discard the voucher when it exists, its credential matches, and at is before its expiresAt
-    refuse VOUCHER_INVALID "That voucher is not valid."
+    refuses VOUCHER_INVALID "That voucher is not valid."
 
-redeem(voucher: Voucher, credential: String, at: Date, counterpart?: String) : return (voucher: Voucher, subject: Subject)
+redeem(voucher: Voucher, credential: String, at: Date, counterpart?: String) : returns (voucher: Voucher, subject: Subject)
   where voucher exists, credential matches, at is before its expiresAt, and counterpart agrees with the voucher's
   then
     discard the voucher
-    return voucher, subject
+    returns voucher, subject
   where no voucher matches, credential does not match, at is not before its expiresAt, or counterpart does not agree with the voucher's
   then
     discard the voucher when it exists, its credential matches, and at is before its expiresAt
-    refuse VOUCHER_INVALID "That voucher is not valid."
+    refuses VOUCHER_INVALID "That voucher is not valid."
 ```
 
 ## Queries

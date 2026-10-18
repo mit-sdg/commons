@@ -38,19 +38,19 @@ Rule: Sharing does not render tokens, decide who may be given one, revoke or exp
 ## Actions
 
 ```actions
-issue (subject: Subject) : return (share: Share, token: String)
+issue (subject: Subject) : returns (share: Share, token: String)
   where true
   then
     add a new share with subject and a freshly minted token
-    return share, token
+    returns share, token
 
-open (token: String) : return (subject: Subject)
+open (token: String) : returns (subject: Subject)
   where a share has token token
   then
-    return subject
+    returns subject
   where no share has token token
   then
-    refuse NOTHING_SHARED "Nothing is shared here."
+    refuses NOTHING_SHARED "Nothing is shared here."
 ```
 
 ## Queries

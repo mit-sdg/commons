@@ -15,6 +15,12 @@ Priya runs a workshop in which a room hands in answers and a helper, a person or
 ```types
 external Subject
   An application-owned identity for what the guidance stands beside.
+opaque Seq
+  An ordered list of the values its argument names.
+opaque GuidanceDocument
+  One selected document as `{ guidance, title, body }`.
+opaque SubjectText
+  One subject's guidance text as `{ subject, text }`.
 ```
 
 ## State
@@ -29,7 +35,7 @@ a set of Guidance with
 a set of Selections with
   a subject Subject
   a use String
-  a guidances Seq
+  a guidances seq of Guidance
 
 Rule: absent selections are empty. Selecting guidance never copies or deletes the original.
 Rule: removing guidance, directly or by replacement, removes its identity from every selection.
@@ -42,102 +48,102 @@ Rule: subjects are opaque identities; Guiding neither creates nor validates them
 ## Actions
 
 ```actions
-select (subject: Subject, use: String, guidances: Seq) : return (subject: Subject)
+select (subject: Subject, use: String, guidances: Seq<Guidance>) : returns (subject: Subject)
   where use is nonblank and every guidance exists under that use
   then
     replace the subject's selection with the distinct guidance identities in the given order
-    return subject
+    returns subject
   where use is blank
   then
-    refuse INVALID_USE "Guidance needs a use."
+    refuses INVALID_USE "Guidance needs a use."
   where any selected guidance does not exist under that use
   then
-    refuse GUIDANCE_NOT_FOUND "A selected document no longer exists."
+    refuses GUIDANCE_NOT_FOUND "A selected document no longer exists."
 
-give (subject: Subject, use: String, title: String, body: String) : return (guidance: Guidance)
+give (subject: Subject, use: String, title: String, body: String) : returns (guidance: Guidance)
   where use is valid, title is valid, and body is valid
   then
     add a new guidance with subject, use, trimmed title, and trimmed body, after the last guidance of this subject under this use
-    return guidance
+    returns guidance
   where use is not valid
   then
-    refuse INVALID_USE "Guidance needs a use."
+    refuses INVALID_USE "Guidance needs a use."
   where title is not valid
   then
-    refuse INVALID_TITLE "The title must be at most 200 characters long."
+    refuses INVALID_TITLE "The title must be at most 200 characters long."
   where body is not valid
   then
-    refuse INVALID_GUIDANCE "Guidance must be 1 to 40000 characters long."
+    refuses INVALID_GUIDANCE "Guidance must be 1 to 40000 characters long."
 
-set (subject: Subject, use: String, title: String, body: String) : return (guidance: Guidance)
+set (subject: Subject, use: String, title: String, body: String) : returns (guidance: Guidance)
   where use is valid, title is valid, and body is valid, and guidance stands beside subject under use
   then
     let guidance be the earliest given of them
     set guidance's title to trimmed title and body to trimmed body
     delete every other guidance of this subject under this use
     remove the deleted identities from every selection
-    return guidance
+    returns guidance
   where use is valid, title is valid, and body is valid, and no guidance stands beside subject under use
   then
     add a new guidance with subject, use, trimmed title, and trimmed body
-    return guidance
+    returns guidance
   where use is not valid
   then
-    refuse INVALID_USE "Guidance needs a use."
+    refuses INVALID_USE "Guidance needs a use."
   where title is not valid
   then
-    refuse INVALID_TITLE "The title must be at most 200 characters long."
+    refuses INVALID_TITLE "The title must be at most 200 characters long."
   where body is not valid
   then
-    refuse INVALID_GUIDANCE "Guidance must be 1 to 40000 characters long."
+    refuses INVALID_GUIDANCE "Guidance must be 1 to 40000 characters long."
 
-revise (guidance: Guidance, title: String, body: String) : return (guidance: Guidance)
+revise (guidance: Guidance, title: String, body: String) : returns (guidance: Guidance)
   where guidance exists, title is valid, and body is valid
   then
     set guidance's title to trimmed title and body to trimmed body
-    return guidance
+    returns guidance
   where guidance does not exist
   then
-    refuse GUIDANCE_NOT_FOUND "There is no such guidance."
+    refuses GUIDANCE_NOT_FOUND "There is no such guidance."
   where title is not valid
   then
-    refuse INVALID_TITLE "The title must be at most 200 characters long."
+    refuses INVALID_TITLE "The title must be at most 200 characters long."
   where body is not valid
   then
-    refuse INVALID_GUIDANCE "Guidance must be 1 to 40000 characters long."
+    refuses INVALID_GUIDANCE "Guidance must be 1 to 40000 characters long."
 
-remove (guidance: Guidance) : return (guidance: Guidance)
+remove (guidance: Guidance) : returns (guidance: Guidance)
   where guidance exists
   then
     delete the guidance
     remove its identity from every selection
-    return guidance
+    returns guidance
   where guidance does not exist
   then
-    refuse GUIDANCE_NOT_FOUND "There is no such guidance."
+    refuses GUIDANCE_NOT_FOUND "There is no such guidance."
 
-clear (subject: Subject, use: String) : return (cleared: Boolean)
+clear (subject: Subject, use: String) : returns (cleared: Flag)
   where use is valid
   then
     let cleared be whether any guidance stands for the subject under the trimmed use
     delete every guidance of the subject under the trimmed use
     remove the deleted identities from every selection
-    return cleared
+    returns cleared
   where use is not valid
   then
-    refuse INVALID_USE "Guidance needs a use."
+    refuses INVALID_USE "Guidance needs a use."
 ```
 
 ## Queries
 
 ```queries
-_selection (subject: String, use: String) : one (guidances: Seq)
+_selection (subject: String, use: String) : one (guidances: Seq<Guidance>)
   answers the selected guidance identities, or an empty sequence
 
-_documentsById (guidances: Seq, use: String) : one (documents: Seq, guidances: Seq)
+_documentsById (guidances: Seq<Guidance>, use: String) : one (documents: Seq<GuidanceDocument>, guidances: Seq<Guidance>)
   answers existing selected documents under the use in selection order, each with guidance, title, and body, and the identities of those documents; missing entries are omitted
 
-_selectedDocuments (subject: String, use: String) : one (documents: Seq)
+_selectedDocuments (subject: String, use: String) : one (documents: Seq<GuidanceDocument>)
   answers the documents selected for this subject and use, as documentsById does
 
 _guidanceFor (subject: String, use: String) : many (guidance: String, title: String, body: String)
@@ -152,13 +158,13 @@ _guidanceText (subject: String, use: String) : one (text: String)
   in the order given, joined by a blank line, as one text a reader takes whole
   answers an empty string when none stands
 
-_guidanceTexts (subjects: Seq, use: String) : one (texts: Seq)
+_guidanceTexts (subjects: Seq<String>, use: String) : one (texts: Seq<SubjectText>)
   answers several subjects back as one value: for each identity in the given
   sequence, in that order, `{ subject, text }` with the text as `_guidanceText`
   answers it
   answers an empty sequence when the given sequence is empty
 
-_documents (subject: String, use: String) : one (documents: Seq)
+_documents (subject: String, use: String) : one (documents: Seq<GuidanceDocument>)
   answers the guidance standing beside the Subject under the use as one value:
   `{ guidance, title, body }` per entry, in the order given, so a reader that
   needs each entry under its own title takes them whole

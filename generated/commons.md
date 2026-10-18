@@ -1,5 +1,5 @@
 <!-- Generated from the Commons assembly. Do not edit. -->
-<!-- Manifest producer: @mit-sdg/sync-engine@1.0.0-beta.18; concept specification: sync-engine.concept-specification@1; renderer: @mit-sdg/sync-engine@1.0.0-beta.18. -->
+<!-- Manifest producer: @mit-sdg/sync-engine@1.2.0; concept specification: sync-engine.concept-specification@1; renderer: @mit-sdg/sync-engine@1.2.0. -->
 
 # Commons — assembled read-back
 
@@ -14,15 +14,15 @@ Defined in [Accessing](../design/concepts/Accessing.md), line 1.
 
 #### Actions
 
-- `establish(resource: Resource, holders: Seq) : return (resource: Resource)`
+- `establish(resource: Resource, holders: Seq<Holder>) : returns (resource: Resource)`
   - Refuses `ACCESS_ALREADY_ESTABLISHED`: Access has already been established or retired.
-- `retire(resource: Resource) : return (resource: Resource)`
+- `retire(resource: Resource) : returns (resource: Resource)`
 
 #### Queries
 
 - `_grants(resource: Resource) : many (holder: Holder)`
-- `_isRetired(resource: Resource) : one (retired: Boolean)`
-- `_holders(resource: Resource) : optional (holders: Seq)`
+- `_isRetired(resource: Resource) : one (retired: Flag)`
+- `_holders(resource: Resource) : optional (holders: Seq<Holder>)`
 
 #### Instances
 
@@ -36,42 +36,42 @@ Defined in [Assigning](../design/concepts/Assigning.md), line 1.
 
 #### Actions
 
-- `createDraft(author: Author, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Bool, audience: String, targets: Sections, at: Date) : return (assignment: Assignment)`
+- `createDraft(author: Author, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Flag, audience: String, targets: Sections, at: Date) : returns (assignment: Assignment)`
   - Refuses `ASSIGNMENT_EVERYONE_NO_TARGETS`: An assignment addressed to everyone cannot list targets.
   - Refuses `ASSIGNMENT_TARGETS_REQUIRED`: A targeted assignment needs at least one target.
   - Refuses `ASSIGNMENT_AUDIENCE_INVALID`: The assignment audience must be EVERYONE or TARGETS.
   - Refuses `ASSIGNMENT_SCHEDULE_INVALID`: Availability must be on or before the due date, and the due date must be on or before close.
-- `revise(assignment: Assignment, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Bool, audience: String, targets: Sections, at: Date) : return (assignment: Assignment, status: String, audience: String, targets: Sections, acceptsSubmissions: Bool)`
+- `revise(assignment: Assignment, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Flag, audience: String, targets: Sections, at: Date) : returns (assignment: Assignment, status: String, audience: String, targets: Sections, acceptsSubmissions: Flag)`
   - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
   - Refuses `ASSIGNMENT_NOT_REVISABLE`: An archived assignment can no longer be revised.
   - Refuses `ASSIGNMENT_EVERYONE_NO_TARGETS`: An assignment addressed to everyone cannot list targets.
   - Refuses `ASSIGNMENT_TARGETS_REQUIRED`: A targeted assignment needs at least one target.
   - Refuses `ASSIGNMENT_AUDIENCE_INVALID`: The assignment audience must be EVERYONE or TARGETS.
   - Refuses `ASSIGNMENT_SCHEDULE_INVALID`: Availability must be on or before the due date, and the due date must be on or before close.
-- `publish(assignment: Assignment, at: Date) : return (assignment: Assignment, audience: String, targets: Sections, acceptsSubmissions: Bool)`
+- `publish(assignment: Assignment, at: Date) : returns (assignment: Assignment, audience: String, targets: Sections, acceptsSubmissions: Flag)`
   - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
   - Refuses `ASSIGNMENT_NOT_DRAFT`: Only a draft can be published.
   - Refuses `ASSIGNMENT_SCHEDULE_INVALID`: Availability must be on or before the due date, and the due date must be on or before close.
-- `archive(assignment: Assignment, at: Date) : return (assignment: Assignment)`
+- `archive(assignment: Assignment, at: Date) : returns (assignment: Assignment)`
   - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
-- `assign(assignment: Assignment, assignee: Assignee, at: Date) : return (release: Release)`
+- `assign(assignment: Assignment, assignee: Assignee, at: Date) : returns (release: Release)`
   - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
   - Refuses `ASSIGNMENT_NOT_PUBLISHED`: Only a published assignment can be assigned.
   - Refuses `RELEASE_ALREADY_EXISTS`: This assignee already holds a release of this assignment.
-- `setDueOverride(assignment: Assignment, assignee: Assignee, dueAt: Date) : return (release: Release)`
+- `setDueOverride(assignment: Assignment, assignee: Assignee, dueAt: Date) : returns (release: Release)`
   - Refuses `RELEASE_NOT_FOUND`: This assignee holds no release of this assignment.
-- `clearDueOverride(assignment: Assignment, assignee: Assignee) : return (release: Release)`
+- `clearDueOverride(assignment: Assignment, assignee: Assignee) : returns (release: Release)`
   - Refuses `RELEASE_NOT_FOUND`: This assignee holds no release of this assignment.
 
 #### Queries
 
 - `_getDetail(assignment: String) : optional (detail: Assignment)`
-- `_getAssignments() : many (assignment: String, author: String, title: String, instructions: String, kind: String, availableAt: String, dueAt: String, closeAt: String | Null, acceptsSubmissions: Boolean, audience: Audience, targets: Strings, status: String, createdAt: Date, updatedAt: Date | Null)`
-- `_getAssigned(assignee: String) : many (assignment: String, release: String, dueOverride: String | Null, status: ASSIGNED)`
+- `_getAssignments() : many (assignment: String, author: String, title: String, instructions: String, kind: String, availableAt: String, dueAt: String, closeAt: String | null, acceptsSubmissions: Flag, audience: String, targets: Seq<String>, status: String, createdAt: Date, updatedAt: Date | null)`
+- `_getAssigned(assignee: String) : many (assignment: String, release: String, dueOverride: String | null, status: String)`
 - `_getAssignees(assignment: String) : many (assignee: String)`
-- `_isAssigned(assignment: String, assignee: String) : one (assigned: Boolean)`
-- `_assignedAmong(assignment: String, assignees: Seq) : one (assigned: Seq)`
-- `_getPublishedForAudience(audience: String | Null) : many (assignment: String)`
+- `_isAssigned(assignment: String, assignee: String) : one (assigned: Flag)`
+- `_assignedAmong(assignment: String, assignees: Seq<String>) : one (assigned: Seq<String>)`
+- `_getPublishedForAudience(audience: String | null) : many (assignment: String)`
 - `_getPublishedInWindow(start: String | Date, end: String | Date) : many (assignment: String)`
 
 #### Instances
@@ -87,8 +87,8 @@ Defined in [Attending](../design/concepts/Attending.md), line 1.
 
 #### Actions
 
-- `attend(gathering: Gathering, attendee: Attendee, holding: String, at: Date) : return (attendee: Attendee)`
-- `leave(gathering: Gathering, attendee: Attendee) : return (attendee: Attendee)`
+- `attend(gathering: Gathering, attendee: Attendee, holding: String, at: Date) : returns (attendee: Attendee)`
+- `leave(gathering: Gathering, attendee: Attendee) : returns (attendee: Attendee)`
   - Refuses `NOT_ATTENDING`: This participant is not here.
 
 #### Queries
@@ -107,33 +107,33 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 
 #### Actions
 
-- `register(username: String, password: String, email: String) : return (user: User)`
+- `register(username: String, password: String, email: String) : returns (user: User)`
   - Refuses `INVALID_BODY`: The email address is not well formed.
   - Refuses `USERNAME_INVALID_LENGTH`: The username must be 3 to 32 characters long.
   - Refuses `USERNAME_INVALID_CHARS`: The username must start with a letter and contain only letters, digits, hyphens, and underscores.
   - Refuses `PASSWORD_INVALID_LENGTH`: The password must be 8 to 128 characters long.
   - Refuses `USERNAME_TAKEN`: That username is already taken.
   - Refuses `EMAIL_TAKEN`: That email address already has an account.
-- `authenticate(username: String, password: String) : return (user: User)`
+- `authenticate(username: String, password: String) : returns (user: User)`
   - Refuses `INVALID_CREDENTIALS`: Unknown username or wrong password.
-- `changePassword(user: User, oldPassword: String, newPassword: String) : return (user: User)`
+- `changePassword(user: User, oldPassword: String, newPassword: String) : returns (user: User)`
   - Refuses `INVALID_CREDENTIALS`: The current password is wrong.
   - Refuses `PASSWORD_INVALID_LENGTH`: The password must be 8 to 128 characters long.
-- `resetPassword(user: User, newPassword: String) : return (user: User)`
+- `resetPassword(user: User, newPassword: String) : returns (user: User)`
   - Refuses `INVALID_CREDENTIALS`: There is no such account.
   - Refuses `PASSWORD_INVALID_LENGTH`: The password must be 8 to 128 characters long.
 
 #### Queries
 
-- `_knownUsers(users: Seq) : one (known: Boolean)`
+- `_knownUsers(users: Seq<String>) : one (known: Flag)`
 - `_getById(user: String) : optional (username: String, email: String)`
 - `_getByEmail(email: String) : optional (user: String)`
 - `_getByUsername(username: String) : optional (user: String)`
 - `_getUserCount() : one (count: Number)`
-- `_selectedUsers(users: Seq) : many (user: String)`
+- `_selectedUsers(users: Seq<String>) : many (user: String)`
 - `_getUsers() : many (user: String, username: String, email: String)`
 - `_search(query: String) : many (user: String, username: String)`
-- `_resolveIdentity(ref: String) : one (user: String | Null, username: String | Null)`
+- `_resolveIdentity(ref: String) : one (user: String | null, username: String | null)`
 - `_denotedUser(ref: String) : one (user: String)`
 
 #### Instances
@@ -146,20 +146,20 @@ Defined in [Banking](../design/concepts/Banking.md), line 1.
 
 #### Actions
 
-- `setTerms(allowance: Number, perItemLimit: Number, unitHours: Number) : return (allowance: Number, perItemLimit: Number, unitHours: Number)`
-- `grant(learner: Learner, days: Number, reason: String, at: Date) : return (grant: Grant)`
+- `setTerms(allowance: Number, perItemLimit: Number, unitHours: Number) : returns (allowance: Number, perItemLimit: Number, unitHours: Number)`
+- `grant(learner: Learner, days: Number, reason: String, at: Date) : returns (grant: Grant)`
   - Refuses `LATE_DAYS_MUST_BE_POSITIVE`: A grant must be for a finite positive number of days.
-- `apply(learner: Learner, item: Item, days: Number, at: Date) : return (use: Use)`
+- `apply(learner: Learner, item: Item, days: Number, at: Date) : returns (use: Use)`
   - Refuses `LATE_DAYS_MUST_BE_POSITIVE`: Late days must be a finite positive number.
   - Refuses `LATE_DAYS_EXCEED_MAX`: That is more late days than any one item may absorb.
   - Refuses `LATE_USE_ALREADY_EXISTS`: Late days already stand applied to this item.
   - Refuses `INSUFFICIENT_BALANCE`: The learner's balance is short of the days requested.
-- `change(learner: Learner, item: Item, days: Number) : return (use: Use)`
+- `change(learner: Learner, item: Item, days: Number) : returns (use: Use)`
   - Refuses `LATE_USE_NOT_FOUND`: No late days stand applied to this item.
   - Refuses `LATE_DAYS_NEGATIVE`: Late days must be a finite non-negative number.
   - Refuses `LATE_DAYS_EXCEED_MAX`: That is more late days than any one item may absorb.
   - Refuses `INSUFFICIENT_BALANCE`: The learner's balance is short of the increase requested.
-- `cancel(learner: Learner, item: Item) : return (use: Use)`
+- `cancel(learner: Learner, item: Item) : returns (use: Use)`
   - Refuses `LATE_USE_NOT_FOUND`: No late days stand applied to this item.
 
 #### Queries
@@ -183,16 +183,16 @@ Defined in [Bookmarking](../design/concepts/Bookmarking.md), line 1.
 
 #### Actions
 
-- `save(user: User, item: Item, at: Date) : return (bookmark: Bookmark)`
+- `save(user: User, item: Item, at: Date) : returns (bookmark: Bookmark)`
   - Refuses `BOOKMARK_ALREADY_EXISTS`: This user has already saved this item.
-- `unsave(user: User, item: Item) : return (bookmark: Bookmark)`
+- `unsave(user: User, item: Item) : returns (bookmark: Bookmark)`
   - Refuses `BOOKMARK_NOT_FOUND`: There is no such bookmark to remove.
-- `clearItem(item: Item) : return (item: Item)`
+- `clearItem(item: Item) : returns (item: Item)`
 
 #### Queries
 
 - `_getSaved(user: String) : many (item: String, savedAt: Date)`
-- `_isSaved(user: String, item: String) : one (saved: Boolean)`
+- `_isSaved(user: String, item: String) : one (saved: Flag)`
 
 #### Instances
 
@@ -206,27 +206,27 @@ Defined in [Categorizing](../design/concepts/Categorizing.md), line 1.
 
 #### Actions
 
-- `createCategory(scope: Scope, name: String, description: String) : return (category: Category)`
+- `createCategory(scope: Scope, name: String, description: String) : returns (category: Category)`
   - Refuses `CATEGORY_ALREADY_EXISTS`: A category with this name already exists.
-- `ensureCategory(scope: Scope, name: String, description: String) : return (category: Category)`
-- `renameCategory(category: Category, name: String) : return (category: Category)`
+- `ensureCategory(scope: Scope, name: String, description: String) : returns (category: Category)`
+- `renameCategory(category: Category, name: String) : returns (category: Category)`
   - Refuses `CATEGORY_NOT_FOUND`: There is no such category.
   - Refuses `CATEGORY_ALREADY_EXISTS`: A category with this name already exists.
-- `describeCategory(category: Category, description: String) : return (category: Category)`
+- `describeCategory(category: Category, description: String) : returns (category: Category)`
   - Refuses `CATEGORY_NOT_FOUND`: There is no such category.
-- `mergeCategory(category: Category, into: Category) : return (into: Category)`
+- `mergeCategory(category: Category, into: Category) : returns (into: Category)`
   - Refuses `CATEGORY_NOT_FOUND`: There is no such category.
   - Refuses `SAME_CATEGORY`: A category cannot be merged into itself.
   - Refuses `DIFFERENT_SCOPES`: These categories are not in the same scope.
-- `file(scope: Scope, name: String, item: Item) : return (category: Category)`
-- `assign(item: Item, category: Category) : return (item: Item)`
+- `file(scope: Scope, name: String, item: Item) : returns (category: Category)`
+- `assign(item: Item, category: Category) : returns (item: Item)`
   - Refuses `CATEGORY_NOT_FOUND`: There is no such category.
-- `unassign(item: Item) : return (item: Item)`
+- `unassign(item: Item) : returns (item: Item)`
   - Refuses `ITEM_NOT_CATEGORIZED`: This item is not in any category.
-- `deleteEmptyCategory(category: Category) : return (category: Category, deleted: Boolean)`
-- `empty(scope: Scope) : return (emptied: Boolean)`
-- `deleteEmptyCategories(categories: Seq) : return (deleted: Boolean)`
-- `deleteCategory(category: Category) : return (category: Category)`
+- `deleteEmptyCategory(category: Category) : returns (category: Category, deleted: Flag)`
+- `empty(scope: Scope) : returns (emptied: Flag)`
+- `deleteEmptyCategories(categories: Seq<Category>) : returns (deleted: Flag)`
+- `deleteCategory(category: Category) : returns (category: Category)`
   - Refuses `CATEGORY_NOT_FOUND`: There is no such category.
 
 #### Queries
@@ -236,8 +236,8 @@ Defined in [Categorizing](../design/concepts/Categorizing.md), line 1.
 - `_getHome(item: String) : optional (home: Category)`
 - `_getItems(category: String) : many (item: String)`
 - `_categoriesIn(scope: String) : many (category: String, name: String, description: String)`
-- `_categoriesWithItems(scope: String) : one (categories: Seq)`
-- `_categoriesInScopes(scopes: Seq) : one (categories: Seq)`
+- `_categoriesWithItems(scope: String) : one (categories: Seq<CategoryWithItems>)`
+- `_categoriesInScopes(scopes: Seq<String>) : one (categories: Seq<ScopedCategory>)`
 
 #### Instances
 
@@ -251,23 +251,23 @@ Defined in [Commissioning](../design/concepts/Commissioning.md), line 1.
 
 #### Actions
 
-- `prepare(subject: Subject, brief: String, account: String, at: Date) : return (commission: Commission, subject: Subject, status: String, account: String, brief: String)`
-- `accept(commission: Commission, at: Date) : return (commission: Commission, brief: String)`
+- `prepare(subject: Subject, brief: String, account: String, at: Date) : returns (commission: Commission, subject: Subject, status: String, account: String, brief: String)`
+- `accept(commission: Commission, at: Date) : returns (commission: Commission, brief: String)`
   - Refuses `COMMISSION_NOT_FOUND`: There is no such commission.
   - Refuses `COMMISSION_NOT_PREPARED`: Only a prepared commission can be accepted.
-- `assign(commission: Commission, execution: Execution, at: Date) : return (commission: Commission, execution: Execution)`
+- `assign(commission: Commission, execution: Execution, at: Date) : returns (commission: Commission, execution: Execution)`
   - Refuses `COMMISSION_NOT_FOUND`: There is no such commission.
   - Refuses `COMMISSION_NOT_PREPARED`: Only an accepted undertaking can receive an execution.
-- `report(execution: Execution, successful: Boolean, account: String, at: Date) : return (execution: Execution, successful: Boolean, account: String)`
-- `conclude(commission: Commission, successful: Boolean, account: String, at: Date) : return (commission: Commission, status: String, account: String)`
+- `report(execution: Execution, successful: Flag, account: String, at: Date) : returns (execution: Execution, successful: Flag, account: String)`
+- `conclude(commission: Commission, successful: Flag, account: String, at: Date) : returns (commission: Commission, status: String, account: String)`
   - Refuses `COMMISSION_NOT_FOUND`: There is no such commission.
 
 #### Queries
 
-- `_receipt(execution: String) : optional (successful: Boolean, account: String, at: Date)`
-- `_commission(commission: String) : optional (subject: String, brief: String, status: String, account: String, executions: Seq, createdAt: Date, updatedAt: Date)`
+- `_receipt(execution: String) : optional (successful: Flag, account: String, at: Date)`
+- `_commission(commission: String) : optional (subject: String, brief: String, status: String, account: String, executions: Seq<Execution>, createdAt: Date, updatedAt: Date)`
 - `_forExecution(execution: String) : many (commission: String, subject: String, status: String)`
-- `_forSubject(subject: String) : many (commission: String, status: String, account: String, brief: String, executions: Seq)`
+- `_forSubject(subject: String) : many (commission: String, status: String, account: String, brief: String, executions: Seq<Execution>)`
 
 #### Instances
 
@@ -281,8 +281,8 @@ Defined in [Connecting](../design/concepts/Connecting.md), line 1.
 
 #### Actions
 
-- `approve(user: User, app: String, at: Date) : return (connection: Connection)`
-- `withdraw(connection: Connection) : return (connection: Connection)`
+- `approve(user: User, app: String, at: Date) : returns (connection: Connection)`
+- `withdraw(connection: Connection) : returns (connection: Connection)`
   - Refuses `CONNECTION_NOT_FOUND`: There is no such connection.
 
 #### Queries
@@ -302,28 +302,28 @@ Defined in [Conversing](../design/concepts/Conversing.md), line 1.
 
 #### Actions
 
-- `start(item: Item, at: Date) : return (conversation: Conversation, node: Node)`
+- `start(item: Item, at: Date) : returns (conversation: Conversation, node: Node)`
   - Refuses `ITEM_ALREADY_IN_CONVERSATION`: This item is already in a conversation.
-- `reply(item: Item, parent: Node, at: Date) : return (node: Node)`
+- `reply(item: Item, parent: Node, at: Date) : returns (node: Node)`
   - Refuses `PARENT_NODE_NOT_FOUND`: There is no such node to reply to.
   - Refuses `ITEM_ALREADY_IN_CONVERSATION`: This item is already in a conversation.
-- `remove(node: Node) : return (node: Node)`
+- `remove(node: Node) : returns (node: Node)`
   - Refuses `NODE_NOT_FOUND`: There is no such node.
   - Refuses `NODE_HAS_CHILDREN`: This node has replies beneath it.
-- `dissolve(conversation: Conversation) : return (conversation: Conversation)`
+- `dissolve(conversation: Conversation) : returns (conversation: Conversation)`
   - Refuses `CONVERSATION_NOT_FOUND`: There is no such conversation.
 
 #### Queries
 
-- `_exists(conversation: String) : one (exists: Boolean)`
-- `_threadNodes(conversation: String) : one (nodes: Seq)`
-- `_getThread(conversation: String) : many (node: String, item: String, parent: String | Null, depth: Number)`
+- `_exists(conversation: String) : one (exists: Flag)`
+- `_threadNodes(conversation: String) : one (nodes: Seq<ThreadNode>)`
+- `_getThread(conversation: String) : many (node: String, item: String, parent: String | null, depth: Number)`
 - `_getRoot(conversation: String) : optional (item: Item)`
 - `_getConversation(node: String) : optional (conversation: String)`
 - `_getNodeByItem(item: String) : optional (node: String)`
 - `_parentOf(node: String) : optional (parent: String)`
 - `_getItem(node: String) : optional (item: String)`
-- `_hasChildren(node: String) : one (present: Boolean)`
+- `_hasChildren(node: String) : one (present: Flag)`
 - `_getConversations() : many (conversation: String, root: String, item: String, createdAt: Date, lastActivityAt: Date)`
 - `_getConversationsByLastActivity() : many (conversation: String, root: String, item: String, createdAt: Date, lastActivityAt: Date)`
 
@@ -338,12 +338,12 @@ Defined in [Delegating](../design/concepts/Delegating.md), line 1.
 
 #### Actions
 
-- `delegate(item: Item, subject: Subject, delegate: Delegate) : return (delegation: Delegation)`
-- `withdraw(item: Item, subject: Subject) : return (delegation: Delegation)`
+- `delegate(item: Item, subject: Subject, delegate: Delegate) : returns (delegation: Delegation)`
+- `withdraw(item: Item, subject: Subject) : returns (delegation: Delegation)`
   - Refuses `DELEGATION_NOT_FOUND`: No delegate is named for this subject.
-- `spread(item: Item, subjects: Seq, delegates: Seq, replace: Bool) : return (assigned: Rows)`
+- `spread(item: Item, subjects: Seq<Subject>, delegates: Seq<Delegate>, replace: Flag) : returns (assigned: Seq<SpreadRow>)`
   - Refuses `INVALID_SPREAD`: Choose at least one subject and at least one delegate, each named once.
-- `clearItem(item: Item) : return (cleared: Number)`
+- `clearItem(item: Item) : returns (cleared: Number)`
 
 #### Queries
 
@@ -363,47 +363,47 @@ Defined in [Drafting](../design/concepts/Drafting.md), line 1.
 
 #### Actions
 
-- `describe(author: Author, request: String, at: Date, context?: String) : return (brief: Brief)`
-- `open(author: Author, request: String, form: String, material: Seq, origin: Origin, at: Date, context?: String) : return (brief: Brief, candidate: Candidate)`
-- `correct(author: Author, candidate: Candidate, request: String, at: Date) : return (brief: Brief)`
+- `describe(author: Author, request: String, at: Date, context?: String) : returns (brief: Brief)`
+- `open(author: Author, request: String, form: String, material: Seq<MaterialEntry>, origin: Origin, at: Date, context?: String) : returns (brief: Brief, candidate: Candidate)`
+- `correct(author: Author, candidate: Candidate, request: String, at: Date) : returns (brief: Brief)`
   - Refuses `CANDIDATE_NOT_FOUND`: There is no such draft to correct.
   - Refuses `ALREADY_ADOPTED`: This draft was already adopted; edit it directly instead.
-- `propose(brief: Brief, form: String, material: Seq) : return (candidate: Candidate)`
+- `propose(brief: Brief, form: String, material: Seq<MaterialEntry>) : returns (candidate: Candidate)`
   - Refuses `BRIEF_NOT_FOUND`: There is no such request.
   - Refuses `ALREADY_DRAFTED`: This request was already drafted; correct the draft instead.
   - Refuses `AWAITING_CLARIFICATION`: This request is waiting on the author's clarification.
   - Refuses `REQUEST_STALLED`: This request stalled; describe it again.
-- `ask(brief: Brief, question: String) : return (clarification: Clarification)`
+- `ask(brief: Brief, question: String) : returns (clarification: Clarification)`
   - Refuses `BRIEF_NOT_FOUND`: There is no such request.
   - Refuses `ALREADY_DRAFTED`: This request was already drafted; correct the draft instead.
   - Refuses `REQUEST_STALLED`: This request stalled; describe it again.
-- `stall(brief: Brief, reason: String) : return (brief: Brief)`
+- `stall(brief: Brief, reason: String) : returns (brief: Brief)`
   - Refuses `BRIEF_NOT_FOUND`: There is no such request.
   - Refuses `NOT_AWAITING_DRAFT`: This request is not waiting on a draft.
-- `clarify(clarification: Clarification, answer: String) : return (clarification: Clarification, brief: Brief)`
+- `clarify(clarification: Clarification, answer: String) : returns (clarification: Clarification, brief: Brief)`
   - Refuses `CLARIFICATION_NOT_FOUND`: There is no such question.
   - Refuses `ALREADY_ANSWERED`: This question was already answered.
-- `adopt(candidate: Candidate) : return (candidate: Candidate)`
+- `adopt(candidate: Candidate) : returns (candidate: Candidate)`
   - Refuses `CANDIDATE_NOT_FOUND`: There is no such draft.
   - Refuses `ALREADY_ADOPTED`: This draft was already adopted.
 
 #### Queries
 
 - `_context(brief: String) : one (context: String)`
-- `_brief(brief: String) : optional (author: String, request: String, createdAt: Date, basis: String | Null)`
-- `_briefs(author: String) : many (brief: String, request: String, createdAt: Date, basis: String | Null)`
-- `_lines(author: String) : many (brief: String, request: String, createdAt: Date, origin: String | Null, adopted: Boolean, stalled: Boolean, clarifying: Boolean)`
-- `_openedFrom(origin: String) : many (brief: String, author: String, request: String, createdAt: Date, adopted: Boolean, stalled: Boolean, clarifying: Boolean)`
-- `_standing(brief: String) : optional (clarifying: Boolean, stalled: Boolean)`
+- `_brief(brief: String) : optional (author: String, request: String, createdAt: Date, basis: String | null)`
+- `_briefs(author: String) : many (brief: String, request: String, createdAt: Date, basis: String | null)`
+- `_lines(author: String) : many (brief: String, request: String, createdAt: Date, origin: String | null, adopted: Flag, stalled: Flag, clarifying: Flag)`
+- `_openedFrom(origin: String) : many (brief: String, author: String, request: String, createdAt: Date, adopted: Flag, stalled: Flag, clarifying: Flag)`
+- `_standing(brief: String) : optional (clarifying: Flag, stalled: Flag)`
 - `_originOf(brief: String) : optional (origin: String)`
 - `_basisOf(brief: String) : optional (basis: String)`
 - `_rootOf(brief: String) : optional (root: String, request: String)`
-- `_clarifications(brief: String) : many (clarification: String, question: String, answer: String | Null)`
-- `_candidateOf(brief: String) : optional (candidate: String, form: String, adopted: Boolean)`
-- `_candidate(candidate: String) : optional (brief: String, form: String, adopted: Boolean)`
-- `_items(candidate: String) : many (item: String, prompt: String, choices: Seq, expected: String, explanation: String, position: Number)`
-- `_material(candidate: String) : optional (form: String, material: Seq)`
-- `_line(brief: String) : many (brief: String, request: String, basis: String | Null, candidate: String | Null, form: String | Null, adopted: Boolean)`
+- `_clarifications(brief: String) : many (clarification: String, question: String, answer: String | null)`
+- `_candidateOf(brief: String) : optional (candidate: String, form: String, adopted: Flag)`
+- `_candidate(candidate: String) : optional (brief: String, form: String, adopted: Flag)`
+- `_items(candidate: String) : many (item: String, prompt: String, choices: Seq<String>, expected: String, explanation: String, position: Number)`
+- `_material(candidate: String) : optional (form: String, material: Seq<MaterialEntry>)`
+- `_line(brief: String) : many (brief: String, request: String, basis: String | null, candidate: String | null, form: String | null, adopted: Flag)`
 
 #### Instances
 
@@ -417,12 +417,12 @@ Defined in [Flagging](../design/concepts/Flagging.md), line 1.
 
 #### Actions
 
-- `flag(reporter: User, target: Target, reason: String, at: Date) : return (flag: Flag)`
+- `flag(reporter: User, target: Target, reason: String, at: Date) : returns (flag: Flag)`
   - Refuses `FLAG_ALREADY_EXISTS`: You already have an open flag on this.
-- `resolve(target: Target, outcome: String) : return (target: Target)`
+- `resolve(target: Target, outcome: String) : returns (target: Target)`
   - Refuses `VALIDATION_FAILED`: An outcome must be upheld or dismissed.
   - Refuses `FLAG_NOT_FOUND`: There are no open flags on this.
-- `clearTarget(target: Target) : return (target: Target)`
+- `clearTarget(target: Target) : returns (target: Target)`
 
 #### Queries
 
@@ -441,8 +441,8 @@ Defined in [Formatting](../design/concepts/Formatting.md), line 1.
 
 #### Actions
 
-- `setSource(target: Target, source: String) : return (target: Target, rendered: String)`
-- `clear(target: Target) : return (target: Target)`
+- `setSource(target: Target, source: String) : returns (target: Target, rendered: String)`
+- `clear(target: Target) : returns (target: Target)`
 
 #### Queries
 
@@ -459,27 +459,27 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 
 #### Actions
 
-- `record(learner: Learner, item: Item, evidence: Evidence, grader: Grader, method: String, setupRevision: Number, criteria: Json, at: Date) : return (grade: Grade, version: Number, method: String)`
+- `record(learner: Learner, item: Item, evidence: Evidence, grader: Grader, method: String, setupRevision: Number, criteria: Criteria, at: Date) : returns (grade: Grade, version: Number, method: String)`
   - Refuses `INVALID_JUDGMENTS`: Select a valid complete grading setup.
-- `save(grade: Grade, version: Number, grader: Grader, judgments: Json, feedback: String, at: Date) : return (grade: Grade, version: Number)`
+- `save(grade: Grade, version: Number, grader: Grader, judgments: Judgments, feedback: String, at: Date) : returns (grade: Grade, version: Number)`
   - Refuses `GRADE_NOT_FOUND`: There is no assessment.
   - Refuses `GRADE_CONFLICT`: This assessment changed or is locked. Reload before editing.
   - Refuses `INVALID_JUDGMENTS`: Use valid judgments for the stored criteria.
-- `release(grade: Grade, version: Number, grader: Grader, at: Date) : return (grade: Grade, version: Number)`
+- `release(grade: Grade, version: Number, grader: Grader, at: Date) : returns (grade: Grade, version: Number)`
   - Refuses `GRADE_NOT_FOUND`: There is no assessment.
   - Refuses `GRADE_CONFLICT`: This assessment changed or is locked. Reload before editing.
   - Refuses `GRADE_INCOMPLETE`: Complete every criterion before release.
-- `releaseItem(item: Item, grader: Grader, at: Date) : return (released: Json, skipped: Json, unconfirmed: Json)`
-- `retract(grade: Grade, version: Number, grader: Grader, at: Date) : return (grade: Grade, version: Number)`
+- `releaseItem(item: Item, grader: Grader, at: Date) : returns (released: Seq<ReleasedEntry>, skipped: Seq<HeldEntry>, unconfirmed: Seq<HeldEntry>)`
+- `retract(grade: Grade, version: Number, grader: Grader, at: Date) : returns (grade: Grade, version: Number)`
   - Refuses `GRADE_NOT_FOUND`: There is no assessment.
   - Refuses `GRADE_CONFLICT`: This assessment changed or is locked. Reload before editing.
-- `restoreExcused(grade: Grade, version: Number, grader: Grader, at: Date) : return (grade: Grade, version: Number)`
+- `restoreExcused(grade: Grade, version: Number, grader: Grader, at: Date) : returns (grade: Grade, version: Number)`
   - Refuses `GRADE_NOT_FOUND`: There is no assessment.
   - Refuses `GRADE_CONFLICT`: This assessment changed or is locked. Reload before editing.
-- `discard(grade: Grade, version: Number) : return (grade: Grade)`
+- `discard(grade: Grade, version: Number) : returns (grade: Grade)`
   - Refuses `GRADE_NOT_FOUND`: There is no assessment.
   - Refuses `GRADE_CONFLICT`: This assessment changed or was released before. Reload before editing.
-- `excuse(grade: Grade, version: Number, grader: Grader, feedback: String, at: Date) : return (grade: Grade, version: Number)`
+- `excuse(grade: Grade, version: Number, grader: Grader, feedback: String, at: Date) : returns (grade: Grade, version: Number)`
   - Refuses `GRADE_NOT_FOUND`: There is no assessment.
   - Refuses `GRADE_CONFLICT`: This assessment changed or is locked. Reload before editing.
   - Refuses `INVALID_JUDGMENTS`: Feedback must be at most 20000 characters.
@@ -487,9 +487,9 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 #### Queries
 
 - `_getAssessment(learner: String, item: String, evidence: String) : optional (grade: String, version: Number, method: String, status: String)`
-- `_getGrade(grade: String) : optional (grade: String, learner: String, item: String, evidence: String, grader: String, method: String, setupRevision: Number, criteria: Json, judgments: Json, feedback: String, status: String, version: Number, score: Number, outOf: Number, scored: Bool, createdAt: Date, updatedAt: Date, releasedAt: Date, history: Json)`
-- `_getGradesForLearner(learner: String) : many (grade: String, learner: String, item: String, evidence: String, grader: String, method: String, setupRevision: Number, criteria: Json, judgments: Json, feedback: String, status: String, version: Number, score: Number, outOf: Number, scored: Bool, createdAt: Date, updatedAt: Date, releasedAt: Date, history: Json)`
-- `_getGradesForItem(item: String) : many (grade: String, learner: String, item: String, evidence: String, grader: String, method: String, setupRevision: Number, criteria: Json, judgments: Json, feedback: String, status: String, version: Number, score: Number, outOf: Number, scored: Bool, createdAt: Date, updatedAt: Date, releasedAt: Date, history: Json)`
+- `_getGrade(grade: String) : optional (grade: String, learner: String, item: String, evidence: String, grader: String, method: String, setupRevision: Number, criteria: Criteria, judgments: Judgments, feedback: String, status: String, version: Number, score: Number, outOf: Number, scored: Flag, createdAt: Date, updatedAt: Date, releasedAt: Date, history: History)`
+- `_getGradesForLearner(learner: String) : many (grade: String, learner: String, item: String, evidence: String, grader: String, method: String, setupRevision: Number, criteria: Criteria, judgments: Judgments, feedback: String, status: String, version: Number, score: Number, outOf: Number, scored: Flag, createdAt: Date, updatedAt: Date, releasedAt: Date, history: History)`
+- `_getGradesForItem(item: String) : many (grade: String, learner: String, item: String, evidence: String, grader: String, method: String, setupRevision: Number, criteria: Criteria, judgments: Judgments, feedback: String, status: String, version: Number, score: Number, outOf: Number, scored: Flag, createdAt: Date, updatedAt: Date, releasedAt: Date, history: History)`
 
 #### Instances
 
@@ -505,32 +505,32 @@ Defined in [Grouping](../design/concepts/Grouping.md), line 1.
 
 #### Actions
 
-- `create(title: String, creator: Person, at: Date) : return (group: Group)`
-- `rename(group: Group, member: Person, title: String, at: Date) : return (group: Group)`
+- `create(title: String, creator: Person, at: Date) : returns (group: Group)`
+- `rename(group: Group, member: Person, title: String, at: Date) : returns (group: Group)`
   - Refuses `GROUP_NOT_FOUND`: There is no such group.
   - Refuses `NOT_A_MEMBER`: This person is not a member of the group.
-- `addMember(group: Group, member: Person, candidate: Person, at: Date) : return (group: Group)`
+- `addMember(group: Group, member: Person, candidate: Person, at: Date) : returns (group: Group)`
   - Refuses `GROUP_NOT_FOUND`: There is no such group.
   - Refuses `NOT_A_MEMBER`: This person is not a member of the group.
   - Refuses `ALREADY_A_MEMBER`: This person is already a member of the group.
-- `removeMember(group: Group, member: Person, target: Person, at: Date) : return (group: Group)`
+- `removeMember(group: Group, member: Person, target: Person, at: Date) : returns (group: Group)`
   - Refuses `GROUP_NOT_FOUND`: There is no such group.
   - Refuses `NOT_A_MEMBER`: This person is not a member of the group.
   - Refuses `TARGET_NOT_A_MEMBER`: The target person is not a member of the group.
   - Refuses `LAST_MEMBER`: The final member cannot be removed from the group.
-- `leave(group: Group, member: Person, at: Date) : return (group: Group)`
+- `leave(group: Group, member: Person, at: Date) : returns (group: Group)`
   - Refuses `GROUP_NOT_FOUND`: There is no such group.
   - Refuses `NOT_A_MEMBER`: This person is not a member of the group.
   - Refuses `LAST_MEMBER`: The final member cannot leave the group.
 
 #### Queries
 
-- `_anyMembership(member: Person, groups: Seq) : one (included: Boolean)`
-- `_allMemberships(member: Person, groups: Seq) : one (included: Boolean)`
+- `_anyMembership(member: Person, groups: Seq<Group>) : one (included: Flag)`
+- `_allMemberships(member: Person, groups: Seq<Group>) : one (included: Flag)`
 - `_getGroup(group: String) : optional (title: String, createdAt: Date, updatedAt: Date)`
 - `_getMembers(group: String) : many (member: String)`
 - `_getGroupsOf(member: String) : many (group: String, title: String, createdAt: Date, updatedAt: Date)`
-- `_isMember(group: String, member: String) : one (isMember: Boolean)`
+- `_isMember(group: String, member: String) : one (isMember: Flag)`
 
 #### Instances
 
@@ -543,36 +543,36 @@ Defined in [Guiding](../design/concepts/Guiding.md), line 1.
 
 #### Actions
 
-- `select(subject: Subject, use: String, guidances: Seq) : return (subject: Subject)`
+- `select(subject: Subject, use: String, guidances: Seq<Guidance>) : returns (subject: Subject)`
   - Refuses `INVALID_USE`: Guidance needs a use.
   - Refuses `GUIDANCE_NOT_FOUND`: A selected document no longer exists.
-- `give(subject: Subject, use: String, title: String, body: String) : return (guidance: Guidance)`
+- `give(subject: Subject, use: String, title: String, body: String) : returns (guidance: Guidance)`
   - Refuses `INVALID_USE`: Guidance needs a use.
   - Refuses `INVALID_TITLE`: The title must be at most 200 characters long.
   - Refuses `INVALID_GUIDANCE`: Guidance must be 1 to 40000 characters long.
-- `set(subject: Subject, use: String, title: String, body: String) : return (guidance: Guidance)`
+- `set(subject: Subject, use: String, title: String, body: String) : returns (guidance: Guidance)`
   - Refuses `INVALID_USE`: Guidance needs a use.
   - Refuses `INVALID_TITLE`: The title must be at most 200 characters long.
   - Refuses `INVALID_GUIDANCE`: Guidance must be 1 to 40000 characters long.
-- `revise(guidance: Guidance, title: String, body: String) : return (guidance: Guidance)`
+- `revise(guidance: Guidance, title: String, body: String) : returns (guidance: Guidance)`
   - Refuses `GUIDANCE_NOT_FOUND`: There is no such guidance.
   - Refuses `INVALID_TITLE`: The title must be at most 200 characters long.
   - Refuses `INVALID_GUIDANCE`: Guidance must be 1 to 40000 characters long.
-- `remove(guidance: Guidance) : return (guidance: Guidance)`
+- `remove(guidance: Guidance) : returns (guidance: Guidance)`
   - Refuses `GUIDANCE_NOT_FOUND`: There is no such guidance.
-- `clear(subject: Subject, use: String) : return (cleared: Boolean)`
+- `clear(subject: Subject, use: String) : returns (cleared: Flag)`
   - Refuses `INVALID_USE`: Guidance needs a use.
 
 #### Queries
 
-- `_selection(subject: String, use: String) : one (guidances: Seq)`
-- `_documentsById(guidances: Seq, use: String) : one (documents: Seq, guidances: Seq)`
-- `_selectedDocuments(subject: String, use: String) : one (documents: Seq)`
+- `_selection(subject: String, use: String) : one (guidances: Seq<Guidance>)`
+- `_documentsById(guidances: Seq<Guidance>, use: String) : one (documents: Seq<GuidanceDocument>, guidances: Seq<Guidance>)`
+- `_selectedDocuments(subject: String, use: String) : one (documents: Seq<GuidanceDocument>)`
 - `_guidanceFor(subject: String, use: String) : many (guidance: String, title: String, body: String)`
 - `_guidance(guidance: String) : optional (subject: String, use: String, title: String, body: String)`
 - `_guidanceText(subject: String, use: String) : one (text: String)`
-- `_guidanceTexts(subjects: Seq, use: String) : one (texts: Seq)`
-- `_documents(subject: String, use: String) : one (documents: Seq)`
+- `_guidanceTexts(subjects: Seq<String>, use: String) : one (texts: Seq<SubjectText>)`
+- `_documents(subject: String, use: String) : one (documents: Seq<GuidanceDocument>)`
 
 #### Instances
 
@@ -585,12 +585,12 @@ Defined in [Insisting](../design/concepts/Insisting.md), line 1.
 
 #### Actions
 
-- `complain(aim: Aim, patience: Number, offering: String, account: String) : return (complaint: Complaint, insistence: Insistence, remaining: Number)`
+- `complain(aim: Aim, patience: Number, offering: String, account: String) : returns (complaint: Complaint, insistence: Insistence, remaining: Number)`
   - Refuses `NO_PATIENCE`: Insisting takes at least one complaint.
   - Refuses `PATIENCE_SPENT`: This aim has had every complaint it was given.
-- `giveUp(aim: Aim) : return (insistence: Insistence)`
+- `giveUp(aim: Aim) : returns (insistence: Insistence)`
   - Refuses `NOT_INSISTING`: Nothing is being insisted on for this aim.
-- `satisfy(aim: Aim) : return (insistence: Insistence)`
+- `satisfy(aim: Aim) : returns (insistence: Insistence)`
   - Refuses `NOT_INSISTING`: Nothing is being insisted on for this aim.
 
 #### Queries
@@ -598,7 +598,7 @@ Defined in [Insisting](../design/concepts/Insisting.md), line 1.
 - `_unsettledFor(aim: String) : optional (insistence: String, patience: Number, remaining: Number)`
 - `_standingFor(aim: String) : optional (insistence: String, remaining: Number)`
 - `_spentFor(aim: String) : optional (insistence: String, complaints: Number)`
-- `_for(aim: String) : many (insistence: String, patience: Number, settled: Boolean, satisfied: Boolean, exhausted: Boolean, remaining: Number)`
+- `_for(aim: String) : many (insistence: String, patience: Number, settled: Flag, satisfied: Flag, exhausted: Flag, remaining: Number)`
 - `_complaints(insistence: String) : many (complaint: String, offering: String, account: String)`
 
 #### Instances
@@ -612,21 +612,21 @@ Defined in [Inviting](../design/concepts/Inviting.md), line 1.
 
 #### Actions
 
-- `invite(channel: String, address: String, at: Date) : return (invitation: Invitation, channel: String, address: String, credential: String, created: Boolean)`
+- `invite(channel: String, address: String, at: Date) : returns (invitation: Invitation, channel: String, address: String, credential: String, created: Flag)`
   - Refuses `INVITATION_ALREADY_CLAIMED`: That invitation has already been used.
-- `verify(invitation: Invitation, credential: String, channel: String) : return (invitation: Invitation, address: String)`
+- `verify(invitation: Invitation, credential: String, channel: String) : returns (invitation: Invitation, address: String)`
   - Refuses `INVITATION_INVALID`: That invitation is not valid.
-- `claim(invitation: Invitation, credential: String, user: User) : return (invitation: Invitation, channel: String, address: String)`
+- `claim(invitation: Invitation, credential: String, user: User) : returns (invitation: Invitation, channel: String, address: String)`
   - Refuses `INVITATION_INVALID`: That invitation is not valid.
-- `retract(invitation: Invitation) : return ()`
+- `retract(invitation: Invitation) : returns ()`
   - Refuses `INVITATION_NOT_FOUND`: That invitation no longer exists.
   - Refuses `INVITATION_ALREADY_CLAIMED`: That invitation has already been used.
 
 #### Queries
 
 - `_getAvailable(invitation: String, credential: String) : optional (channel: String, address: String)`
-- `_getInvitationByAddress(channel: String, address: String) : optional (invitation: String, user: User | Null)`
-- `_getInvitations() : many (invitation: String, channel: String, address: String, createdAt: Date, lastInvitedAt: Date, inviteCount: Number, user: User | Null)`
+- `_getInvitationByAddress(channel: String, address: String) : optional (invitation: String, user: User | null)`
+- `_getInvitations() : many (invitation: String, channel: String, address: String, createdAt: Date, lastInvitedAt: Date, inviteCount: Number, user: User | null)`
 
 #### Instances
 
@@ -639,30 +639,30 @@ Defined in [Itemizing](../design/concepts/Itemizing.md), line 1.
 
 #### Actions
 
-- `configureItem(item: Item, label: String) : return (gradeItem: GradeItem)`
-- `ensureItem(item: Item, label: String) : return (gradeItem: GradeItem)`
-- `archiveItem(item: Item) : return (gradeItem: GradeItem)`
+- `configureItem(item: Item, label: String) : returns (gradeItem: GradeItem)`
+- `ensureItem(item: Item, label: String) : returns (gradeItem: GradeItem)`
+- `archiveItem(item: Item) : returns (gradeItem: GradeItem)`
   - Refuses `GRADE_ITEM_NOT_FOUND`: There is no active item.
-- `configureSetup(item: Item, method: String, revision: Number, criteria: Json, resolvedCriteria: Json) : return (gradeItem: GradeItem, label: String, status: String, method: String, revision: Number, criteria: Json, maxPoints: Number)`
+- `configureSetup(item: Item, method: String, revision: Number, criteria: CriteriaSetup, resolvedCriteria: CriteriaSetup) : returns (gradeItem: GradeItem, label: String, status: String, method: String, revision: Number, criteria: CriteriaSetup, maxPoints: Number)`
   - Refuses `GRADE_ITEM_NOT_FOUND`: There is no active item.
   - Refuses `GRADE_ITEM_CONFLICT`: This grading setup changed. Reload before saving.
   - Refuses `INVALID_CRITERION`: Supply a valid complete grading setup.
-- `addCriterion(item: Item, basis: Basis, position: Number, revision: Number) : return (criterion: Criterion, revision: Number)`
+- `addCriterion(item: Item, basis: Basis, position: Number, revision: Number) : returns (criterion: Criterion, revision: Number)`
   - Refuses `INVALID_CRITERION`: Select a distinct rubric edition and valid position.
-- `reviseCriterion(criterion: Criterion, position: Number, revision: Number) : return (criterion: Criterion, revision: Number)`
+- `reviseCriterion(criterion: Criterion, position: Number, revision: Number) : returns (criterion: Criterion, revision: Number)`
   - Refuses `CRITERION_NOT_FOUND`: There is no active competency criterion.
-- `addPointCriterion(item: Item, name: String, maxPoints: Number, position: Number, revision: Number) : return (criterion: Criterion, revision: Number)`
+- `addPointCriterion(item: Item, name: String, maxPoints: Number, position: Number, revision: Number) : returns (criterion: Criterion, revision: Number)`
   - Refuses `INVALID_CRITERION`: Supply a valid point criterion.
-- `revisePointCriterion(criterion: Criterion, name: String, maxPoints: Number, position: Number, revision: Number) : return (criterion: Criterion, revision: Number)`
+- `revisePointCriterion(criterion: Criterion, name: String, maxPoints: Number, position: Number, revision: Number) : returns (criterion: Criterion, revision: Number)`
   - Refuses `CRITERION_NOT_FOUND`: There is no active point criterion.
-- `removeCriterion(criterion: Criterion, revision: Number) : return (criterion: Criterion, revision: Number)`
+- `removeCriterion(criterion: Criterion, revision: Number) : returns (criterion: Criterion, revision: Number)`
   - Refuses `CRITERION_NOT_FOUND`: There is no active criterion.
 
 #### Queries
 
 - `_getItem(item: String) : optional (item: String, label: String, status: String, method: String, revision: Number, maxPoints: Number)`
 - `_getItems() : many (item: String, label: String, method: String, revision: Number, maxPoints: Number)`
-- `_getSetup(item: String) : optional (item: String, label: String, status: String, method: String, revision: Number, criteria: Json, maxPoints: Number)`
+- `_getSetup(item: String) : optional (item: String, label: String, status: String, method: String, revision: Number, criteria: CriteriaSetup, maxPoints: Number)`
 
 #### Instances
 
@@ -676,10 +676,10 @@ Defined in [Linking](../design/concepts/Linking.md), line 1.
 
 #### Actions
 
-- `setLinks(source: Source, targets: Targets) : return (source: Source)`
-- `setLinksFrom(source: Source, content: String) : return (source: Source)`
-- `clearLinks(source: Source) : return (source: Source)`
-- `clearBacklinks(target: Target) : return (target: Target)`
+- `setLinks(source: Source, targets: Targets) : returns (source: Source)`
+- `setLinksFrom(source: Source, content: String) : returns (source: Source)`
+- `clearLinks(source: Source) : returns (source: Source)`
+- `clearBacklinks(target: Target) : returns (target: Target)`
 
 #### Queries
 
@@ -701,8 +701,8 @@ Defined in [Locating](../design/concepts/Locating.md), line 1.
 
 #### Actions
 
-- `ensure(subject: Subject) : return (location: Location, code: String)`
-- `locate(code: String) : return (subject: Subject)`
+- `ensure(subject: Subject) : returns (location: Location, code: String)`
+- `locate(code: String) : returns (subject: Subject)`
   - Refuses `NOTHING_LOCATED`: Nothing is located there.
 
 #### Queries
@@ -721,14 +721,14 @@ Defined in [Locking](../design/concepts/Locking.md), line 1.
 
 #### Actions
 
-- `lock(target: Target, at: Date) : return (target: Target)`
+- `lock(target: Target, at: Date) : returns (target: Target)`
   - Refuses `TARGET_ALREADY_LOCKED`: This is already locked.
-- `unlock(target: Target) : return (target: Target)`
+- `unlock(target: Target) : returns (target: Target)`
   - Refuses `TARGET_NOT_LOCKED`: This is not locked.
 
 #### Queries
 
-- `_isLocked(target: String) : one (locked: Boolean)`
+- `_isLocked(target: String) : one (locked: Flag)`
 - `_getLocked() : many (target: String, lockedAt: Date)`
 
 #### Instances
@@ -742,21 +742,21 @@ Defined in [Mailing](../design/concepts/Mailing.md), line 1.
 
 #### Actions
 
-- `normalizeRecipient(recipient: String) : return (recipient: String)`
+- `normalizeRecipient(recipient: String) : returns (recipient: String)`
   - Refuses `MAIL_RECIPIENT_INVALID`: The mail recipient is not well formed.
-- `enqueue(key: Key, recipient: String, subject: String, text: String, html: String, at: Date) : return (message: Message)`
+- `enqueue(key: Key, recipient: String, subject: String, text: String, html: String, at: Date) : returns (message: Message)`
   - Refuses `MAIL_RECIPIENT_INVALID`: The mail recipient is not well formed.
-- `markSent(message: Message, generation: String | Null, at: Date) : return (message: Message)`
+- `markSent(message: Message, generation: String | null, at: Date) : returns (message: Message)`
   - Refuses `MAIL_NOT_FOUND`: There is no such mail message.
-- `markFailed(message: Message, generation: String | Null, error: String, at: Date) : return (message: Message)`
+- `markFailed(message: Message, generation: String | null, error: String, at: Date) : returns (message: Message)`
   - Refuses `MAIL_NOT_FOUND`: There is no such mail message.
 
 #### Queries
 
-- `_getPending() : many (message: String, key: Key, generation: String | Null, recipient: String, subject: String, text: String, html: String, createdAt: Date)`
-- `_getStatus(message: String) : optional (sentAt: Date | Null)`
+- `_getPending() : many (message: String, key: Key, generation: String | null, recipient: String, subject: String, text: String, html: String, createdAt: Date)`
+- `_getStatus(message: String) : optional (sentAt: Date | null)`
 - `_getMessage(message: String) : optional (subject: String, recipient: String, text: String)`
-- `_getMessages() : many (message: String, key: Key, recipient: String, subject: String, createdAt: Date, sentAt: Date | Null, attempts: Number, lastAttemptAt: Date | Null, lastError: String | Null)`
+- `_getMessages() : many (message: String, key: Key, recipient: String, subject: String, createdAt: Date, sentAt: Date | null, attempts: Number, lastAttemptAt: Date | null, lastError: String | null)`
 
 #### Instances
 
@@ -769,19 +769,19 @@ Defined in [Notifying](../design/concepts/Notifying.md), line 1.
 
 #### Actions
 
-- `notify(recipient: Person, kind: String, subject: Subject, link: Link, actor: Person, at: Date) : return (notification: Notification)`
-- `markRead(notification: Notification, recipient: Person) : return (notification: Notification)`
+- `notify(recipient: Person, kind: String, subject: Subject, link: Link, actor: Person, at: Date) : returns (notification: Notification)`
+- `markRead(notification: Notification, recipient: Person) : returns (notification: Notification)`
   - Refuses `NOTIFICATION_NOT_FOUND`: There is no such notification.
-- `markAllRead(recipient: Person) : return (recipient: Person)`
-- `dismiss(notification: Notification, recipient: Person) : return (notification: Notification)`
+- `markAllRead(recipient: Person) : returns (recipient: Person)`
+- `dismiss(notification: Notification, recipient: Person) : returns (notification: Notification)`
   - Refuses `NOTIFICATION_NOT_FOUND`: There is no such notification.
-- `clearSubject(subject: Subject) : return (subject: Subject)`
+- `clearSubject(subject: Subject) : returns (subject: Subject)`
 
 #### Queries
 
-- `_getInbox(recipient: String) : many (notification: String, kind: String, subject: Subject, link: Link | Null, actor: Person | Null, createdAt: Date, read: Boolean)`
-- `_getNotification(notification: String, recipient: String) : optional (kind: String, subject: Subject, link: Link | Null, actor: Person | Null, createdAt: Date, read: Boolean)`
-- `_hasFor(user: String, subject: Subject) : one (notified: Boolean)`
+- `_getInbox(recipient: String) : many (notification: String, kind: String, subject: Subject, link: Link | null, actor: Person | null, createdAt: Date, read: Flag)`
+- `_getNotification(notification: String, recipient: String) : optional (kind: String, subject: Subject, link: Link | null, actor: Person | null, createdAt: Date, read: Flag)`
+- `_hasFor(user: String, subject: Subject) : one (notified: Flag)`
 - `_getUnreadCount(recipient: String) : one (count: Number)`
 
 #### Instances
@@ -801,31 +801,31 @@ Defined in [Noting](../design/concepts/Noting.md), line 1.
 
 #### Actions
 
-- `write(author: Author, learner: Learner, body: String, visibility: String, tags: Strings, followUpAt: Date, at: Date) : return (note: Note)`
+- `write(author: Author, learner: Learner, body: String, visibility: String, tags: Seq<String>, followUpAt: Date, at: Date) : returns (note: Note)`
   - Refuses `INVALID_VISIBILITY`: Visibility must be staff-only or learner-visible.
-- `revise(note: Note, body: String, visibility: String, tags: Strings, followUpAt: Date, at: Date) : return (note: Note)`
+- `revise(note: Note, body: String, visibility: String, tags: Seq<String>, followUpAt: Date, at: Date) : returns (note: Note)`
   - Refuses `NOTE_NOT_FOUND`: There is no such note.
   - Refuses `NOTE_NOT_OPEN`: This note is no longer open.
   - Refuses `INVALID_VISIBILITY`: Visibility must be staff-only or learner-visible.
-- `resolve(note: Note, at: Date) : return (note: Note)`
+- `resolve(note: Note, at: Date) : returns (note: Note)`
   - Refuses `NOTE_NOT_FOUND`: There is no such note.
   - Refuses `NOTE_NOT_OPEN`: This note is no longer open.
-- `archive(note: Note, at: Date) : return (note: Note)`
+- `archive(note: Note, at: Date) : returns (note: Note)`
   - Refuses `NOTE_NOT_FOUND`: There is no such note.
   - Refuses `NOTE_NOT_RESOLVED`: Only a resolved note can be archived.
-- `restore(note: Note, at: Date) : return (note: Note)`
+- `restore(note: Note, at: Date) : returns (note: Note)`
   - Refuses `NOTE_NOT_FOUND`: There is no such note.
   - Refuses `NOTE_NOT_RESTORABLE`: This note cannot be restored.
-- `acknowledge(note: Note, learner: Learner, at: Date) : return (note: Note)`
+- `acknowledge(note: Note, learner: Learner, at: Date) : returns (note: Note)`
   - Refuses `NOTE_NOT_FOUND`: There is no such note.
   - Refuses `NOTE_NOT_LEARNER_VISIBLE`: This note is not shown to its learner.
   - Refuses `NOTE_NOT_OWNER`: Only the learner a note concerns may acknowledge it.
 
 #### Queries
 
-- `_getNote(note: String) : optional (note: String, author: String, learner: String, body: String, visibility: String, status: String, createdAt: Date, updatedAt: Date | Null, followUpAt: Date | Null, acknowledgedAt: Date | Null, tags: Strings)`
-- `_getActiveNotesFor(learner: String) : many (note: String, author: String, learner: String, body: String, visibility: String, status: String, createdAt: Date, updatedAt: Date | Null, followUpAt: Date | Null, acknowledgedAt: Date | Null, tags: Strings)`
-- `_getShownTo(learner: String) : many (note: String, author: String, learner: String, body: String, status: String, createdAt: Date, updatedAt: Date | Null, followUpAt: Date | Null, acknowledgedAt: Date | Null, tags: Strings)`
+- `_getNote(note: String) : optional (note: String, author: String, learner: String, body: String, visibility: String, status: String, createdAt: Date, updatedAt: Date | null, followUpAt: Date | null, acknowledgedAt: Date | null, tags: Seq<String>)`
+- `_getActiveNotesFor(learner: String) : many (note: String, author: String, learner: String, body: String, visibility: String, status: String, createdAt: Date, updatedAt: Date | null, followUpAt: Date | null, acknowledgedAt: Date | null, tags: Seq<String>)`
+- `_getShownTo(learner: String) : many (note: String, author: String, learner: String, body: String, status: String, createdAt: Date, updatedAt: Date | null, followUpAt: Date | null, acknowledgedAt: Date | null, tags: Seq<String>)`
 - `_getByAuthor(author: String) : many (note: String, learner: String, status: String, visibility: String, createdAt: Date)`
 - `_getOpenFollowUpsBefore(before: Date) : many (note: String, author: String, learner: String, body: String, followUpAt: Date, createdAt: Date)`
 
@@ -841,18 +841,18 @@ Defined in [Pinning](../design/concepts/Pinning.md), line 1.
 
 #### Actions
 
-- `pin(item: Item, scope: Scope, priority: Number, at: Date) : return (pin: Pin)`
+- `pin(item: Item, scope: Scope, priority: Number, at: Date) : returns (pin: Pin)`
   - Refuses `ITEM_ALREADY_PINNED`: This item is already pinned in this scope.
-- `unpin(item: Item, scope: Scope) : return (item: Item)`
-- `setPriority(item: Item, scope: Scope, priority: Number) : return (pin: Pin)`
+- `unpin(item: Item, scope: Scope) : returns (item: Item)`
+- `setPriority(item: Item, scope: Scope, priority: Number) : returns (pin: Pin)`
   - Refuses `ITEM_NOT_PINNED`: There is no such pin to reprioritize.
-- `clearItem(item: Item) : return (item: Item)`
+- `clearItem(item: Item) : returns (item: Item)`
 
 #### Queries
 
-- `_pinnedItems(scope: String) : one (items: Seq)`
+- `_pinnedItems(scope: String) : one (items: Seq<String>)`
 - `_getPinned(scope: String) : many (item: String, priority: Number)`
-- `_isPinned(item: String, scope: String) : one (pinned: Boolean)`
+- `_isPinned(item: String, scope: String) : one (pinned: Flag)`
 
 #### Instances
 
@@ -866,19 +866,19 @@ Defined in [Posting](../design/concepts/Posting.md), line 1.
 
 #### Actions
 
-- `create(author: Author, content: String, at: Date) : return (post: Post)`
-- `edit(post: Post, content: String, at: Date) : return (post: Post)`
+- `create(author: Author, content: String, at: Date) : returns (post: Post)`
+- `edit(post: Post, content: String, at: Date) : returns (post: Post)`
   - Refuses `POST_NOT_FOUND`: There is no such post.
-- `delete(post: Post) : return (post: Post)`
+- `delete(post: Post) : returns (post: Post)`
   - Refuses `POST_NOT_FOUND`: There is no such post.
 
 #### Queries
 
-- `_postMetadata(posts: Seq) : one (posts: Seq)`
-- `_getPost(post: String) : optional (author: String, content: String, createdAt: Date, editedAt: Date | Null)`
+- `_postMetadata(posts: Seq<String>) : one (posts: Seq<PostMetadata>)`
+- `_getPost(post: String) : optional (author: String, content: String, createdAt: Date, editedAt: Date | null)`
 - `_getByAuthor(author: String) : many (post: String)`
 - `_getMentions(post: String) : many (handle: String)`
-- `_isMentioned(post: String, handle: String) : one (mentioned: Boolean)`
+- `_isMentioned(post: String, handle: String) : one (mentioned: Flag)`
 
 #### Instances
 
@@ -891,20 +891,20 @@ Defined in [Profiling](../design/concepts/Profiling.md), line 1.
 
 #### Actions
 
-- `createProfile(user: User, displayName: String) : return (user: User)`
+- `createProfile(user: User, displayName: String) : returns (user: User)`
   - Refuses `PROFILE_ALREADY_EXISTS`: This user already has a profile.
-- `setDisplayName(user: User, displayName: String) : return (user: User)`
+- `setDisplayName(user: User, displayName: String) : returns (user: User)`
   - Refuses `PROFILE_NOT_FOUND`: There is no profile for this user.
-- `setBio(user: User, bio: String) : return (user: User)`
+- `setBio(user: User, bio: String) : returns (user: User)`
   - Refuses `PROFILE_NOT_FOUND`: There is no profile for this user.
-- `setAvatar(user: User, avatar: String) : return (user: User)`
+- `setAvatar(user: User, avatar: String) : returns (user: User)`
   - Refuses `PROFILE_NOT_FOUND`: There is no profile for this user.
 
 #### Queries
 
 - `_getProfile(user: String) : optional (profile: Profile)`
 - `_getProfileFields(user: String) : optional (displayName: String, bio: String, avatar: String)`
-- `_getProfilesOf(users: Strings) : many (user: String, displayName: String, bio: String, avatar: String)`
+- `_getProfilesOf(users: Seq<String>) : many (user: String, displayName: String, bio: String, avatar: String)`
 
 #### Instances
 
@@ -917,25 +917,25 @@ Defined in [Publishing](../design/concepts/Publishing.md), line 1.
 
 #### Actions
 
-- `publish(author: Author, material: Material, at: Date) : return (edition: Edition)`
+- `publish(author: Author, material: Material, at: Date) : returns (edition: Edition)`
   - Refuses `MATERIAL_ALREADY_SHARED`: This is already running; close the open run first.
-- `publishWithin(whole: Edition, author: Author, material: Material, at: Date) : return (edition: Edition)`
+- `publishWithin(whole: Edition, author: Author, material: Material, at: Date) : returns (edition: Edition)`
   - Refuses `EDITION_NOT_FOUND`: There is no such edition.
   - Refuses `WHOLE_CLOSED`: What this belongs to is closed.
   - Refuses `PART_DONE`: This was already released here.
   - Refuses `PART_OPEN`: Another part is open; close it first.
   - Refuses `MATERIAL_ALREADY_SHARED`: This is already running; close the open run first.
-- `close(edition: Edition, at: Date) : return (edition: Edition)`
+- `close(edition: Edition, at: Date) : returns (edition: Edition)`
   - Refuses `EDITION_NOT_FOUND`: There is no such edition.
   - Refuses `ALREADY_CLOSED`: This edition is already closed.
 
 #### Queries
 
-- `_edition(edition: String) : optional (author: String, material: String, whole: String | Null, open: Boolean, openedAt: Date, closedAt: Date | Null)`
-- `_parts(whole: String) : many (edition: String, material: String, open: Boolean, openedAt: Date, closedAt: Date | Null)`
+- `_edition(edition: String) : optional (author: String, material: String, whole: String | null, open: Flag, openedAt: Date, closedAt: Date | null)`
+- `_parts(whole: String) : many (edition: String, material: String, open: Flag, openedAt: Date, closedAt: Date | null)`
 - `_openPart(whole: String) : optional (edition: String, material: String)`
-- `_hasOpenEditionFor(material: String) : one (open: Boolean)`
-- `_editionsFor(material: String) : many (edition: String, open: Boolean, openedAt: Date, closedAt: Date | Null)`
+- `_hasOpenEditionFor(material: String) : one (open: Flag)`
+- `_editionsFor(material: String) : many (edition: String, open: Flag, openedAt: Date, closedAt: Date | null)`
 - `_openEditions() : many (edition: String, author: String, material: String, openedAt: Date)`
 
 #### Instances
@@ -950,19 +950,19 @@ Defined in [Questioning](../design/concepts/Questioning.md), line 1.
 
 #### Actions
 
-- `compose(author: Author, title: String, form: String, disclosure: String, at: Date) : return (questionnaire: Questionnaire)`
+- `compose(author: Author, title: String, form: String, disclosure: String, at: Date) : returns (questionnaire: Questionnaire)`
   - Refuses `UNKNOWN_FORM`: A questionnaire is a quiz or a survey.
   - Refuses `UNKNOWN_DISCLOSURE`: That is not a disclosure level.
   - Refuses `INVALID_TITLE`: The title must be 1 to 200 characters long.
-- `setDisclosure(questionnaire: Questionnaire, disclosure: String) : return (questionnaire: Questionnaire)`
+- `setDisclosure(questionnaire: Questionnaire, disclosure: String) : returns (questionnaire: Questionnaire)`
   - Refuses `QUESTIONNAIRE_NOT_FOUND`: There is no such questionnaire.
   - Refuses `QUESTIONNAIRE_RETIRED`: This questionnaire was retired.
   - Refuses `UNKNOWN_DISCLOSURE`: That is not a disclosure level.
-- `retitle(questionnaire: Questionnaire, title: String) : return (questionnaire: Questionnaire)`
+- `retitle(questionnaire: Questionnaire, title: String) : returns (questionnaire: Questionnaire)`
   - Refuses `QUESTIONNAIRE_NOT_FOUND`: There is no such questionnaire.
   - Refuses `QUESTIONNAIRE_RETIRED`: This questionnaire was retired.
   - Refuses `INVALID_TITLE`: The title must be 1 to 200 characters long.
-- `addQuestion(questionnaire: Questionnaire, prompt: String, choices: Seq, expected: String, explanation: String, position: Number) : return (question: Question)`
+- `addQuestion(questionnaire: Questionnaire, prompt: String, choices: Seq<String>, expected: String, explanation: String, position: Number) : returns (question: Question)`
   - Refuses `QUESTIONNAIRE_NOT_FOUND`: There is no such questionnaire.
   - Refuses `QUESTIONNAIRE_RETIRED`: This questionnaire was retired.
   - Refuses `QUESTION_LIMIT_REACHED`: A questionnaire may contain at most 100 questions.
@@ -972,7 +972,7 @@ Defined in [Questioning](../design/concepts/Questioning.md), line 1.
   - Refuses `INVALID_EXPECTED`: The expected answer must exactly match an offered choice.
   - Refuses `INVALID_REFERENCE`: A written-answer reference may be at most 2000 characters long.
   - Refuses `INVALID_EXPLANATION`: An explanation may be at most 2000 characters long.
-- `reviseQuestion(question: Question, prompt: String, choices: Seq, expected: String, explanation: String, position: Number) : return (question: Question)`
+- `reviseQuestion(question: Question, prompt: String, choices: Seq<String>, expected: String, explanation: String, position: Number) : returns (question: Question)`
   - Refuses `QUESTION_NOT_FOUND`: There is no such question.
   - Refuses `QUESTIONNAIRE_RETIRED`: This questionnaire was retired.
   - Refuses `INVALID_PROMPT`: The prompt must be 1 to 10000 characters long.
@@ -982,35 +982,35 @@ Defined in [Questioning](../design/concepts/Questioning.md), line 1.
   - Refuses `INVALID_EXPECTED`: The expected answer must exactly match an offered choice.
   - Refuses `INVALID_REFERENCE`: A written-answer reference may be at most 2000 characters long.
   - Refuses `INVALID_EXPLANATION`: An explanation may be at most 2000 characters long.
-- `setParts(question: Question, parts: Seq, cap: Number) : return (question: Question)`
+- `setParts(question: Question, parts: Seq<String>, cap: Number) : returns (question: Question)`
   - Refuses `QUESTION_NOT_FOUND`: There is no such question.
   - Refuses `QUESTIONNAIRE_RETIRED`: This questionnaire was retired.
   - Refuses `INVALID_PARTS`: Parts are up to 12 short labels, or one label repeated up to a cap of 2 to 20, and never beside choices.
-- `swapQuestions(question: Question, other: Question) : return (question: Question, other: Question)`
+- `swapQuestions(question: Question, other: Question) : returns (question: Question, other: Question)`
   - Refuses `QUESTION_NOT_FOUND`: There is no such question.
   - Refuses `NOT_SIBLINGS`: These questions do not share a questionnaire.
   - Refuses `QUESTIONNAIRE_RETIRED`: This questionnaire was retired.
-- `removeQuestion(question: Question) : return (question: Question, questionnaire: Questionnaire, position: Number)`
+- `removeQuestion(question: Question) : returns (question: Question, questionnaire: Questionnaire, position: Number)`
   - Refuses `QUESTION_NOT_FOUND`: There is no such question.
   - Refuses `QUESTIONNAIRE_RETIRED`: This questionnaire was retired.
-- `present(questionnaire: Questionnaire) : return (presentation: Value, form: String, disclosure: String, proposes: Boolean, expectations: Seq)`
+- `present(questionnaire: Questionnaire) : returns (presentation: Presentation, form: String, disclosure: String, proposes: Flag, expectations: Seq<Expectation>)`
   - Refuses `QUESTIONNAIRE_NOT_FOUND`: There is no such questionnaire.
   - Refuses `QUESTIONNAIRE_RETIRED`: This questionnaire was retired.
-- `retire(questionnaire: Questionnaire) : return (questionnaire: Questionnaire)`
+- `retire(questionnaire: Questionnaire) : returns (questionnaire: Questionnaire)`
   - Refuses `QUESTIONNAIRE_NOT_FOUND`: There is no such questionnaire.
   - Refuses `QUESTIONNAIRE_RETIRED`: This questionnaire was retired.
 
 #### Queries
 
-- `_content(questionnaire: String) : optional (content: Json)`
-- `_getQuestionnaire(questionnaire: String) : optional (author: String, title: String, form: String, disclosure: String, createdAt: Date, retired: Boolean)`
-- `_getQuestionnaires() : many (questionnaire: String, author: String, title: String, form: String, disclosure: String, createdAt: Date, retired: Boolean)`
-- `_getQuestions(questionnaire: String) : many (question: String, prompt: String, choices: Seq, expected: String, explanation: String, parts: Seq, cap: Number, position: Number)`
-- `_getQuestion(question: String) : optional (questionnaire: String, prompt: String, choices: Seq, expected: String, explanation: String, parts: Seq, cap: Number, position: Number)`
-- `_material(questionnaire: String) : optional (form: String, material: Seq)`
-- `_proposesAnswers(questionnaire: String) : one (proposes: Boolean)`
-- `_expectedAnswers(questionnaire: String) : optional (expectations: Seq)`
-- `_materials(questionnaires: Seq) : one (materials: Seq)`
+- `_content(questionnaire: String) : optional (content: Content)`
+- `_getQuestionnaire(questionnaire: String) : optional (author: String, title: String, form: String, disclosure: String, createdAt: Date, retired: Flag)`
+- `_getQuestionnaires() : many (questionnaire: String, author: String, title: String, form: String, disclosure: String, createdAt: Date, retired: Flag)`
+- `_getQuestions(questionnaire: String) : many (question: String, prompt: String, choices: Seq<String>, expected: String, explanation: String, parts: Seq<String>, cap: Number, position: Number)`
+- `_getQuestion(question: String) : optional (questionnaire: String, prompt: String, choices: Seq<String>, expected: String, explanation: String, parts: Seq<String>, cap: Number, position: Number)`
+- `_material(questionnaire: String) : optional (form: String, material: Seq<QuestionMaterial>)`
+- `_proposesAnswers(questionnaire: String) : one (proposes: Flag)`
+- `_expectedAnswers(questionnaire: String) : optional (expectations: Seq<Expectation>)`
+- `_materials(questionnaires: Seq<String>) : one (materials: Seq<QuestionnaireMaterial>)`
 - `_references(questionnaire: String) : many (question: String, prompt: String, expected: String, explanation: String, position: Number)`
 
 #### Instances
@@ -1024,18 +1024,18 @@ Defined in [Reacting](../design/concepts/Reacting.md), line 1.
 
 #### Actions
 
-- `react(reactor: Person, target: Target, kind: String, at: Date) : return (reaction: Reaction)`
+- `react(reactor: Person, target: Target, kind: String, at: Date) : returns (reaction: Reaction)`
   - Refuses `REACTION_ALREADY_EXISTS`: This person has already reacted to the target with this kind.
-- `unreact(reactor: Person, target: Target, kind: String) : return (reaction: Reaction)`
+- `unreact(reactor: Person, target: Target, kind: String) : returns (reaction: Reaction)`
   - Refuses `REACTION_NOT_FOUND`: There is no such reaction to take back.
-- `clearTarget(target: Target) : return (target: Target)`
+- `clearTarget(target: Target) : returns (target: Target)`
 
 #### Queries
 
 - `_getReactionsForTarget(target: String) : many (reaction: String, reactor: String, kind: String)`
 - `_getReactionsByUser(reactor: String) : many (reaction: String, target: String, kind: String)`
 - `_countByKind(target: String) : many (kind: String, count: Number)`
-- `_hasReacted(reactor: String, target: String, kind: String) : one (hasReacted: Boolean)`
+- `_hasReacted(reactor: String, target: String, kind: String) : one (hasReacted: Flag)`
 
 #### Instances
 
@@ -1049,13 +1049,13 @@ Defined in [Reasoning](../design/concepts/Reasoning.md), line 1.
 
 #### Actions
 
-- `ask(reasoner: Reasoner, about: Subject, passage: String, at: Date) : return (asking: Asking)`
-- `followUp(previous: Asking, passage: String, at: Date) : return (asking: Asking)`
+- `ask(reasoner: Reasoner, about: Subject, passage: String, at: Date) : returns (asking: Asking)`
+- `followUp(previous: Asking, passage: String, at: Date) : returns (asking: Asking)`
   - Refuses `ASKING_NOT_FOUND`: There is no such asking to follow up.
-- `answer(asking: Asking, reply: String, at: Date) : return (asking: Asking, reply: String)`
+- `answer(asking: Asking, reply: String, at: Date) : returns (asking: Asking, reply: String)`
   - Refuses `ASKING_NOT_FOUND`: There is no such ask.
   - Refuses `ALREADY_SETTLED`: This ask was already settled.
-- `fail(asking: Asking, account: String, at: Date) : return (asking: Asking)`
+- `fail(asking: Asking, account: String, at: Date) : returns (asking: Asking)`
   - Refuses `ASKING_NOT_FOUND`: There is no such ask.
   - Refuses `ALREADY_SETTLED`: This ask was already settled.
 
@@ -1064,12 +1064,12 @@ Defined in [Reasoning](../design/concepts/Reasoning.md), line 1.
 - `_followups(previous: String) : many (asking: String)`
 - `_pending() : many (asking: String, reasoner: String, about: String, passage: String, askedAt: Date)`
 - `_pendingAbout(about: String) : many (asking: String, reasoner: String, passage: String, askedAt: Date)`
-- `_asking(asking: String) : optional (reasoner: String, about: String, passage: String, askedAt: Date, pending: Boolean)`
+- `_asking(asking: String) : optional (reasoner: String, about: String, passage: String, askedAt: Date, pending: Flag)`
 - `_replyOf(asking: String) : optional (reply: String, answeredAt: Date)`
 - `_failureOf(asking: String) : optional (account: String, failedAt: Date)`
 - `_repliesAbout(about: String) : many (asking: String, reasoner: String, passage: String, reply: String, answeredAt: Date)`
 - `_lastReplyAbout(about: String) : optional (asking: String, reasoner: String, passage: String, reply: String, answeredAt: Date)`
-- `_lastRepliesAbout(subjects: Seq) : one (replies: Seq)`
+- `_lastRepliesAbout(subjects: Seq<String>) : one (replies: Seq<LatestReply>)`
 - `_lastFailureAbout(about: String) : optional (asking: String, account: String, failedAt: Date)`
 
 #### Instances
@@ -1084,29 +1084,29 @@ Defined in [Relaying](../design/concepts/Relaying.md), line 1.
 
 #### Actions
 
-- `plan(author: Author, title: String, at: Date) : return (relay: Relay)`
+- `plan(author: Author, title: String, at: Date) : returns (relay: Relay)`
   - Refuses `INVALID_TITLE`: The title must be 1 to 200 characters long.
-- `retitle(relay: Relay, title: String) : return (relay: Relay)`
+- `retitle(relay: Relay, title: String) : returns (relay: Relay)`
   - Refuses `RELAY_NOT_FOUND`: There is no such relay.
   - Refuses `INVALID_TITLE`: The title must be 1 to 200 characters long.
-- `addLeg(relay: Relay, material: Material) : return (leg: Leg, position: Number)`
+- `addLeg(relay: Relay, material: Material) : returns (leg: Leg, position: Number)`
   - Refuses `RELAY_NOT_FOUND`: There is no such relay.
-- `setKind(leg: Leg, kind: String) : return (leg: Leg)`
+- `setKind(leg: Leg, kind: String) : returns (leg: Leg)`
   - Refuses `LEG_NOT_FOUND`: There is no such leg.
   - Refuses `KIND_BLANK`: A kind needs a word.
-- `removeLeg(leg: Leg) : return (leg: Leg, relay: Relay, material: Material)`
+- `removeLeg(leg: Leg) : returns (leg: Leg, relay: Relay, material: Material)`
   - Refuses `LEG_NOT_FOUND`: There is no such leg.
   - Refuses `LEG_DRAWN_ON`: Another leg still draws on this one.
-- `moveLeg(leg: Leg, position: Number) : return (leg: Leg, position: Number)`
+- `moveLeg(leg: Leg, position: Number) : returns (leg: Leg, position: Number)`
   - Refuses `LEG_NOT_FOUND`: There is no such leg.
   - Refuses `NO_SUCH_POSITION`: There is no such place in this relay.
   - Refuses `FORWARD_DRAW`: A leg cannot come before what it draws on.
-- `draw(leg: Leg, source: Leg, use: String) : return (draw: Draw)`
+- `draw(leg: Leg, source: Leg, use: String) : returns (draw: Draw)`
   - Refuses `LEG_NOT_FOUND`: There is no such leg.
   - Refuses `NOT_SIBLINGS`: These legs do not share a relay.
   - Refuses `FORWARD_DRAW`: A leg cannot come before what it draws on.
   - Refuses `USE_BLANK`: A draw needs a use.
-- `undraw(leg: Leg, source: Leg) : return (leg: Leg)`
+- `undraw(leg: Leg, source: Leg) : returns (leg: Leg)`
   - Refuses `NO_DRAW`: This leg does not draw on that one.
 
 #### Queries
@@ -1118,7 +1118,7 @@ Defined in [Relaying](../design/concepts/Relaying.md), line 1.
 - `_legFor(material: String) : optional (leg: String, relay: String, position: Number)`
 - `_draws(leg: String) : many (draw: String, source: String, use: String)`
 - `_drawsOn(source: String) : many (draw: String, leg: String, use: String)`
-- `_plan(relay: String) : optional (legs: Seq)`
+- `_plan(relay: String) : optional (legs: Seq<PlannedLeg>)`
 
 #### Instances
 
@@ -1132,13 +1132,13 @@ Defined in [Resolving](../design/concepts/Resolving.md), line 1.
 
 #### Actions
 
-- `accept(question: Question, answer: Answer, by: User, at: Date) : return (resolution: Resolution)`
-- `clear(question: Question) : return (question: Question)`
+- `accept(question: Question, answer: Answer, by: User, at: Date) : returns (resolution: Question)`
+- `clear(question: Question) : returns (question: Question)`
   - Refuses `RESOLUTION_NOT_FOUND`: This question has no accepted answer.
 
 #### Queries
 
-- `_isResolved(question: String) : one (resolved: Boolean)`
+- `_isResolved(question: String) : one (resolved: Flag)`
 - `_getResolution(question: String) : optional (answer: String, resolvedBy: String, resolvedAt: Date)`
 - `_getQuestionsAnswered(answer: String) : many (question: String)`
 
@@ -1155,29 +1155,29 @@ Defined in [Responding](../design/concepts/Responding.md), line 1.
 
 #### Actions
 
-- `begin(participant: Participant, subject: Subject, at: Date) : return (response: Response)`
+- `begin(participant: Participant, subject: Subject, at: Date) : returns (response: Response)`
   - Refuses `ALREADY_SUBMITTED`: This was already handed in.
   - Refuses `NO_PARTICIPANT`: A response needs someone to belong to.
-- `answer(response: Response, item: Item, value: String) : return (response: Response)`
+- `answer(response: Response, item: Item, value: String) : returns (response: Response)`
   - Refuses `RESPONSE_NOT_FOUND`: There is no such response.
   - Refuses `ALREADY_SUBMITTED`: This was already handed in.
   - Refuses `BLANK_ANSWER`: An answer needs something in it.
-- `submit(response: Response, at: Date, required?: Seq) : return (response: Response)`
+- `submit(response: Response, at: Date, required?: Seq<String>) : returns (response: Response)`
   - Refuses `RESPONSE_NOT_FOUND`: There is no such response.
   - Refuses `ALREADY_SUBMITTED`: This was already handed in.
   - Refuses `INCOMPLETE`: An answer is still required.
 
 #### Queries
 
-- `_response(response: String) : optional (subject: String, participant: String, submitted: Boolean, startedAt: Date, submittedAt: Date | Null)`
-- `_responseFor(subject: String, participant: String) : optional (response: String, submitted: Boolean)`
-- `_responsesFor(subject: String) : many (response: String, participant: String, submitted: Boolean, startedAt: Date, submittedAt: Date | Null)`
-- `_responsesOf(subject: String) : one (responses: Seq)`
+- `_response(response: String) : optional (subject: String, participant: String, submitted: Flag, startedAt: Date, submittedAt: Date | null)`
+- `_responseFor(subject: String, participant: String) : optional (response: String, submitted: Flag)`
+- `_responsesFor(subject: String) : many (response: String, participant: String, submitted: Flag, startedAt: Date, submittedAt: Date | null)`
+- `_responsesOf(subject: String) : one (responses: Seq<ResponseSummary>)`
 - `_answers(response: String) : many (item: String, value: String)`
 - `_valuesFor(subject: String, item: String) : many (response: String, participant: String, value: String)`
-- `_collectedAnswers(response: String) : optional (answers: Seq)`
+- `_collectedAnswers(response: String) : optional (answers: Seq<CollectedAnswer>)`
 - `_submittedAnswers(subject: String) : many (response: String, participant: String, item: String, value: String)`
-- `_valuesForSubject(subject: String) : one (values: Seq)`
+- `_valuesForSubject(subject: String) : one (values: Seq<SubmittedValue>)`
 
 #### Instances
 
@@ -1192,8 +1192,8 @@ Defined in [Revising](../design/concepts/Revising.md), line 1.
 
 #### Actions
 
-- `record(item: Item, content: String, at: Date) : return (revision: Revision, number: Number)`
-- `clearItem(item: Item) : return (item: Item)`
+- `record(item: Item, content: String, at: Date) : returns (revision: Revision, number: Number)`
+- `clearItem(item: Item) : returns (item: Item)`
 
 #### Queries
 
@@ -1212,35 +1212,35 @@ Defined in [Roling](../design/concepts/Roling.md), line 1.
 
 #### Actions
 
-- `defineRole(name: String, capabilities: Strings) : return (role: Role)`
+- `defineRole(name: String, capabilities: Seq<String>) : returns (role: Role)`
   - Refuses `ROLE_ALREADY_EXISTS`: A role with this name already exists.
-- `ensureRole(name: String, capabilities: Strings) : return (role: Role)`
-- `setCapabilities(role: Role, capabilities: Strings) : return (role: Role)`
+- `ensureRole(name: String, capabilities: Seq<String>) : returns (role: Role)`
+- `setCapabilities(role: Role, capabilities: Seq<String>) : returns (role: Role)`
   - Refuses `ROLE_NOT_FOUND`: No such role exists.
-- `deleteRole(role: Role) : return (role: Role)`
+- `deleteRole(role: Role) : returns (role: Role)`
   - Refuses `ROLE_NOT_FOUND`: No such role exists.
   - Refuses `ROLE_IN_USE`: The role is still assigned to a user.
-- `assign(user: User, context: Context, role: Role) : return (assignment: Assignment)`
+- `assign(user: User, context: Context, role: Role) : returns (assignment: Assignment)`
   - Refuses `ROLE_NOT_FOUND`: No such role exists.
-- `revoke(user: User, context: Context) : return (assignment: Assignment)`
+- `revoke(user: User, context: Context) : returns (assignment: Assignment)`
   - Refuses `ASSIGNMENT_NOT_FOUND`: The user holds no role in this context.
-- `requireCapability(user: User, context: Context, capability: String) : return (allowed: Boolean)`
+- `requireCapability(user: User, context: Context, capability: String) : returns (allowed: Flag)`
   - Refuses `FORBIDDEN`: The user does not hold the required capability in this context.
 
 #### Queries
 
-- `_capableUsers(users: Seq, context: Context, capabilities: Seq) : one (capable: Seq)`
-- `_hasCapability(user: String, context: String, capability: String) : one (allowed: Boolean)`
-- `_hasCapabilityHolder(context: String, capability: String) : one (present: Boolean)`
+- `_capableUsers(users: Seq<String>, context: Context, capabilities: Seq<String>) : one (capable: Seq<String>)`
+- `_hasCapability(user: String, context: String, capability: String) : one (allowed: Flag)`
+- `_hasCapabilityHolder(context: String, capability: String) : one (present: Flag)`
 - `_getCapabilityHolders(context: String, capability: String) : many (user: String)`
-- `_isSoleCapabilityHolder(user: String, context: String, capability: String) : one (sole: Boolean)`
-- `_holdsRoleNamed(user: String, context: String, name: String) : one (held: Boolean)`
+- `_isSoleCapabilityHolder(user: String, context: String, capability: String) : one (sole: Flag)`
+- `_holdsRoleNamed(user: String, context: String, name: String) : one (held: Flag)`
 - `_getRole(user: String, context: String) : optional (role: String)`
 - `_getContextsOfRoleNamed(user: String, name: String) : many (context: String)`
 - `_getHoldersOfRoleNamed(context: String, name: String) : many (user: String)`
 - `_getRoleByName(name: String) : optional (role: String)`
-- `_getRoleDetail(role: String) : optional (name: String, capabilities: Strings)`
-- `_listRoles() : many (role: String, name: String, capabilities: Strings)`
+- `_getRoleDetail(role: String) : optional (name: String, capabilities: Seq<String>)`
+- `_listRoles() : many (role: String, name: String, capabilities: Seq<String>)`
 - `_denotedRole(ref: String) : one (role: String)`
 
 #### Instances
@@ -1255,52 +1255,52 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 
 #### Actions
 
-- `configureClass(code: String, title: String, term: String, timezone: String) : return (class: Class)`
+- `configureClass(code: String, title: String, term: String, timezone: String) : returns (class: Class)`
   - Refuses `CLASS_ALREADY_CONFIGURED`: The class has already been configured.
   - Refuses `CLASS_TIMEZONE_INVALID`: Choose a valid IANA timezone.
-- `updateClass(code: String, title: String, term: String, timezone: String) : return (class: Class)`
+- `updateClass(code: String, title: String, term: String, timezone: String) : returns (class: Class)`
   - Refuses `CLASS_NOT_CONFIGURED`: The class has not been configured.
   - Refuses `CLASS_TIMEZONE_INVALID`: Choose a valid IANA timezone.
-- `createSection(name: String, location: String, meetingPattern: String) : return (section: Section)`
-- `updateSection(section: Section, name: String, location: String, meetingPattern: String) : return (section: Section)`
+- `createSection(name: String, location: String, meetingPattern: String) : returns (section: Section)`
+- `updateSection(section: Section, name: String, location: String, meetingPattern: String) : returns (section: Section)`
   - Refuses `SECTION_NOT_FOUND`: No such section exists.
-- `previewImport(csv: String) : return (rows: Rows)`
-- `importSeats(rows: Rows) : return (created: Seats, skipped: Strings)`
+- `previewImport(csv: String) : returns (rows: Seq<ImportRow>)`
+- `importSeats(rows: Seq<ImportRow>) : returns (created: Seq<Seat>, skipped: Seq<String>)`
   - Refuses `SECTION_NOT_FOUND`: No such section exists.
-- `enrol(email: String, kind: String, section: Section, user: User) : return (seat: Seat, kind: String, user: User, section: Section)`
+- `enrol(email: String, kind: String, section: Section, user: User) : returns (seat: Seat, kind: String, user: User, section: Section)`
   - Refuses `SEAT_ALREADY_EXISTS`: A seat already exists for this address.
   - Refuses `SEAT_ALREADY_ACTIVE`: This user already holds an active seat.
-- `claimSeat(seat: Seat, user: User) : return (seat: Seat, kind: String, user: User, section: Section)`
+- `claimSeat(seat: Seat, user: User) : returns (seat: Seat, kind: String, user: User, section: Section)`
   - Refuses `SEAT_NOT_FOUND`: No such seat exists.
   - Refuses `SEAT_NOT_PENDING`: This seat is not open to claim.
   - Refuses `SEAT_ALREADY_ACTIVE`: This user already holds an active seat.
-- `dropSeat(seat: Seat) : return (seat: Seat, kind: String, user: User)`
+- `dropSeat(seat: Seat) : returns (seat: Seat, kind: String, user: User)`
   - Refuses `SEAT_NOT_FOUND`: No such seat exists.
   - Refuses `SEAT_NOT_ACTIVE`: This seat is not active.
-- `reinstateSeat(seat: Seat) : return (seat: Seat, kind: String, user: User, section: Section)`
+- `reinstateSeat(seat: Seat) : returns (seat: Seat, kind: String, user: User, section: Section)`
   - Refuses `SEAT_NOT_FOUND`: No such seat exists.
   - Refuses `SEAT_NOT_DROPPED`: This seat is not dropped.
   - Refuses `SEAT_ALREADY_ACTIVE`: This user already holds an active seat.
-- `removeSeat(seat: Seat) : return (seat: Seat, email: String)`
+- `removeSeat(seat: Seat) : returns (seat: Seat, email: String)`
   - Refuses `SEAT_NOT_FOUND`: No such seat exists.
-- `moveSection(seat: Seat, section: Section) : return (seat: Seat)`
+- `moveSection(seat: Seat, section: Section) : returns (seat: Seat)`
   - Refuses `SEAT_NOT_FOUND`: No such seat exists.
 
 #### Queries
 
-- `_activeUsers(users: Seq) : one (active: Seq)`
-- `_activeSections(sections: Seq) : one (active: Boolean)`
+- `_activeUsers(users: Seq<String>) : one (active: Seq<String>)`
+- `_activeSections(sections: Seq<String>) : one (active: Flag)`
 - `_getClass() : optional (detail: Class)`
 - `_getSections() : many (section: String, name: String, location: String, meetingPattern: String, status: String)`
 - `_getSeatByEmail(email: String) : optional (seat: String, email: String)`
 - `_getPendingSeatByEmail(email: String) : optional (seat: String, email: String, displayName: String)`
-- `_getSeatByUser(user: String) : optional (seat: String, user: String | Null, email: String, kind: String, section: String | Null, status: String)`
+- `_getSeatByUser(user: String) : optional (seat: String, user: String | null, email: String, kind: String, section: String | null, status: String)`
 - `_getSeatDetail(user: String) : optional (detail: Seat)`
-- `_getActiveMembers() : many (user: String | Null, seat: String, kind: String, section: String | Null, email: String)`
-- `_isActiveStudent(user: String) : one (active: Boolean)`
-- `_getActiveStudents() : many (user: String, seat: String, section: String | Null, email: String)`
-- `_getUnclaimedSeats() : many (seat: String, email: String, kind: String, section: String | Null, displayName: String)`
-- `_getDroppedSeats() : many (user: String | Null, seat: String, kind: String, section: String | Null, email: String)`
+- `_getActiveMembers() : many (user: String | null, seat: String, kind: String, section: String | null, email: String)`
+- `_isActiveStudent(user: String) : one (active: Flag)`
+- `_getActiveStudents() : many (user: String, seat: String, section: String | null, email: String)`
+- `_getUnclaimedSeats() : many (seat: String, email: String, kind: String, section: String | null, displayName: String)`
+- `_getDroppedSeats() : many (user: String | null, seat: String, kind: String, section: String | null, email: String)`
 
 #### Instances
 
@@ -1313,10 +1313,10 @@ Defined in [Scoring](../design/concepts/Scoring.md), line 1.
 
 #### Actions
 
-- `establish(subject: Subject, disclosure: String, expectations: Seq) : return (key: Key)`
+- `establish(subject: Subject, disclosure: String, expectations: Seq<ExpectationEntry>) : returns (key: Key)`
   - Refuses `KEY_EXISTS`: This already has a key.
   - Refuses `UNKNOWN_DISCLOSURE`: That is not a disclosure level.
-- `grade(key: Key, submission: Submission, answers: Seq) : return (result: Result, score: Number)`
+- `grade(key: Key, submission: Submission, answers: Seq<AnswerEntry>) : returns (result: Result, score: Number)`
   - Refuses `KEY_NOT_FOUND`: There is no such key.
   - Refuses `ALREADY_GRADED`: This submission was already graded.
 
@@ -1341,16 +1341,16 @@ Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 
 #### Actions
 
-- `start(user: User, at?: Date) : return (session: Session, expiresAt: Date, absoluteExpiresAt: Date)`
-- `refresh(session: Session) : return (session: Session, refreshed: Boolean)`
-- `end(session: Session) : return (session: Session)`
+- `start(user: User, at?: Date) : returns (session: Session, expiresAt: Date, absoluteExpiresAt: Date)`
+- `refresh(session: Session) : returns (session: Session, refreshed: Flag)`
+- `end(session: Session) : returns (session: Session)`
   - Refuses `SESSION_NOT_FOUND`: There is no such session.
-- `endAllForUser(user: User) : return (user: User)`
+- `endAllForUser(user: User) : returns (user: User)`
 
 #### Queries
 
 - `_getUser(session: String, at?: Date) : optional (user: String)`
-- `_isExpired(session: String, at: Date) : one (expired: Boolean)`
+- `_isExpired(session: String, at: Date) : one (expired: Flag)`
 
 #### Instances
 
@@ -1363,8 +1363,8 @@ Defined in [Sharing](../design/concepts/Sharing.md), line 1.
 
 #### Actions
 
-- `issue(subject: Subject) : return (share: Share, token: String)`
-- `open(token: String) : return (subject: Subject)`
+- `issue(subject: Subject) : returns (share: Share, token: String)`
+- `open(token: String) : returns (subject: Subject)`
   - Refuses `NOTHING_SHARED`: Nothing is shared here.
 
 #### Queries
@@ -1383,7 +1383,7 @@ Defined in [Snapshotting](../design/concepts/Snapshotting.md), line 1.
 
 #### Actions
 
-- `capture(subject: Subject, value: Value) : return (snapshot: Snapshot)`
+- `capture(subject: Subject, value: Value) : returns (snapshot: Snapshot)`
   - Refuses `SNAPSHOT_EXISTS`: This subject already has a snapshot.
 
 #### Queries
@@ -1405,9 +1405,9 @@ Defined in [StandardSetting](../design/concepts/StandardSetting.md), line 1.
 
 #### Actions
 
-- `define(name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String) : return (standard: Standard, edition: Edition)`
+- `define(name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String) : returns (standard: Standard, edition: Edition)`
   - Refuses `INVALID_STANDARD`: Supply a skill name and a safe optional reference link.
-- `revise(standard: Standard, expectedEdition: Edition, name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String) : return (standard: Standard, edition: Edition)`
+- `revise(standard: Standard, expectedEdition: Edition, name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String) : returns (standard: Standard, edition: Edition)`
   - Refuses `STANDARD_NOT_FOUND`: There is no such standard.
   - Refuses `STANDARD_CONFLICT`: This standard changed. Reload before issuing an edition.
   - Refuses `INVALID_STANDARD`: Supply a skill name and a safe optional reference link.
@@ -1417,8 +1417,8 @@ Defined in [StandardSetting](../design/concepts/StandardSetting.md), line 1.
 - `_getStandards() : many (standard: String, edition: String, number: Number, name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String)`
 - `_getEdition(edition: String) : optional (standard: String, edition: String, number: Number, name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String)`
 - `_getEditions() : many (standard: String, edition: String, number: Number, name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String)`
-- `_getEditionCatalog() : optional (editions: Json)`
-- `_hasEditions(editions: Json) : optional (valid: Bool)`
+- `_getEditionCatalog() : optional (editions: EditionCatalog)`
+- `_hasEditions(editions: Seq<String>) : optional (valid: Flag)`
 
 #### Instances
 
@@ -1430,18 +1430,18 @@ Defined in [Submitting](../design/concepts/Submitting.md), line 1.
 
 #### Actions
 
-- `submit(assignment: Assignment, submitter: Submitter, artifact: Artifact, at: Date) : return (submission: Submission)`
-- `withdraw(submission: Submission) : return (submission: Submission)`
+- `submit(assignment: Assignment, submitter: Submitter, artifact: Artifact, at: Date) : returns (submission: Submission)`
+- `withdraw(submission: Submission) : returns (submission: Submission)`
   - Refuses `SUBMISSION_NOT_FOUND`: There is no such submission.
   - Refuses `SUBMISSION_NOT_SUBMITTED`: Only a submitted attempt can be withdrawn.
-- `restore(submission: Submission) : return (submission: Submission)`
+- `restore(submission: Submission) : returns (submission: Submission)`
   - Refuses `SUBMISSION_NOT_FOUND`: There is no such submission.
   - Refuses `SUBMISSION_NOT_WITHDRAWN`: Only a withdrawn attempt can be restored.
 
 #### Queries
 
 - `_getLatest(assignment: String, submitter: String) : optional (latest: Submission)`
-- `_getAttempts(assignment: String, submitter: String) : many (submission: String, artifacts: Strings, submittedAt: Date, number: Number, status: String)`
+- `_getAttempts(assignment: String, submitter: String) : many (submission: String, artifacts: Seq<String>, submittedAt: Date, number: Number, status: String)`
 - `_getSubmissionsForAssignment(assignment: String) : many (submitter: String, submission: String, artifacts: Artifacts, submittedAt: Date, number: Number, status: String)`
 - `_getSubmissionsForSubmitter(submitter: String) : many (assignment: String, submission: String, submittedAt: Date, number: Number, status: String)`
 
@@ -1458,18 +1458,18 @@ Defined in [Subscribing](../design/concepts/Subscribing.md), line 1.
 
 #### Actions
 
-- `subscribe(user: Person, target: Target, at: Date) : return (subscription: Subscription)`
+- `subscribe(user: Person, target: Target, at: Date) : returns (subscription: Subscription)`
   - Refuses `ALREADY_SUBSCRIBED`: This person already follows the target.
-- `unsubscribe(user: Person, target: Target) : return (subscription: Subscription)`
+- `unsubscribe(user: Person, target: Target) : returns (subscription: Subscription)`
   - Refuses `NOT_SUBSCRIBED`: There is no such subscription to drop.
-- `clearTarget(target: Target) : return (target: Target)`
+- `clearTarget(target: Target) : returns (target: Target)`
 
 #### Queries
 
 - `_getSubscribers(target: String) : many (user: String)`
-- `_subscribersOf(target: String) : one (users: Seq)`
+- `_subscribersOf(target: String) : one (users: Seq<String>)`
 - `_getSubscriptions(user: String) : many (target: String, subscribedAt: Date)`
-- `_isSubscribed(user: String, target: String) : one (subscribed: Boolean)`
+- `_isSubscribed(user: String, target: String) : one (subscribed: Flag)`
 
 #### Instances
 
@@ -1483,13 +1483,13 @@ Defined in [Suggesting](../design/concepts/Suggesting.md), line 1.
 
 #### Actions
 
-- `offer(subject: Subject, lines: Seq, at: Date) : return (offering: Offering)`
+- `offer(subject: Subject, lines: Seq<SuggestionLine>, at: Date) : returns (offering: Offering)`
   - Refuses `NOTHING_OFFERED`: An offering needs at least one suggestion.
   - Refuses `INVALID_SUGGESTION`: Every suggestion needs a kind.
-- `take(suggestion: Suggestion) : return (suggestion: Suggestion, offering: Offering, kind: String, target: String, value: String)`
+- `take(suggestion: Suggestion) : returns (suggestion: Suggestion, offering: Offering, kind: String, target: String, value: String)`
   - Refuses `SUGGESTION_NOT_FOUND`: There is no such suggestion.
   - Refuses `SUGGESTION_SETTLED`: This suggestion was already settled.
-- `decline(suggestion: Suggestion) : return (suggestion: Suggestion)`
+- `decline(suggestion: Suggestion) : returns (suggestion: Suggestion)`
   - Refuses `SUGGESTION_NOT_FOUND`: There is no such suggestion.
   - Refuses `SUGGESTION_SETTLED`: This suggestion was already settled.
 
@@ -1512,16 +1512,16 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 
 #### Actions
 
-- `createTag(name: String) : return (tag: Tag)`
+- `createTag(name: String) : returns (tag: Tag)`
   - Refuses `TAG_ALREADY_EXISTS`: A tag with this name already exists.
-- `addTag(target: Target, tag: Tag) : return (target: Target)`
+- `addTag(target: Target, tag: Tag) : returns (target: Target)`
   - Refuses `TAG_NOT_FOUND`: There is no such tag.
   - Refuses `TAG_ALREADY_APPLIED`: This tag is already applied to the target.
-- `removeTag(target: Target, tag: Tag) : return (target: Target)`
+- `removeTag(target: Target, tag: Tag) : returns (target: Target)`
   - Refuses `TAG_NOT_APPLIED`: This tag is not applied to the target.
-- `deleteTag(tag: Tag) : return (tag: Tag)`
+- `deleteTag(tag: Tag) : returns (tag: Tag)`
   - Refuses `TAG_NOT_FOUND`: There is no such tag.
-- `clearTarget(target: Target) : return (target: Target)`
+- `clearTarget(target: Target) : returns (target: Target)`
 
 #### Queries
 
@@ -1541,46 +1541,46 @@ Defined in [Tasking](../design/concepts/Tasking.md), line 1.
 
 #### Actions
 
-- `create(scope: Scope, title: String, details: String, startsAt: Date, endsAt: Date, assignee: Assignee, at: Date) : return (task: Task)`
+- `create(scope: Scope, title: String, details: String, startsAt: Date, endsAt: Date, assignee: Assignee, at: Date) : returns (task: Task)`
   - Refuses `TASK_WINDOW_INVALID`: A task's window cannot end before it begins.
-- `describe(task: Task, title: String, details: String, at: Date) : return (task: Task)`
+- `describe(task: Task, title: String, details: String, at: Date) : returns (task: Task)`
   - Refuses `TASK_NOT_FOUND`: There is no such task.
   - Refuses `TASK_CANCELED`: A canceled task can no longer be changed.
-- `retime(task: Task, startsAt: Date, endsAt: Date, at: Date) : return (task: Task, assignee?: Assignee)`
+- `retime(task: Task, startsAt: Date, endsAt: Date, at: Date) : returns (task: Task, assignee?: Assignee)`
   - Refuses `TASK_NOT_FOUND`: There is no such task.
   - Refuses `TASK_CANCELED`: A canceled task can no longer be changed.
   - Refuses `TASK_WINDOW_INVALID`: A task's window cannot end before it begins.
-- `assign(task: Task, assignee: Assignee, at: Date) : return (task: Task)`
+- `assign(task: Task, assignee: Assignee, at: Date) : returns (task: Task)`
   - Refuses `TASK_NOT_FOUND`: There is no such task.
   - Refuses `TASK_CANCELED`: A canceled task can no longer be changed.
-- `release(task: Task, at: Date) : return (task: Task)`
+- `release(task: Task, at: Date) : returns (task: Task)`
   - Refuses `TASK_NOT_FOUND`: There is no such task.
   - Refuses `TASK_CANCELED`: A canceled task can no longer be changed.
-- `complete(task: Task, at: Date) : return (task: Task, assignee?: Assignee)`
+- `complete(task: Task, at: Date) : returns (task: Task, assignee?: Assignee)`
   - Refuses `TASK_NOT_FOUND`: There is no such task.
   - Refuses `TASK_ALREADY_COMPLETE`: This task is already complete.
   - Refuses `TASK_CANCELED`: A canceled task can no longer be changed.
-- `reopen(task: Task, at: Date) : return (task: Task, assignee?: Assignee)`
+- `reopen(task: Task, at: Date) : returns (task: Task, assignee?: Assignee)`
   - Refuses `TASK_NOT_FOUND`: There is no such task.
   - Refuses `TASK_NOT_COMPLETE`: Only a completed task can be reopened.
   - Refuses `TASK_CANCELED`: Only a completed task can be reopened; uncancel this task instead.
-- `cancel(task: Task, at: Date) : return (task: Task, assignee?: Assignee)`
+- `cancel(task: Task, at: Date) : returns (task: Task, assignee?: Assignee)`
   - Refuses `TASK_NOT_FOUND`: There is no such task.
   - Refuses `TASK_ALREADY_COMPLETE`: This task is already complete.
   - Refuses `TASK_ALREADY_CANCELED`: This task is already canceled.
-- `uncancel(task: Task, at: Date) : return (task: Task, assignee?: Assignee)`
+- `uncancel(task: Task, at: Date) : returns (task: Task, assignee?: Assignee)`
   - Refuses `TASK_NOT_FOUND`: There is no such task.
   - Refuses `TASK_NOT_CANCELED`: Only a canceled task can be uncanceled, and this task is already outstanding.
   - Refuses `TASK_ALREADY_COMPLETE`: This task is already complete.
-- `delete(task: Task, at: Date) : return ()`
+- `delete(task: Task, at: Date) : returns ()`
   - Refuses `TASK_NOT_FOUND`: There is no such task.
   - Refuses `TASK_NOT_SETTLED`: Only a completed or canceled task can be deleted; complete or cancel this task first.
 
 #### Queries
 
-- `_getTask(task: String, at: Date) : optional (scope: String, title: String, details: String, startsAt: String, endsAt: String, assignee: String | Null, state: String, overdue: Boolean, createdAt: Date, updatedAt: Date)`
-- `_getTasksInScope(scope: String, at: Date) : many (task: String, title: String, details: String, startsAt: String, endsAt: String, assignee: String | Null, state: String, overdue: Boolean, createdAt: Date, updatedAt: Date)`
-- `_getAssigned(assignee: String, at: Date) : many (task: String, scope: String, title: String, details: String, startsAt: String, endsAt: String, state: String, overdue: Boolean, createdAt: Date, updatedAt: Date)`
+- `_getTask(task: String, at: Date) : optional (scope: String, title: String, details: String, startsAt: String, endsAt: String, assignee: String | null, state: String, overdue: Flag, createdAt: Date, updatedAt: Date)`
+- `_getTasksInScope(scope: String, at: Date) : many (task: String, title: String, details: String, startsAt: String, endsAt: String, assignee: String | null, state: String, overdue: Flag, createdAt: Date, updatedAt: Date)`
+- `_getAssigned(assignee: String, at: Date) : many (task: String, scope: String, title: String, details: String, startsAt: String, endsAt: String, state: String, overdue: Flag, createdAt: Date, updatedAt: Date)`
 
 #### Instances
 
@@ -1594,14 +1594,14 @@ Defined in [Tracking](../design/concepts/Tracking.md), line 1.
 
 #### Actions
 
-- `register(item: Item, scope: Scope) : return (item: Item)`
+- `register(item: Item, scope: Scope) : returns (item: Item)`
   - Refuses `ITEM_ALREADY_REGISTERED`: This item is already being tracked.
-- `unregister(item: Item) : return (item: Item)`
-- `markSeen(user: User, item: Item) : return (item: Item)`
+- `unregister(item: Item) : returns (item: Item)`
+- `markSeen(user: User, item: Item) : returns (item: Item)`
   - Refuses `ITEM_NOT_REGISTERED`: This item is not being tracked.
   - Refuses `ITEM_ALREADY_SEEN`: This user has already seen this item.
-- `markAllSeen(user: User, scope: Scope) : return (user: User)`
-- `markEachSeen(user: User, items: Rows) : return (user: User)`
+- `markAllSeen(user: User, scope: Scope) : returns (user: User)`
+- `markEachSeen(user: User, items: Seq<ItemRow>) : returns (user: User)`
 
 #### Queries
 
@@ -1622,20 +1622,20 @@ Defined in [Trashing](../design/concepts/Trashing.md), line 1.
 
 #### Actions
 
-- `trash(item: Item, by: User, at: Date) : return (item: Item)`
+- `trash(item: Item, by: User, at: Date) : returns (item: Item)`
   - Refuses `ITEM_ALREADY_TRASHED`: This item is already in the trash.
-- `restore(item: Item) : return (item: Item)`
+- `restore(item: Item) : returns (item: Item)`
   - Refuses `ITEM_NOT_TRASHED`: This item is not in the trash.
-- `purge(item: Item) : return (item: Item)`
+- `purge(item: Item) : returns (item: Item)`
   - Refuses `ITEM_NOT_TRASHED`: This item is not in the trash.
 
 #### Queries
 
-- `_anyTrashed(items: Seq) : one (trashed: Boolean)`
-- `_trashedAmong(items: Seq) : one (trashed: Seq)`
-- `_isTrashed(item: String) : one (trashed: Boolean)`
+- `_anyTrashed(items: Seq<String>) : one (trashed: Flag)`
+- `_trashedAmong(items: Seq<String>) : one (trashed: Seq<String>)`
+- `_isTrashed(item: String) : one (trashed: Flag)`
 - `_getTrashed() : many (item: String, trashedBy: String, trashedAt: Date)`
-- `_trashedItems() : one (items: Seq)`
+- `_trashedItems() : one (items: Seq<String>)`
 
 #### Instances
 
@@ -1655,11 +1655,11 @@ Defined in [Vouching](../design/concepts/Vouching.md), line 1.
 
 #### Actions
 
-- `issue(subject: Subject, at: Date, expiresAt: Date, counterpart?: String) : return (voucher: Voucher, subject: Subject, credential: String)`
+- `issue(subject: Subject, at: Date, expiresAt: Date, counterpart?: String) : returns (voucher: Voucher, subject: Subject, credential: String)`
   - Refuses `VOUCHER_EXPIRY_INVALID`: The voucher expiry must come after its issue time.
-- `verify(voucher: Voucher, credential: String, at: Date, counterpart?: String) : return (voucher: Voucher, subject: Subject)`
+- `verify(voucher: Voucher, credential: String, at: Date, counterpart?: String) : returns (voucher: Voucher, subject: Subject)`
   - Refuses `VOUCHER_INVALID`: That voucher is not valid.
-- `redeem(voucher: Voucher, credential: String, at: Date, counterpart?: String) : return (voucher: Voucher, subject: Subject)`
+- `redeem(voucher: Voucher, credential: String, at: Date, counterpart?: String) : returns (voucher: Voucher, subject: Subject)`
   - Refuses `VOUCHER_INVALID`: That voucher is not valid.
 
 #### Queries
@@ -1679,9 +1679,9 @@ Defined in [Wording](../design/concepts/Wording.md), line 1.
 
 #### Actions
 
-- `word(place: Place, heading: String, passage: String) : return (heading: String, passage: String)`
+- `word(place: Place, heading: String, passage: String) : returns (heading: String, passage: String)`
   - Refuses `INVALID_WORDING`: Use a one-line heading of up to 200 characters and a passage of up to 20000 characters.
-- `withdraw(place: Place) : return (place: Place)`
+- `withdraw(place: Place) : returns (place: Place)`
 
 #### Queries
 

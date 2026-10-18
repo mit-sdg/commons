@@ -23,7 +23,8 @@ password was wrong.
 ## Types
 
 ```types
-
+opaque Seq
+  An ordered list of the values its argument names.
 ```
 
 ## State
@@ -47,67 +48,67 @@ Rule: resetting a password replaces the verifier without the current password; t
 ## Actions
 
 ```actions
-register(username: String, password: String, email: String) : return (user: User)
+register(username: String, password: String, email: String) : returns (user: User)
   where email looks like an address, username is within name length, username is well-formed, password is within password length, no user has username username, and no user holds the normalized email
   then
     add a new user with username, a passwordVerifier derived from password, and the normalized email
-    return user
+    returns user
   where email does not look like an address
   then
-    refuse INVALID_BODY "The email address is not well formed."
+    refuses INVALID_BODY "The email address is not well formed."
   where username is not within name length
   then
-    refuse USERNAME_INVALID_LENGTH "The username must be 3 to 32 characters long."
+    refuses USERNAME_INVALID_LENGTH "The username must be 3 to 32 characters long."
   where username is not well-formed
   then
-    refuse USERNAME_INVALID_CHARS "The username must start with a letter and contain only letters, digits, hyphens, and underscores."
+    refuses USERNAME_INVALID_CHARS "The username must start with a letter and contain only letters, digits, hyphens, and underscores."
   where password is not within password length
   then
-    refuse PASSWORD_INVALID_LENGTH "The password must be 8 to 128 characters long."
+    refuses PASSWORD_INVALID_LENGTH "The password must be 8 to 128 characters long."
   where some user has username username
   then
-    refuse USERNAME_TAKEN "That username is already taken."
+    refuses USERNAME_TAKEN "That username is already taken."
   where some user holds the normalized email
   then
-    refuse EMAIL_TAKEN "That email address already has an account."
+    refuses EMAIL_TAKEN "That email address already has an account."
 
-authenticate(username: String, password: String) : return (user: User)
+authenticate(username: String, password: String) : returns (user: User)
   where some user has username username and password matches its passwordVerifier
   then
-    return user
+    returns user
   where no user has username username whose passwordVerifier matches password
   then
-    refuse INVALID_CREDENTIALS "Unknown username or wrong password."
+    refuses INVALID_CREDENTIALS "Unknown username or wrong password."
 
-changePassword(user: User, oldPassword: String, newPassword: String) : return (user: User)
+changePassword(user: User, oldPassword: String, newPassword: String) : returns (user: User)
   where the user exists and oldPassword matches its passwordVerifier, and newPassword is within password length
   then
     set the user's passwordVerifier to one derived from newPassword
-    return user
+    returns user
   where the user does not exist or oldPassword does not match its passwordVerifier
   then
-    refuse INVALID_CREDENTIALS "The current password is wrong."
+    refuses INVALID_CREDENTIALS "The current password is wrong."
   where newPassword is not within password length
   then
-    refuse PASSWORD_INVALID_LENGTH "The password must be 8 to 128 characters long."
+    refuses PASSWORD_INVALID_LENGTH "The password must be 8 to 128 characters long."
 
-resetPassword(user: User, newPassword: String) : return (user: User)
+resetPassword(user: User, newPassword: String) : returns (user: User)
   where the user exists and newPassword is within password length
   then
     set the user's passwordVerifier to one derived from newPassword
-    return user
+    returns user
   where the user does not exist
   then
-    refuse INVALID_CREDENTIALS "There is no such account."
+    refuses INVALID_CREDENTIALS "There is no such account."
   where newPassword is not within password length
   then
-    refuse PASSWORD_INVALID_LENGTH "The password must be 8 to 128 characters long."
+    refuses PASSWORD_INVALID_LENGTH "The password must be 8 to 128 characters long."
 ```
 
 ## Queries
 
 ```queries
-_knownUsers (users: Seq) : one (known: Boolean)
+_knownUsers (users: Seq<String>) : one (known: Flag)
   answers whether every supplied user identity is registered; the empty selection answers true
 
 _getById (user: String) : optional (username: String, email: String)
@@ -125,7 +126,7 @@ _getByUsername (username: String) : optional (user: String)
 _getUserCount () : one (count: Number)
   answers the number of Users
 
-_selectedUsers (users: Seq) : many (user: String)
+_selectedUsers (users: Seq<String>) : many (user: String)
   answers the registered account identities among the supplied users without resolving usernames
 
 _getUsers () : many (user: String, username: String, email: String)
@@ -138,7 +139,7 @@ _search (query: String) : many (user: String, username: String)
   orders rows alphabetically by username and returns at most ten
   answers no rows when none match
 
-_resolveIdentity (ref: String) : one (user: String|Null, username: String|Null)
+_resolveIdentity (ref: String) : one (user: String|null, username: String|null)
   answers the User denoted by an existing identifier, then an exact username, then a sole case-blind username match
   answers both fields as null when no User matches or several usernames match only by case
 

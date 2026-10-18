@@ -15,6 +15,10 @@ A reader of Noor's draft _offers_ four suggestions about it at once: two rewordi
 ```types
 external Subject
   An application-owned identity naming the work the suggestions are about.
+opaque Seq
+  An ordered list of the values its argument names.
+opaque SuggestionLine
+  One suggestion to offer as `{ kind, target, value }`.
 ```
 
 ## State
@@ -31,9 +35,9 @@ a set of Suggestions with
   a value      String
   a position   Number
 
-a Pending  set of Suggestions
-a Taken    set of Suggestions
-a Declined set of Suggestions
+a set of Pending Suggestions
+a set of Taken Suggestions
+a set of Declined Suggestions
 
 Rule: each entry of offer's lines is `{ kind, target, value }`; a kind is a nonblank string, and target and value are strings that may be empty; the suggestions keep the lines' order under per-suggestion identities the concept mints.
 Rule: an offering carries at least one line.
@@ -44,44 +48,44 @@ Rule: Suggesting does not produce suggestions, interpret what a kind, target, or
 ## Actions
 
 ```actions
-offer (subject: Subject, lines: Seq, at: Date) : return (offering: Offering)
+offer (subject: Subject, lines: Seq<SuggestionLine>, at: Date) : returns (offering: Offering)
   where lines has at least one entry and every entry names a nonblank kind
   then
     add a new offering with subject and offeredAt at
     add a new suggestion for each entry of lines with its kind, target, and value, in order, and add it to pending
-    return offering
+    returns offering
   where lines is empty
   then
-    refuse NOTHING_OFFERED "An offering needs at least one suggestion."
+    refuses NOTHING_OFFERED "An offering needs at least one suggestion."
   where some entry of lines names no kind
   then
-    refuse INVALID_SUGGESTION "Every suggestion needs a kind."
+    refuses INVALID_SUGGESTION "Every suggestion needs a kind."
 
-take (suggestion: Suggestion) : return (suggestion: Suggestion, offering: Offering, kind: String, target: String, value: String)
+take (suggestion: Suggestion) : returns (suggestion: Suggestion, offering: Offering, kind: String, target: String, value: String)
   where suggestion in pending
   then
     remove suggestion from pending
     add suggestion to taken
-    return suggestion, offering, kind, target, value
+    returns suggestion, offering, kind, target, value
   where suggestion does not exist
   then
-    refuse SUGGESTION_NOT_FOUND "There is no such suggestion."
+    refuses SUGGESTION_NOT_FOUND "There is no such suggestion."
   where suggestion not in pending
   then
-    refuse SUGGESTION_SETTLED "This suggestion was already settled."
+    refuses SUGGESTION_SETTLED "This suggestion was already settled."
 
-decline (suggestion: Suggestion) : return (suggestion: Suggestion)
+decline (suggestion: Suggestion) : returns (suggestion: Suggestion)
   where suggestion in pending
   then
     remove suggestion from pending
     add suggestion to declined
-    return suggestion
+    returns suggestion
   where suggestion does not exist
   then
-    refuse SUGGESTION_NOT_FOUND "There is no such suggestion."
+    refuses SUGGESTION_NOT_FOUND "There is no such suggestion."
   where suggestion not in pending
   then
-    refuse SUGGESTION_SETTLED "This suggestion was already settled."
+    refuses SUGGESTION_SETTLED "This suggestion was already settled."
 ```
 
 ## Queries

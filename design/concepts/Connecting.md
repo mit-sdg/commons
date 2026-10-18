@@ -43,24 +43,24 @@ Rule: an app is opaque text. Connecting does not interpret it, decide which apps
 ## Actions
 
 ```actions
-approve (user: User, app: String, at: Date) : return (connection: Connection)
+approve (user: User, app: String, at: Date) : returns (connection: Connection)
   where no connection has user and app
   then
     add a new connection with user, app, and approvedAt at
-    return connection
+    returns connection
   where some connection has user and app
   then
     leave that connection and its approvedAt unchanged
-    return connection
+    returns connection
 
-withdraw (connection: Connection) : return (connection: Connection)
+withdraw (connection: Connection) : returns (connection: Connection)
   where connection in connections
   then
     delete connection
-    return connection
+    returns connection
   where connection not in connections
   then
-    refuse CONNECTION_NOT_FOUND "There is no such connection."
+    refuses CONNECTION_NOT_FOUND "There is no such connection."
 ```
 
 ## Queries

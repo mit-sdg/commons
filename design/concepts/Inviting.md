@@ -46,47 +46,47 @@ Rule: a credential is derived from the invitation identifier with a deployment s
 ## Actions
 
 ```actions
-invite(channel: String, address: String, at: Date) : return (invitation: Invitation, channel: String, address: String, credential: String, created: Boolean)
+invite(channel: String, address: String, at: Date) : returns (invitation: Invitation, channel: String, address: String, credential: String, created: Flag)
   where no invitation has channel and address
   then
     add a new invitation with createdAt and lastInvitedAt at, inviteCount 1, and no user
-    return invitation, channel, address, credential, created
+    returns invitation, channel, address, credential, created
   where an unclaimed invitation has channel and address
   then
     set its lastInvitedAt to at and increment its inviteCount
-    return invitation, channel, address, credential, created
+    returns invitation, channel, address, credential, created
   where a claimed invitation has channel and address
   then
-    refuse INVITATION_ALREADY_CLAIMED "That invitation has already been used."
+    refuses INVITATION_ALREADY_CLAIMED "That invitation has already been used."
 
-verify(invitation: Invitation, credential: String, channel: String) : return (invitation: Invitation, address: String)
+verify(invitation: Invitation, credential: String, channel: String) : returns (invitation: Invitation, address: String)
   where invitation exists on channel, has no user, and credential matches
   then
-    return invitation, address
+    returns invitation, address
   where no such unclaimed invitation matches
   then
-    refuse INVITATION_INVALID "That invitation is not valid."
+    refuses INVITATION_INVALID "That invitation is not valid."
 
-claim(invitation: Invitation, credential: String, user: User) : return (invitation: Invitation, channel: String, address: String)
+claim(invitation: Invitation, credential: String, user: User) : returns (invitation: Invitation, channel: String, address: String)
   where invitation exists, has no user, and credential matches
   then
     set its user to user
-    return invitation, channel, address
+    returns invitation, channel, address
   where no such unclaimed invitation matches
   then
-    refuse INVITATION_INVALID "That invitation is not valid."
+    refuses INVITATION_INVALID "That invitation is not valid."
 
-retract(invitation: Invitation) : return ()
+retract(invitation: Invitation) : returns ()
   where no such invitation exists
   then
-    refuse INVITATION_NOT_FOUND "That invitation no longer exists."
+    refuses INVITATION_NOT_FOUND "That invitation no longer exists."
   where invitation exists and has a user
   then
-    refuse INVITATION_ALREADY_CLAIMED "That invitation has already been used."
+    refuses INVITATION_ALREADY_CLAIMED "That invitation has already been used."
   where invitation exists and has no user
   then
     delete the invitation
-    return
+    returns
 ```
 
 ## Queries
@@ -96,11 +96,11 @@ _getAvailable (invitation: String, credential: String) : optional (channel: Stri
   answers the channel and address only while the Invitation is unclaimed and credential matches
   answers no row otherwise
 
-_getInvitationByAddress (channel: String, address: String) : optional (invitation: String, user: User|Null)
+_getInvitationByAddress (channel: String, address: String) : optional (invitation: String, user: User|null)
   answers the Invitation issued to the channel and address
   answers no row when the address has never been invited
 
-_getInvitations () : many (invitation: String, channel: String, address: String, createdAt: Date, lastInvitedAt: Date, inviteCount: Number, user: User|Null)
+_getInvitations () : many (invitation: String, channel: String, address: String, createdAt: Date, lastInvitedAt: Date, inviteCount: Number, user: User|null)
   answers every Invitation without its credential
   orders rows by creation from newest to oldest
   answers no rows when none match

@@ -22,6 +22,8 @@ external Item
 
 external Scope
   An application-owned identity used in the scope role.
+opaque Seq
+  An ordered list of the values its argument names.
 ```
 
 ## State
@@ -42,41 +44,41 @@ Rule: items and scopes are opaque identities; Pinning neither creates nor valida
 ## Actions
 
 ```actions
-pin(item: Item, scope: Scope, priority: Number, at: Date) : return (pin: Pin)
+pin(item: Item, scope: Scope, priority: Number, at: Date) : returns (pin: Pin)
   where no pin has this item and scope
   then
     add a new pin with item, scope, priority, and pinnedAt at
-    return pin
+    returns pin
   where some pin has this item and scope
   then
-    refuse ITEM_ALREADY_PINNED "This item is already pinned in this scope."
+    refuses ITEM_ALREADY_PINNED "This item is already pinned in this scope."
 
-unpin(item: Item, scope: Scope) : return (item: Item)
+unpin(item: Item, scope: Scope) : returns (item: Item)
   where true
   then
     delete the pin with this item and scope when one stands
-    return item
+    returns item
 
-setPriority(item: Item, scope: Scope, priority: Number) : return (pin: Pin)
+setPriority(item: Item, scope: Scope, priority: Number) : returns (pin: Pin)
   where some pin has this item and scope
   then
     set that pin's priority to priority
-    return pin
+    returns pin
   where no pin has this item and scope
   then
-    refuse ITEM_NOT_PINNED "There is no such pin to reprioritize."
+    refuses ITEM_NOT_PINNED "There is no such pin to reprioritize."
 
-clearItem(item: Item) : return (item: Item)
+clearItem(item: Item) : returns (item: Item)
   where true
   then
     remove every pin of item
-    return item
+    returns item
 ```
 
 ## Queries
 
 ```queries
-_pinnedItems (scope: String) : one (items: Seq)
+_pinnedItems (scope: String) : one (items: Seq<String>)
   answers the pinned item identities as one ordered sequence, empty when none are pinned
 
 
@@ -84,6 +86,6 @@ _getPinned (scope: String) : many (item: String, priority: Number)
   answers the scope's pinned items with highest priority first, with later pins breaking ties
   answers no rows when none match
 
-_isPinned (item: String, scope: String) : one (pinned: Boolean)
+_isPinned (item: String, scope: String) : one (pinned: Flag)
   answers whether the Item is pinned in the Scope
 ```

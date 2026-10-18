@@ -31,12 +31,16 @@ configured is refused.
 ```types
 external User
   An application-owned identity used in the user role.
+opaque Seq
+  An ordered list of the values its argument names.
+opaque ImportRow
+  One roster line as `{ email, kind, section, displayName }`.
 ```
 
 ## State
 
 ```state
-an element of Class with
+a Class with
   a code     String
   a title    String
   a term     String
@@ -56,9 +60,9 @@ a set of Seats with
   an optional holder       User
   an optional displayName  String
 
-a Pending set of Seats
-an Active set of Seats
-a Dropped set of Seats
+a set of Pending Seats
+a set of Active Seats
+a set of Dropped Seats
 
 Rule: the class is absent until it is configured, and it is configured at most once.
 Rule: a class timezone must be a valid IANA timezone identifier.
@@ -75,53 +79,53 @@ Rule: removing a seat deletes it, so the address it carried identifies no seat a
 ## Actions
 
 ```actions
-configureClass(code: String, title: String, term: String, timezone: String) : return (class: Class)
+configureClass(code: String, title: String, term: String, timezone: String) : returns (class: Class)
   where no class is configured
   then
     add a new class with code, title, term, and timezone
-    return class
+    returns class
   where a class is already configured
   then
-    refuse CLASS_ALREADY_CONFIGURED "The class has already been configured."
+    refuses CLASS_ALREADY_CONFIGURED "The class has already been configured."
   where timezone is not a valid IANA timezone
   then
-    refuse CLASS_TIMEZONE_INVALID "Choose a valid IANA timezone."
+    refuses CLASS_TIMEZONE_INVALID "Choose a valid IANA timezone."
 
-updateClass(code: String, title: String, term: String, timezone: String) : return (class: Class)
+updateClass(code: String, title: String, term: String, timezone: String) : returns (class: Class)
   where a class is configured
   then
     set the class's code, title, term, and timezone
-    return class
+    returns class
   where no class is configured
   then
-    refuse CLASS_NOT_CONFIGURED "The class has not been configured."
+    refuses CLASS_NOT_CONFIGURED "The class has not been configured."
   where timezone is not a valid IANA timezone
   then
-    refuse CLASS_TIMEZONE_INVALID "Choose a valid IANA timezone."
+    refuses CLASS_TIMEZONE_INVALID "Choose a valid IANA timezone."
 
-createSection(name: String, location: String, meetingPattern: String) : return (section: Section)
+createSection(name: String, location: String, meetingPattern: String) : returns (section: Section)
   where true
   then
     add a new section with name, location, and meetingPattern
-    return section
+    returns section
 
-updateSection(section: Section, name: String, location: String, meetingPattern: String) : return (section: Section)
+updateSection(section: Section, name: String, location: String, meetingPattern: String) : returns (section: Section)
   where section in sections
   then
     set section's name, location, and meetingPattern
-    return section
+    returns section
   where section not in sections
   then
-    refuse SECTION_NOT_FOUND "No such section exists."
-previewImport(csv: String) : return (rows: Rows)
+    refuses SECTION_NOT_FOUND "No such section exists."
+previewImport(csv: String) : returns (rows: Seq<ImportRow>)
   where true
   then
     read the first newline-delimited line as comma-delimited headers
     read each later newline-delimited line as comma-delimited values, without quoting or escaping
     resolve each non-empty section name or identifier to one active section and mark unknown or ambiguous sections invalid
-    return rows
+    returns rows
 
-importSeats(rows: Rows) : return (created: Seats, skipped: Strings)
+importSeats(rows: Seq<ImportRow>) : returns (created: Seq<Seat>, skipped: Seq<String>)
   where every non-empty section identifies an active section
   then
     for each row whose email no seat already carries:
@@ -129,97 +133,97 @@ importSeats(rows: Rows) : return (created: Seats, skipped: Strings)
       add the seat to pending
     for each row carrying a display name whose email any seat in pending carries, including a seat this import has just created:
       set that seat's displayName to the row's display name
-    return created, skipped
+    returns created, skipped
   where a non-empty section does not identify an active section
   then
-    refuse SECTION_NOT_FOUND "No such section exists."
+    refuses SECTION_NOT_FOUND "No such section exists."
 
-enrol(email: String, kind: String, section: Section, user: User) : return (seat: Seat, kind: String, user: User, section: Section)
+enrol(email: String, kind: String, section: Section, user: User) : returns (seat: Seat, kind: String, user: User, section: Section)
   where a seat not in pending carries email
   then
-    refuse SEAT_ALREADY_EXISTS "A seat already exists for this address."
+    refuses SEAT_ALREADY_EXISTS "A seat already exists for this address."
   where no seat outside pending carries email and user holds a seat in active
   then
-    refuse SEAT_ALREADY_ACTIVE "This user already holds an active seat."
+    refuses SEAT_ALREADY_ACTIVE "This user already holds an active seat."
   where a seat in pending carries email and user holds no seat in active
   then
     set that seat's holder to user
     remove it from pending, add it to active
     take that seat's own kind as kind and its own section as section, leaving the supplied kind and section unused
-    return seat, kind, user, section
+    returns seat, kind, user, section
   where no seat carries email and user holds no seat in active
   then
     add a new seat with email, kind, and section, held by user
     add the seat to active
-    return seat, kind, user, section
+    returns seat, kind, user, section
 
-claimSeat(seat: Seat, user: User) : return (seat: Seat, kind: String, user: User, section: Section)
+claimSeat(seat: Seat, user: User) : returns (seat: Seat, kind: String, user: User, section: Section)
   where seat in pending and user holds no seat in active
   then
     set seat's holder to user
     remove seat from pending, add seat to active
-    return seat, kind, user, section
+    returns seat, kind, user, section
   where seat not in seats
   then
-    refuse SEAT_NOT_FOUND "No such seat exists."
+    refuses SEAT_NOT_FOUND "No such seat exists."
   where seat not in pending
   then
-    refuse SEAT_NOT_PENDING "This seat is not open to claim."
+    refuses SEAT_NOT_PENDING "This seat is not open to claim."
   where user holds a seat in active
   then
-    refuse SEAT_ALREADY_ACTIVE "This user already holds an active seat."
-dropSeat(seat: Seat) : return (seat: Seat, kind: String, user: User)
+    refuses SEAT_ALREADY_ACTIVE "This user already holds an active seat."
+dropSeat(seat: Seat) : returns (seat: Seat, kind: String, user: User)
   where seat in active
   then
     remove seat from active, add seat to dropped
-    return seat, kind, user
+    returns seat, kind, user
   where seat not in seats
   then
-    refuse SEAT_NOT_FOUND "No such seat exists."
+    refuses SEAT_NOT_FOUND "No such seat exists."
   where seat not in active
   then
-    refuse SEAT_NOT_ACTIVE "This seat is not active."
-reinstateSeat(seat: Seat) : return (seat: Seat, kind: String, user: User, section: Section)
+    refuses SEAT_NOT_ACTIVE "This seat is not active."
+reinstateSeat(seat: Seat) : returns (seat: Seat, kind: String, user: User, section: Section)
   where seat in dropped and its holder holds no other seat in active
   then
     remove seat from dropped, add seat to active
-    return seat, kind, user, section
+    returns seat, kind, user, section
   where seat not in seats
   then
-    refuse SEAT_NOT_FOUND "No such seat exists."
+    refuses SEAT_NOT_FOUND "No such seat exists."
   where seat not in dropped
   then
-    refuse SEAT_NOT_DROPPED "This seat is not dropped."
+    refuses SEAT_NOT_DROPPED "This seat is not dropped."
   where seat in dropped and its holder holds another seat in active
   then
-    refuse SEAT_ALREADY_ACTIVE "This user already holds an active seat."
-removeSeat(seat: Seat) : return (seat: Seat, email: String)
+    refuses SEAT_ALREADY_ACTIVE "This user already holds an active seat."
+removeSeat(seat: Seat) : returns (seat: Seat, email: String)
   where seat in seats
   then
     take that seat's own email as email
     remove seat from whichever of pending, active, and dropped holds it
     delete the seat
-    return seat, email
+    returns seat, email
   where seat not in seats
   then
-    refuse SEAT_NOT_FOUND "No such seat exists."
-moveSection(seat: Seat, section: Section) : return (seat: Seat)
+    refuses SEAT_NOT_FOUND "No such seat exists."
+moveSection(seat: Seat, section: Section) : returns (seat: Seat)
   where seat in seats
   then
     set seat's section to section
-    return seat
+    returns seat
   where seat not in seats
   then
-    refuse SEAT_NOT_FOUND "No such seat exists."
+    refuses SEAT_NOT_FOUND "No such seat exists."
 ```
 
 ## Queries
 
 ```queries
-_activeUsers (users: Seq) : one (active: Seq)
+_activeUsers (users: Seq<String>) : one (active: Seq<String>)
   answers the supplied user identities that currently hold active seats
 
-_activeSections (sections: Seq) : one (active: Boolean)
+_activeSections (sections: Seq<String>) : one (active: Flag)
   answers whether every supplied section exists and is active; the empty selection answers true
 
 _getClass () : optional (detail: Class)
@@ -238,7 +242,7 @@ _getPendingSeatByEmail (email: String) : optional (seat: String, email: String, 
   answers the pending, unclaimed Seat carrying the address, compared the same way, with the display name it carries or the empty string when it carries none
   answers no row when no pending Seat matches
 
-_getSeatByUser (user: String) : optional (seat: String, user: String|Null, email: String, kind: String, section: String|Null, status: String)
+_getSeatByUser (user: String) : optional (seat: String, user: String|null, email: String, kind: String, section: String|null, status: String)
   answers the User's active Seat when one exists, otherwise their most recently created held Seat
   answers no row when the User holds no Seat
 
@@ -246,22 +250,22 @@ _getSeatDetail (user: String) : optional (detail: Seat)
   answers the active Seat when one exists, otherwise the User's most recently created held Seat, with every field it carries except its displayName, which no read of a held Seat answers
   answers no row when the User holds no Seat
 
-_getActiveMembers () : many (user: String|Null, seat: String, kind: String, section: String|Null, email: String)
+_getActiveMembers () : many (user: String|null, seat: String, kind: String, section: String|null, email: String)
   answers active seats in creation order
   answers no rows when none match
 
-_isActiveStudent (user: String) : one (active: Boolean)
+_isActiveStudent (user: String) : one (active: Flag)
   answers whether the User holds an active student Seat
 
-_getActiveStudents () : many (user: String, seat: String, section: String|Null, email: String)
+_getActiveStudents () : many (user: String, seat: String, section: String|null, email: String)
   answers linked active student seats in creation order
   answers no rows when none match
 
-_getUnclaimedSeats () : many (seat: String, email: String, kind: String, section: String|Null, displayName: String)
+_getUnclaimedSeats () : many (seat: String, email: String, kind: String, section: String|null, displayName: String)
   answers pending unclaimed seats in creation order, each with the display name it carries or the empty string when it carries none
   answers no rows when none match
 
-_getDroppedSeats () : many (user: String|Null, seat: String, kind: String, section: String|Null, email: String)
+_getDroppedSeats () : many (user: String|null, seat: String, kind: String, section: String|null, email: String)
   answers dropped seats in creation order
   answers no rows when none match
 ```

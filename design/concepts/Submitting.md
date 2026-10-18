@@ -22,6 +22,8 @@ external Assignment
 
 external Artifact
   An application-owned identity used in the artifact role.
+opaque Seq
+  An ordered list of the values its argument names.
 ```
 
 ## State
@@ -34,8 +36,8 @@ a set of Submissions with
   an artifacts set of Artifacts
   a submittedAt Date
 
-a Submitted set of Submissions
-a Withdrawn set of Submissions
+a set of Submitted Submissions
+a set of Withdrawn Submissions
 
 Rule: number reservation survives a failed insert; gaps can occur after failure, but an allocated number is never reused.
 Rule: a submitter's attempts on an assignment are numbered from one, and a number, once used, is never reused; withdrawing an attempt does not free its slot.
@@ -44,39 +46,39 @@ Rule: a submitter's attempts on an assignment are numbered from one, and a numbe
 ## Actions
 
 ```actions
-submit(assignment: Assignment, submitter: Submitter, artifact: Artifact, at: Date) : return (submission: Submission)
+submit(assignment: Assignment, submitter: Submitter, artifact: Artifact, at: Date) : returns (submission: Submission)
   where true
   then
     add a new submission with assignment and submitter, its artifacts holding artifact
     reserve the next attempt number atomically for this submitter and assignment, above all previously reserved or stored numbers, starting at 1
     set submission's submittedAt to at
     add submission to submitted
-    return submission
+    returns submission
 
-withdraw(submission: Submission) : return (submission: Submission)
+withdraw(submission: Submission) : returns (submission: Submission)
   where submission in submitted
   then
     remove submission from submitted
     add submission to withdrawn
-    return submission
+    returns submission
   where submission not in submissions
   then
-    refuse SUBMISSION_NOT_FOUND "There is no such submission."
+    refuses SUBMISSION_NOT_FOUND "There is no such submission."
   where submission in withdrawn
   then
-    refuse SUBMISSION_NOT_SUBMITTED "Only a submitted attempt can be withdrawn."
-restore(submission: Submission) : return (submission: Submission)
+    refuses SUBMISSION_NOT_SUBMITTED "Only a submitted attempt can be withdrawn."
+restore(submission: Submission) : returns (submission: Submission)
   where submission in withdrawn
   then
     remove submission from withdrawn
     add submission to submitted
-    return submission
+    returns submission
   where submission not in submissions
   then
-    refuse SUBMISSION_NOT_FOUND "There is no such submission."
+    refuses SUBMISSION_NOT_FOUND "There is no such submission."
   where submission in submitted
   then
-    refuse SUBMISSION_NOT_WITHDRAWN "Only a withdrawn attempt can be restored."
+    refuses SUBMISSION_NOT_WITHDRAWN "Only a withdrawn attempt can be restored."
 ```
 
 ## Queries
@@ -86,7 +88,7 @@ _getLatest (assignment: String, submitter: String) : optional (latest: Submissio
   answers the Submitter's highest-numbered submitted attempt for the Assignment
   answers no row when there is no submitted attempt
 
-_getAttempts (assignment: String, submitter: String) : many (submission: String, artifacts: Strings, submittedAt: Date, number: Number, status: String)
+_getAttempts (assignment: String, submitter: String) : many (submission: String, artifacts: Seq<String>, submittedAt: Date, number: Number, status: String)
   answers all attempts in number order
   answers no rows when none match
 

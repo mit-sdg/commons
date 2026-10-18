@@ -40,14 +40,14 @@ Rule: Snapshotting preserves a value but does not produce, validate, reveal, or 
 ## Actions
 
 ```actions
-capture (subject: Subject, value: Value) : return (snapshot: Snapshot)
+capture (subject: Subject, value: Value) : returns (snapshot: Snapshot)
   where no snapshot has subject subject
   then
     add a new snapshot with subject and value
-    return snapshot
+    returns snapshot
   where a snapshot has subject subject
   then
-    refuse SNAPSHOT_EXISTS "This subject already has a snapshot."
+    refuses SNAPSHOT_EXISTS "This subject already has a snapshot."
 ```
 
 ## Queries

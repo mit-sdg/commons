@@ -24,6 +24,10 @@ external Item
 
 external Scope
   An application-owned identity used in the scope role.
+opaque Seq
+  An ordered list of the values its argument names.
+opaque ItemRow
+  A row naming the item to mark, as `{ item }`.
 ```
 
 ## State
@@ -47,47 +51,47 @@ Rule: there is no action that makes a seen item unread.
 ## Actions
 
 ```actions
-register(item: Item, scope: Scope) : return (item: Item)
+register(item: Item, scope: Scope) : returns (item: Item)
   where item not in registered
   then
     add item to registered with scope
-    return item
+    returns item
   where item in registered
   then
-    refuse ITEM_ALREADY_REGISTERED "This item is already being tracked."
+    refuses ITEM_ALREADY_REGISTERED "This item is already being tracked."
 
-unregister(item: Item) : return (item: Item)
+unregister(item: Item) : returns (item: Item)
   where true
   then
     remove item from registered
     remove every seen-mark of item
-    return item
+    returns item
 
-markSeen(user: User, item: Item) : return (item: Item)
+markSeen(user: User, item: Item) : returns (item: Item)
   where item in registered and no seen-mark has this user and item
   then
     add a seen-mark with user and item
-    return item
+    returns item
   where item not in registered
   then
-    refuse ITEM_NOT_REGISTERED "This item is not being tracked."
+    refuses ITEM_NOT_REGISTERED "This item is not being tracked."
   where some seen-mark has this user and item
   then
-    refuse ITEM_ALREADY_SEEN "This user has already seen this item."
+    refuses ITEM_ALREADY_SEEN "This user has already seen this item."
 
-markAllSeen(user: User, scope: Scope) : return (user: User)
+markAllSeen(user: User, scope: Scope) : returns (user: User)
   where true
   then
     for every registered item in scope the user has not seen,
       add a seen-mark with user and that item
-    return user
+    returns user
 
-markEachSeen(user: User, items: Rows) : return (user: User)
+markEachSeen(user: User, items: Seq<ItemRow>) : returns (user: User)
   where true
   then
     for every row's item that is registered and the user has not seen,
       add a seen-mark with user and that item
-    return user
+    returns user
 ```
 
 ## Queries

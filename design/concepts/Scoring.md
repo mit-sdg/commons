@@ -28,6 +28,12 @@ external Item
 
 external Submission
   An application-owned identity for one measured hand-in.
+opaque Seq
+  An ordered list of the values its argument names.
+opaque ExpectationEntry
+  One expected answer as `{ item, expected, explanation }`.
+opaque AnswerEntry
+  One given answer as `{ item, value }`.
 ```
 
 ## State
@@ -60,31 +66,31 @@ Rule: a result's score counts the key's expectations matched by an answer of the
 ## Actions
 
 ```actions
-establish (subject: Subject, disclosure: String, expectations: Seq) : return (key: Key)
+establish (subject: Subject, disclosure: String, expectations: Seq<ExpectationEntry>) : returns (key: Key)
   where no key has subject subject and disclosure names a level
   then
     add a new key with subject and disclosure
     add a new expectation for each entry of expectations with its item, expected, and explanation
-    return key
+    returns key
   where a key has subject subject
   then
-    refuse KEY_EXISTS "This already has a key."
+    refuses KEY_EXISTS "This already has a key."
   where disclosure does not name a level
   then
-    refuse UNKNOWN_DISCLOSURE "That is not a disclosure level."
+    refuses UNKNOWN_DISCLOSURE "That is not a disclosure level."
 
-grade (key: Key, submission: Submission, answers: Seq) : return (result: Result, score: Number)
+grade (key: Key, submission: Submission, answers: Seq<AnswerEntry>) : returns (result: Result, score: Number)
   where key exists and submission has no result for key
   then
     add a new result with key and submission, whose score counts the key's
       expectations matched by an answer of the same item
-    return result, score
+    returns result, score
   where key does not exist
   then
-    refuse KEY_NOT_FOUND "There is no such key."
+    refuses KEY_NOT_FOUND "There is no such key."
   where submission has a result for key
   then
-    refuse ALREADY_GRADED "This submission was already graded."
+    refuses ALREADY_GRADED "This submission was already graded."
 ```
 
 ## Queries

@@ -17,6 +17,10 @@ beneath it. Removing the last node also removes the conversation.
 ```types
 external Item
   An application-owned identity used in the item role.
+opaque Seq
+  An ordered list of the values its argument names.
+opaque ThreadNode
+  One node of a thread with its item, parent and depth, as `_getThread` answers it.
 ```
 
 ## State
@@ -41,68 +45,68 @@ Rule: both conversations and nodes keep their creation order.
 ## Actions
 
 ```actions
-start(item: Item, at: Date) : return (conversation: Conversation, node: Node)
+start(item: Item, at: Date) : returns (conversation: Conversation, node: Node)
   where no node has this item
   then
     add a new conversation with root node and createdAt at
     add a new node with conversation, item, depth 0, and createdAt at
-    return conversation, node
+    returns conversation, node
   where a node has this item
   then
-    refuse ITEM_ALREADY_IN_CONVERSATION "This item is already in a conversation."
+    refuses ITEM_ALREADY_IN_CONVERSATION "This item is already in a conversation."
 
-reply(item: Item, parent: Node, at: Date) : return (node: Node)
+reply(item: Item, parent: Node, at: Date) : returns (node: Node)
   where parent not in nodes
   then
-    refuse PARENT_NODE_NOT_FOUND "There is no such node to reply to."
+    refuses PARENT_NODE_NOT_FOUND "There is no such node to reply to."
   where parent in nodes and a node has this item
   then
-    refuse ITEM_ALREADY_IN_CONVERSATION "This item is already in a conversation."
+    refuses ITEM_ALREADY_IN_CONVERSATION "This item is already in a conversation."
   where parent in nodes and no node has this item
   then
     add a new node with conversation the parent's conversation, item, parent,
       depth one more than the parent's depth, and createdAt at
-    return node
+    returns node
 
-remove(node: Node) : return (node: Node)
+remove(node: Node) : returns (node: Node)
   where node not in nodes
   then
-    refuse NODE_NOT_FOUND "There is no such node."
+    refuses NODE_NOT_FOUND "There is no such node."
   where another node has node as its parent
   then
-    refuse NODE_HAS_CHILDREN "This node has replies beneath it."
+    refuses NODE_HAS_CHILDREN "This node has replies beneath it."
   where node in nodes, no node has node as its parent, and another node shares its conversation
   then
     delete node
-    return node
+    returns node
   where node in nodes, no node has node as its parent, and no other node shares its conversation
   then
     delete node
     delete its conversation
-    return node
+    returns node
 
-dissolve(conversation: Conversation) : return (conversation: Conversation)
+dissolve(conversation: Conversation) : returns (conversation: Conversation)
   where conversation not in conversations
   then
-    refuse CONVERSATION_NOT_FOUND "There is no such conversation."
+    refuses CONVERSATION_NOT_FOUND "There is no such conversation."
   where conversation in conversations
   then
     delete every node of conversation
     delete conversation
-    return conversation
+    returns conversation
 ```
 
 ## Queries
 
 ```queries
-_exists (conversation: String) : one (exists: Boolean)
+_exists (conversation: String) : one (exists: Flag)
   answers whether the Conversation exists, independently of its Nodes
 
-_threadNodes (conversation: String) : one (nodes: Seq)
+_threadNodes (conversation: String) : one (nodes: Seq<ThreadNode>)
   answers the same ordered node, item, parent, and depth records as _getThread in one sequence
   answers an empty sequence when no Nodes match
 
-_getThread (conversation: String) : many (node: String, item: String, parent: String|Null, depth: Number)
+_getThread (conversation: String) : many (node: String, item: String, parent: String|null, depth: Number)
   answers the Conversation's Nodes in creation order
   answers no rows when the Conversation has no Nodes or does not exist
 
@@ -126,7 +130,7 @@ _getItem (node: String) : optional (item: String)
   answers the Item placed by the Node
   answers no row when the Node does not exist
 
-_hasChildren (node: String) : one (present: Boolean)
+_hasChildren (node: String) : one (present: Flag)
   answers whether another Node has this Node as its parent
   answers false for an unknown Node
 

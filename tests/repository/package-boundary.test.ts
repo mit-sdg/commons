@@ -8,7 +8,8 @@ const sourceRoots = ["src", "frontend/src", "scripts", "tests"];
 const standaloneSources = ["frontend/next.config.ts", "generated.config.ts"];
 const coreHomes = new Set(["advanced", "assembly", "boundary", "client", "language", "tooling"]);
 const httpHomes = new Set(["client", "handler", "policy", "tooling"]);
-const vendored = (name: string) => `file:./vendor/mit-sdg-${name}-1.0.0-beta.18.tgz`;
+const version = "1.2.0";
+const vendored = (name: string) => `file:./vendor/mit-sdg-${name}-${version}.tgz`;
 const vendoredPackages = [
   "sync-engine",
   "sync-engine-http",
@@ -43,7 +44,7 @@ describe("the engine package boundary", () => {
     }
   });
 
-  test("the vendored beta.18 packages and public commands are pinned", () => {
+  test("the vendored packages and public commands are pinned", () => {
     const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
     expect(manifest.dependencies["@mit-sdg/sync-engine"]).toBe(vendored("sync-engine"));
     expect(manifest.dependencies["@mit-sdg/sync-engine-http"]).toBe(vendored("sync-engine-http"));
@@ -71,9 +72,9 @@ describe("the engine package boundary", () => {
     const installedHttp = JSON.parse(
       readFileSync(join(root, "node_modules/@mit-sdg/sync-engine-http/package.json"), "utf8"),
     );
-    expect(installedCore.version).toBe("1.0.0-beta.18");
+    expect(installedCore.version).toBe(version);
     expect(installedCore.bin["sync-engine"]).toBe("./dist/command/main.js");
-    expect(installedHttp.version).toBe("1.0.0-beta.18");
+    expect(installedHttp.version).toBe(version);
 
     for (const home of coreHomes)
       expect(import.meta.resolve(`@mit-sdg/sync-engine/${home}`)).toBeTruthy();
@@ -92,7 +93,7 @@ describe("the engine package boundary", () => {
         }),
     );
     expect([...recorded.keys()].sort()).toEqual(
-      vendoredPackages.map((name) => `mit-sdg-${name}-1.0.0-beta.18.tgz`).sort(),
+      vendoredPackages.map((name) => `mit-sdg-${name}-${version}.tgz`).sort(),
     );
     expect(
       readdirSync(join(root, "vendor"))

@@ -39,7 +39,7 @@ a set of Notifications with
   an optional actor Person
   a createdAt Date
 
-an Unread set of Notifications
+a set of Unread Notifications
 
 Rule: a notification remains until its recipient dismisses it or clearSubject removes every notification about its subject.
 Rule: an actor is the person whose act raised the notification, and is recorded only when the subject does not already say who that was.
@@ -50,56 +50,56 @@ Rule: markAllRead and marking an already-read notification succeed without chang
 ## Actions
 
 ```actions
-notify(recipient: Person, kind: String, subject: Subject, link: Link, actor: Person, at: Date) : return (notification: Notification)
+notify(recipient: Person, kind: String, subject: Subject, link: Link, actor: Person, at: Date) : returns (notification: Notification)
   where true
   then
     add a new notification with recipient, kind, subject, link, actor, and createdAt at
     add notification to unread
-    return notification
+    returns notification
 
-markRead(notification: Notification, recipient: Person) : return (notification: Notification)
+markRead(notification: Notification, recipient: Person) : returns (notification: Notification)
   where notification in notifications and its recipient is recipient
   then
     remove notification from unread
-    return notification
+    returns notification
   where no such notification of this recipient
   then
-    refuse NOTIFICATION_NOT_FOUND "There is no such notification."
+    refuses NOTIFICATION_NOT_FOUND "There is no such notification."
 
-markAllRead(recipient: Person) : return (recipient: Person)
+markAllRead(recipient: Person) : returns (recipient: Person)
   where true
   then
     remove every notification of recipient from unread
-    return recipient
+    returns recipient
 
-dismiss(notification: Notification, recipient: Person) : return (notification: Notification)
+dismiss(notification: Notification, recipient: Person) : returns (notification: Notification)
   where notification in notifications and its recipient is recipient
   then
     delete notification
-    return notification
+    returns notification
   where no such notification of this recipient
   then
-    refuse NOTIFICATION_NOT_FOUND "There is no such notification."
+    refuses NOTIFICATION_NOT_FOUND "There is no such notification."
 
-clearSubject(subject: Subject) : return (subject: Subject)
+clearSubject(subject: Subject) : returns (subject: Subject)
   where true
   then
     delete every notification about subject
-    return subject
+    returns subject
 ```
 
 ## Queries
 
 ```queries
-_getInbox (recipient: String) : many (notification: String, kind: String, subject: Subject, link: Link|Null, actor: Person|Null, createdAt: Date, read: Boolean)
+_getInbox (recipient: String) : many (notification: String, kind: String, subject: Subject, link: Link|null, actor: Person|null, createdAt: Date, read: Flag)
   answers the recipient's notifications newest first, with later arrivals breaking equal-time ties
   answers no rows when none match
 
-_getNotification (notification: String, recipient: String) : optional (kind: String, subject: Subject, link: Link|Null, actor: Person|Null, createdAt: Date, read: Boolean)
+_getNotification (notification: String, recipient: String) : optional (kind: String, subject: Subject, link: Link|null, actor: Person|null, createdAt: Date, read: Flag)
   answers the notification when it belongs to the recipient
   answers no rows when it is missing or belongs to someone else
 
-_hasFor (user: String, subject: Subject) : one (notified: Boolean)
+_hasFor (user: String, subject: Subject) : one (notified: Flag)
   answers whether the User has a Notification with this subject
 
 _getUnreadCount (recipient: String) : one (count: Number)

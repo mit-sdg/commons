@@ -18,6 +18,8 @@ A field never set reads as the empty string.
 ```types
 external User
   An application-owned identity used in the user role.
+opaque Seq
+  An ordered list of the values its argument names.
 ```
 
 ## State
@@ -35,41 +37,41 @@ Rule: each user has at most one profile.
 ## Actions
 
 ```actions
-createProfile(user: User, displayName: String) : return (user: User)
+createProfile(user: User, displayName: String) : returns (user: User)
   where no profile has user user
   then
     add a new profile with user and displayName, and with an empty bio and avatar
-    return user
+    returns user
   where some profile has user user
   then
-    refuse PROFILE_ALREADY_EXISTS "This user already has a profile."
+    refuses PROFILE_ALREADY_EXISTS "This user already has a profile."
 
-setDisplayName(user: User, displayName: String) : return (user: User)
+setDisplayName(user: User, displayName: String) : returns (user: User)
   where some profile has user user
   then
     set that profile's displayName to displayName
-    return user
+    returns user
   where no profile has user user
   then
-    refuse PROFILE_NOT_FOUND "There is no profile for this user."
+    refuses PROFILE_NOT_FOUND "There is no profile for this user."
 
-setBio(user: User, bio: String) : return (user: User)
+setBio(user: User, bio: String) : returns (user: User)
   where some profile has user user
   then
     set that profile's bio to bio
-    return user
+    returns user
   where no profile has user user
   then
-    refuse PROFILE_NOT_FOUND "There is no profile for this user."
+    refuses PROFILE_NOT_FOUND "There is no profile for this user."
 
-setAvatar(user: User, avatar: String) : return (user: User)
+setAvatar(user: User, avatar: String) : returns (user: User)
   where some profile has user user
   then
     set that profile's avatar to avatar
-    return user
+    returns user
   where no profile has user user
   then
-    refuse PROFILE_NOT_FOUND "There is no profile for this user."
+    refuses PROFILE_NOT_FOUND "There is no profile for this user."
 ```
 
 ## Queries
@@ -83,7 +85,7 @@ _getProfileFields (user: String) : optional (displayName: String, bio: String, a
   answers the User's display name, bio, and avatar
   answers no row when the User has no Profile
 
-_getProfilesOf (users: Strings) : many (user: String, displayName: String, bio: String, avatar: String)
+_getProfilesOf (users: Seq<String>) : many (user: String, displayName: String, bio: String, avatar: String)
   answers the public face of each named User that has a Profile, in the order the names are given
   answers no rows when none match
 ```

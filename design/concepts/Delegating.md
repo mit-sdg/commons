@@ -28,6 +28,10 @@ external Subject
 
 external Delegate
   An application-owned identity used in the delegate role.
+opaque Seq
+  An ordered list of the values its argument names.
+opaque SpreadRow
+  One subject and the delegate it went to, as `{ subject, delegate }`.
 ```
 
 ## State
@@ -49,26 +53,26 @@ Rule: items, subjects, and delegates are opaque identities; Delegating neither c
 ## Actions
 
 ```actions
-delegate(item: Item, subject: Subject, delegate: Delegate) : return (delegation: Delegation)
+delegate(item: Item, subject: Subject, delegate: Delegate) : returns (delegation: Delegation)
   where no delegation has this item and subject
   then
     add a new delegation with item, subject, and delegate
-    return delegation
+    returns delegation
   where some delegation has this item and subject
   then
     replace that delegation's delegate with delegate
-    return delegation
+    returns delegation
 
-withdraw(item: Item, subject: Subject) : return (delegation: Delegation)
+withdraw(item: Item, subject: Subject) : returns (delegation: Delegation)
   where some delegation has this item and subject
   then
     delete that delegation
-    return delegation
+    returns delegation
   where no delegation has this item and subject
   then
-    refuse DELEGATION_NOT_FOUND "No delegate is named for this subject."
+    refuses DELEGATION_NOT_FOUND "No delegate is named for this subject."
 
-spread(item: Item, subjects: Seq, delegates: Seq, replace: Bool) : return (assigned: Rows)
+spread(item: Item, subjects: Seq<Subject>, delegates: Seq<Delegate>, replace: Flag) : returns (assigned: Seq<SpreadRow>)
   where subjects and delegates each hold at least one member and neither names a member twice
   then
     when replace is false, select only named subjects with no current delegation
@@ -80,17 +84,17 @@ spread(item: Item, subjects: Seq, delegates: Seq, replace: Bool) : return (assig
       raise that delegate's count by one
     atomically store every resulting delegation
     collect one subject and delegate row for each selected subject in the order given as assigned
-    return assigned
-  where subjects is empty, delegates is empty, either names a member twice, or replace is not a Bool
+    returns assigned
+  where subjects is empty, delegates is empty, either names a member twice, or replace is not a Flag
   then
-    refuse INVALID_SPREAD "Choose at least one subject and at least one delegate, each named once."
+    refuses INVALID_SPREAD "Choose at least one subject and at least one delegate, each named once."
 
-clearItem(item: Item) : return (cleared: Number)
+clearItem(item: Item) : returns (cleared: Number)
   where true
   then
     take how many delegations of item there are as cleared
     delete every delegation of item atomically
-    return cleared
+    returns cleared
 ```
 
 ## Queries
