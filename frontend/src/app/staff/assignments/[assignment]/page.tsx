@@ -32,6 +32,7 @@ import {
 } from "@/components/lms/grading-delegation";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { BackLink, PageContainer } from "@/components/page";
+import { PageTitle } from "@/components/page-title";
 import { RequireCapability } from "@/components/require-capability";
 import { ErrorState, LoadingState } from "@/components/states";
 import { TaskMarkdown } from "@/components/tasks/task-markdown";
@@ -738,6 +739,7 @@ function StaffAssignmentDetailPageContent({
   if (editing && canManage)
     return (
       <PageContainer>
+        <PageTitle parts={["Edit", detail.title, "Assignments", "Staff"]} />
         <div className="mb-6">
           <h1 className="mb-6 font-display text-3xl font-semibold">
             Edit assignment
@@ -769,6 +771,7 @@ function StaffAssignmentDetailPageContent({
         {canManage ? "Back to assignments" : "Back to assessment book"}
       </BackLink>
 
+      <PageTitle parts={[detail.title, "Assignments", "Staff"]} />
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">

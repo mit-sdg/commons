@@ -20,6 +20,7 @@ import { bareVote, PhoneColumn } from "@/components/live/round-preview";
 import { GOING } from "@/components/live/round-proposal";
 import { launchRefusal, NO_ROUNDS } from "@/components/live/rounds";
 import { PageContainer } from "@/components/page";
+import { PageTitle } from "@/components/page-title";
 import { RequireCapability } from "@/components/require-capability";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
@@ -370,6 +371,7 @@ function RelaySetup({
 
   return (
     <PageContainer width="wide">
+      <PageTitle parts={["Edit", relay.title, "Live"]} />
       <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <Link

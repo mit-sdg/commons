@@ -117,6 +117,7 @@ function StaffCalendarPageContent() {
       <PageHeader
         eyebrow="Staff"
         title="Calendar"
+        tab={["Calendar", "Staff"]}
         description="Assignment due and close dates across all sections."
       />
 

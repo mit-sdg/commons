@@ -34,6 +34,7 @@ import {
   type Wall as WallShape,
 } from "@/components/live/rounds";
 import { roomFigures, Wall } from "@/components/live/wall";
+import { PageTitle } from "@/components/page-title";
 import { SIGN_IN_ENDED, SignInEnded } from "@/components/sign-in-ended";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -1140,6 +1141,7 @@ function Shell({
       >
         {said}
       </span>
+      {title !== undefined && <PageTitle parts={[title]} />}
       {title !== undefined && (
         <h1
           className="mb-6 font-display text-2xl font-semibold tracking-tight"
@@ -1759,6 +1761,7 @@ function RelayPhone({
         {/* The name of what you are in is the phone's own line: a round with
             a long title of its own never takes it away. */}
         <header className="flex flex-col gap-2">
+          <PageTitle parts={[relay.title]} />
           <h1
             className="line-clamp-2 font-display text-[22px] font-semibold tracking-tight"
             dir="auto"

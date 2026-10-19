@@ -64,6 +64,7 @@ function StaffAssignmentsPageContent() {
       <PageHeader
         eyebrow="Staff"
         title="Assignments"
+        tab={["Assignments", "Staff"]}
         actions={
           <Button asChild>
             <Link href="/staff/assignments/new">
