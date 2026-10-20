@@ -135,6 +135,13 @@ at once.` or `commons: reading the rows of a list one at a time.`
   settings are for MongoDB load, not for wrong answers. A thread page loads its
   posts' controls in batches; adding `?postControls=single` to its address
   loads them one post at a time.
+- **A stuck MongoDB command.** A command that gets no reply for 10 seconds
+  fails, and the driver retries a read once, so a stuck read fails within
+  about 20 seconds instead of holding its page, and every read batched with
+  it, forever. The other rows of a batch are then read one at a time and
+  answer. A single command that is legitimately silent for longer, such as a
+  first index build on a large collection, is cut too; run heavy maintenance
+  on its own connection. A write cut this way may still have been applied.
 - **Closest to before.** `READ_AHEAD=off` with `QUERY_CACHE=memoize` reads one
   row at a time and clears answers per request, as the release before engine
   1.2.0 did, though requests that overlap may still interleave differently.

@@ -47,6 +47,9 @@ async function connectMongo(url: string): Promise<MongoClient> {
     client = new MongoClient(url, {
       connectTimeoutMS: 5_000,
       serverSelectionTimeoutMS: 5_000,
+      // A command with no reply for 10 s fails instead of waiting forever, so a
+      // stuck read cannot hold the reads batched with it; each is then read alone.
+      socketTimeoutMS: 10_000,
     });
   } catch {
     throw new Error(INVALID_MONGODB_URL);
