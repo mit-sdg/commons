@@ -100,6 +100,9 @@ at once.` or `commons: reading the rows of a list one at a time.`
   it never stops the server.
 - **MongoDB load.** However many requests are under way, the backend keeps at
   most 64 rows read ahead at once, plus one row for each request being served.
+  A row stuck longer than the 30-second request deadline gives up its place
+  when every place is taken, but keeps its connection until MongoDB answers.
+  A batched query reads many rows with one command on one connection.
   Each read in flight holds one of the driver's pooled connections, so while
   pages are being read the backend holds up to 64 connections, or the whole
   pool if it is smaller, where the previous release held about 7. Connections
