@@ -6,6 +6,7 @@ import { use, useEffect } from "react";
 import { PostPreview } from "@/components/forum/post-preview";
 import { Link } from "@/components/link";
 import { PageContainer } from "@/components/page";
+import { PageTitle } from "@/components/page-title";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
@@ -131,6 +132,7 @@ export default function UserPage({
 
   return (
     <PageContainer>
+      <PageTitle parts={[profile.displayName]} />
       <header className="mb-8 flex flex-col items-start gap-5 border-b border-border pb-8 sm:flex-row sm:items-center">
         <UserAvatar
           user={userId}

@@ -1,6 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { Link } from "@/components/link";
+import { PageTitle } from "@/components/page-title";
 import { cn } from "@/lib/utils";
 
 export function PageContainer({
@@ -27,19 +28,27 @@ export function PageContainer({
   );
 }
 
+/**
+ * A page's heading. A heading in plain text names the browser tab as well;
+ * `tab` names it instead, from the most particular part to the least, for a
+ * heading that is more than text or a page that shares its name with another.
+ */
 export function PageHeader({
   eyebrow,
   title,
+  tab,
   description,
   actions,
   className,
 }: {
   eyebrow?: React.ReactNode;
   title: React.ReactNode;
+  tab?: readonly (string | null | undefined)[];
   description?: React.ReactNode;
   actions?: React.ReactNode;
   className?: string;
 }) {
+  const parts = tab ?? (typeof title === "string" ? [title] : null);
   return (
     <div
       className={cn(
@@ -47,6 +56,7 @@ export function PageHeader({
         className,
       )}
     >
+      {parts ? <PageTitle parts={parts} /> : null}
       <div className="space-y-1.5">
         {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
         <h1 className="text-balance font-display text-3xl font-semibold tracking-tight sm:text-4xl">

@@ -26,6 +26,7 @@ import { TagEditor } from "@/components/forum/tag-editor";
 import { UnreadBanner } from "@/components/forum/unread-banner";
 import { Link } from "@/components/link";
 import { BackLink, PageContainer } from "@/components/page";
+import { PageTitle } from "@/components/page-title";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { useHashTargetHighlight } from "@/hooks/use-hash-target-highlight";
@@ -240,6 +241,7 @@ export function ThreadView({
 
   return (
     <PageContainer>
+      <PageTitle parts={[title, "Discussions"]} />
       <BackLink
         href={
           origin

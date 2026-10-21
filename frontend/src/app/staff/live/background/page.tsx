@@ -20,6 +20,7 @@ export default function BackgroundPage() {
             </Link>
           }
           title="Documents"
+          tab={["Documents", "Live"]}
           description="Store reference documents here, then choose which ones each activity uses."
         />
         <BackgroundCard />

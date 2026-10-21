@@ -172,6 +172,7 @@ function NewLiveContent() {
           </Link>
         }
         title="New"
+        tab={["New", "Live"]}
         actions={
           <Button variant="outline" asChild>
             <Link href={`/staff/live/draft?kind=${kind}`}>

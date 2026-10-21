@@ -370,6 +370,7 @@ function DraftPageContent() {
           </Link>
         }
         title={refining !== null ? "Refine with AI" : "Draft with AI"}
+        tab={[refining !== null ? "Refine with AI" : "Draft with AI", "Live"]}
         actions={
           brief !== null && !abandoned && !tip?.adopted && ownsLine ? (
             <ConfirmAction

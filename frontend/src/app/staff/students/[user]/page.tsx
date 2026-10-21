@@ -8,6 +8,7 @@ import { AssessmentHistory } from "@/components/lms/assessment-history";
 import { StatusBadge } from "@/components/lms/status-badge";
 import { StudentNotes } from "@/components/lms/student-notes";
 import { BackLink, PageContainer } from "@/components/page";
+import { PageTitle } from "@/components/page-title";
 import { RequireCapability } from "@/components/require-capability";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Tag } from "@/components/tag";
@@ -132,6 +133,9 @@ function StudentDetailPageContent({
         <BackLink href="/staff/roster">Back to roster</BackLink>
       </div>
 
+      <PageTitle
+        parts={[detailData?.displayName ?? seat?.email ?? user, "Roster"]}
+      />
       <div className="mb-6">
         <h1 className="font-display text-3xl font-semibold tracking-tight">
           {detailData?.displayName ?? seat?.email ?? user}

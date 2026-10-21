@@ -8,6 +8,7 @@ import { JoinCode, joinUrl } from "@/components/live/qr-code";
 import { marksExpected, QuizResults } from "@/components/live/quiz-projector";
 import { modelCounts, scoresOf } from "@/components/live/run-board";
 import { RelayProjector } from "@/components/live/run-relay-projector";
+import { PageTitle } from "@/components/page-title";
 import { RequireCapability } from "@/components/require-capability";
 import { SignInEnded } from "@/components/sign-in-ended";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
@@ -150,6 +151,7 @@ function QuizProjector() {
 
   return (
     <div className="relative flex h-dvh flex-col items-center justify-center gap-[clamp(0.75rem,2.5dvh,2rem)] overflow-hidden px-6 py-[clamp(1rem,3dvh,2.5rem)] text-center">
+      <PageTitle parts={[board.title, "Live"]} />
       <h1
         dir="auto"
         className={cn(

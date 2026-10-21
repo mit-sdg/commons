@@ -22,6 +22,7 @@ import {
 } from "@/components/live/run-board";
 import { RelayRunBoard, seatIdentity } from "@/components/live/run-relay-board";
 import { PageContainer } from "@/components/page";
+import { PageTitle } from "@/components/page-title";
 import { RequireCapability } from "@/components/require-capability";
 import { SignInEnded } from "@/components/sign-in-ended";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
@@ -224,6 +225,7 @@ function QuizRunDashboard() {
       {ended ? (
         <SignInEnded next={`/staff/live/run/${run}`} className="mb-6" />
       ) : null}
+      <PageTitle parts={[board.title, "Live"]} />
       <header className="mb-8 border-b border-border pb-6">
         <Link
           href={`/staff/live/${board.questionnaire}`}
