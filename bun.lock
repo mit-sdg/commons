@@ -42,7 +42,7 @@
 
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.5.5", "", {}, "sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og=="],
 
-    "@mit-sdg/sync-engine": ["@mit-sdg/sync-engine@./vendor/mit-sdg-sync-engine-1.2.0.tgz", { "dependencies": { "mdast-util-from-markdown": "^2.0.3", "semver": "^7.7.3", "typescript": ">=6 <7" }, "bin": { "sync-engine": "./dist/command/main.js" } }, "sha512-p0JgSk1c+4T1AAgO6r03LNwUQRVX95TKztw9f37ETmB0BnVcxLqbEASAnlVt0yMkFkoidrBgBoZmlKOJF5YlhQ=="],
+    "@mit-sdg/sync-engine": ["@mit-sdg/sync-engine@./vendor/mit-sdg-sync-engine-1.2.0.tgz", { "dependencies": { "mdast-util-from-markdown": "^2.0.3", "semver": "^7.7.3", "typescript": ">=6 <7" }, "bin": { "sync-engine": "./dist/command/main.js" } }, "sha512-/MAFPYkw+C1atQ+pclcDLElJbay8YUAu0oHMSbP581z6rbHxbwBQ0SaA6+6EVLqXuOzTwf8S+cFZwHEJuhRSJg=="],
 
     "@mit-sdg/sync-engine-analysis": ["@mit-sdg/sync-engine-analysis@./vendor/mit-sdg-sync-engine-analysis-1.2.0.tgz", { "dependencies": { "typescript": ">=6 <7" }, "peerDependencies": { "@mit-sdg/sync-engine": "1.2.0" }, "bin": { "sync-engine-analysis": "./dist/command.js" } }, "sha512-j+0kl9SHrd25jjRc8RVmT4nx6Wf4oVqRHeco9GjNaONjB/Rv2hjrIj0Cd3NGEt55E+6eO/HNpOx/Pz5gqsdnNw=="],
 
