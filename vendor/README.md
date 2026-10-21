@@ -5,7 +5,7 @@ These four packages are the sync-engine 1.2.0 release candidate, packed before
 publication. Once 1.2.0 is published, this folder is deleted and
 `package.json` points back at the registry.
 
-- Source: `mit-sdg/sync-engine` commit `bb81ceb534c364ce73e4bb7c2a383e033d693293`,
+- Source: `mit-sdg/sync-engine` commit `790a65dc1d8967fd76bf7bd82740d3c8395f1440`,
   branch `batched`.
 - Checksums: [`SHA256SUMS`](SHA256SUMS). `bun.lock` also records each file's
   integrity, so a changed file fails the frozen install.
@@ -13,7 +13,7 @@ publication. Once 1.2.0 is published, this folder is deleted and
 To rebuild them and check they match, with Bun 1.3.14:
 
 ```sh
-git -C <sync-engine clone> archive bb81ceb534c364ce73e4bb7c2a383e033d693293 | tar -x -C <empty dir>
+git -C <sync-engine clone> archive 790a65dc1d8967fd76bf7bd82740d3c8395f1440 | tar -x -C <empty dir>
 cd <empty dir>
 bun install --frozen-lockfile && bun run build
 for d in . packages/analysis packages/catalog packages/http; do (cd $d && bun pm pack --destination <out dir>); done
