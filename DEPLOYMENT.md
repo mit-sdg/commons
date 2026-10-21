@@ -139,7 +139,9 @@ at once.` or `commons: reading the rows of a list one at a time.`
   fails, and the driver retries a read once, so a stuck read fails within
   about 20 seconds instead of holding its page, and every read batched with
   it, forever. The other rows of a batch are then read one at a time and
-  answer. A single command that is legitimately silent for longer, such as a
+  answer. If the whole database stays stuck, those reads wait one more
+  timeout, so a batched read fails after about 40 seconds; the 30-second
+  request deadline answers the page first. A single command that is legitimately silent for longer, such as a
   first index build on a large collection, is cut too; run heavy maintenance
   on its own connection. A write cut this way may still have been applied.
 - **Closest to before.** `READ_AHEAD=off` with `QUERY_CACHE=memoize` reads one
