@@ -238,19 +238,28 @@ function Bar({
   total,
   muted = false,
   expected = false,
+  onPick,
 }: {
   label: string;
   count: number;
   total: number;
   muted?: boolean;
   expected?: boolean;
+  /** Opens the students who gave this answer. */
+  onPick?: () => void;
 }) {
   const share = total === 0 ? 0 : Math.round((count / total) * 100);
+  const Row = onPick === undefined ? "div" : "button";
   return (
-    <div
+    <Row
+      {...(onPick === undefined
+        ? {}
+        : { type: "button" as const, onClick: onPick })}
       className={cn(
-        "space-y-1.5",
+        "block w-full space-y-1.5 text-start",
         expected && "-mx-3 rounded-lg bg-primary/5 px-3 py-2",
+        onPick !== undefined &&
+          "group/bar -mx-2 w-[calc(100%+1rem)] rounded-lg px-2 py-1 hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-ring",
       )}
     >
       <div className="flex items-baseline justify-between gap-4">
@@ -264,7 +273,12 @@ function Bar({
           {expected ? (
             <Check className="me-2 inline-block size-5 align-text-bottom text-primary" />
           ) : null}
-          <span dir="auto">{label}</span>
+          <span
+            dir="auto"
+            className="underline-offset-4 group-hover/bar:underline"
+          >
+            {label}
+          </span>
           {expected ? (
             <span className="sr-only"> (expected answer)</span>
           ) : null}
@@ -285,7 +299,7 @@ function Bar({
           style={{ width: `${share}%` }}
         />
       </div>
-    </div>
+    </Row>
   );
 }
 
@@ -299,10 +313,13 @@ export function RunQuestionBoard({
   index,
   question,
   modelResponses,
+  onPick,
 }: {
   index: number;
   question: RunBoardQuestion;
   modelResponses: ModelResponses;
+  /** Opens the students who gave one of the offered choices. */
+  onPick?: (choice: string) => void;
 }) {
   const { room, model } = splitValues(question.values, modelResponses);
   const values = room.map((entry) => entry.value);
@@ -331,6 +348,11 @@ export function RunQuestionBoard({
               total={values.length}
               muted={row.other}
               expected={row.expected}
+              onPick={
+                onPick === undefined || row.other
+                  ? undefined
+                  : () => onPick(row.label)
+              }
             />
           ))}
           <Facts className="font-medium text-base text-muted-foreground">
