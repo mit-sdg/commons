@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/trashing/errors.ts";
-import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { caughtError, checkListForm, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoTrashingConcept } from "../../src/concepts/trashing/trashing.mongo.ts";
 
 const floors: [string, () => Promise<MongoTrashingConcept>][] = [
@@ -21,9 +21,9 @@ for (const [floor, make] of floors) {
       const archiving = new MongoTrashingConcept(database, "Archiving");
 
       await trashing.trash({ item: "shared-id", by: "maya", at });
-      expect(await trashing._isTrashed({ item: "shared-id" })).toEqual({ trashed: true });
+      expect(await trashing._isTrashed([{ item: "shared-id" }])).toEqual([{ trashed: true }]);
       // The same identity in the other instance is untouched.
-      expect(await archiving._isTrashed({ item: "shared-id" })).toEqual({ trashed: false });
+      expect(await archiving._isTrashed([{ item: "shared-id" }])).toEqual([{ trashed: false }]);
 
       await archiving.trash({ item: "shared-id", by: "admin", at });
       expect(await archiving._getTrashed({})).toEqual([
@@ -31,18 +31,45 @@ for (const [floor, make] of floors) {
       ]);
       // Restoring in one instance leaves the other alone.
       await archiving.restore({ item: "shared-id" });
-      expect(await archiving._isTrashed({ item: "shared-id" })).toEqual({ trashed: false });
-      expect(await trashing._isTrashed({ item: "shared-id" })).toEqual({ trashed: true });
+      expect(await archiving._isTrashed([{ item: "shared-id" }])).toEqual([{ trashed: false }]);
+      expect(await trashing._isTrashed([{ item: "shared-id" }])).toEqual([{ trashed: true }]);
 
       // The default instance must keep writing to the pre-existing collection.
       expect(await database.collection("trashing.items").countDocuments()).toBe(1);
       expect(await database.collection("archiving.items").countDocuments()).toBe(0);
     });
 
+    test("_isTrashed answers a list as its single form did, each instance from its own trash", async () => {
+      const database = await testDb();
+      const instances = ["Trashing", "Archiving", "DraftTrashing"].map(
+        (name) => [name, new MongoTrashingConcept(database, name)] as const,
+      );
+      const [[, trashing], [, archiving], [, draftTrashing]] = instances;
+      await trashing.trash({ item: "both", by: "maya", at });
+      await archiving.trash({ item: "both", by: "admin", at });
+      await trashing.trash({ item: "trashed-only", by: "maya", at });
+      await archiving.trash({ item: "archived-only", by: "admin", at });
+      await draftTrashing.trash({ item: "draft-only", by: "maya", at });
+      const samples = ["both", "trashed-only", "archived-only", "draft-only", "missing"].map(
+        (item) => ({
+          item,
+        }),
+      );
+      for (const [name, concept] of instances) {
+        const items = database.collection<{ _id: string }>(
+          `${name[0]!.toLowerCase()}${name.slice(1)}.items`,
+        );
+        // The single form the list form replaced.
+        await checkListForm(concept, "_isTrashed", samples, async ({ item }) => ({
+          trashed: (await items.findOne({ _id: item })) !== null,
+        }));
+      }
+    });
+
     test("trash records who moved the item and when", async () => {
       const trashing = await make();
       expect(await trashing.trash({ item: "draft", by: "maya", at })).toEqual({ item: "draft" });
-      expect(await trashing._isTrashed({ item: "draft" })).toEqual({ trashed: true });
+      expect(await trashing._isTrashed([{ item: "draft" }])).toEqual([{ trashed: true }]);
       expect(await trashing._getTrashed({})).toEqual([
         { item: "draft", trashedBy: "maya", trashedAt: at },
       ]);
@@ -72,7 +99,7 @@ for (const [floor, make] of floors) {
       const trashing = await make();
       await trashing.trash({ item: "draft", by: "maya", at });
       expect(await trashing.restore({ item: "draft" })).toEqual({ item: "draft" });
-      expect(await trashing._isTrashed({ item: "draft" })).toEqual({ trashed: false });
+      expect(await trashing._isTrashed([{ item: "draft" }])).toEqual([{ trashed: false }]);
     });
 
     test("restore refuses an item not in the trash", async () => {

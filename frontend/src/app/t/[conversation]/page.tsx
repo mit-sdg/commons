@@ -19,7 +19,7 @@ export default function ThreadPage({
     <ThreadView
       conversation={conversation}
       fromGroup={typeof fromGroup === "string" ? fromGroup : undefined}
-      batchedControls={postControls === "batched"}
+      batchedControls={postControls !== "single"}
     />
   );
 }

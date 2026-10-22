@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/posting/errors.ts";
-import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { caughtError, checkListForm, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoPostingConcept } from "../../src/concepts/posting/posting.mongo.ts";
 
 const floors: [string, () => Promise<MongoPostingConcept>][] = [
@@ -17,9 +17,47 @@ for (const [floor, make] of floors) {
       const posting = await make();
       const at = new Date("2026-01-05T09:00:00Z");
       const { post } = await posting.create({ author: "amara", content: "Hello all", at });
-      expect(await posting._getPost({ post })).toEqual([
-        { author: "amara", content: "Hello all", createdAt: at, editedAt: null },
+      expect(await posting._getPost([{ post }])).toEqual([
+        [{ author: "amara", content: "Hello all", createdAt: at, editedAt: null }],
       ]);
+    });
+
+    test("_getPost answers a list as its single form did", async () => {
+      const database = await testDb();
+      const posting = new MongoPostingConcept(database);
+      const posts = database.collection<{
+        _id: string;
+        author: string;
+        content: string;
+        createdAt: Date;
+        editedAt: Date | null;
+      }>("posting.posts");
+      const at = new Date("2026-01-05T09:00:00Z");
+      const { post } = await posting.create({ author: "amara", content: "Hello all", at });
+      const { post: edited } = await posting.create({ author: "noah", content: "first", at });
+      await posting.edit({ post: edited, content: "second", at: new Date("2026-01-07T12:00:00Z") });
+      const { post: deleted } = await posting.create({ author: "noah", content: "gone", at });
+      await posting.delete({ post: deleted });
+      // The single form the list form replaced.
+      await checkListForm(
+        posting,
+        "_getPost",
+        [post, edited, deleted, "missing", post].map((post) => ({ post })),
+        async ({ post }) => {
+          const doc = await posts.findOne({ _id: post });
+          return doc === null
+            ? []
+            : [
+                {
+                  author: doc.author,
+                  content: doc.content,
+                  createdAt: doc.createdAt,
+                  editedAt: doc.editedAt,
+                },
+              ];
+        },
+      );
+      expect(await posting._getPost([])).toEqual([]);
     });
 
     test("batch metadata includes only existing selected posts without content or duplicates", async () => {
@@ -43,7 +81,7 @@ for (const [floor, make] of floors) {
         at: new Date("2026-01-05T09:00:00Z"),
       });
       expect(await posting.delete({ post })).toEqual({ post });
-      expect(await posting._getPost({ post })).toEqual([]);
+      expect(await posting._getPost([{ post }])).toEqual([[]]);
     });
 
     test("deleting an unknown post refuses with POST_NOT_FOUND", async () => {
@@ -61,13 +99,15 @@ for (const [floor, make] of floors) {
       });
       const editedAt = new Date("2026-01-07T12:00:00Z");
       expect(await posting.edit({ post, content: "second", at: editedAt })).toEqual({ post });
-      expect(await posting._getPost({ post })).toEqual([
-        {
-          author: "amara",
-          content: "second",
-          createdAt: new Date("2026-01-05T09:00:00Z"),
-          editedAt,
-        },
+      expect(await posting._getPost([{ post }])).toEqual([
+        [
+          {
+            author: "amara",
+            content: "second",
+            createdAt: new Date("2026-01-05T09:00:00Z"),
+            editedAt,
+          },
+        ],
       ]);
     });
 

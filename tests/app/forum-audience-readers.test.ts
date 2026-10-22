@@ -157,7 +157,7 @@ test("production target routes hide private posts from authors and moderators ou
     { ok: true },
   );
   expect(await f.instances.Locking._isLocked({ target: conversation })).toEqual({ locked: false });
-  expect(await f.instances.Trashing._isTrashed({ item: post })).toEqual({ trashed: false });
+  expect(await f.instances.Trashing._isTrashed([{ item: post }])).toEqual([{ trashed: false }]);
 });
 
 test("production feeds, nested links, notification counts and unread marks filter the same audience", async () => {

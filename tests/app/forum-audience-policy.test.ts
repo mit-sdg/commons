@@ -102,7 +102,7 @@ test("production policy preserves direct access after departure, but closes new 
   expect(
     await f.app.form(admission({ session: reader.session, conversation: f.conversation })),
   ).toEqual({ user: reader.user });
-  const [{ seat }] = await f.instances.Rostering._getSeatByUser({ user: reader.user });
+  const [{ seat }] = (await f.instances.Rostering._getSeatByUser([{ user: reader.user }]))[0];
   await f.instances.Rostering.dropSeat({ seat });
   expect(
     await f.app.form(admission({ session: reader.session, conversation: f.conversation })),
@@ -187,7 +187,7 @@ test("the production options and full selection agree on people, groups, section
     location: "",
     meetingPattern: "",
   });
-  const [{ seat }] = await f.instances.Rostering._getSeatByUser({ user: author.user });
+  const [{ seat }] = (await f.instances.Rostering._getSeatByUser([{ user: author.user }]))[0];
   await f.instances.Rostering.moveSection({ seat, section: section._id });
   const edge = createEdge(f.instances);
   const options = await edge.application.invoker.invoke("/audiences/options", {
@@ -271,7 +271,7 @@ test("bounded production membership preserves the union across current group and
     location: "",
     meetingPattern: "",
   });
-  const [{ seat }] = await f.instances.Rostering._getSeatByUser({ user: reader.user });
+  const [{ seat }] = (await f.instances.Rostering._getSeatByUser([{ user: reader.user }]))[0];
   await f.instances.Rostering.moveSection({ seat, section: section._id });
   const { post } = await f.instances.Posting.create({ author: author.user, content: "Union", at });
   const { conversation } = await f.instances.Conversing.start({ item: post, at });
@@ -400,7 +400,9 @@ test.each([false, true])(
     expect(await f.app.form(storedAdmission(postInput))).toEqual({ post: f.post });
     expect(await f.app.form(admission(conversationInput))).toEqual({ user: reader.user });
     await f.instances.Posting.delete({ post: f.post });
-    expect(await f.instances.Accessing._holders({ resource: f.conversation })).toHaveLength(1);
+    expect((await f.instances.Accessing._holders([{ resource: f.conversation }]))[0]).toHaveLength(
+      1,
+    );
     expect(await f.instances.Conversing._getThread({ conversation: f.conversation })).toHaveLength(
       1,
     );
@@ -524,7 +526,7 @@ test("conversation statistics use placed readable posts without rediscovering th
 test("conversation admission and statistics use bounded batch reads without individual post queries", async () => {
   const f = await fixture((people) => [`account:${people[1].user}`]);
   const reader = f.people[1];
-  const [opening] = await f.instances.Posting._getPost({ post: f.post });
+  const [opening] = (await f.instances.Posting._getPost([{ post: f.post }]))[0];
   const at = new Date(opening.createdAt.getTime() + 1000);
   for (let index = 0; index < 5; index++) {
     const { post } = await f.instances.Posting.create({

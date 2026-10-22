@@ -31,6 +31,12 @@ external Scope
 
 external Item
   An application-owned identity used in the item role.
+opaque Seq
+  An ordered list of the values its argument names.
+opaque CategoryWithItems
+  One category as `{ category, name, description, items }`, its items in assignment order.
+opaque ScopedCategory
+  One category as `{ scope, category, name, description }`.
 ```
 
 ## State
@@ -55,124 +61,124 @@ Rule: items and scopes are opaque identities; Categorizing neither creates nor v
 ## Actions
 
 ```actions
-createCategory(scope: Scope, name: String, description: String) : return (category: Category)
+createCategory(scope: Scope, name: String, description: String) : returns (category: Category)
   where no category in scope has this name
   then
     add a new category with scope, name, and description
-    return category
+    returns category
   where some category in scope has this name
   then
-    refuse CATEGORY_ALREADY_EXISTS "A category with this name already exists."
+    refuses CATEGORY_ALREADY_EXISTS "A category with this name already exists."
 
-ensureCategory(scope: Scope, name: String, description: String) : return (category: Category)
+ensureCategory(scope: Scope, name: String, description: String) : returns (category: Category)
   where some category in scope has this name
   then
-    return category
+    returns category
   where no category in scope has this name
   then
     add a new category with scope, name, and description
-    return category
+    returns category
 
-renameCategory(category: Category, name: String) : return (category: Category)
+renameCategory(category: Category, name: String) : returns (category: Category)
   where category in categories and no other category in its scope has this name
   then
     set category's name to name
-    return category
+    returns category
   where category not in categories
   then
-    refuse CATEGORY_NOT_FOUND "There is no such category."
+    refuses CATEGORY_NOT_FOUND "There is no such category."
   where category in categories and another category in its scope has this name
   then
-    refuse CATEGORY_ALREADY_EXISTS "A category with this name already exists."
+    refuses CATEGORY_ALREADY_EXISTS "A category with this name already exists."
 
-describeCategory(category: Category, description: String) : return (category: Category)
+describeCategory(category: Category, description: String) : returns (category: Category)
   where category in categories
   then
     set category's description to description
-    return category
+    returns category
   where category not in categories
   then
-    refuse CATEGORY_NOT_FOUND "There is no such category."
+    refuses CATEGORY_NOT_FOUND "There is no such category."
 
-mergeCategory(category: Category, into: Category) : return (into: Category)
+mergeCategory(category: Category, into: Category) : returns (into: Category)
   where category and into are in categories, differ, and share a scope
   then
     set the home of every item whose home is category to into
     delete category
-    return into
+    returns into
   where category not in categories or into not in categories
   then
-    refuse CATEGORY_NOT_FOUND "There is no such category."
+    refuses CATEGORY_NOT_FOUND "There is no such category."
   where category is into
   then
-    refuse SAME_CATEGORY "A category cannot be merged into itself."
+    refuses SAME_CATEGORY "A category cannot be merged into itself."
   where category and into do not share a scope
   then
-    refuse DIFFERENT_SCOPES "These categories are not in the same scope."
+    refuses DIFFERENT_SCOPES "These categories are not in the same scope."
 
-file(scope: Scope, name: String, item: Item) : return (category: Category)
+file(scope: Scope, name: String, item: Item) : returns (category: Category)
   where some category in scope has this name
   then
     set item's home to that category, replacing any prior home
-    return category
+    returns category
   where no category in scope has this name
   then
     add a new category with scope, name, and an empty description
     set item's home to it, replacing any prior home
-    return category
+    returns category
 
-assign(item: Item, category: Category) : return (item: Item)
+assign(item: Item, category: Category) : returns (item: Item)
   where category in categories
   then
     set item's home to category, replacing any prior home
-    return item
+    returns item
   where category not in categories
   then
-    refuse CATEGORY_NOT_FOUND "There is no such category."
-unassign(item: Item) : return (item: Item)
+    refuses CATEGORY_NOT_FOUND "There is no such category."
+unassign(item: Item) : returns (item: Item)
   where item in categorized
   then
     remove item from categorized
-    return item
+    returns item
   where item not in categorized
   then
-    refuse ITEM_NOT_CATEGORIZED "This item is not in any category."
-deleteEmptyCategory(category: Category) : return (category: Category, deleted: Boolean)
+    refuses ITEM_NOT_CATEGORIZED "This item is not in any category."
+deleteEmptyCategory(category: Category) : returns (category: Category, deleted: Flag)
   where category exists and holds no items
   then
     delete category
     set deleted to true
-    return category, deleted
+    returns category, deleted
   where category does not exist or holds any item
   then
     leave categories and memberships unchanged
     set deleted to false
-    return category, deleted
+    returns category, deleted
 
-empty(scope: Scope) : return (emptied: Boolean)
+empty(scope: Scope) : returns (emptied: Flag)
   where true
   then
     remove the memberships of every item in a category of scope
     leave the categories themselves unchanged
     set emptied to whether any membership was removed
-    return emptied
+    returns emptied
 
-deleteEmptyCategories(categories: Seq) : return (deleted: Boolean)
+deleteEmptyCategories(categories: Seq<Category>) : returns (deleted: Flag)
   where true
   then
     for each category in categories, delete it only if it still exists and holds no items
     set deleted to whether any category was deleted
-    return deleted
+    returns deleted
 
-deleteCategory(category: Category) : return (category: Category)
+deleteCategory(category: Category) : returns (category: Category)
   where category in categories
   then
     remove every item whose home is category from categorized
     delete category
-    return category
+    returns category
   where category not in categories
   then
-    refuse CATEGORY_NOT_FOUND "There is no such category."
+    refuses CATEGORY_NOT_FOUND "There is no such category."
 ```
 
 ## Queries
@@ -198,13 +204,13 @@ _categoriesIn (scope: String) : many (category: String, name: String, descriptio
   answers the scope's categories in creation order
   answers no rows when none match
 
-_categoriesWithItems (scope: String) : one (categories: Seq)
+_categoriesWithItems (scope: String) : one (categories: Seq<CategoryWithItems>)
   answers the scope's categories back as one value: an ordered sequence of
   `{ category, name, description, items }` entries in creation order, each
   items entry the category's items in assignment order
   answers an empty sequence when the scope has no categories
 
-_categoriesInScopes (scopes: Seq) : one (categories: Seq)
+_categoriesInScopes (scopes: Seq<String>) : one (categories: Seq<ScopedCategory>)
   answers several scopes back as one value: an ordered sequence of
   `{ scope, category, name, description }` entries, each scope's categories in
   creation order, the scopes in the order given

@@ -268,7 +268,7 @@ test("failed purge deletion keeps the post trashed and unreadable", async () => 
   expect(
     await failing.invoker.invoke("/trash/purge", { session: author.session, item: post }),
   ).toMatchObject({ ok: false });
-  expect(await instances.Trashing._isTrashed({ item: post })).toEqual({ trashed: true });
+  expect(await instances.Trashing._isTrashed([{ item: post }])).toEqual([{ trashed: true }]);
   expect(
     await failing.invoker.invoke("/posts/get", { session: author.session, post }),
   ).toMatchObject({ ok: false });

@@ -60,6 +60,13 @@ const nameCarriedBy = (row: { displayName?: string }): string | null => {
   return name === "" ? null : name;
 };
 
+// Whether a user's seat outranks another of theirs: an active seat before any other, then the
+// higher seq.
+const prefers = (seat: SeatDoc, other: SeatDoc): boolean =>
+  (seat.status === "ACTIVE") === (other.status === "ACTIVE")
+    ? seat.seq > other.seq
+    : seat.status === "ACTIVE";
+
 export class MongoRosteringConcept {
   private readonly classes: Collection<ClassDoc>;
   private readonly sections: Collection<SectionDoc>;
@@ -442,19 +449,35 @@ export class MongoRosteringConcept {
       : [{ seat: seat._id, email: seat.email, displayName: seat.displayName ?? "" }];
   }
 
-  async _getSeatByUser({ user }: { user: string }) {
-    const doc = await this.#preferredSeatFor(user);
-    if (doc === null) return [];
-    return [
-      {
-        seat: doc._id,
-        user: doc.user,
-        email: doc.email,
-        kind: doc.kind,
-        section: doc.section,
-        status: doc.status,
-      },
-    ];
+  /**
+   * Each user's preferred seat, in the order given, from one read: the active seat with the
+   * highest seq, else any seat with the highest seq, as #preferredSeatFor picks it.
+   */
+  async _getSeatByUser(inputs: readonly { user: string }[]) {
+    const users = [...new Set(inputs.map(({ user }) => user))];
+    if (users.length === 0) return [];
+    await this.#ready();
+    const docs = await this.seats.find({ user: { $in: users } }).toArray();
+    const preferred = new Map<string, SeatDoc>();
+    for (const doc of docs) {
+      if (doc.user === null) continue;
+      const held = preferred.get(doc.user);
+      if (held === undefined || prefers(doc, held)) preferred.set(doc.user, doc);
+    }
+    return inputs.map(({ user }) => {
+      const doc = preferred.get(user);
+      if (doc === undefined) return [];
+      return [
+        {
+          seat: doc._id,
+          user: doc.user,
+          email: doc.email,
+          kind: doc.kind,
+          section: doc.section,
+          status: doc.status,
+        },
+      ];
+    });
   }
 
   async _getSeatDetail({ user }: { user: string }) {

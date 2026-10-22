@@ -64,19 +64,26 @@ export class MongoPostingConcept {
     return { post };
   }
 
-  async _getPost({ post }: { post: string }) {
+  /** Each post's author, content and times, in the order given, from one read. */
+  async _getPost(inputs: readonly { post: string }[]) {
+    const ids = [...new Set(inputs.map(({ post }) => post))];
+    if (ids.length === 0) return [];
     await this.#ready();
-    const doc = await this.posts.findOne({ _id: post });
-    return doc === null
-      ? []
-      : [
-          {
-            author: doc.author,
-            content: doc.content,
-            createdAt: doc.createdAt,
-            editedAt: doc.editedAt,
-          },
-        ];
+    const docs = await this.posts.find({ _id: { $in: ids } }).toArray();
+    const byId = new Map(docs.map((doc) => [doc._id, doc]));
+    return inputs.map(({ post }) => {
+      const doc = byId.get(post);
+      return doc === undefined
+        ? []
+        : [
+            {
+              author: doc.author,
+              content: doc.content,
+              createdAt: doc.createdAt,
+              editedAt: doc.editedAt,
+            },
+          ];
+    });
   }
 
   async _getByAuthor({ author }: { author: string }) {

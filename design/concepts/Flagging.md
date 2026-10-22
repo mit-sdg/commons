@@ -25,47 +25,47 @@ external Target
 ## State
 
 ```state
-a set of Flags with
+a set of Reports with
   a reporter  User
   a target    Target
   a reason    String
   a createdAt Date
 
-an Open     set of Flags
-an Upheld   set of Flags
-a Dismissed set of Flags
+a set of Open Reports
+a set of Upheld Reports
+a set of Dismissed Reports
 ```
 
 ## Actions
 
 ```actions
-flag(reporter: User, target: Target, reason: String, at: Date) : return (flag: Flag)
-  where no flag in open has this reporter and this target
+flag(reporter: User, target: Target, reason: String, at: Date) : returns (flag: Report)
+  where no report in open has this reporter and this target
   then
-    add a new flag with reporter, target, reason, and createdAt at
+    add a new report as flag with reporter, target, reason, and createdAt at
     add flag to open
-    return flag
-  where some flag in open has this reporter and this target
+    returns flag
+  where some report in open has this reporter and this target
   then
-    refuse FLAG_ALREADY_EXISTS "You already have an open flag on this."
+    refuses FLAG_ALREADY_EXISTS "You already have an open flag on this."
 
-resolve(target: Target, outcome: String) : return (target: Target)
+resolve(target: Target, outcome: String) : returns (target: Target)
   where outcome is neither "upheld" nor "dismissed"
   then
-    refuse VALIDATION_FAILED "An outcome must be upheld or dismissed."
-  where some flag in open has this target
+    refuses VALIDATION_FAILED "An outcome must be upheld or dismissed."
+  where some report in open has this target
   then
-    remove every flag with this target from open
+    remove every report with this target from open
     add each of them to upheld if outcome is "upheld", or to dismissed if outcome is "dismissed"
-    return target
-  where no flag in open has this target
+    returns target
+  where no report in open has this target
   then
-    refuse FLAG_NOT_FOUND "There are no open flags on this."
-clearTarget(target: Target) : return (target: Target)
+    refuses FLAG_NOT_FOUND "There are no open flags on this."
+clearTarget(target: Target) : returns (target: Target)
   where true
   then
-    delete every flag on target
-    return target
+    delete every report on target
+    returns target
 ```
 
 ## Queries
@@ -76,6 +76,6 @@ _getOpenTargets () : many (target: String, count: Number)
   answers no rows when none match
 
 _getFlags (target: String) : many (flag: String, reporter: String, reason: String, status: String, createdAt: Date)
-  answers every flag on the target in creation order
+  answers every report on the target in creation order
   answers no rows when none match
 ```

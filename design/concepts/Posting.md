@@ -16,6 +16,10 @@ is refused because the post no longer exists.
 ```types
 external Author
   An application-owned identity used in the author role.
+opaque Seq
+  An ordered list of the values its argument names.
+opaque PostMetadata
+  One post as `{ post, author, createdAt }`.
 ```
 
 ## State
@@ -31,39 +35,39 @@ a set of Posts with
 ## Actions
 
 ```actions
-create(author: Author, content: String, at: Date) : return (post: Post)
+create(author: Author, content: String, at: Date) : returns (post: Post)
   where true
   then
     add a new post with author, content, and createdAt at
-    return post
+    returns post
 
-edit(post: Post, content: String, at: Date) : return (post: Post)
+edit(post: Post, content: String, at: Date) : returns (post: Post)
   where post in posts
   then
     set the post's content to content, and its editedAt to at
-    return post
+    returns post
   where post not in posts
   then
-    refuse POST_NOT_FOUND "There is no such post."
+    refuses POST_NOT_FOUND "There is no such post."
 
-delete(post: Post) : return (post: Post)
+delete(post: Post) : returns (post: Post)
   where post in posts
   then
     delete post
-    return post
+    returns post
   where post not in posts
   then
-    refuse POST_NOT_FOUND "There is no such post."
+    refuses POST_NOT_FOUND "There is no such post."
 ```
 
 ## Queries
 
 ```queries
-_postMetadata (posts: Seq) : one (posts: Seq)
+_postMetadata (posts: Seq<String>) : one (posts: Seq<PostMetadata>)
   answers identity, author, and creation time for the existing supplied Posts in one sequence
   includes each matching Post once, omits unknown Posts, and promises no sequence order
 
-_getPost (post: String) : optional (author: String, content: String, createdAt: Date, editedAt: Date|Null)
+_getPost (post: String) : optional (author: String, content: String, createdAt: Date, editedAt: Date|null)
   answers the complete Post
   answers no row when the Post does not exist
 
@@ -76,6 +80,6 @@ _getMentions (post: String) : many (handle: String)
   treats handles as opaque strings without assigning them to people
   answers no rows when none match
 
-_isMentioned (post: String, handle: String) : one (mentioned: Boolean)
+_isMentioned (post: String, handle: String) : one (mentioned: Flag)
   answers whether the Post's content contains the handle
 ```

@@ -26,35 +26,35 @@ external Target
 
 ```state
 a set of Sources with
-  a links Targetss
+  a links set of Target
 ```
 
 ## Actions
 
 ```actions
-setLinks(source: Source, targets: Targets) : return (source: Source)
+setLinks(source: Source, targets: Targets) : returns (source: Source)
   where true
   then
     set source's links to targets, replacing any prior links
-    return source
-setLinksFrom(source: Source, content: String) : return (source: Source)
+    returns source
+setLinksFrom(source: Source, content: String) : returns (source: Source)
   where true
   then
     read each nonempty target between [[ and ]] from left to right
     set source's links to those targets in that order, preserving repeats
-    return source
+    returns source
 
 
-clearLinks(source: Source) : return (source: Source)
+clearLinks(source: Source) : returns (source: Source)
   where true
   then
     remove all of source's links
-    return source
-clearBacklinks(target: Target) : return (target: Target)
+    returns source
+clearBacklinks(target: Target) : returns (target: Target)
   where true
   then
     remove target from every source's links
-    return target
+    returns target
 ```
 
 ## Queries

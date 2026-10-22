@@ -37,17 +37,17 @@ Rule: items are opaque identities; Revising neither creates nor validates them.
 ## Actions
 
 ```actions
-record(item: Item, content: String, at: Date) : return (revision: Revision, number: Number)
+record(item: Item, content: String, at: Date) : returns (revision: Revision, number: Number)
   where true
   then
     add a new revision with item, content, and savedAt at, numbered one past the item's highest standing revision (or 1)
-    return revision, number
+    returns revision, number
 
-clearItem(item: Item) : return (item: Item)
+clearItem(item: Item) : returns (item: Item)
   where true
   then
     delete every revision with item item
-    return item
+    returns item
 ```
 
 ## Queries

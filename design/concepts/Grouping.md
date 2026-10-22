@@ -18,6 +18,8 @@ removing her or her leaving is refused.
 ```types
 external Person
   An application-owned identity used in the person role.
+opaque Seq
+  An ordered list of the values its argument names.
 ```
 
 ## State
@@ -37,84 +39,84 @@ Rule: titles need not be unique.
 ## Actions
 
 ```actions
-create(title: String, creator: Person, at: Date) : return (group: Group)
+create(title: String, creator: Person, at: Date) : returns (group: Group)
   where true
   then
     add a new group with title, members containing creator, createdAt at, and updatedAt at
-    return group
+    returns group
 
-rename(group: Group, member: Person, title: String, at: Date) : return (group: Group)
+rename(group: Group, member: Person, title: String, at: Date) : returns (group: Group)
   where group in groups and member in group's members
   then
     set group's title to title
     set group's updatedAt to at
-    return group
+    returns group
   where group not in groups
   then
-    refuse GROUP_NOT_FOUND "There is no such group."
+    refuses GROUP_NOT_FOUND "There is no such group."
   where group in groups and member not in group's members
   then
-    refuse NOT_A_MEMBER "This person is not a member of the group."
+    refuses NOT_A_MEMBER "This person is not a member of the group."
 
-addMember(group: Group, member: Person, candidate: Person, at: Date) : return (group: Group)
+addMember(group: Group, member: Person, candidate: Person, at: Date) : returns (group: Group)
   where group in groups and member in group's members and candidate not in group's members
   then
     add candidate to group's members
     set group's updatedAt to at
-    return group
+    returns group
   where group not in groups
   then
-    refuse GROUP_NOT_FOUND "There is no such group."
+    refuses GROUP_NOT_FOUND "There is no such group."
   where group in groups and member not in group's members
   then
-    refuse NOT_A_MEMBER "This person is not a member of the group."
+    refuses NOT_A_MEMBER "This person is not a member of the group."
   where group in groups and member in group's members and candidate in group's members
   then
-    refuse ALREADY_A_MEMBER "This person is already a member of the group."
+    refuses ALREADY_A_MEMBER "This person is already a member of the group."
 
-removeMember(group: Group, member: Person, target: Person, at: Date) : return (group: Group)
+removeMember(group: Group, member: Person, target: Person, at: Date) : returns (group: Group)
   where group in groups and member in group's members and target in group's members and size of group's members > 1
   then
     remove target from group's members
     set group's updatedAt to at
-    return group
+    returns group
   where group not in groups
   then
-    refuse GROUP_NOT_FOUND "There is no such group."
+    refuses GROUP_NOT_FOUND "There is no such group."
   where group in groups and member not in group's members
   then
-    refuse NOT_A_MEMBER "This person is not a member of the group."
+    refuses NOT_A_MEMBER "This person is not a member of the group."
   where group in groups and member in group's members and target not in group's members
   then
-    refuse TARGET_NOT_A_MEMBER "The target person is not a member of the group."
+    refuses TARGET_NOT_A_MEMBER "The target person is not a member of the group."
   where group in groups and member in group's members and target in group's members and size of group's members <= 1
   then
-    refuse LAST_MEMBER "The final member cannot be removed from the group."
+    refuses LAST_MEMBER "The final member cannot be removed from the group."
 
-leave(group: Group, member: Person, at: Date) : return (group: Group)
+leave(group: Group, member: Person, at: Date) : returns (group: Group)
   where group in groups and member in group's members and size of group's members > 1
   then
     remove member from group's members
     set group's updatedAt to at
-    return group
+    returns group
   where group not in groups
   then
-    refuse GROUP_NOT_FOUND "There is no such group."
+    refuses GROUP_NOT_FOUND "There is no such group."
   where group in groups and member not in group's members
   then
-    refuse NOT_A_MEMBER "This person is not a member of the group."
+    refuses NOT_A_MEMBER "This person is not a member of the group."
   where group in groups and member in group's members and size of group's members <= 1
   then
-    refuse LAST_MEMBER "The final member cannot leave the group."
+    refuses LAST_MEMBER "The final member cannot leave the group."
 ```
 
 ## Queries
 
 ```queries
-_anyMembership (member: Person, groups: Seq) : one (included: Boolean)
+_anyMembership (member: Person, groups: Seq<Group>) : one (included: Flag)
   answers whether the member belongs to at least one supplied group; unknown groups do not match and the empty selection answers false
 
-_allMemberships (member: Person, groups: Seq) : one (included: Boolean)
+_allMemberships (member: Person, groups: Seq<Group>) : one (included: Flag)
   answers whether the member belongs to every supplied group; unknown groups fail and the empty selection answers true
 
 _getGroup (group: String) : optional (title: String, createdAt: Date, updatedAt: Date)
@@ -129,6 +131,6 @@ _getGroupsOf (member: String) : many (group: String, title: String, createdAt: D
   answers every group the member belongs to, in creation order
   answers no rows when the member belongs to no groups
 
-_isMember (group: String, member: String) : one (isMember: Boolean)
+_isMember (group: String, member: String) : one (isMember: Flag)
   answers whether the person is a member of the group
 ```

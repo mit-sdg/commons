@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, test } from "vite-plus/test";
 import * as refusalErrors from "../../src/concepts/conversing/errors.ts";
-import { caughtError, stopTestDb, testDb } from "../../src/concepts/testing.ts";
+import { caughtError, checkListForm, stopTestDb, testDb } from "../../src/concepts/testing.ts";
 import { MongoConversingConcept } from "../../src/concepts/conversing/conversing.mongo.ts";
 
 const floors: [string, () => Promise<MongoConversingConcept>][] = [
@@ -22,11 +22,87 @@ for (const [floor, make] of floors) {
       expect(await conversing._getThread({ conversation })).toEqual([
         { node, item: "question", parent: null, depth: 0 },
       ]);
-      expect(await conversing._getConversation({ node })).toEqual([{ conversation }]);
+      expect(await conversing._getConversation([{ node }])).toEqual([[{ conversation }]]);
       expect(await conversing._getRoot({ conversation })).toEqual([{ item: "question" }]);
       expect(await conversing._getRoot({ conversation: "missing" })).toEqual([]);
-      expect(await conversing._getNodeByItem({ item: "question" })).toEqual([{ node }]);
+      expect(await conversing._getNodeByItem([{ item: "question" }])).toEqual([[{ node }]]);
       expect(await conversing._parentOf({ node })).toEqual([]);
+    });
+
+    test("node, conversation and existence reads answer a list as their single forms did", async () => {
+      const database = await testDb();
+      const conversing = new MongoConversingConcept(database);
+      const nodes = database.collection<{
+        _id: string;
+        conversation: string;
+        item: string;
+        parent: string | null;
+        depth: number;
+        createdAt: Date;
+        seq: number;
+      }>("conversing.nodes");
+      const conversations = database.collection<{ _id: string }>("conversing.conversations");
+      const at = new Date("2026-02-01T10:00:00Z");
+      const opening = await conversing.start({ item: "opening", at });
+      const { node: reply } = await conversing.reply({ item: "reply", parent: opening.node, at });
+      const other = await conversing.start({ item: "other", at });
+      const gone = await conversing.start({ item: "gone", at });
+      await conversing.dissolve({ conversation: gone.conversation });
+      // Two nodes place one item, written so that storage order and identity order disagree.
+      for (const node of ["z-shared", "a-shared"])
+        await nodes.insertOne({
+          _id: node,
+          conversation: other.conversation,
+          item: "shared",
+          parent: other.node,
+          depth: 1,
+          createdAt: at,
+          seq: 99,
+        });
+
+      // The single forms the list forms replaced.
+      await checkListForm(
+        conversing,
+        "_getNodeByItem",
+        ["opening", "reply", "shared", "gone", "missing", "opening"].map((item) => ({ item })),
+        async ({ item }) => {
+          const doc = await nodes.findOne({ item });
+          return doc === null ? [] : [{ node: doc._id }];
+        },
+      );
+      await checkListForm(
+        conversing,
+        "_getConversation",
+        [opening.node, reply, other.node, "a-shared", gone.node, "missing", reply].map((node) => ({
+          node,
+        })),
+        async ({ node }) => {
+          const doc = await nodes.findOne({ _id: node });
+          return doc === null ? [] : [{ conversation: doc.conversation }];
+        },
+      );
+      await checkListForm(
+        conversing,
+        "_exists",
+        [
+          opening.conversation,
+          other.conversation,
+          gone.conversation,
+          "missing",
+          other.conversation,
+        ].map((conversation) => ({ conversation })),
+        async ({ conversation }) => ({
+          exists:
+            (await conversations.findOne({ _id: conversation }, { projection: { _id: 1 } })) !==
+            null,
+        }),
+      );
+      expect(await conversing._getNodeByItem([{ item: "shared" }])).toEqual([
+        [{ node: "z-shared" }],
+      ]);
+      expect(await conversing._getNodeByItem([])).toEqual([]);
+      expect(await conversing._getConversation([])).toEqual([]);
+      expect(await conversing._exists([])).toEqual([]);
     });
 
     test("node sequences preserve reply order and existence follows the conversation record", async () => {
@@ -34,7 +110,7 @@ for (const [floor, make] of floors) {
       const at = new Date("2026-02-01T10:00:00Z");
       const { conversation, node: root } = await conversing.start({ item: "opening", at });
       const { node: reply } = await conversing.reply({ item: "reply", parent: root, at });
-      expect(await conversing._exists({ conversation })).toEqual({ exists: true });
+      expect(await conversing._exists([{ conversation }])).toEqual([{ exists: true }]);
       expect(await conversing._threadNodes({ conversation })).toEqual({
         nodes: [
           { node: root, item: "opening", parent: null, depth: 0 },
@@ -43,7 +119,7 @@ for (const [floor, make] of floors) {
       });
       await conversing.remove({ node: reply });
       await conversing.remove({ node: root });
-      expect(await conversing._exists({ conversation })).toEqual({ exists: false });
+      expect(await conversing._exists([{ conversation }])).toEqual([{ exists: false }]);
       expect(await conversing._getRoot({ conversation })).toEqual([]);
       expect(await conversing._threadNodes({ conversation })).toEqual({ nodes: [] });
     });
@@ -56,13 +132,13 @@ for (const [floor, make] of floors) {
       await conversing.reply({ item: "leaf", parent: middle, at });
       const other = await conversing.start({ item: "other", at });
       expect(await conversing.dissolve({ conversation })).toEqual({ conversation });
-      expect(await conversing._exists({ conversation })).toEqual({ exists: false });
+      expect(await conversing._exists([{ conversation }])).toEqual([{ exists: false }]);
       expect(await conversing._threadNodes({ conversation })).toEqual({ nodes: [] });
       for (const item of ["opening", "middle", "leaf"])
-        expect(await conversing._getNodeByItem({ item })).toEqual([]);
-      expect(await conversing._exists({ conversation: other.conversation })).toEqual({
-        exists: true,
-      });
+        expect(await conversing._getNodeByItem([{ item }])).toEqual([[]]);
+      expect(await conversing._exists([{ conversation: other.conversation }])).toEqual([
+        { exists: true },
+      ]);
       expect(await refusal(() => conversing.dissolve({ conversation }))).toBeInstanceOf(
         refusalErrors.ConversationNotFound,
       );

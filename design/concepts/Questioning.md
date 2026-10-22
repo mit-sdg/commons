@@ -33,6 +33,18 @@ questionnaire; she remains free to revise it afterward.
 ```types
 external Author
   An application-owned identity used in the author role.
+opaque Seq
+  An ordered list of the values its argument names.
+opaque Presentation
+  A questionnaire's title, form, disclosure and ordered questions, serialized as one value.
+opaque Expectation
+  One proposed answer as `{ item, expected, explanation }`.
+opaque Content
+  A questionnaire's title, form, disclosure and ordered questions, with their identities.
+opaque QuestionMaterial
+  One question as `{ prompt, choices, expected, explanation, parts, cap }`.
+opaque QuestionnaireMaterial
+  One questionnaire as `{ questionnaire, title, questions }`.
 ```
 
 ## State
@@ -45,15 +57,15 @@ a set of Questionnaires with
   a disclosure String
   a createdAt Date
 
-a Retired set of Questionnaires
+a set of Retired Questionnaires
 
 a set of Questions with
   a questionnaire Questionnaire
   a prompt      String
-  a choices     Seq
+  a choices     seq of String
   an expected    String
   an explanation String
-  a parts       Seq
+  a parts       seq of String
   a cap         Number
   a position    Number
 
@@ -79,228 +91,228 @@ Rule: Questioning does not decide who may compose, put a questionnaire before an
 ## Actions
 
 ```actions
-compose (author: Author, title: String, form: String, disclosure: String, at: Date) : return (questionnaire: Questionnaire)
+compose (author: Author, title: String, form: String, disclosure: String, at: Date) : returns (questionnaire: Questionnaire)
   where form is a workable form, disclosure names a level, and title is valid
   then
     add a new questionnaire with author, normalized title, form, disclosure, and createdAt at
-    return questionnaire
+    returns questionnaire
   where form is not a workable form
   then
-    refuse UNKNOWN_FORM "A questionnaire is a quiz or a survey."
+    refuses UNKNOWN_FORM "A questionnaire is a quiz or a survey."
   where disclosure does not name a level
   then
-    refuse UNKNOWN_DISCLOSURE "That is not a disclosure level."
+    refuses UNKNOWN_DISCLOSURE "That is not a disclosure level."
   where title is not valid
   then
-    refuse INVALID_TITLE "The title must be 1 to 200 characters long."
+    refuses INVALID_TITLE "The title must be 1 to 200 characters long."
 
-setDisclosure (questionnaire: Questionnaire, disclosure: String) : return (questionnaire: Questionnaire)
+setDisclosure (questionnaire: Questionnaire, disclosure: String) : returns (questionnaire: Questionnaire)
   where questionnaire exists and questionnaire not in retired and disclosure names a level
   then
     set questionnaire's disclosure to disclosure
-    return questionnaire
+    returns questionnaire
   where questionnaire does not exist
   then
-    refuse QUESTIONNAIRE_NOT_FOUND "There is no such questionnaire."
+    refuses QUESTIONNAIRE_NOT_FOUND "There is no such questionnaire."
   where questionnaire in retired
   then
-    refuse QUESTIONNAIRE_RETIRED "This questionnaire was retired."
+    refuses QUESTIONNAIRE_RETIRED "This questionnaire was retired."
   where disclosure does not name a level
   then
-    refuse UNKNOWN_DISCLOSURE "That is not a disclosure level."
+    refuses UNKNOWN_DISCLOSURE "That is not a disclosure level."
 
-retitle (questionnaire: Questionnaire, title: String) : return (questionnaire: Questionnaire)
+retitle (questionnaire: Questionnaire, title: String) : returns (questionnaire: Questionnaire)
   where questionnaire exists, questionnaire not in retired, and title is valid
   then
     set questionnaire's title to normalized title
-    return questionnaire
+    returns questionnaire
   where questionnaire does not exist
   then
-    refuse QUESTIONNAIRE_NOT_FOUND "There is no such questionnaire."
+    refuses QUESTIONNAIRE_NOT_FOUND "There is no such questionnaire."
   where questionnaire in retired
   then
-    refuse QUESTIONNAIRE_RETIRED "This questionnaire was retired."
+    refuses QUESTIONNAIRE_RETIRED "This questionnaire was retired."
   where title is not valid
   then
-    refuse INVALID_TITLE "The title must be 1 to 200 characters long."
+    refuses INVALID_TITLE "The title must be 1 to 200 characters long."
 
-addQuestion (questionnaire: Questionnaire, prompt: String, choices: Seq, expected: String, explanation: String, position: Number) : return (question: Question)
+addQuestion (questionnaire: Questionnaire, prompt: String, choices: Seq<String>, expected: String, explanation: String, position: Number) : returns (question: Question)
   where questionnaire exists, questionnaire not in retired, questionnaire has room for another question, prompt is valid, choices are valid and distinct, the expected answer or reference is valid, and explanation is valid
   then
     add a new question with questionnaire, normalized prompt, normalized choices, normalized expected, normalized explanation, and position
-    return question
+    returns question
   where questionnaire does not exist
   then
-    refuse QUESTIONNAIRE_NOT_FOUND "There is no such questionnaire."
+    refuses QUESTIONNAIRE_NOT_FOUND "There is no such questionnaire."
   where questionnaire in retired
   then
-    refuse QUESTIONNAIRE_RETIRED "This questionnaire was retired."
+    refuses QUESTIONNAIRE_RETIRED "This questionnaire was retired."
   where questionnaire has no room for another question
   then
-    refuse QUESTION_LIMIT_REACHED "A questionnaire may contain at most 100 questions."
+    refuses QUESTION_LIMIT_REACHED "A questionnaire may contain at most 100 questions."
   where prompt is not valid
   then
-    refuse INVALID_PROMPT "The prompt must be 1 to 10000 characters long."
+    refuses INVALID_PROMPT "The prompt must be 1 to 10000 characters long."
   where choices exceed 50 or any choice is not a nonblank String no longer than 500 characters
   then
-    refuse INVALID_CHOICES "A question may offer at most 50 choices, each 1 to 500 characters long."
+    refuses INVALID_CHOICES "A question may offer at most 50 choices, each 1 to 500 characters long."
   where choices contain duplicates after trimming and lower-casing
   then
-    refuse DUPLICATE_CHOICES "Choices must be distinct, ignoring case and surrounding space."
+    refuses DUPLICATE_CHOICES "Choices must be distinct, ignoring case and surrounding space."
   where choices are offered and a nonempty expected answer does not equal one of them exactly
   then
-    refuse INVALID_EXPECTED "The expected answer must exactly match an offered choice."
+    refuses INVALID_EXPECTED "The expected answer must exactly match an offered choice."
   where no choices are offered and the reference exceeds 2000 characters
   then
-    refuse INVALID_REFERENCE "A written-answer reference may be at most 2000 characters long."
+    refuses INVALID_REFERENCE "A written-answer reference may be at most 2000 characters long."
   where explanation exceeds 2000 characters
   then
-    refuse INVALID_EXPLANATION "An explanation may be at most 2000 characters long."
+    refuses INVALID_EXPLANATION "An explanation may be at most 2000 characters long."
 
-reviseQuestion (question: Question, prompt: String, choices: Seq, expected: String, explanation: String, position: Number) : return (question: Question)
+reviseQuestion (question: Question, prompt: String, choices: Seq<String>, expected: String, explanation: String, position: Number) : returns (question: Question)
   where question exists, its questionnaire not in retired, prompt is valid, choices are valid and distinct, choices are empty or the question takes no parts, the expected answer or reference is valid, and explanation is valid
   then
     set question's prompt, choices, expected, and explanation from their normalized inputs, and position from the input
-    return question
+    returns question
   where question does not exist
   then
-    refuse QUESTION_NOT_FOUND "There is no such question."
+    refuses QUESTION_NOT_FOUND "There is no such question."
   where question's questionnaire in retired
   then
-    refuse QUESTIONNAIRE_RETIRED "This questionnaire was retired."
+    refuses QUESTIONNAIRE_RETIRED "This questionnaire was retired."
   where prompt is not valid
   then
-    refuse INVALID_PROMPT "The prompt must be 1 to 10000 characters long."
+    refuses INVALID_PROMPT "The prompt must be 1 to 10000 characters long."
   where choices exceed 50 or any choice is not a nonblank String no longer than 500 characters
   then
-    refuse INVALID_CHOICES "A question may offer at most 50 choices, each 1 to 500 characters long."
+    refuses INVALID_CHOICES "A question may offer at most 50 choices, each 1 to 500 characters long."
   where choices contain duplicates after trimming and lower-casing
   then
-    refuse DUPLICATE_CHOICES "Choices must be distinct, ignoring case and surrounding space."
+    refuses DUPLICATE_CHOICES "Choices must be distinct, ignoring case and surrounding space."
   where choices are offered and the question takes parts
   then
-    refuse INVALID_PARTS "A question offers choices or takes parts, not both."
+    refuses INVALID_PARTS "A question offers choices or takes parts, not both."
   where choices are offered and a nonempty expected answer does not equal one of them exactly
   then
-    refuse INVALID_EXPECTED "The expected answer must exactly match an offered choice."
+    refuses INVALID_EXPECTED "The expected answer must exactly match an offered choice."
   where no choices are offered and the reference exceeds 2000 characters
   then
-    refuse INVALID_REFERENCE "A written-answer reference may be at most 2000 characters long."
+    refuses INVALID_REFERENCE "A written-answer reference may be at most 2000 characters long."
   where explanation exceeds 2000 characters
   then
-    refuse INVALID_EXPLANATION "An explanation may be at most 2000 characters long."
+    refuses INVALID_EXPLANATION "An explanation may be at most 2000 characters long."
 
-setParts (question: Question, parts: Seq, cap: Number) : return (question: Question)
+setParts (question: Question, parts: Seq<String>, cap: Number) : returns (question: Question)
   where question exists, its questionnaire not in retired, parts and cap are valid together, and parts are empty or the question offers no choices
   then
     set question's parts to the normalized parts and its cap to cap
-    return question
+    returns question
   where question does not exist
   then
-    refuse QUESTION_NOT_FOUND "There is no such question."
+    refuses QUESTION_NOT_FOUND "There is no such question."
   where question's questionnaire in retired
   then
-    refuse QUESTIONNAIRE_RETIRED "This questionnaire was retired."
+    refuses QUESTIONNAIRE_RETIRED "This questionnaire was retired."
   where parts are nonempty and the question offers choices, or parts and cap are not valid together
   then
-    refuse INVALID_PARTS "Parts are up to 12 short labels, or one label repeated up to a cap of 2 to 20, and never beside choices."
+    refuses INVALID_PARTS "Parts are up to 12 short labels, or one label repeated up to a cap of 2 to 20, and never beside choices."
 
-swapQuestions (question: Question, other: Question) : return (question: Question, other: Question)
+swapQuestions (question: Question, other: Question) : returns (question: Question, other: Question)
   where question and other exist, share a questionnaire, and it is not in retired
   then
     trade the positions of question and other
-    return question, other
+    returns question, other
   where question does not exist or other does not exist
   then
-    refuse QUESTION_NOT_FOUND "There is no such question."
+    refuses QUESTION_NOT_FOUND "There is no such question."
   where question and other do not share a questionnaire
   then
-    refuse NOT_SIBLINGS "These questions do not share a questionnaire."
+    refuses NOT_SIBLINGS "These questions do not share a questionnaire."
   where question's questionnaire in retired
   then
-    refuse QUESTIONNAIRE_RETIRED "This questionnaire was retired."
+    refuses QUESTIONNAIRE_RETIRED "This questionnaire was retired."
 
-removeQuestion (question: Question) : return (question: Question, questionnaire: Questionnaire, position: Number)
+removeQuestion (question: Question) : returns (question: Question, questionnaire: Questionnaire, position: Number)
   where question exists and its questionnaire not in retired
   then
     delete question, remembering its questionnaire and the position it stood at
-    return question, questionnaire, position
+    returns question, questionnaire, position
   where question does not exist
   then
-    refuse QUESTION_NOT_FOUND "There is no such question."
+    refuses QUESTION_NOT_FOUND "There is no such question."
   where question's questionnaire in retired
   then
-    refuse QUESTIONNAIRE_RETIRED "This questionnaire was retired."
+    refuses QUESTIONNAIRE_RETIRED "This questionnaire was retired."
 
-present (questionnaire: Questionnaire) : return (presentation: Value, form: String, disclosure: String, proposes: Boolean, expectations: Seq)
+present (questionnaire: Questionnaire) : returns (presentation: Presentation, form: String, disclosure: String, proposes: Flag, expectations: Seq<Expectation>)
   where questionnaire exists and questionnaire not in retired
   then
     serialize the questionnaire's title, form, disclosure, and ordered questions as one presentation value; each question is `{ item, prompt, choices, expected, explanation, parts, cap, position }`
     project form, disclosure, proposes, and expectations from that same presentation
-    return presentation, form, disclosure, proposes, expectations
+    returns presentation, form, disclosure, proposes, expectations
   where questionnaire does not exist
   then
-    refuse QUESTIONNAIRE_NOT_FOUND "There is no such questionnaire."
+    refuses QUESTIONNAIRE_NOT_FOUND "There is no such questionnaire."
   where questionnaire in retired
   then
-    refuse QUESTIONNAIRE_RETIRED "This questionnaire was retired."
+    refuses QUESTIONNAIRE_RETIRED "This questionnaire was retired."
 
-retire (questionnaire: Questionnaire) : return (questionnaire: Questionnaire)
+retire (questionnaire: Questionnaire) : returns (questionnaire: Questionnaire)
   where questionnaire exists and questionnaire not in retired
   then
     add questionnaire to retired
-    return questionnaire
+    returns questionnaire
   where questionnaire does not exist
   then
-    refuse QUESTIONNAIRE_NOT_FOUND "There is no such questionnaire."
+    refuses QUESTIONNAIRE_NOT_FOUND "There is no such questionnaire."
   where questionnaire in retired
   then
-    refuse QUESTIONNAIRE_RETIRED "This questionnaire was retired."
+    refuses QUESTIONNAIRE_RETIRED "This questionnaire was retired."
 ```
 
 ## Queries
 
 ```queries
-_content (questionnaire: String) : optional (content: Json)
+_content (questionnaire: String) : optional (content: Content)
   answers the title, form, disclosure, and ordered questions with their identities as one value
   answers no row when the questionnaire does not exist
 
 
-_getQuestionnaire (questionnaire: String) : optional (author: String, title: String, form: String, disclosure: String, createdAt: Date, retired: Boolean)
+_getQuestionnaire (questionnaire: String) : optional (author: String, title: String, form: String, disclosure: String, createdAt: Date, retired: Flag)
   answers the complete Questionnaire
   answers no row when the Questionnaire does not exist
 
-_getQuestionnaires () : many (questionnaire: String, author: String, title: String, form: String, disclosure: String, createdAt: Date, retired: Boolean)
+_getQuestionnaires () : many (questionnaire: String, author: String, title: String, form: String, disclosure: String, createdAt: Date, retired: Flag)
   answers every questionnaire, newest first
 
-_getQuestions (questionnaire: String) : many (question: String, prompt: String, choices: Seq, expected: String, explanation: String, parts: Seq, cap: Number, position: Number)
+_getQuestions (questionnaire: String) : many (question: String, prompt: String, choices: Seq<String>, expected: String, explanation: String, parts: Seq<String>, cap: Number, position: Number)
   answers the questionnaire's questions in position order
   answers no rows when none match
 
-_getQuestion (question: String) : optional (questionnaire: String, prompt: String, choices: Seq, expected: String, explanation: String, parts: Seq, cap: Number, position: Number)
+_getQuestion (question: String) : optional (questionnaire: String, prompt: String, choices: Seq<String>, expected: String, explanation: String, parts: Seq<String>, cap: Number, position: Number)
   answers the complete Question
   answers no row when the Question does not exist
 
-_material (questionnaire: String) : optional (form: String, material: Seq)
+_material (questionnaire: String) : optional (form: String, material: Seq<QuestionMaterial>)
   answers the questionnaire's form and its questions back as one value: an
   ordered sequence of `{ prompt, choices, expected, explanation, parts, cap }`
   entries in position order
   answers one row with an empty sequence when the questionnaire has no questions
   answers no row when the Questionnaire does not exist
 
-_proposesAnswers (questionnaire: String) : one (proposes: Boolean)
+_proposesAnswers (questionnaire: String) : one (proposes: Flag)
   answers whether any question of the questionnaire proposes an expected answer
   — a written-answer question's reference proposes nothing
   answers false when the Questionnaire does not exist
 
-_expectedAnswers (questionnaire: String) : optional (expectations: Seq)
+_expectedAnswers (questionnaire: String) : optional (expectations: Seq<Expectation>)
   answers the questionnaire's proposed answers as one value: an ordered sequence
   of `{ item, expected, explanation }` entries, one per question that proposes —
   choices offered and expected non-empty — in position order
   answers one row with an empty sequence when the questionnaire proposes none
   answers no row when the Questionnaire does not exist
 
-_materials (questionnaires: Seq) : one (materials: Seq)
+_materials (questionnaires: Seq<String>) : one (materials: Seq<QuestionnaireMaterial>)
   answers several questionnaires back as one value: for each identity in the
   given sequence, in that order, `{ questionnaire, title, questions }` with the
   questions as `_material` answers them, or no entry for an identity that

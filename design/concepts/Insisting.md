@@ -29,9 +29,9 @@ a set of Complaints with
   an offering   String
   an account    String
 
-a Settled   set of Insistences
-a Satisfied set of Insistences
-an Exhausted set of Insistences
+a set of Settled Insistences
+a set of Satisfied Insistences
+a set of Exhausted Insistences
 
 Rule: at most one unsettled insistence exists per aim, which is what makes addressing by aim unambiguous.
 Rule: patience counts complaints, so an insistence contains at most patience complaints, and a complaint past that is refused until the insistence is settled.
@@ -43,42 +43,42 @@ Rule: Insisting does not perform the next attempt, form what carries a complaint
 ## Actions
 
 ```actions
-complain (aim: Aim, patience: Number, offering: String, account: String) : return (complaint: Complaint, insistence: Insistence, remaining: Number)
+complain (aim: Aim, patience: Number, offering: String, account: String) : returns (complaint: Complaint, insistence: Insistence, remaining: Number)
   where patience is at least one and no unsettled insistence has aim aim
   then
     add a new insistence with aim and patience
     add a new complaint with that insistence, offering, and account
-    return complaint, insistence, remaining
+    returns complaint, insistence, remaining
   where an unsettled insistence for aim has complaints left
   then
     add a new complaint with that insistence, offering, and account
-    return complaint, insistence, remaining
+    returns complaint, insistence, remaining
   where patience is less than one
   then
-    refuse NO_PATIENCE "Insisting takes at least one complaint."
+    refuses NO_PATIENCE "Insisting takes at least one complaint."
   where the unsettled insistence for aim has had its patience in complaints
   then
-    refuse PATIENCE_SPENT "This aim has had every complaint it was given."
+    refuses PATIENCE_SPENT "This aim has had every complaint it was given."
 
-giveUp (aim: Aim) : return (insistence: Insistence)
+giveUp (aim: Aim) : returns (insistence: Insistence)
   where an unsettled insistence has aim aim
   then
     add that insistence to settled
     add that insistence to exhausted
-    return insistence
+    returns insistence
   where no unsettled insistence has aim aim
   then
-    refuse NOT_INSISTING "Nothing is being insisted on for this aim."
+    refuses NOT_INSISTING "Nothing is being insisted on for this aim."
 
-satisfy (aim: Aim) : return (insistence: Insistence)
+satisfy (aim: Aim) : returns (insistence: Insistence)
   where an unsettled insistence has aim aim
   then
     add that insistence to settled
     add that insistence to satisfied
-    return insistence
+    returns insistence
   where no unsettled insistence has aim aim
   then
-    refuse NOT_INSISTING "Nothing is being insisted on for this aim."
+    refuses NOT_INSISTING "Nothing is being insisted on for this aim."
 ```
 
 ## Queries
@@ -96,7 +96,7 @@ _spentFor (aim: String) : optional (insistence: String, complaints: Number)
   answers the aim's unsettled insistence once its patience is spent
   answers no row otherwise
 
-_for (aim: String) : many (insistence: String, patience: Number, settled: Boolean, satisfied: Boolean, exhausted: Boolean, remaining: Number)
+_for (aim: String) : many (insistence: String, patience: Number, settled: Flag, satisfied: Flag, exhausted: Flag, remaining: Number)
   answers every insistence for the aim in opening order
   answers no rows when none match
 

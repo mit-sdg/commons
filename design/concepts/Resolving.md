@@ -40,25 +40,25 @@ Rule: questions and answers are opaque identities; Resolving neither creates nor
 ## Actions
 
 ```actions
-accept(question: Question, answer: Answer, by: User, at: Date) : return (resolution: Resolution)
+accept(question: Question, answer: Answer, by: User, at: Date) : returns (resolution: Question)
   where true
   then
     add question to resolved with answer, resolvedBy by, and resolvedAt at, replacing any prior resolution
-    return resolution
-clear(question: Question) : return (question: Question)
+    returns resolution
+clear(question: Question) : returns (question: Question)
   where question in resolved
   then
     remove question from resolved
-    return question
+    returns question
   where question not in resolved
   then
-    refuse RESOLUTION_NOT_FOUND "This question has no accepted answer."
+    refuses RESOLUTION_NOT_FOUND "This question has no accepted answer."
 ```
 
 ## Queries
 
 ```queries
-_isResolved (question: String) : one (resolved: Boolean)
+_isResolved (question: String) : one (resolved: Flag)
   answers whether the Question has an accepted Answer
 
 _getResolution (question: String) : optional (answer: String, resolvedBy: String, resolvedAt: Date)

@@ -7,6 +7,7 @@ import { SubmissionNotFound, SubmissionNotSubmitted, SubmissionNotWithdrawn } fr
 export const submitting = registerConcept({
   class: MongoSubmittingConcept,
   spec,
+  batched: ["_getAttempts"],
   refusals: {
     SUBMISSION_NOT_FOUND: SubmissionNotFound,
     SUBMISSION_NOT_SUBMITTED: SubmissionNotSubmitted,

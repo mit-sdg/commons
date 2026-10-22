@@ -18,6 +18,10 @@ external Author
 
 external Material
   An application-owned identity for what a leg puts before its participants.
+opaque Seq
+  An ordered list of the values its argument names.
+opaque PlannedLeg
+  One leg as `{ leg, material, position, kind, draws }`, each draw as `{ source, use }`.
 ```
 
 ## State
@@ -53,102 +57,102 @@ Rule: Relaying does not know what a material is, open a leg to anyone, or carry 
 ## Actions
 
 ```actions
-plan (author: Author, title: String, at: Date) : return (relay: Relay)
+plan (author: Author, title: String, at: Date) : returns (relay: Relay)
   where title is valid
   then
     add a new relay with author, normalized title, and createdAt at
-    return relay
+    returns relay
   where title is not valid
   then
-    refuse INVALID_TITLE "The title must be 1 to 200 characters long."
+    refuses INVALID_TITLE "The title must be 1 to 200 characters long."
 
-retitle (relay: Relay, title: String) : return (relay: Relay)
+retitle (relay: Relay, title: String) : returns (relay: Relay)
   where relay exists and title is valid
   then
     set relay's title to normalized title
-    return relay
+    returns relay
   where relay does not exist
   then
-    refuse RELAY_NOT_FOUND "There is no such relay."
+    refuses RELAY_NOT_FOUND "There is no such relay."
   where title is not valid
   then
-    refuse INVALID_TITLE "The title must be 1 to 200 characters long."
+    refuses INVALID_TITLE "The title must be 1 to 200 characters long."
 
-addLeg (relay: Relay, material: Material) : return (leg: Leg, position: Number)
+addLeg (relay: Relay, material: Material) : returns (leg: Leg, position: Number)
   where relay exists
   then
     add a new leg with relay, material, an empty kind, and the position after the relay's last leg
-    return leg, position
+    returns leg, position
   where relay does not exist
   then
-    refuse RELAY_NOT_FOUND "There is no such relay."
+    refuses RELAY_NOT_FOUND "There is no such relay."
 
-setKind (leg: Leg, kind: String) : return (leg: Leg)
+setKind (leg: Leg, kind: String) : returns (leg: Leg)
   where leg exists and kind is nonblank
   then
     set leg's kind to kind
-    return leg
+    returns leg
   where leg does not exist
   then
-    refuse LEG_NOT_FOUND "There is no such leg."
+    refuses LEG_NOT_FOUND "There is no such leg."
   where kind is blank
   then
-    refuse KIND_BLANK "A kind needs a word."
+    refuses KIND_BLANK "A kind needs a word."
 
-removeLeg (leg: Leg) : return (leg: Leg, relay: Relay, material: Material)
+removeLeg (leg: Leg) : returns (leg: Leg, relay: Relay, material: Material)
   where leg exists and no draw has source leg
   then
     delete leg and every draw whose leg is leg, remembering its relay and material
     close the ranks of the relay's remaining legs
-    return leg, relay, material
+    returns leg, relay, material
   where leg does not exist
   then
-    refuse LEG_NOT_FOUND "There is no such leg."
+    refuses LEG_NOT_FOUND "There is no such leg."
   where some draw has source leg
   then
-    refuse LEG_DRAWN_ON "Another leg still draws on this one."
+    refuses LEG_DRAWN_ON "Another leg still draws on this one."
 
-moveLeg (leg: Leg, position: Number) : return (leg: Leg, position: Number)
+moveLeg (leg: Leg, position: Number) : returns (leg: Leg, position: Number)
   where leg exists, position is between one and the relay's leg count, and the order it makes has no draw pointing forward
   then
     place leg at position, shifting the legs between its old and new places by one
-    return leg, position
+    returns leg, position
   where leg does not exist
   then
-    refuse LEG_NOT_FOUND "There is no such leg."
+    refuses LEG_NOT_FOUND "There is no such leg."
   where position is below one or past the relay's leg count
   then
-    refuse NO_SUCH_POSITION "There is no such place in this relay."
+    refuses NO_SUCH_POSITION "There is no such place in this relay."
   where the order it makes has a draw pointing forward
   then
-    refuse FORWARD_DRAW "A leg cannot come before what it draws on."
+    refuses FORWARD_DRAW "A leg cannot come before what it draws on."
 
-draw (leg: Leg, source: Leg, use: String) : return (draw: Draw)
+draw (leg: Leg, source: Leg, use: String) : returns (draw: Draw)
   where leg and source exist, share a relay, source stands earlier than leg, and use is nonblank
   then
     set leg's draw to source and use, adding one when none stands
-    return draw
+    returns draw
   where leg does not exist or source does not exist
   then
-    refuse LEG_NOT_FOUND "There is no such leg."
+    refuses LEG_NOT_FOUND "There is no such leg."
   where leg and source do not share a relay
   then
-    refuse NOT_SIBLINGS "These legs do not share a relay."
+    refuses NOT_SIBLINGS "These legs do not share a relay."
   where source stands at or after leg
   then
-    refuse FORWARD_DRAW "A leg cannot come before what it draws on."
+    refuses FORWARD_DRAW "A leg cannot come before what it draws on."
   where use is blank
   then
-    refuse USE_BLANK "A draw needs a use."
+    refuses USE_BLANK "A draw needs a use."
 
-undraw (leg: Leg, source: Leg) : return (leg: Leg)
+undraw (leg: Leg, source: Leg) : returns (leg: Leg)
   where a draw joins leg to source
   then
     delete that draw
-    return leg
+    returns leg
   where no draw joins leg to source
   then
-    refuse NO_DRAW "This leg does not draw on that one."
+    refuses NO_DRAW "This leg does not draw on that one."
 ```
 
 ## Queries
@@ -181,7 +185,7 @@ _drawsOn (source: String) : many (draw: String, leg: String, use: String)
   answers every draw whose source is the leg, in the order they were made
   answers no rows when none match
 
-_plan (relay: String) : optional (legs: Seq)
+_plan (relay: String) : optional (legs: Seq<PlannedLeg>)
   answers the relay's legs back as one value: an ordered sequence of
   `{ leg, material, position, kind, draws }` entries in position order, each draws
   entry `{ source, use }` in the order the draws were made

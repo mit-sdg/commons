@@ -138,6 +138,9 @@ async function startEdge(
   delete env.MONGODB_URI;
   delete env.MONGODB_URL;
   delete env.SLOW_REQUEST_MS;
+  delete env.READ_AHEAD;
+  delete env.QUERY_CACHE;
+  delete env.BATCHED_QUERIES;
   if (mongodbUrl !== undefined) env[mongodbVariable] = mongodbUrl;
   const running = startChild(["bun", "src/start.ts"], {
     cwd: root,
@@ -206,6 +209,9 @@ describe("the Commons process with MongoDB", () => {
         "commons: logging requests that take 1000 ms or longer.",
       );
       expect(edge.output.join("")).toContain("commons: reading up to 32 rows of a list at once.");
+      expect(edge.output.join("")).toContain(
+        "commons: batched queries read the rows asked together in one call.",
+      );
 
       const closedRegistration = await post(edge.origin, "/api/auth/register", {
         username: "anyone",

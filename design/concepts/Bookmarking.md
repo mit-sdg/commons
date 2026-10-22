@@ -37,29 +37,29 @@ Rule: items are opaque identities; Bookmarking neither creates nor validates the
 ## Actions
 
 ```actions
-save(user: User, item: Item, at: Date) : return (bookmark: Bookmark)
+save(user: User, item: Item, at: Date) : returns (bookmark: Bookmark)
   where no bookmark has this user and item
   then
     add a new bookmark with user, item, and savedAt at
-    return bookmark
+    returns bookmark
   where some bookmark has this user and item
   then
-    refuse BOOKMARK_ALREADY_EXISTS "This user has already saved this item."
+    refuses BOOKMARK_ALREADY_EXISTS "This user has already saved this item."
 
-unsave(user: User, item: Item) : return (bookmark: Bookmark)
+unsave(user: User, item: Item) : returns (bookmark: Bookmark)
   where some bookmark has this user and item
   then
     delete that bookmark
-    return bookmark
+    returns bookmark
   where no bookmark has this user and item
   then
-    refuse BOOKMARK_NOT_FOUND "There is no such bookmark to remove."
+    refuses BOOKMARK_NOT_FOUND "There is no such bookmark to remove."
 
-clearItem(item: Item) : return (item: Item)
+clearItem(item: Item) : returns (item: Item)
   where true
   then
     remove every bookmark of item
-    return item
+    returns item
 ```
 
 ## Queries
@@ -69,6 +69,6 @@ _getSaved (user: String) : many (item: String, savedAt: Date)
   answers the user's bookmarks newest first
   answers no rows when none match
 
-_isSaved (user: String, item: String) : one (saved: Boolean)
+_isSaved (user: String, item: String) : one (saved: Flag)
   answers whether the User has bookmarked the Item
 ```

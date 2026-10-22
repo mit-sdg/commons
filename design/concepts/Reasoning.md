@@ -26,6 +26,10 @@ external Reasoner
 
 external Subject
   An application-owned identity naming what the ask is about.
+opaque Seq
+  An ordered list of the values its argument names.
+opaque LatestReply
+  A subject's newest reply as `{ about, asking, reasoner, passage, reply, answeredAt }`.
 ```
 
 ## State
@@ -38,7 +42,7 @@ a set of Askings with
   an askedAt Date
   an optional previous Asking
 
-a Pending set of Askings
+a set of Pending Askings
 
 a set of Replies with
   an asking     Asking
@@ -60,49 +64,49 @@ Rule: Reasoning does not own the mind it reaches, does not form passages, and do
 ## Actions
 
 ```actions
-ask (reasoner: Reasoner, about: Subject, passage: String, at: Date) : return (asking: Asking)
+ask (reasoner: Reasoner, about: Subject, passage: String, at: Date) : returns (asking: Asking)
   where true
   then
     add a new asking with reasoner, about, passage, and askedAt at
     add asking to pending
-    return asking
+    returns asking
 
-followUp(previous: Asking, passage: String, at: Date) : return (asking: Asking)
+followUp(previous: Asking, passage: String, at: Date) : returns (asking: Asking)
   where previous exists
   then
     add an asking with previous's reasoner and about, the supplied passage, and askedAt at
     record previous as its predecessor and put the new asking in pending
-    return asking
+    returns asking
   where previous does not exist
   then
-    refuse ASKING_NOT_FOUND "There is no such asking to follow up."
+    refuses ASKING_NOT_FOUND "There is no such asking to follow up."
 
 
-answer (asking: Asking, reply: String, at: Date) : return (asking: Asking, reply: String)
+answer (asking: Asking, reply: String, at: Date) : returns (asking: Asking, reply: String)
   where asking in pending
   then
     remove asking from pending
     add a new reply with asking, reply, and answeredAt at
-    return asking, reply
+    returns asking, reply
   where asking does not exist
   then
-    refuse ASKING_NOT_FOUND "There is no such ask."
+    refuses ASKING_NOT_FOUND "There is no such ask."
   where asking not in pending
   then
-    refuse ALREADY_SETTLED "This ask was already settled."
+    refuses ALREADY_SETTLED "This ask was already settled."
 
-fail (asking: Asking, account: String, at: Date) : return (asking: Asking)
+fail (asking: Asking, account: String, at: Date) : returns (asking: Asking)
   where asking in pending
   then
     remove asking from pending
     add a new failure with asking, account, and failedAt at
-    return asking
+    returns asking
   where asking does not exist
   then
-    refuse ASKING_NOT_FOUND "There is no such ask."
+    refuses ASKING_NOT_FOUND "There is no such ask."
   where asking not in pending
   then
-    refuse ALREADY_SETTLED "This ask was already settled."
+    refuses ALREADY_SETTLED "This ask was already settled."
 ```
 
 ## Queries
@@ -119,7 +123,7 @@ _pendingAbout (about: String) : many (asking: String, reasoner: String, passage:
   answers the pending askings about one subject, oldest first
   answers no rows when none is pending about it
 
-_asking (asking: String) : optional (reasoner: String, about: String, passage: String, askedAt: Date, pending: Boolean)
+_asking (asking: String) : optional (reasoner: String, about: String, passage: String, askedAt: Date, pending: Flag)
   answers the complete Asking
   answers no row when the Asking does not exist
 
@@ -139,7 +143,7 @@ _lastReplyAbout (about: String) : optional (asking: String, reasoner: String, pa
   answers the newest reply among the askings about the subject, with the passage it answered
   answers no row when none of them was answered
 
-_lastRepliesAbout (subjects: Seq) : one (replies: Seq)
+_lastRepliesAbout (subjects: Seq<String>) : one (replies: Seq<LatestReply>)
   answers the newest reply for each requested subject that has an answer, in
   first-requested subject order, as records containing about, asking, reasoner,
   passage, reply, and answeredAt; repeated subjects appear once and subjects

@@ -28,6 +28,14 @@ external Participant
 
 external Item
   An application-owned identity for the thing a single answer addresses.
+opaque Seq
+  An ordered list of the values its argument names.
+opaque ResponseSummary
+  One response as `{ response, participant, submitted }`.
+opaque CollectedAnswer
+  One answer as `{ item, value }`.
+opaque SubmittedValue
+  One submitted answer as `{ response, participant, item, value }`.
 ```
 
 ## State
@@ -39,8 +47,8 @@ a set of Responses with
   a startedAt   Date
   an optional submittedAt Date
 
-an InProgress set of Responses
-a Submitted   set of Responses
+a set of InProgress Responses
+a set of Submitted Responses
 
 a set of Answers with
   a response Response
@@ -59,72 +67,72 @@ Rule: whether the subject is open to participation, whether an item belongs to t
 ## Actions
 
 ```actions
-begin (participant: Participant, subject: Subject, at: Date) : return (response: Response)
+begin (participant: Participant, subject: Subject, at: Date) : returns (response: Response)
   where participant is present and no response has subject and participant
   then
     add a new response with subject, participant, and startedAt at
     add response to inProgress
-    return response
+    returns response
   where a response with subject and participant is in inProgress
   then
-    return response
+    returns response
   where the response with subject and participant is in submitted
   then
-    refuse ALREADY_SUBMITTED "This was already handed in."
+    refuses ALREADY_SUBMITTED "This was already handed in."
   where participant is blank
   then
-    refuse NO_PARTICIPANT "A response needs someone to belong to."
+    refuses NO_PARTICIPANT "A response needs someone to belong to."
 
-answer (response: Response, item: Item, value: String) : return (response: Response)
+answer (response: Response, item: Item, value: String) : returns (response: Response)
   where response in inProgress and value is present
   then
     set the answer of response for item to the trimmed value
-    return response
+    returns response
   where response does not exist
   then
-    refuse RESPONSE_NOT_FOUND "There is no such response."
+    refuses RESPONSE_NOT_FOUND "There is no such response."
   where response in submitted
   then
-    refuse ALREADY_SUBMITTED "This was already handed in."
+    refuses ALREADY_SUBMITTED "This was already handed in."
   where value is blank
   then
-    refuse BLANK_ANSWER "An answer needs something in it."
+    refuses BLANK_ANSWER "An answer needs something in it."
 
-submit (response: Response, at: Date, required?: Seq) : return (response: Response)
+submit (response: Response, at: Date, required?: Seq<String>) : returns (response: Response)
   where response in inProgress and every group in required has an answered item
   then
     remove response from inProgress
     add response to submitted
     set response's submittedAt to at
-    return response
+    returns response
   where response does not exist
   then
-    refuse RESPONSE_NOT_FOUND "There is no such response."
+    refuses RESPONSE_NOT_FOUND "There is no such response."
   where response in submitted
   then
-    refuse ALREADY_SUBMITTED "This was already handed in."
+    refuses ALREADY_SUBMITTED "This was already handed in."
   where response in inProgress and a group in required has no answered item
   then
-    refuse INCOMPLETE "An answer is still required."
+    refuses INCOMPLETE "An answer is still required."
 
 ```
 
 ## Queries
 
 ```queries
-_response (response: String) : optional (subject: String, participant: String, submitted: Boolean, startedAt: Date, submittedAt: Date|Null)
+_response (response: String) : optional (subject: String, participant: String, submitted: Flag, startedAt: Date, submittedAt: Date|null)
   answers the complete Response
   answers no row when the Response does not exist
 
-_responseFor (subject: String, participant: String) : optional (response: String, submitted: Boolean)
+_responseFor (subject: String, participant: String) : optional (response: String, submitted: Flag)
   answers the participant's one response to the subject
   answers no row when none exists
 
-_responsesFor (subject: String) : many (response: String, participant: String, submitted: Boolean, startedAt: Date, submittedAt: Date|Null)
+_responsesFor (subject: String) : many (response: String, participant: String, submitted: Flag, startedAt: Date, submittedAt: Date|null)
   answers the subject's responses, earliest begun first
   answers no rows when none match
 
-_responsesOf (subject: String) : one (responses: Seq)
+_responsesOf (subject: String) : one (responses: Seq<ResponseSummary>)
   answers the same responses as one value: an ordered sequence of
   `{ response, participant, submitted }` entries, earliest begun first
   answers an empty sequence when none match
@@ -138,7 +146,7 @@ _valuesFor (subject: String, item: String) : many (response: String, participant
   hand-in first — nothing counts until it was handed in
   answers no rows when none match
 
-_collectedAnswers (response: String) : optional (answers: Seq)
+_collectedAnswers (response: String) : optional (answers: Seq<CollectedAnswer>)
   answers the same answers as one value: an ordered sequence of `{ item, value }`
   pairs in first-answer order
   answers no row when the Response does not exist
@@ -149,7 +157,7 @@ _submittedAnswers (subject: String) : many (response: String, participant: Strin
   answers _valuesForSubject gives as one value
   answers no rows when the subject has no submitted values
 
-_valuesForSubject (subject: String) : one (values: Seq)
+_valuesForSubject (subject: String) : one (values: Seq<SubmittedValue>)
   answers all submitted values as one sequence of `{ response, participant,
   item, value }`, ordered first by hand-in and then by the answer's first-save
   order

@@ -132,9 +132,18 @@ export class MongoAuthenticatingConcept {
     return { user };
   }
 
-  async _getById({ user }: { user: string }) {
-    const doc = await this.users.findOne({ _id: user });
-    return doc === null ? [] : [{ username: doc.username, email: doc.email }];
+  /** Each user's username and address, in the order given, from one read. */
+  async _getById(inputs: readonly { user: string }[]) {
+    const users = [...new Set(inputs.map(({ user }) => user))];
+    if (users.length === 0) return [];
+    const docs = await this.users
+      .find({ _id: { $in: users } }, { projection: { username: 1, email: 1 } })
+      .toArray();
+    const found = new Map(docs.map((doc) => [doc._id, doc]));
+    return inputs.map(({ user }) => {
+      const doc = found.get(user);
+      return doc === undefined ? [] : [{ username: doc.username, email: doc.email }];
+    });
   }
 
   async _getByEmail({ email }: { email: string }) {

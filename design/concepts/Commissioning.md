@@ -15,6 +15,8 @@ external Subject
   What the work concerns; Commissioning neither creates nor validates it.
 external Execution
   An external attempt carrying out the undertaking; its own behavior belongs elsewhere.
+opaque Seq
+  An ordered list of the values its argument names.
 ```
 
 ## State
@@ -25,7 +27,7 @@ a set of Commissions with
   a brief String
   a status String
   an account String
-  an executions Seq
+  an executions seq of Execution
   a createdAt Date
   an updatedAt Date
   an optional acceptedAt Date
@@ -40,7 +42,7 @@ Rule: associations are sets; adding the same execution twice changes nothing.
 Rule: exclusion, eligibility, and execution are not owned here. The caller supplies a brief and its admission account.
 a set of Receipts with
   an execution Execution
-  a successful Boolean
+  a successful Flag
   an account String
   an at Date
 
@@ -52,72 +54,72 @@ Rule: declined records are eligible for expiry after one hour, completed or fail
 ## Actions
 
 ```actions
-prepare(subject: Subject, brief: String, account: String, at: Date) : return (commission: Commission, subject: Subject, status: String, account: String, brief: String)
+prepare(subject: Subject, brief: String, account: String, at: Date) : returns (commission: Commission, subject: Subject, status: String, account: String, brief: String)
   where true
   then
     add a commission with subject, brief, account, no executions, and both times at
     set status to prepared when account is empty, otherwise declined
-    return commission, subject, status, account, brief
+    returns commission, subject, status, account, brief
 
-accept(commission: Commission, at: Date) : return (commission: Commission, brief: String)
+accept(commission: Commission, at: Date) : returns (commission: Commission, brief: String)
   where commission exists and is prepared
   then
     set status to accepted and both acceptedAt and updatedAt to at
-    return commission, brief
+    returns commission, brief
   where commission does not exist
   then
-    refuse COMMISSION_NOT_FOUND "There is no such commission."
+    refuses COMMISSION_NOT_FOUND "There is no such commission."
   where commission exists and is not prepared
   then
-    refuse COMMISSION_NOT_PREPARED "Only a prepared commission can be accepted."
+    refuses COMMISSION_NOT_PREPARED "Only a prepared commission can be accepted."
 
-assign(commission: Commission, execution: Execution, at: Date) : return (commission: Commission, execution: Execution)
+assign(commission: Commission, execution: Execution, at: Date) : returns (commission: Commission, execution: Execution)
   where commission exists and has an acceptedAt
   then
     add execution to its executions and set updatedAt to at
     if execution has a receipt, conclude commission from that receipt
-    return commission, execution
+    returns commission, execution
   where commission does not exist
   then
-    refuse COMMISSION_NOT_FOUND "There is no such commission."
+    refuses COMMISSION_NOT_FOUND "There is no such commission."
   where commission exists and has no acceptedAt
   then
-    refuse COMMISSION_NOT_PREPARED "Only an accepted undertaking can receive an execution."
+    refuses COMMISSION_NOT_PREPARED "Only an accepted undertaking can receive an execution."
 
-report(execution: Execution, successful: Boolean, account: String, at: Date) : return (execution: Execution, successful: Boolean, account: String)
+report(execution: Execution, successful: Flag, account: String, at: Date) : returns (execution: Execution, successful: Flag, account: String)
   where true
   then
     record execution's receipt with successful, account, and at only if it has no receipt
     conclude each associated accepted commission from the recorded receipt
     let successful and account be the recorded receipt's values
-    return execution, successful, account
+    returns execution, successful, account
 
 
-conclude(commission: Commission, successful: Boolean, account: String, at: Date) : return (commission: Commission, status: String, account: String)
+conclude(commission: Commission, successful: Flag, account: String, at: Date) : returns (commission: Commission, status: String, account: String)
   where commission exists
   then
     if successful and commission is accepted, set status to completed, account to account, and updatedAt to at
     if not successful and commission is prepared or accepted, set status to failed, account to account, and updatedAt to at
     leave every other status and account unchanged
-    return commission, status, account
+    returns commission, status, account
   where commission does not exist
   then
-    refuse COMMISSION_NOT_FOUND "There is no such commission."
+    refuses COMMISSION_NOT_FOUND "There is no such commission."
 ```
 
 ## Queries
 
 ```queries
-_receipt (execution: String) : optional (successful: Boolean, account: String, at: Date)
+_receipt (execution: String) : optional (successful: Flag, account: String, at: Date)
   answers the retained first completion receipt of the execution
 
 
-_commission (commission: String) : optional (subject: String, brief: String, status: String, account: String, executions: Seq, createdAt: Date, updatedAt: Date)
+_commission (commission: String) : optional (subject: String, brief: String, status: String, account: String, executions: Seq<Execution>, createdAt: Date, updatedAt: Date)
   answers the retained commission's brief, disposition, executions and times; absent after expiry
 
 _forExecution (execution: String) : many (commission: String, subject: String, status: String)
   answers the retained commissions associated with that execution
 
-_forSubject (subject: String) : many (commission: String, status: String, account: String, brief: String, executions: Seq)
+_forSubject (subject: String) : many (commission: String, status: String, account: String, brief: String, executions: Seq<Execution>)
   answers retained commissions for the subject, newest creation first with identity breaking ties
 ```

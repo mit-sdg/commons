@@ -29,6 +29,20 @@ external Item
   The activity under assessment.
 external Evidence
   The particular work under assessment, or the application's empty-evidence marker for an assignment-wide excusal.
+Method is COMPETENCY or POINTS
+  How a grade is reached: by competency ratings or by points.
+opaque Seq
+  An ordered list of the values its argument names.
+opaque Criteria
+  The setup's criteria as recorded with the grade.
+opaque Judgments
+  The grader's judgments, at most one per criterion.
+opaque History
+  The grade's release and excusal history, appended and never erased.
+opaque ReleasedEntry
+  A grade a release published, as `{ grade, learner }`.
+opaque HeldEntry
+  A grade a release did not publish, as `{ grade, reason }`.
 ```
 
 ## State
@@ -39,20 +53,20 @@ a set of Grades with
   an item Item
   an evidence Evidence
   a grader Grader
-  a method of COMPETENCY or POINTS
+  a method Method
   a setupRevision Number
-  a criteria Json
-  a judgments Json
+  a criteria Criteria
+  a judgments Judgments
   a feedback String
   a version Number
   a createdAt Date
   an updatedAt Date
   an optional releasedAt Date
-  a history Json
+  a history History
 
-a Draft set of Grades
-a Released set of Grades
-an Excused set of Grades
+a set of Draft Grades
+a set of Released Grades
+a set of Excused Grades
 
 Rule: at most one grade has a given learner, item, and evidence; repeated creation returns it unchanged.
 Rule: a grade's learner, item, evidence, method, setup revision, and complete criterion definitions never change.
@@ -73,105 +87,105 @@ Rule: exposed excused grades omit private judgments and scored values while reta
 ## Actions
 
 ```actions
-record(learner: Learner, item: Item, evidence: Evidence, grader: Grader, method: String, setupRevision: Number, criteria: Json, at: Date) : return (grade: Grade, version: Number, method: String)
+record(learner: Learner, item: Item, evidence: Evidence, grader: Grader, method: String, setupRevision: Number, criteria: Criteria, at: Date) : returns (grade: Grade, version: Number, method: String)
   where a grade already has learner, item, and evidence
   then
     preserve that grade without validating the supplied current setup
-    return grade, version, method
+    returns grade, version, method
   where no grade has learner, item, and evidence and method, setup revision, and the complete criterion snapshot are valid
   then
     create one draft fixing learner, item, evidence, method, setup revision, and criteria, with version one and no judgments
-    return grade, version, method
+    returns grade, version, method
   where the setup snapshot is invalid
   then
-    refuse INVALID_JUDGMENTS "Select a valid complete grading setup."
+    refuses INVALID_JUDGMENTS "Select a valid complete grading setup."
 
-save(grade: Grade, version: Number, grader: Grader, judgments: Json, feedback: String, at: Date) : return (grade: Grade, version: Number)
+save(grade: Grade, version: Number, grader: Grader, judgments: Judgments, feedback: String, at: Date) : returns (grade: Grade, version: Number)
   where grade is draft at version and judgments and feedback match its stored method and criteria
   then
     atomically replace judgments and feedback, record grader and time, and increment version
-    return grade, version
+    returns grade, version
   where grade does not exist
   then
-    refuse GRADE_NOT_FOUND "There is no assessment."
+    refuses GRADE_NOT_FOUND "There is no assessment."
   where grade is not draft at version
   then
-    refuse GRADE_CONFLICT "This assessment changed or is locked. Reload before editing."
+    refuses GRADE_CONFLICT "This assessment changed or is locked. Reload before editing."
   where judgments or feedback are invalid
   then
-    refuse INVALID_JUDGMENTS "Use valid judgments for the stored criteria."
+    refuses INVALID_JUDGMENTS "Use valid judgments for the stored criteria."
 
-release(grade: Grade, version: Number, grader: Grader, at: Date) : return (grade: Grade, version: Number)
+release(grade: Grade, version: Number, grader: Grader, at: Date) : returns (grade: Grade, version: Number)
   where grade is a complete draft at version
   then
     append an immutable release, mark grade released, record grader and time, and increment version
-    return grade, version
+    returns grade, version
   where grade does not exist
   then
-    refuse GRADE_NOT_FOUND "There is no assessment."
+    refuses GRADE_NOT_FOUND "There is no assessment."
   where grade is not draft at version
   then
-    refuse GRADE_CONFLICT "This assessment changed or is locked. Reload before editing."
+    refuses GRADE_CONFLICT "This assessment changed or is locked. Reload before editing."
   where grade is incomplete
   then
-    refuse GRADE_INCOMPLETE "Complete every criterion before release."
+    refuses GRADE_INCOMPLETE "Complete every criterion before release."
 
-releaseItem(item: Item, grader: Grader, at: Date) : return (released: Json, skipped: Json, unconfirmed: Json)
+releaseItem(item: Item, grader: Grader, at: Date) : returns (released: Seq<ReleasedEntry>, skipped: Seq<HeldEntry>, unconfirmed: Seq<HeldEntry>)
   where true
   then
     attempt release of every draft on item at its observed version, retaining successes, reporting incomplete or changed drafts as skipped, and reporting unexpected write outcomes as unconfirmed
-    return released, skipped, unconfirmed
+    returns released, skipped, unconfirmed
 
-retract(grade: Grade, version: Number, grader: Grader, at: Date) : return (grade: Grade, version: Number)
+retract(grade: Grade, version: Number, grader: Grader, at: Date) : returns (grade: Grade, version: Number)
   where grade is released at version
   then
     move it to draft, clear releasedAt, retain history, record grader and time, and increment version
-    return grade, version
+    returns grade, version
   where grade does not exist
   then
-    refuse GRADE_NOT_FOUND "There is no assessment."
+    refuses GRADE_NOT_FOUND "There is no assessment."
   where grade is not released at version
   then
-    refuse GRADE_CONFLICT "This assessment changed or is locked. Reload before editing."
+    refuses GRADE_CONFLICT "This assessment changed or is locked. Reload before editing."
 
-restoreExcused(grade: Grade, version: Number, grader: Grader, at: Date) : return (grade: Grade, version: Number)
+restoreExcused(grade: Grade, version: Number, grader: Grader, at: Date) : returns (grade: Grade, version: Number)
   where grade is excused at version
   then
     move it to draft, clear releasedAt, retain history and private draft values, record grader and time, and increment version
-    return grade, version
+    returns grade, version
   where grade does not exist
   then
-    refuse GRADE_NOT_FOUND "There is no assessment."
+    refuses GRADE_NOT_FOUND "There is no assessment."
   where grade is not excused at version
   then
-    refuse GRADE_CONFLICT "This assessment changed or is locked. Reload before editing."
+    refuses GRADE_CONFLICT "This assessment changed or is locked. Reload before editing."
 
-discard(grade: Grade, version: Number) : return (grade: Grade)
+discard(grade: Grade, version: Number) : returns (grade: Grade)
   where grade is draft at version and has no history
   then
     remove the grade, so the next record for its learner, item, and evidence creates a new draft
-    return grade
+    returns grade
   where grade does not exist
   then
-    refuse GRADE_NOT_FOUND "There is no assessment."
+    refuses GRADE_NOT_FOUND "There is no assessment."
   where grade is not draft at version or has history
   then
-    refuse GRADE_CONFLICT "This assessment changed or was released before. Reload before editing."
+    refuses GRADE_CONFLICT "This assessment changed or was released before. Reload before editing."
 
-excuse(grade: Grade, version: Number, grader: Grader, feedback: String, at: Date) : return (grade: Grade, version: Number)
+excuse(grade: Grade, version: Number, grader: Grader, feedback: String, at: Date) : returns (grade: Grade, version: Number)
   where grade is draft at version and feedback is valid
   then
     append an excusal release, mark grade excused without erasing private draft judgments, record grader and time, and increment version
-    return grade, version
+    returns grade, version
   where grade does not exist
   then
-    refuse GRADE_NOT_FOUND "There is no assessment."
+    refuses GRADE_NOT_FOUND "There is no assessment."
   where grade is not draft at version
   then
-    refuse GRADE_CONFLICT "This assessment changed or is locked. Reload before editing."
+    refuses GRADE_CONFLICT "This assessment changed or is locked. Reload before editing."
   where feedback is invalid
   then
-    refuse INVALID_JUDGMENTS "Feedback must be at most 20000 characters."
+    refuses INVALID_JUDGMENTS "Feedback must be at most 20000 characters."
 ```
 
 ## Queries
@@ -179,10 +193,10 @@ excuse(grade: Grade, version: Number, grader: Grader, feedback: String, at: Date
 ```queries
 _getAssessment (learner: String, item: String, evidence: String) : optional (grade: String, version: Number, method: String, status: String)
   answers the exact assessment identity for idempotent opening and correction
-_getGrade (grade: String) : optional (grade: String, learner: String, item: String, evidence: String, grader: String, method: String, setupRevision: Number, criteria: Json, judgments: Json, feedback: String, status: String, version: Number, score: Number, outOf: Number, scored: Bool, createdAt: Date, updatedAt: Date, releasedAt: Date, history: Json)
+_getGrade (grade: String) : optional (grade: String, learner: String, item: String, evidence: String, grader: String, method: String, setupRevision: Number, criteria: Criteria, judgments: Judgments, feedback: String, status: String, version: Number, score: Number, outOf: Number, scored: Flag, createdAt: Date, updatedAt: Date, releasedAt: Date, history: History)
   answers one assessment with point totals derived from its immutable snapshot and excused private values masked
-_getGradesForLearner (learner: String) : many (grade: String, learner: String, item: String, evidence: String, grader: String, method: String, setupRevision: Number, criteria: Json, judgments: Json, feedback: String, status: String, version: Number, score: Number, outOf: Number, scored: Bool, createdAt: Date, updatedAt: Date, releasedAt: Date, history: Json)
+_getGradesForLearner (learner: String) : many (grade: String, learner: String, item: String, evidence: String, grader: String, method: String, setupRevision: Number, criteria: Criteria, judgments: Judgments, feedback: String, status: String, version: Number, score: Number, outOf: Number, scored: Flag, createdAt: Date, updatedAt: Date, releasedAt: Date, history: History)
   answers all of a learner's assessments in creation order
-_getGradesForItem (item: String) : many (grade: String, learner: String, item: String, evidence: String, grader: String, method: String, setupRevision: Number, criteria: Json, judgments: Json, feedback: String, status: String, version: Number, score: Number, outOf: Number, scored: Bool, createdAt: Date, updatedAt: Date, releasedAt: Date, history: Json)
+_getGradesForItem (item: String) : many (grade: String, learner: String, item: String, evidence: String, grader: String, method: String, setupRevision: Number, criteria: Criteria, judgments: Judgments, feedback: String, status: String, version: Number, score: Number, outOf: Number, scored: Flag, createdAt: Date, updatedAt: Date, releasedAt: Date, history: History)
   answers all assessments on an item in creation order
 ```

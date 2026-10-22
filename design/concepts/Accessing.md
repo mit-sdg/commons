@@ -24,6 +24,8 @@ external Resource
   The identity whose access is established; its existence is supplied externally.
 external Holder
   An identity named in the choice; its interpretation is supplied externally.
+opaque Seq
+  An ordered list of the values its argument names.
 ```
 
 ## State
@@ -44,21 +46,21 @@ Rule: retirement removes holders and permanently prevents establishment for that
 ## Actions
 
 ```actions
-establish(resource: Resource, holders: Seq) : return (resource: Resource)
+establish(resource: Resource, holders: Seq<Holder>) : returns (resource: Resource)
   where resource has neither an establishment nor a retirement
   then
     add one establishment with resource and the complete set of holders
-    return resource
+    returns resource
   where resource has an establishment or a retirement
   then
-    refuse ACCESS_ALREADY_ESTABLISHED "Access has already been established or retired."
+    refuses ACCESS_ALREADY_ESTABLISHED "Access has already been established or retired."
 
-retire(resource: Resource) : return (resource: Resource)
+retire(resource: Resource) : returns (resource: Resource)
   where true
   then
     remove any establishment for resource
     retain a retirement for resource
-    return resource
+    returns resource
 ```
 
 ## Queries
@@ -67,9 +69,9 @@ retire(resource: Resource) : return (resource: Resource)
 _grants (resource: Resource) : many (holder: Holder)
   answers each explicit holder from one complete audience observation, or no rows when absent or retired
 
-_isRetired (resource: Resource) : one (retired: Boolean)
+_isRetired (resource: Resource) : one (retired: Flag)
   answers whether the resource is permanently retired, including retirement before establishment
 
-_holders (resource: Resource) : optional (holders: Seq)
+_holders (resource: Resource) : optional (holders: Seq<Holder>)
   Answers the complete established holder set in identity order; no row before establishment or after retirement.
 ```

@@ -40,27 +40,27 @@ Rule: Attending does not decide who may attend, show anything to attendees, or i
 ## Actions
 
 ```actions
-attend (gathering: Gathering, attendee: Attendee, holding: String, at: Date) : return (attendee: Attendee)
+attend (gathering: Gathering, attendee: Attendee, holding: String, at: Date) : returns (attendee: Attendee)
   where no attendance has gathering gathering and attendee attendee
   then
     add a new attendance with gathering, attendee, holding, and heardAt at
-    return attendee
+    returns attendee
   where the attendance of attendee at gathering was heard twenty seconds or more before at, or holds another holding and was heard before at
   then
     set that attendance's holding to holding and its heardAt to at
-    return attendee
+    returns attendee
   where the attendance of attendee at gathering was heard at or after at, or was heard less than twenty seconds before at and holds holding
   then
-    return attendee
+    returns attendee
 
-leave (gathering: Gathering, attendee: Attendee) : return (attendee: Attendee)
+leave (gathering: Gathering, attendee: Attendee) : returns (attendee: Attendee)
   where an attendance has gathering gathering and attendee attendee
   then
     delete that attendance
-    return attendee
+    returns attendee
   where no attendance has gathering gathering and attendee attendee
   then
-    refuse NOT_ATTENDING "This participant is not here."
+    refuses NOT_ATTENDING "This participant is not here."
 ```
 
 ## Queries

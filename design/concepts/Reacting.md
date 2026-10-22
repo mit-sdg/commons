@@ -39,29 +39,29 @@ Rule: targets are opaque identities; Reacting neither creates nor validates them
 ## Actions
 
 ```actions
-react(reactor: Person, target: Target, kind: String, at: Date) : return (reaction: Reaction)
+react(reactor: Person, target: Target, kind: String, at: Date) : returns (reaction: Reaction)
   where no reaction has this reactor, target, and kind
   then
     add a new reaction with reactor, target, kind, and reactedAt at
-    return reaction
+    returns reaction
   where some reaction has this reactor, target, and kind
   then
-    refuse REACTION_ALREADY_EXISTS "This person has already reacted to the target with this kind."
+    refuses REACTION_ALREADY_EXISTS "This person has already reacted to the target with this kind."
 
-unreact(reactor: Person, target: Target, kind: String) : return (reaction: Reaction)
+unreact(reactor: Person, target: Target, kind: String) : returns (reaction: Reaction)
   where some reaction has this reactor, target, and kind
   then
     delete that reaction
-    return reaction
+    returns reaction
   where no reaction has this reactor, target, and kind
   then
-    refuse REACTION_NOT_FOUND "There is no such reaction to take back."
+    refuses REACTION_NOT_FOUND "There is no such reaction to take back."
 
-clearTarget(target: Target) : return (target: Target)
+clearTarget(target: Target) : returns (target: Target)
   where true
   then
     remove every reaction on target
-    return target
+    returns target
 ```
 
 ## Queries
@@ -79,6 +79,6 @@ _countByKind (target: String) : many (kind: String, count: Number)
   answers one row per reaction kind with its count
   answers no rows when none match
 
-_hasReacted (reactor: String, target: String, kind: String) : one (hasReacted: Boolean)
+_hasReacted (reactor: String, target: String, kind: String) : one (hasReacted: Flag)
   answers whether the Person has this kind of Reaction on the Target
 ```

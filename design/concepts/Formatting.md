@@ -32,17 +32,17 @@ Rule: each target has at most one formatting.
 ## Actions
 
 ```actions
-setSource(target: Target, source: String) : return (target: Target, rendered: String)
+setSource(target: Target, source: String) : returns (target: Target, rendered: String)
   where true
   then
     delete any formatting for target
     add a new formatting with target, source, and rendered source rendered
-    return target, rendered
-clear(target: Target) : return (target: Target)
+    returns target, rendered
+clear(target: Target) : returns (target: Target)
   where true
   then
     delete any formatting for target
-    return target
+    returns target
 ```
 
 ## Queries

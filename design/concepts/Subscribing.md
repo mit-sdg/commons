@@ -20,6 +20,8 @@ external Person
 
 external Target
   An application-owned identity used in the target role.
+opaque Seq
+  An ordered list of the values its argument names.
 ```
 
 ## State
@@ -38,29 +40,29 @@ Rule: targets are opaque identities; Subscribing neither creates nor validates t
 ## Actions
 
 ```actions
-subscribe(user: Person, target: Target, at: Date) : return (subscription: Subscription)
+subscribe(user: Person, target: Target, at: Date) : returns (subscription: Subscription)
   where no subscription has this user and target
   then
     add a new subscription with user, target, and subscribedAt at
-    return subscription
+    returns subscription
   where some subscription has this user and target
   then
-    refuse ALREADY_SUBSCRIBED "This person already follows the target."
+    refuses ALREADY_SUBSCRIBED "This person already follows the target."
 
-unsubscribe(user: Person, target: Target) : return (subscription: Subscription)
+unsubscribe(user: Person, target: Target) : returns (subscription: Subscription)
   where some subscription has this user and target
   then
     delete that subscription
-    return subscription
+    returns subscription
   where no subscription has this user and target
   then
-    refuse NOT_SUBSCRIBED "There is no such subscription to drop."
+    refuses NOT_SUBSCRIBED "There is no such subscription to drop."
 
-clearTarget(target: Target) : return (target: Target)
+clearTarget(target: Target) : returns (target: Target)
   where true
   then
     delete every subscription to target
-    return target
+    returns target
 ```
 
 ## Queries
@@ -70,7 +72,7 @@ _getSubscribers (target: String) : many (user: String)
   answers its subscribers in subscription order
   answers no rows when none match
 
-_subscribersOf (target: String) : one (users: Seq)
+_subscribersOf (target: String) : one (users: Seq<String>)
   answers the same subscribers as one value: an ordered sequence of user
   identities in subscription order
   answers an empty sequence when none match
@@ -79,6 +81,6 @@ _getSubscriptions (user: String) : many (target: String, subscribedAt: Date)
   answers the person's targets newest first
   answers no rows when none match
 
-_isSubscribed (user: String, target: String) : one (subscribed: Boolean)
+_isSubscribed (user: String, target: String) : one (subscribed: Flag)
   answers whether the Person follows the Target
 ```

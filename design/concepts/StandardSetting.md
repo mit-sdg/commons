@@ -21,7 +21,10 @@ Descriptions may be empty when guidance lives externally. Defining a standard wi
 ## Types
 
 ```types
-
+opaque Seq
+  An ordered list of the values its argument names.
+opaque EditionCatalog
+  Every immutable edition together, as one snapshot-expansion catalog.
 ```
 
 ## State
@@ -50,30 +53,30 @@ Rule: the reference can point to the full rubric; StandardSetting never fetches 
 ## Actions
 
 ```actions
-define(name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String) : return (standard: Standard, edition: Edition)
+define(name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String) : returns (standard: Standard, edition: Edition)
   where the supplied standard is complete
   then
     create a standard and its first immutable edition with the supplied descriptions and reference
     make that edition current and return standard and edition
-    return standard, edition
+    returns standard, edition
   where the supplied standard is not complete
   then
-    refuse INVALID_STANDARD "Supply a skill name and a safe optional reference link."
+    refuses INVALID_STANDARD "Supply a skill name and a safe optional reference link."
 
-revise(standard: Standard, expectedEdition: Edition, name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String) : return (standard: Standard, edition: Edition)
+revise(standard: Standard, expectedEdition: Edition, name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String) : returns (standard: Standard, edition: Edition)
   where standard exists, expectedEdition is current, and the supplied standard is complete
   then
     append a new immutable edition and atomically make it current
-    return standard, edition
+    returns standard, edition
   where standard does not exist
   then
-    refuse STANDARD_NOT_FOUND "There is no such standard."
+    refuses STANDARD_NOT_FOUND "There is no such standard."
   where expectedEdition is not current
   then
-    refuse STANDARD_CONFLICT "This standard changed. Reload before issuing an edition."
+    refuses STANDARD_CONFLICT "This standard changed. Reload before issuing an edition."
   where the supplied standard is not complete
   then
-    refuse INVALID_STANDARD "Supply a skill name and a safe optional reference link."
+    refuses INVALID_STANDARD "Supply a skill name and a safe optional reference link."
 ```
 
 ## Queries
@@ -86,8 +89,8 @@ _getEdition (edition: String) : optional (standard: String, edition: String, num
   answers the specified edition even after it is no longer current
 _getEditions () : many (standard: String, edition: String, number: Number, name: String, description: String, deficient: String, emergent: String, competent: String, expert: String, referenceUrl: String)
   answers every immutable edition for complete assessment snapshots
-_getEditionCatalog () : optional (editions: Json)
+_getEditionCatalog () : optional (editions: EditionCatalog)
   answers every immutable edition together as one snapshot-expansion catalog
-_hasEditions (editions: Json) : optional (valid: Bool)
+_hasEditions (editions: Seq<String>) : optional (valid: Flag)
   answers whether the supplied distinct nonblank identifiers all name immutable editions
 ```
