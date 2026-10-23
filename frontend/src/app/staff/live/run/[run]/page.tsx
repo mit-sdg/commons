@@ -1,12 +1,19 @@
 "use client";
 
-import { ArrowLeft, Presentation, Radio, Square } from "lucide-react";
-import { useParams } from "next/navigation";
-import { useEffect } from "react";
+import { ArrowLeft, Download, Presentation, Radio, Square } from "lucide-react";
+import { useParams, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Fact } from "@/components/facts";
 import { Link } from "@/components/link";
+import {
+  type AnswerFilter,
+  offersByStudent,
+  studentCsv,
+  studentTable,
+} from "@/components/live/by-student";
+import { ByStudentTable } from "@/components/live/by-student-table";
 import { ModelRow } from "@/components/live/model-row";
 import { JoinCode, joinUrl } from "@/components/live/qr-code";
 import { FormTag } from "@/components/live/quiz-meta";
@@ -27,15 +34,33 @@ import { RequireCapability } from "@/components/require-capability";
 import { SignInEnded } from "@/components/sign-in-ended";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
+import { Segmented } from "@/components/ui/segmented";
 import { useAdrift } from "@/hooks/use-adrift";
 import { useQuery } from "@/hooks/use-query";
 import { api, isApiError, publicErrorMessage, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { downloadCsv, fileSlug } from "@/lib/csv";
 import { NO_CONNECTION, POLL_DEADLINE_MS } from "@/lib/poll";
 import { cn } from "@/lib/utils";
 
 /** Fast enough that the room sees itself answer, slow enough to be polite. */
 const POLL_MS = 3_000;
+
+/** Moves the page's address without leaving it, so a view can be linked. */
+function navigate(
+  changes: Record<string, string | null>,
+  mode: "push" | "replace",
+) {
+  const next = new URLSearchParams(window.location.search);
+  for (const [key, value] of Object.entries(changes)) {
+    if (value === null) next.delete(key);
+    else next.set(key, value);
+  }
+  const query = next.toString();
+  const url = `${window.location.pathname}${query ? `?${query}` : ""}`;
+  if (mode === "push") window.history.pushState(null, "", url);
+  else window.history.replaceState(null, "", url);
+}
 
 /** Where the status line stands: out of the flow, above the figures, so nothing moves when it appears or clears. */
 const STATUS_LINE =
@@ -120,6 +145,77 @@ function QuizRunDashboard() {
   const scores = data === null ? null : scoresOf(data);
   const open = board?.open ?? false;
   const ended = refused === "UNAUTHORIZED";
+
+  // A survey can be read by student once the roster says whose answers are whose.
+  const searchParams = useSearchParams();
+  const survey = board?.form === "survey";
+  const roster = useQuery(
+    session && survey ? () => api["/roster/list"]({}).then(unwrap) : null,
+    [session, survey],
+  );
+  const sections = useQuery(
+    session && survey
+      ? () => api["/roster/sections/list"]({}).then(unwrap)
+      : null,
+    [session, survey],
+  );
+  const members = roster.data?.members ?? null;
+  const unnamed = useMemo(
+    () =>
+      board === null || members === null
+        ? null
+        : studentTable(board.questions, board.modelResponses, members),
+    [board, members],
+  );
+  // Answers from off the roster are named after their accounts' profiles.
+  const outsiders = (unnamed?.outside ?? [])
+    .map((row) => row.participant)
+    .join(" ");
+  const profiles = useQuery(
+    session && outsiders !== ""
+      ? () =>
+          api.profiles
+            .displays({ users: outsiders.split(" ").slice(0, 64) })
+            .then(unwrap)
+      : null,
+    [session, outsiders],
+  );
+  const table = useMemo(() => {
+    const found = profiles.data?.profiles ?? [];
+    if (board === null || members === null || found.length === 0)
+      return unnamed;
+    return studentTable(
+      board.questions,
+      board.modelResponses,
+      members,
+      new Map(found.map((row) => [row.user, row.displayName ?? ""])),
+    );
+  }, [board, members, unnamed, profiles.data]);
+  const sectionNames = useMemo(
+    () =>
+      new Map(
+        (sections.data?.sections ?? []).map((entry) => [
+          entry.section,
+          entry.name,
+        ]),
+      ),
+    [sections.data],
+  );
+  const sectionName = useCallback(
+    (section: string) => sectionNames.get(section) ?? "",
+    [sectionNames],
+  );
+  const byStudent = table !== null && offersByStudent(table);
+  const view =
+    byStudent && searchParams.get("view") === "students"
+      ? "students"
+      : "summary";
+  const answerColumn = searchParams.get("question");
+  const answerValue = searchParams.get("answer");
+  const answer: AnswerFilter | null =
+    answerColumn !== null && answerValue !== null
+      ? { column: answerColumn, value: answerValue }
+      : null;
 
   // The board only moves while the run is open; a closed run is final, so the
   // polling stops rather than asking the same question forever.
@@ -271,14 +367,14 @@ function QuizRunDashboard() {
 
       <div
         className={cn(
-          "relative grid gap-8",
+          "relative grid grid-cols-1 gap-8",
           open && "lg:grid-cols-[minmax(0,1fr)_22rem]",
         )}
       >
         <p role="status" className={STATUS_LINE}>
           {!ended && adrift ? NO_CONNECTION : null}
         </p>
-        <div className="order-2 space-y-6 lg:order-1">
+        <div className="order-2 min-w-0 space-y-6 lg:order-1">
           <div className="grid grid-cols-2 gap-4 sm:max-w-md">
             <RunCount
               label="Started"
@@ -292,24 +388,90 @@ function QuizRunDashboard() {
             />
           </div>
 
-          {scores !== null ? (
-            <RunScoreBoard
-              scores={scores}
-              choices={choiceQuestions(board.questions)}
-            />
+          {byStudent ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Segmented
+                label="View"
+                value={view}
+                options={[
+                  ["summary", "Summary"],
+                  ["students", "By student"],
+                ]}
+                onChange={(next) =>
+                  navigate(
+                    {
+                      view: next === "students" ? "students" : null,
+                      question: null,
+                      answer: null,
+                    },
+                    "push",
+                  )
+                }
+              />
+              {view === "students" && table !== null ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    downloadCsv(
+                      `${fileSlug(board.title, "survey")}-by-student.csv`,
+                      studentCsv(table, sectionName),
+                    )
+                  }
+                >
+                  <Download /> Download CSV
+                </Button>
+              ) : null}
+            </div>
           ) : null}
 
-          {board.questions.length === 0 ? (
-            <p className="text-muted-foreground">No questions in this run.</p>
+          {view === "students" && table !== null ? (
+            <ByStudentTable
+              table={table}
+              showSection={sectionNames.size > 1}
+              sectionName={sectionName}
+              answer={answer}
+              onClearAnswer={() =>
+                navigate({ question: null, answer: null }, "replace")
+              }
+            />
           ) : (
-            board.questions.map((question, index) => (
-              <RunQuestionBoard
-                key={question.question}
-                index={index}
-                question={question}
-                modelResponses={board.modelResponses}
-              />
-            ))
+            <>
+              {scores !== null ? (
+                <RunScoreBoard
+                  scores={scores}
+                  choices={choiceQuestions(board.questions)}
+                />
+              ) : null}
+
+              {board.questions.length === 0 ? (
+                <p className="text-muted-foreground">
+                  No questions in this run.
+                </p>
+              ) : (
+                board.questions.map((question, index) => (
+                  <RunQuestionBoard
+                    key={question.question}
+                    index={index}
+                    question={question}
+                    modelResponses={board.modelResponses}
+                    onPick={
+                      byStudent
+                        ? (choice) =>
+                            navigate(
+                              {
+                                view: "students",
+                                question: question.question,
+                                answer: choice,
+                              },
+                              "push",
+                            )
+                        : undefined
+                    }
+                  />
+                ))
+              )}
+            </>
           )}
         </div>
 
