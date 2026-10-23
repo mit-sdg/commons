@@ -119,12 +119,14 @@ function columnOfValue(
 /**
  * The run's answers joined to the roster: one row per participant who handed
  * in, and the students who did not, split by whether an answer names them.
- * Model seats are left out.
+ * Model seats are left out. Anyone off the roster goes by their profile's
+ * name in `profiles`, or by a number when they have none.
  */
 export function studentTable(
   questions: readonly BoardQuestion[],
   modelResponses: readonly { response: string }[],
   roster: readonly Member[],
+  profiles: ReadonlyMap<string, string> = new Map(),
 ): StudentTable {
   const seated = new Set(modelResponses.map((entry) => entry.response));
   const byUser = new Map(roster.map((member) => [member.user, member]));
@@ -180,7 +182,9 @@ export function studentTable(
     const row: AnswerRow = {
       participant,
       member,
-      name: member ? memberName(member) : `Unnamed ${++unnamed}`,
+      name: member
+        ? memberName(member)
+        : profiles.get(participant)?.trim() || `Unnamed ${++unnamed}`,
       cells,
       unknown: misses,
     };
@@ -350,7 +354,7 @@ export function studentCsv(
       memberName(member),
       member.email,
       sectionName(member.section ?? ""),
-      "Not handed in",
+      "Named by a classmate",
       by.map((entry) => entry.name).join("; "),
       ...blank,
     ]),
@@ -366,7 +370,7 @@ export function studentCsv(
       row.name,
       "",
       "",
-      "Not on the roster",
+      "Answered but not on the roster",
       "",
       ...answers(row),
     ]),

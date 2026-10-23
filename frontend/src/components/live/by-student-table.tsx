@@ -164,16 +164,16 @@ function GroupRow({
 }) {
   return (
     <tr>
+      {/* One cell across the table, so a long label never widens the name column. */}
       <td
-        className={cn(
-          STICKY_NAME,
-          "border-b bg-muted px-3 py-1.5 text-xs whitespace-nowrap",
-        )}
+        colSpan={span + 1}
+        className="border-b border-border bg-muted py-1.5 text-xs"
       >
-        <span className="me-2 font-semibold text-foreground">{label}</span>
-        <span className="text-muted-foreground tabular-nums">{count}</span>
+        <span className="sticky left-0 inline-block px-3 whitespace-nowrap">
+          <span className="me-2 font-semibold text-foreground">{label}</span>{" "}
+          <span className="text-muted-foreground tabular-nums">{count}</span>
+        </span>
       </td>
-      <td colSpan={span} className="border-b border-border bg-muted" />
     </tr>
   );
 }
@@ -388,7 +388,7 @@ export function ByStudentTable({
             <span className="inline-flex items-center gap-1">
               <span className="font-semibold tabular-nums">
                 {table.missing.length}
-              </span>
+              </span>{" "}
               <span className="text-muted-foreground">not handed in</span>
               <button
                 type="button"
@@ -419,7 +419,7 @@ export function ByStudentTable({
                 />
                 <span className="font-semibold tabular-nums">
                   {table.unknown}
-                </span>
+                </span>{" "}
                 <span className={cn(!unknownOnly && "text-muted-foreground")}>
                   email{table.unknown === 1 ? "" : "s"} not on the roster
                 </span>
@@ -505,7 +505,7 @@ export function ByStudentTable({
             {outside.length > 0 ? (
               <>
                 <GroupRow
-                  label="Not on the roster"
+                  label="Answered but not on the roster"
                   count={outside.length}
                   span={span}
                 />

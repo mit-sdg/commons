@@ -160,13 +160,37 @@ function QuizRunDashboard() {
     [session, survey],
   );
   const members = roster.data?.members ?? null;
-  const table = useMemo(
+  const unnamed = useMemo(
     () =>
       board === null || members === null
         ? null
         : studentTable(board.questions, board.modelResponses, members),
     [board, members],
   );
+  // Answers from off the roster are named after their accounts' profiles.
+  const outsiders = (unnamed?.outside ?? [])
+    .map((row) => row.participant)
+    .join(" ");
+  const profiles = useQuery(
+    session && outsiders !== ""
+      ? () =>
+          api.profiles
+            .displays({ users: outsiders.split(" ").slice(0, 64) })
+            .then(unwrap)
+      : null,
+    [session, outsiders],
+  );
+  const table = useMemo(() => {
+    const found = profiles.data?.profiles ?? [];
+    if (board === null || members === null || found.length === 0)
+      return unnamed;
+    return studentTable(
+      board.questions,
+      board.modelResponses,
+      members,
+      new Map(found.map((row) => [row.user, row.displayName ?? ""])),
+    );
+  }, [board, members, unnamed, profiles.data]);
   const sectionNames = useMemo(
     () =>
       new Map(

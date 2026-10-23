@@ -125,6 +125,27 @@ describe("joining answers to the roster", () => {
     expect(table.missing.map((row) => row.user)).toEqual(["cara", "eli"]);
   });
 
+  test("names an answer from off the roster by its profile, if it has one", () => {
+    const outside: BoardQuestion = {
+      ...TEAM,
+      values: [...TEAM.values, value("guest-2", "No, place me")],
+    };
+    const named = studentTable(
+      [outside, MATE],
+      SEATS,
+      ROSTER,
+      new Map([["phone-1", "Zed Moss"]]),
+    );
+    expect(named.outside.map((row) => row.name)).toEqual([
+      "Zed Moss",
+      "Unnamed 1",
+    ]);
+    expect(named.named[0]?.by.map((entry) => entry.name)).toEqual([
+      "Ava Chen",
+      "Zed Moss",
+    ]);
+  });
+
   test("never counts staff as missing", () => {
     expect(table.missing.some((row) => row.kind !== "STUDENT")).toBe(false);
   });
@@ -233,11 +254,11 @@ describe("the CSV", () => {
       "Ava Chen,ava@mit.edu,R01,Handed in,,Yes, BEN@mit.edu ,cara@mit.edu",
     );
     expect(lines).toContain(
-      "Ben Okafor,ben@mit.edu,R01,Not handed in,Ava Chen; Unnamed 1,,,",
+      "Ben Okafor,ben@mit.edu,R01,Named by a classmate,Ava Chen; Unnamed 1,,,",
     );
     expect(lines).toContain("Eli Stone,eli@mit.edu,R01,Not handed in,,,,");
     expect(lines).toContain(
-      "Unnamed 1,,,Not on the roster,,Partly,ben@mit.edu,",
+      "Unnamed 1,,,Answered but not on the roster,,Partly,ben@mit.edu,",
     );
   });
 });
