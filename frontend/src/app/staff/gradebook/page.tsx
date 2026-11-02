@@ -3,6 +3,7 @@
 import { Download } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmAction } from "@/components/confirm-action";
 import { ClassPane } from "@/components/lms/course-grades/class-pane";
 import { PolicyPane } from "@/components/lms/course-grades/policy-pane";
 import {
@@ -186,6 +187,15 @@ function CourseGrades({
   const dirty =
     saved === null || JSON.stringify(saved) !== JSON.stringify(policy);
 
+  // Leaving a policy with unsaved changes asks first.
+  const [pendingLeave, setPendingLeave] = useState<
+    (() => void | Promise<void>) | null
+  >(null);
+  function leave(go: () => void | Promise<void>) {
+    if (dirty && !readOnly) setPendingLeave(() => go);
+    else void go();
+  }
+
   async function save() {
     if (open.policy === null || open.version === null) {
       const created = await courseActions.create(open.name, policy);
@@ -303,6 +313,20 @@ function CourseGrades({
           </div>
         }
       />
+      <ConfirmAction
+        open={pendingLeave !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingLeave(null);
+        }}
+        title="Discard unsaved changes?"
+        description={`Changes to ${open.name} aren't saved.`}
+        confirmLabel="Discard"
+        destructive
+        onConfirm={async () => {
+          await pendingLeave?.();
+          setPendingLeave(null);
+        }}
+      />
       <ReleaseLine page={page} readOnly={readOnly} onChanged={refetch} />
       <div className="mt-4 grid gap-6 lg:grid-cols-[24rem_minmax(0,1fr)]">
         <div className="order-2 lg:order-1">
@@ -315,13 +339,15 @@ function CourseGrades({
             dirty={dirty}
             readOnly={readOnly}
             conflict={conflict}
-            onOpenPolicy={(id) => void openPolicy(id)}
-            onNewPolicy={() => {
-              setOpen(NEW_POLICY);
-              setSaved(null);
-              setPolicy(startingPolicy(inputs));
-              setConflict(null);
-            }}
+            onOpenPolicy={(id) => leave(() => openPolicy(id))}
+            onNewPolicy={() =>
+              leave(() => {
+                setOpen(NEW_POLICY);
+                setSaved(null);
+                setPolicy(startingPolicy(inputs));
+                setConflict(null);
+              })
+            }
             onSave={save}
             onSaveCopy={saveCopy}
             onReload={async () => {

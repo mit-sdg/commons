@@ -26,7 +26,7 @@ test("skills refresh without clearing a draft, and graders can open unassessed a
       return result;
     };
     // Warm routes before typing so dev compilation cannot reload away the draft.
-    for (const route of ["/staff/skills", "/staff/assignments/new", "/staff/gradebook"])
+    for (const route of ["/staff/skills", "/staff/assignments/new", "/staff/gradebook/assessments"])
       await staff.request.get(`${baseURL}${route}`);
     const page = await staff.newPage();
     await page.goto(`${baseURL}/staff/assignments/new`);
@@ -84,7 +84,7 @@ test("skills refresh without clearing a draft, and graders can open unassessed a
     const warmAssignment = await grader.request.get(`${baseURL}/staff/assignments/${assignment}`);
     expect(warmAssignment.ok()).toBe(true);
     const review = await grader.newPage();
-    await review.goto(`${baseURL}/staff/gradebook`);
+    await review.goto(`${baseURL}/staff/gradebook/assessments`);
     await review.getByText("Grade an assignment", { exact: true }).click();
     const assignmentLink = review.getByRole("link", { name: /^Unassessed work/ });
     await expect(assignmentLink).toHaveAttribute("href", `/staff/assignments/${assignment}`);

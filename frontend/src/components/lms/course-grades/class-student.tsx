@@ -270,7 +270,7 @@ export function OpenedStudent({
   );
 }
 
-/** Skills down, assignments across in due order, design skills first. */
+/** Skills down, assignments across in due order. */
 function BySkillGrid({
   grade,
   grid,

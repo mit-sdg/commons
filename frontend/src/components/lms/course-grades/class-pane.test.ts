@@ -403,7 +403,7 @@ describe("an opened student", () => {
     ]);
   });
 
-  test("By skill puts design skills first, then the order the term first rates them", () => {
+  test("By skill lists skills in the order the term first rates them", () => {
     const criterion = (standard: string, name: string) => ({
       criterion: standard,
       kind: "COMPETENCY",
@@ -457,10 +457,10 @@ describe("an opened student", () => {
     ]);
     expect(grid.skills.map((skill) => skill.name)).toEqual([
       "Concept design",
-      "Visual design",
       "Problem framing",
       "Technical writing",
       "Implementing concepts",
+      "Visual design",
     ]);
   });
 });

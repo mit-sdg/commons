@@ -448,13 +448,10 @@ export function skillsByAssignment(
   return rated;
 }
 
-/** A design skill: one whose name says design. */
-export const isDesignSkill = (name: string) => /\bdesign\b/i.test(name);
-
 export interface BySkill {
   /** Assignments in due order that rate at least one skill. */
   assignments: AssignmentInput[];
-  /** Design skills first, then the rest, each in the order the term first rates them. */
+  /** Skills in the order the term first rates them. */
   skills: { standard: string; name: string }[];
 }
 
@@ -476,7 +473,6 @@ export function bySkill(inputs: CourseGradeInputs): BySkill {
   }));
   skills.sort(
     (left, right) =>
-      Number(isDesignSkill(right.name)) - Number(isDesignSkill(left.name)) ||
       first.get(left.standard)! - first.get(right.standard)! ||
       left.name.localeCompare(right.name),
   );
