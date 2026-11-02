@@ -33,6 +33,11 @@ external User
   An application-owned identity used in the user role.
 opaque Seq
   An ordered list of the values its argument names.
+opaque StudentEntry
+  One linked active student seat as `{ user, section, email }`.
+
+opaque SectionEntry
+  One section as `{ section, name }`.
 opaque ImportRow
   One previewed roster line: a field for each CSV header, such as `email`, `kind`, `section` and `displayName`, plus `sectionName`, and `sectionError` when its section is unknown or ambiguous.
 ```
@@ -234,6 +239,9 @@ _getSections () : many (section: String, name: String, location: String, meeting
   answers every section in creation order
   answers no rows when none match
 
+_sectionList () : one (sections: Seq<SectionEntry>)
+  answers every section's identity and name in creation order
+  answers an empty sequence when there are none
 _getSeatByEmail (email: String) : optional (seat: String, email: String)
   answers the Seat carrying the address, compared after trimming and lower-casing both sides
   answers no row when no Seat matches
@@ -260,6 +268,9 @@ _isActiveStudent (user: String) : one (active: Flag)
 _getActiveStudents () : many (user: String, seat: String, section: String|null, email: String)
   answers linked active student seats in creation order
   answers no rows when none match
+_activeStudentList () : one (students: Seq<StudentEntry>)
+  answers the same seats as `_getActiveStudents` as one sequence
+  answers an empty sequence when none match
 
 _getUnclaimedSeats () : many (seat: String, email: String, kind: String, section: String|null, displayName: String)
   answers pending unclaimed seats in creation order, each with the display name it carries or the empty string when it carries none

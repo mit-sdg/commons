@@ -235,6 +235,11 @@ export class MongoBankingConcept {
     }));
   }
 
+  async _standingUses() {
+    const docs = await this.uses.find({ status: "APPLIED" }).sort({ seq: 1 }).toArray();
+    return { uses: docs.map(({ learner, item, days }) => ({ learner, item, days })) };
+  }
+
   async _getUsesForItem({ item }: { item: string }) {
     const docs = await this.uses.find({ item, status: "APPLIED" }).sort({ seq: 1 }).toArray();
     return docs.map((doc) => ({ learner: doc.learner, days: doc.days }));

@@ -372,6 +372,36 @@ export class MongoAssigningConcept {
     return { assigned: [...new Set(docs.map((release) => release.assignee))] };
   }
 
+  async _courseAssignments() {
+    await this.#ready();
+    const docs = await this.assignments
+      .find({ status: { $in: ["PUBLISHED", "ARCHIVED"] } })
+      .sort({ seq: 1 })
+      .toArray();
+    return {
+      assignments: docs.map((doc) => ({
+        assignment: doc._id,
+        title: doc.title,
+        kind: doc.kind,
+        dueAt: doc.dueAt,
+        status: doc.status,
+        acceptsSubmissions: doc.acceptsSubmissions,
+      })),
+    };
+  }
+
+  async _courseReleases() {
+    await this.#ready();
+    const docs = await this.releases.find().sort({ seq: 1 }).toArray();
+    return {
+      releases: docs.map((doc) => ({
+        assignment: doc.assignment,
+        assignee: doc.assignee,
+        dueOverride: doc.dueOverride,
+      })),
+    };
+  }
+
   async _getPublishedForAudience({ audience }: { audience: string | null }) {
     const docs = await this.assignments.find({ status: "PUBLISHED" }).sort({ seq: 1 }).toArray();
     return docs

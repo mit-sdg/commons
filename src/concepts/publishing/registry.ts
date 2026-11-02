@@ -22,5 +22,8 @@ export const publishing = registerConcept({
     PART_OPEN: PartOpen,
     PART_DONE: PartDone,
   },
-  floors: { mongo: ({ database }: { database: Db }) => new MongoPublishingConcept(database) },
+  floors: {
+    mongo: ({ database }: { database: Db }, instance: string) =>
+      new MongoPublishingConcept(database, instance),
+  },
 });

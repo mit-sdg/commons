@@ -21,6 +21,12 @@ external Learner
 
 external Item
   An application-owned identity used in the item role.
+
+opaque Seq
+  An ordered list of the values its argument names.
+
+opaque UseEntry
+  One standing use as `{ learner, item, days }`.
 ```
 
 ## State
@@ -143,6 +149,9 @@ _getUses (learner: String) : many (use: String, item: String, days: Number, stat
 _getUsesForItem (item: String) : many (learner: String, days: Number)
   answers the standing uses on the item in creation order
   answers no rows when none match
+_standingUses () : one (uses: Seq<UseEntry>)
+  answers every applied use in creation order
+  answers an empty sequence when none stand
 
 _getGrants (learner: String) : many (grant: String, days: Number, reason: String, grantedAt: Date)
   answers the learner's grants in creation order

@@ -23,6 +23,11 @@ external Material
 
 opaque Seq
   An ordered list of the values its argument names.
+opaque EditionEntry
+  One edition as `{ edition, whole, openedAt }`.
+
+opaque PartEntry
+  One part as `{ whole, edition }`.
 ```
 
 ## State
@@ -113,6 +118,12 @@ _partsOf (whole: String) : one (parts: Seq<String>)
   answers the same parts as `_parts` as one sequence of edition identities,
   earliest published first
   answers an empty sequence when the whole has none or does not exist
+_editionsAmong (editions: Seq<String>) : one (editions: Seq<EditionEntry>)
+  answers the supplied editions that exist, earliest opened first
+  answers an empty sequence when none do
+_partsAmong (wholes: Seq<String>) : one (parts: Seq<PartEntry>)
+  answers the parts of every supplied whole, earliest published first
+  answers an empty sequence when none have parts
 _openPart (whole: String) : optional (edition: String, material: String)
   answers the whole's open part
   answers no row when no part of the whole is open
@@ -121,6 +132,9 @@ _hasOpenEditionFor (material: String) : one (open: Flag)
   answers whether any open edition releases the material
   answers false when none does
 
+_latestFor (material: String) : optional (edition: String, open: Flag, openedAt: Date)
+  answers the material's newest edition, open or closed
+  answers no row when none exists
 _editionsFor (material: String) : many (edition: String, open: Flag, openedAt: Date, closedAt: Date|null)
   answers the material's editions, newest first
   answers no rows when none match

@@ -64,9 +64,10 @@ export class MongoPublishingConcept {
     return result;
   }
 
-  constructor(db: Db) {
-    this.editions = db.collection<EditionDoc>("publishing.editions");
-    this.counters = db.collection("publishing.counters");
+  constructor(db: Db, instance = "Publishing") {
+    const prefix = `${instance[0]?.toLowerCase() ?? ""}${instance.slice(1)}`;
+    this.editions = db.collection<EditionDoc>(`${prefix}.editions`);
+    this.counters = db.collection(`${prefix}.counters`);
   }
 
   async #ready(): Promise<void> {
@@ -208,6 +209,33 @@ export class MongoPublishingConcept {
 
   async _partsOf({ whole }: { whole: string }) {
     return { parts: (await this._parts({ whole })).map(({ edition }) => edition) };
+  }
+
+  async _editionsAmong({ editions }: { editions: string[] }) {
+    const docs = await this.editions
+      .find({ _id: { $in: [...new Set(editions)] } })
+      .sort({ openedAt: 1, seq: 1 })
+      .toArray();
+    return {
+      editions: docs.map((doc) => ({
+        edition: doc._id,
+        whole: doc.whole ?? null,
+        openedAt: doc.openedAt,
+      })),
+    };
+  }
+
+  async _partsAmong({ wholes }: { wholes: string[] }) {
+    const docs = await this.editions
+      .find({ whole: { $in: [...new Set(wholes)], $type: "string" } })
+      .sort({ openedAt: 1, seq: 1 })
+      .toArray();
+    return { parts: docs.map((doc) => ({ whole: doc.whole as string, edition: doc._id })) };
+  }
+
+  async _latestFor({ material }: { material: string }) {
+    const doc = await this.editions.findOne({ material }, { sort: { openedAt: -1, seq: -1 } });
+    return doc === null ? [] : [{ edition: doc._id, open: doc.open, openedAt: doc.openedAt }];
   }
 
   async _editionsFor({ material }: { material: string }) {

@@ -76,6 +76,15 @@ export class MongoProfilingConcept {
         ];
   }
 
+  async _namesOf({ users }: { users: string[] }) {
+    return {
+      names: (await this._getProfilesOf({ users })).map(({ user, displayName }) => ({
+        user,
+        displayName,
+      })),
+    };
+  }
+
   async _getProfilesOf({ users }: { users: string[] }) {
     const docs = await this.profiles.find({ _id: { $in: [...users] } }).toArray();
     const found = new Map(docs.map((doc) => [doc._id, doc]));

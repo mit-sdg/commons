@@ -36,6 +36,9 @@ opaque CollectedAnswer
   One answer as `{ item, value }`.
 opaque SubmittedValue
   One submitted answer as `{ response, participant, item, value }`.
+
+opaque ParticipationEntry
+  One subject a participant responded to, as `{ subject, participant }`.
 ```
 
 ## State
@@ -140,6 +143,10 @@ _responsesOf (subject: String) : one (responses: Seq<ResponseSummary>)
 _participantsAmong (subjects: Seq<String>) : one (participants: Seq<String>)
   answers every participant with a response to any of the subjects, each once,
   submitted or not, in identity order
+  answers an empty sequence when none match
+_participationAmong (subjects: Seq<String>) : one (participation: Seq<ParticipationEntry>)
+  answers each subject and participant with a response to it, once per pair,
+  submitted or not, ordered by subject and then participant
   answers an empty sequence when none match
 _answers (response: String) : many (item: String, value: String)
   answers the response's answers in first-answer order

@@ -97,9 +97,7 @@ attempts.
 
 [Read one item's assessment history as staff](reaction:Course.grades.GradesForItem).
 
-[Read the staff gradebook](reaction:Course.grades.GradesGradebook).
-
-[Keep the guarded whole-gradebook export placeholder](reaction:Course.grades.GradesExport).
+[Read the staff gradebook](reaction:Course.grades.GradesGradebook), for a caller holding `grade` who is not enrolled as an active student, since it shows every student's ratings.
 
 ```endpoints
 Course.grades.GradesDefineStandard at /grades/define-standard
@@ -121,7 +119,6 @@ Course.grades.GradesStandards at /grades/standards
 Course.grades.GradesForStudent at /grades/for-student
 Course.grades.GradesForItem at /grades/for-item
 Course.grades.GradesGradebook at /grades/gradebook
-Course.grades.GradesExport at /grades/export
 ```
 
 ```computations

@@ -568,6 +568,37 @@ export class MongoGradingConcept {
     );
   }
 
+  async _courseRatings() {
+    await this.#ready();
+    const docs = await this.records.find().sort({ createdAt: 1, _id: 1 }).toArray();
+    return {
+      ratings: docs.map((doc) => ({
+        learner: doc.learner,
+        item: doc.item,
+        evidence: doc.evidence,
+        status: doc.status,
+        method: doc.method,
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt,
+        criteria: doc.criteria.map((criterion) => ({
+          criterion: criterion.criterion,
+          kind: criterion.kind,
+          standard: criterion.kind === "COMPETENCY" ? criterion.standard : "",
+          name: criterion.name,
+          maxPoints: criterion.kind === "POINTS" ? criterion.maxPoints : 0,
+        })),
+        judgments:
+          doc.status === "RELEASED"
+            ? doc.judgments.map((judgment) => ({
+                criterion: judgment.criterion,
+                rating: judgment.kind === "COMPETENCY" ? judgment.rating : null,
+                score: judgment.kind === "POINTS" ? judgment.score : null,
+              }))
+            : [],
+      })),
+    };
+  }
+
   async _getGradesForItem({ item }: { item: string }) {
     await this.#ready();
     return (await this.records.find({ item }).sort({ createdAt: 1, _id: 1 }).toArray()).map((doc) =>

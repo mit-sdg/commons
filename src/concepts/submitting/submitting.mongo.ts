@@ -176,6 +176,20 @@ export class MongoSubmittingConcept {
     }));
   }
 
+  async _allAttempts() {
+    const docs = await this.submissions.find().sort({ submittedAt: 1, seq: 1 }).toArray();
+    return {
+      attempts: docs.map((doc) => ({
+        assignment: doc.assignment,
+        submitter: doc.submitter,
+        submission: doc._id,
+        submittedAt: doc.submittedAt,
+        number: doc.number,
+        status: doc.status,
+      })),
+    };
+  }
+
   async _getSubmissionsForSubmitter({ submitter }: { submitter: string }) {
     const docs = await this.submissions
       .find({ submitter })

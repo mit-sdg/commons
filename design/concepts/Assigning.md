@@ -25,6 +25,11 @@ external Sections
   An application-owned identity used in the sections role.
 opaque Seq
   An ordered list of the values its argument names.
+opaque CourseAssignment
+  One assignment as `{ assignment, title, kind, dueAt, status, acceptsSubmissions }`.
+
+opaque ReleaseEntry
+  One release as `{ assignment, assignee, dueOverride }`.
 ```
 
 ## State
@@ -193,6 +198,12 @@ _isAssigned (assignment: String, assignee: String) : one (assigned: Flag)
 
 _assignedAmong (assignment: String, assignees: Seq<String>) : one (assigned: Seq<String>)
   answers the supplied assignees that hold a release of the Assignment, in release order
+_courseAssignments () : one (assignments: Seq<CourseAssignment>)
+  answers every published or archived assignment in creation order
+  answers an empty sequence when there are none
+_courseReleases () : one (releases: Seq<ReleaseEntry>)
+  answers every release in creation order
+  answers an empty sequence when there are none
 
 _getPublishedForAudience (audience: String|null) : many (assignment: String)
   answers published assignments addressed to everyone or to the named section, in creation order

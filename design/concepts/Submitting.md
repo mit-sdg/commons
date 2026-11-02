@@ -24,6 +24,8 @@ external Artifact
   An application-owned identity used in the artifact role.
 opaque Seq
   An ordered list of the values its argument names.
+opaque AttemptEntry
+  One attempt as `{ assignment, submitter, submission, submittedAt, number, status }`.
 ```
 
 ## State
@@ -99,4 +101,7 @@ _getSubmissionsForAssignment (assignment: String) : many (submitter: String, sub
 _getSubmissionsForSubmitter (submitter: String) : many (assignment: String, submission: String, submittedAt: Date, number: Number, status: String)
   answers the learner's attempts in creation order
   answers no rows when none match
+_allAttempts () : one (attempts: Seq<AttemptEntry>)
+  answers every attempt, submitted or withdrawn, earliest submitted first
+  answers an empty sequence when there are none
 ```

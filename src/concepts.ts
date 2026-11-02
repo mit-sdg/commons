@@ -53,6 +53,21 @@ import {
 import { draftContext, draftReferences, draftRequest } from "./computations/live-background.ts";
 import { roomSince } from "./computations/live-room.ts";
 import {
+  courseGradeInputs,
+  courseGradesCsv,
+  lectureSubjectList,
+  overrideReplaced,
+  ownCourseGrade,
+  policyIsWellFormed,
+  releaseSettings,
+  releaseSummary,
+  releaseValue,
+  releasedPolicy,
+  studentUsers,
+  updateValue,
+  validReleaseSettings,
+} from "./computations/course-grades.ts";
+import {
   classTimezone,
   lectureSubjects,
   runKind,
@@ -91,6 +106,8 @@ import { pinning } from "./concepts/pinning/registry.ts";
 import { posting } from "./concepts/posting/registry.ts";
 import { profiling } from "./concepts/profiling/registry.ts";
 import { publishing } from "./concepts/publishing/registry.ts";
+import { policymaking } from "./concepts/policymaking/registry.ts";
+import { overriding } from "./concepts/overriding/registry.ts";
 import { questioning } from "./concepts/questioning/registry.ts";
 import { reacting } from "./concepts/reacting/registry.ts";
 import { reasoning } from "./concepts/reasoning/registry.ts";
@@ -303,6 +320,8 @@ const registrations = {
   Bookmarking: bookmarking,
   Categorizing: categorizing,
   Commissioning: commissioning,
+  CourseGradePublishing: publishing,
+  CourseGradeSnapshotting: snapshotting,
   Connecting: connecting,
   ConnectVouching: vouching,
   Conversing: conversing,
@@ -325,8 +344,10 @@ const registrations = {
   NoticeSnapshotting: snapshotting,
   Notifying: notifying,
   Noting: noting,
+  Overriding: overriding,
   PasswordResetVouching: vouching,
   Pinning: pinning,
+  Policymaking: policymaking,
   Posting: posting,
   Profiling: profiling,
   Publishing: publishing,
@@ -559,6 +580,19 @@ export const learningConcepts = conceptSet(registrations, {
   runKind,
   runTitle,
   signedOutJoiners,
+  courseGradeInputs,
+  courseGradesCsv,
+  lectureSubjectList,
+  overrideReplaced,
+  ownCourseGrade,
+  policyIsWellFormed,
+  releaseSettings,
+  releaseSummary,
+  releaseValue,
+  releasedPolicy,
+  studentUsers,
+  updateValue,
+  validReleaseSettings,
 });
 
 export const concepts = learningConcepts.concepts;

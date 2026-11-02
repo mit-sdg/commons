@@ -63,6 +63,24 @@ concrete LiveMaterial
   What a live edition releases: a Questioning questionnaire for a quiz, survey,
   or round, or a Relaying relay for a relay run.
 
+concrete CourseGradeMaterial
+  What a course-grade edition releases: the reserved constant `course-grades`
+  for a release to the class, or one student, for an update of that student's
+  course grade alone.
+
+concrete CourseGradeRelease
+  What a course-grade edition keeps: the policy version, grade set, lines, and
+  release settings; the inputs that produced the grades; who released and
+  when; and each released student's card, or a held student's held card.
+
+concrete CourseGradeSubject
+  Whom an override replaces a course grade for: an active student.
+
+concrete PolicySpecification
+  A course-grade policy: rating values, the Missing value, the rule for late
+  work without late days, skill weights, groups and their rows, attendance
+  rules, the grade set, and the grade lines.
+
 concrete LiveItem
   What one live answer addresses: a Questioning question, or one part of it,
   written `question#n` for the part or repetition n counting from one.
@@ -132,6 +150,22 @@ Commons registers concepts under their own names and uses additional named insta
 instantiate Accessing with
   Resource is Conversing.Conversation
   Holder is AudienceHolder
+
+instantiate Publishing as CourseGradePublishing with
+  Author is Authenticating.User
+  Material is CourseGradeMaterial
+
+instantiate Snapshotting as CourseGradeSnapshotting with
+  Subject is CourseGradePublishing.Edition
+  Value is CourseGradeRelease
+
+instantiate Policymaking with
+  Author is Authenticating.User
+  Specification is PolicySpecification
+
+instantiate Overriding with
+  Subject is CourseGradeSubject
+  Author is Authenticating.User
 
 instantiate Commissioning with
   Subject is Publishing.Edition

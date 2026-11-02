@@ -213,6 +213,7 @@ describe("deployment routes", () => {
           "moderate",
           "course:manage",
           "grade",
+          "grade-policies",
           "live:host",
           "student-records",
         ],

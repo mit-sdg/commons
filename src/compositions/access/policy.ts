@@ -310,3 +310,48 @@ export const mayNotMarkLectures = view(
       }),
     ),
 ).holds();
+
+/**
+ * The gradebook and course grades show every student's ratings, averages, and
+ * ranks, so a caller holding `grade` reads them only while not enrolled as an
+ * active student.
+ */
+export const mayReadClassGrades = view(
+  "(user) may read the class's grades",
+  ({ user }, _outputs, _bindings) => where(mayGrade({ user }), isNotActiveStudent({ user })),
+).holds();
+
+export const mayNotReadClassGrades = view(
+  "(user) may not read the class's grades",
+  ({ user }, _outputs, _bindings) => [
+    where(mayNotGrade({ user })),
+    where(isActiveStudent({ user })),
+  ],
+).holds();
+
+/** Changing policies, overrides, and releases, and downloading, needs `grade-policies`. */
+export const mayChangeCourseGrades = view(
+  "(user) may change course grades",
+  ({ user }, _outputs, _bindings) => [
+    where(
+      Roling._hasCapability({ user, context: COMMONS, capability: "grade-policies" }).is({
+        allowed: true,
+      }),
+      isNotActiveStudent({ user }),
+    ),
+    where(mayAdminister({ user }), isNotActiveStudent({ user })),
+  ],
+).holds();
+
+export const mayNotChangeCourseGrades = view(
+  "(user) may not change course grades",
+  ({ user }, _outputs, _bindings) => [
+    where(
+      Roling._hasCapability({ user, context: COMMONS, capability: "grade-policies" }).is({
+        allowed: false,
+      }),
+      mayNotAdminister({ user }),
+    ),
+    where(isActiveStudent({ user })),
+  ],
+).holds();

@@ -12,7 +12,14 @@ import {
   whether,
 } from "@mit-sdg/sync-engine/language";
 import { concepts, computations as c } from "../../concepts.ts";
-import { isActiveStudent, isNotActiveStudent, mayGrade, mayNotGrade } from "../access/policy.ts";
+import {
+  isActiveStudent,
+  isNotActiveStudent,
+  mayGrade,
+  mayNotGrade,
+  mayNotReadClassGrades,
+  mayReadClassGrades,
+} from "../access/policy.ts";
 import { activeUser } from "../access/session.ts";
 
 const { Assigning, Grading, Itemizing, Profiling, Rostering, StandardSetting, Submitting } =
@@ -1053,21 +1060,10 @@ export const GradesForItem = endpoint("/grades/for-item", ({ session, user, item
 
 export const GradesGradebook = endpoint("/grades/gradebook", ({ session, user }) =>
   receive({ session }).then(
-    where(activeUser({ session }).is({ user }), mayGrade({ user }))
+    where(activeUser({ session }).is({ user }), mayReadClassGrades({ user }))
       .then(respond({ gradebook: theGradebook({}) }))
       .named("success"),
-    where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
-      .then(respond({ error: "FORBIDDEN" }))
-      .named("forbidden"),
-  ),
-);
-
-export const GradesExport = endpoint("/grades/export", ({ session, user }) =>
-  receive({ session }).then(
-    where(activeUser({ session }).is({ user }), mayGrade({ user }))
-      .then(respond({ csv: "" }))
-      .named("success"),
-    where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
+    where(activeUser({ session }).is({ user }), mayNotReadClassGrades({ user }))
       .then(respond({ error: "FORBIDDEN" }))
       .named("forbidden"),
   ),

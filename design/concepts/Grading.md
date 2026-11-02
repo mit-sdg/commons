@@ -43,6 +43,8 @@ opaque ReleasedEntry
   A grade a release published, as `{ grade, learner }`.
 opaque HeldEntry
   A grade a release did not publish, as `{ grade, reason }`.
+opaque CourseRating
+  One grade without its rubric text, feedback, or history, as `{ learner, item, evidence, status, method, createdAt, updatedAt, criteria, judgments }`: each criterion as `{ criterion, kind, standard, name, maxPoints }`, and each judgment as `{ criterion, rating, score }`.
 ```
 
 ## State
@@ -199,4 +201,7 @@ _getGradesForLearner (learner: String) : many (grade: String, learner: String, i
   answers all of a learner's assessments in creation order
 _getGradesForItem (item: String) : many (grade: String, learner: String, item: String, evidence: String, grader: String, method: String, setupRevision: Number, criteria: Criteria, judgments: Judgments, feedback: String, status: String, version: Number, score: Number, outOf: Number, scored: Flag, createdAt: Date, updatedAt: Date, releasedAt: Date, history: History)
   answers all assessments on an item in creation order
+_courseRatings () : one (ratings: Seq<CourseRating>)
+  answers every grade in creation order, with judgments only for released grades
+  answers an empty sequence when there are none
 ```
