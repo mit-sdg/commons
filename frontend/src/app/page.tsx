@@ -219,13 +219,16 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
             <p className="text-2xl font-semibold">{released}</p>
             <p className="text-xs text-muted-foreground">released</p>
           </Link>
-          <div className="rounded-lg border border-border bg-card p-3">
+          <Link
+            href="/late-days"
+            className="rounded-lg border border-border bg-card p-3 hover:bg-muted/50 transition-colors"
+          >
             <p className="text-xs text-muted-foreground">Late days</p>
             <p className="text-2xl font-semibold">
               {lateBalance?.balance?.remaining ?? "—"}
             </p>
             <p className="text-xs text-muted-foreground">remaining</p>
-          </div>
+          </Link>
         </div>
       </div>
 

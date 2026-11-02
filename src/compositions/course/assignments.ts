@@ -26,7 +26,20 @@ const { Assigning, Grading, Notifying, Posting, Rostering, Submitting } = concep
 /** Which assignments belong to this learner? */
 export const theAssignmentsOf = former(
   "the assignments of (student)",
-  ({ student }, { assignment, release, dueOverride, releaseStatus }) =>
+  (
+    { student },
+    {
+      assignment,
+      release,
+      dueOverride,
+      releaseStatus,
+      title,
+      kind,
+      dueAt,
+      closeAt,
+      acceptsSubmissions,
+    },
+  ) =>
     each(
       Assigning._getAssigned({ assignee: student }).is({
         assignment,
@@ -35,8 +48,28 @@ export const theAssignmentsOf = former(
         status: releaseStatus,
       }),
     )
-      .where(Assigning._getAssignments({}).is({ assignment, status: "PUBLISHED" }))
-      .form({ assignment, release, dueOverride, status: releaseStatus }),
+      .where(
+        Assigning._getAssignments({}).is({
+          assignment,
+          status: "PUBLISHED",
+          title,
+          kind,
+          dueAt,
+          closeAt,
+          acceptsSubmissions,
+        }),
+      )
+      .form({
+        assignment,
+        release,
+        dueOverride,
+        status: releaseStatus,
+        title,
+        kind,
+        dueAt,
+        closeAt,
+        acceptsSubmissions,
+      }),
 );
 /** What is this assignment? */
 export const theAssignment = view(

@@ -575,7 +575,12 @@
             "assignment": "uuid#17",
             "release": "uuid#19",
             "dueOverride": null,
-            "status": "ASSIGNED"
+            "status": "ASSIGNED",
+            "title": "Homework 1 (rev)",
+            "kind": "HOMEWORK",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "acceptsSubmissions": true
           }
         ]
       }
@@ -707,7 +712,12 @@
             "assignment": "uuid#17",
             "release": "uuid#21",
             "dueOverride": null,
-            "status": "ASSIGNED"
+            "status": "ASSIGNED",
+            "title": "Homework 1 (rev)",
+            "kind": "HOMEWORK",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "acceptsSubmissions": true
           }
         ]
       }
@@ -748,13 +758,23 @@
             "assignment": "uuid#17",
             "release": "uuid#21",
             "dueOverride": null,
-            "status": "ASSIGNED"
+            "status": "ASSIGNED",
+            "title": "Homework 1 (rev)",
+            "kind": "HOMEWORK",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "acceptsSubmissions": true
           },
           {
             "assignment": "uuid#20",
             "release": "uuid#22",
             "dueOverride": null,
-            "status": "ASSIGNED"
+            "status": "ASSIGNED",
+            "title": "Homework 2",
+            "kind": "PROJECT",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "acceptsSubmissions": false
           }
         ]
       }
@@ -858,13 +878,23 @@
             "assignment": "uuid#17",
             "release": "uuid#25",
             "dueOverride": null,
-            "status": "ASSIGNED"
+            "status": "ASSIGNED",
+            "title": "Homework 1 (rev)",
+            "kind": "HOMEWORK",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "acceptsSubmissions": true
           },
           {
             "assignment": "uuid#20",
             "release": "uuid#26",
             "dueOverride": null,
-            "status": "ASSIGNED"
+            "status": "ASSIGNED",
+            "title": "Homework 2",
+            "kind": "PROJECT",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "acceptsSubmissions": false
           }
         ]
       }
@@ -898,13 +928,23 @@
             "assignment": "uuid#17",
             "release": "uuid#19",
             "dueOverride": "<date>",
-            "status": "ASSIGNED"
+            "status": "ASSIGNED",
+            "title": "Homework 1 (rev)",
+            "kind": "HOMEWORK",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "acceptsSubmissions": true
           },
           {
             "assignment": "uuid#20",
             "release": "uuid#27",
             "dueOverride": null,
-            "status": "ASSIGNED"
+            "status": "ASSIGNED",
+            "title": "Homework 2",
+            "kind": "PROJECT",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "acceptsSubmissions": false
           }
         ]
       }
@@ -952,13 +992,23 @@
             "assignment": "uuid#17",
             "release": "uuid#19",
             "dueOverride": null,
-            "status": "ASSIGNED"
+            "status": "ASSIGNED",
+            "title": "Homework 1 (rev)",
+            "kind": "HOMEWORK",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "acceptsSubmissions": true
           },
           {
             "assignment": "uuid#20",
             "release": "uuid#27",
             "dueOverride": null,
-            "status": "ASSIGNED"
+            "status": "ASSIGNED",
+            "title": "Homework 2",
+            "kind": "PROJECT",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "acceptsSubmissions": false
           }
         ]
       }
@@ -1285,13 +1335,23 @@
             "assignment": "uuid#17",
             "release": "uuid#19",
             "dueOverride": null,
-            "status": "ASSIGNED"
+            "status": "ASSIGNED",
+            "title": "Homework 1 (rev)",
+            "kind": "HOMEWORK",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "acceptsSubmissions": true
           },
           {
             "assignment": "uuid#20",
             "release": "uuid#27",
             "dueOverride": null,
-            "status": "ASSIGNED"
+            "status": "ASSIGNED",
+            "title": "Homework 2",
+            "kind": "PROJECT",
+            "dueAt": "<date>",
+            "closeAt": "<date>",
+            "acceptsSubmissions": false
           }
         ]
       }

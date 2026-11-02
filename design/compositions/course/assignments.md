@@ -32,7 +32,9 @@ later roster or assignment change is the only automatic retry opportunity.
 
 An active student reads
 [their published releases](former:Course.assignments.theAssignmentsOf) with
-[Course.assignments.ForMe](reaction:Course.assignments.ForMe). The
+[Course.assignments.ForMe](reaction:Course.assignments.ForMe): each release's due
+override beside the assignment's title, kind, due and close dates, and whether it
+accepts submissions, so one read lists the student's work. The
 [theAssignment view](view:Course.assignments.theAssignment) relates one release to its current
 published assignment, so [Course.assignments.GetAssignment](reaction:Course.assignments.GetAssignment) returns detail
 when [learner access](view:Course.assignments.mayReadLearnerAssignment) holds: a published assignment assigned to the active learner, or an archived assignment with their own released or excused assessment. Other work appears as `null`. The response also reports current `canSubmit` eligibility; historical access cannot permit new submissions. [Course.assignments.StaffSummary](reaction:Course.assignments.StaffSummary) gives callers with [staff detail access](view:Course.assignments.mayReadStaffAssignment) (`course:manage` or `grade`) the detail for one assignment. Assignment mutations remain restricted to course management. [Course.assignments.StaffList](reaction:Course.assignments.StaffList) gives the same callers

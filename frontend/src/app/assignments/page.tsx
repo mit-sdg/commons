@@ -10,16 +10,16 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@/hooks/use-query";
-import { api } from "@/lib/api";
 import { assignmentTypeLabel } from "@/lib/assignment-types";
 import { useAuth } from "@/lib/auth";
 import { type Assessment, assessmentForEvidence } from "@/lib/grading";
-
+import { handedInAttempt, overdue } from "@/lib/late-days";
 import {
   loadAssignments,
   loadGradesForMe,
+  loadLateDaysList,
   loadRosterMe,
-  loadSubmissionLatest,
+  loadSubmissionsForStudent,
 } from "@/lib/lms";
 import { cn } from "@/lib/utils";
 
@@ -50,56 +50,15 @@ export default function AssignmentsPage() {
     session && rosterData?.seat ? () => loadGradesForMe() : null,
     [session, rosterData],
   );
-  const { data: submissionsData } = useQuery<{
-    submissions: {
-      assignment: string;
-      submission: string;
-      submittedAt: string;
-      number: number;
-      status: string;
-    }[];
-  }>(
-    me && asgnData
-      ? async () => {
-          if (!asgnData?.assignments) return { submissions: [] };
-          const allSubs = await Promise.all(
-            asgnData.assignments.map(async (a) => {
-              const res = await loadSubmissionLatest(
-                a.assignment,
-                String(me.user),
-              );
-              if (!res.submission) return null;
-              return { ...res.submission, assignment: a.assignment };
-            }),
-          );
-          return {
-            submissions: allSubs.filter(
-              (submission): submission is NonNullable<typeof submission> =>
-                submission !== null,
-            ),
-          };
-        }
+  const { data: submissionsData } = useQuery(
+    me && rosterData?.seat
+      ? () => loadSubmissionsForStudent(String(me.user))
       : null,
-    [me, asgnData],
+    [me, rosterData],
   );
-
-  const { data: detailsData } = useQuery<Record<string, unknown>>(
-    asgnData?.assignments
-      ? async () => {
-          const map: Record<string, unknown> = {};
-          await Promise.all(
-            asgnData.assignments.map(async (a) => {
-              const res = await api.assignments.get({
-                assignment: a.assignment,
-              });
-              if (!("error" in res) && res.assignment)
-                map[a.assignment] = res.assignment;
-            }),
-          );
-          return map;
-        }
-      : null,
-    [asgnData],
+  const { data: lateDaysData } = useQuery(
+    session && rosterData?.seat ? () => loadLateDaysList() : null,
+    [session, rosterData],
   );
 
   const filters: { key: FilterKey; label: string }[] = [
@@ -111,26 +70,19 @@ export default function AssignmentsPage() {
   ];
 
   const assignments = asgnData?.assignments ?? [];
-  const details = (detailsData ?? {}) as Record<
-    string,
-    {
-      title: string;
-      kind: string;
-      dueAt: string;
-      closeAt?: string;
-      status: string;
-      availableAt: string;
-    }
-  >;
-  const submissions = submissionsData?.submissions ?? [];
   const grades = (gradesData?.grades ?? []) as Assessment[];
-  const subMap = new Map(submissions.map((s) => [s.assignment, s]));
-
+  const attempts = submissionsData?.submissions ?? [];
+  const standingDays = new Map(
+    (lateDaysData?.uses ?? [])
+      .filter((use) => use.status === "APPLIED")
+      .map((use) => [String(use.item), use.days]),
+  );
   const now = new Date();
 
-  const filtered = assignments.filter((a) => {
-    const detail = details[a.assignment];
-    const sub = subMap.get(a.assignment);
+  const rows = assignments.map((a) => {
+    const sub = handedInAttempt(
+      attempts.filter((attempt) => attempt.assignment === a.assignment),
+    );
     const grade = me
       ? assessmentForEvidence(
           grades,
@@ -139,15 +91,28 @@ export default function AssignmentsPage() {
           sub?.submission ?? "",
         )
       : undefined;
-    const dueAt = a.dueOverride ?? detail?.dueAt;
+    const settled = grade?.status === "RELEASED" || grade?.status === "EXCUSED";
+    const isOverdue =
+      a.acceptsSubmissions &&
+      !settled &&
+      lateDaysData !== null &&
+      overdue({
+        handedIn: sub !== undefined,
+        dueAt: a.dueAt,
+        dueOverride: a.dueOverride,
+        lateDays: standingDays.get(String(a.assignment)) ?? 0,
+        unitHours: lateDaysData.unitHours,
+        at: now,
+      });
+    return { a, sub, grade, settled, isOverdue };
+  });
 
-    if (search && detail) {
+  const filtered = rows.filter(({ a, sub, grade, settled, isOverdue }) => {
+    if (search) {
       const q = search.toLowerCase();
       if (
-        !detail.title?.toLowerCase().includes(q) &&
-        !assignmentTypeLabel(detail.kind ?? "")
-          .toLowerCase()
-          .includes(q)
+        !a.title.toLowerCase().includes(q) &&
+        !assignmentTypeLabel(a.kind).toLowerCase().includes(q)
       )
         return false;
     }
@@ -155,18 +120,8 @@ export default function AssignmentsPage() {
     if (filter === "all") return true;
     if (filter === "submitted") return !!sub;
     if (filter === "graded") return grade?.status === "RELEASED";
-    if (filter === "upcoming") {
-      if (sub || grade?.status === "RELEASED" || grade?.status === "EXCUSED")
-        return false;
-      if (dueAt) return new Date(dueAt) > now;
-      return true;
-    }
-    if (filter === "overdue") {
-      if (sub) return false;
-      if (detail?.closeAt) return new Date(detail.closeAt) < now;
-      if (dueAt) return new Date(dueAt) < now;
-      return false;
-    }
+    if (filter === "upcoming") return !sub && !settled && !isOverdue;
+    if (filter === "overdue") return isOverdue;
     return true;
   });
 
@@ -235,20 +190,8 @@ export default function AssignmentsPage() {
         />
       ) : (
         <div className="space-y-2">
-          {filtered.map((a) => {
-            const detail = details[a.assignment];
-            const sub = subMap.get(a.assignment);
-            const grade = me
-              ? assessmentForEvidence(
-                  grades,
-                  String(me.user),
-                  a.assignment,
-                  sub?.submission ?? "",
-                )
-              : undefined;
-            const due = a.dueOverride ?? detail?.dueAt;
-            const isOverdue = due && new Date(due) < now && !sub;
-            const title = detail?.title ?? a.assignment.slice(0, 8);
+          {filtered.map(({ a, sub, grade, isOverdue }) => {
+            const due = a.dueOverride ?? a.dueAt;
 
             return (
               <Link
@@ -261,13 +204,11 @@ export default function AssignmentsPage() {
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="font-medium truncate">{title}</p>
-                    {detail?.kind && (
-                      <Fact.Kind>{assignmentTypeLabel(detail.kind)}</Fact.Kind>
-                    )}
+                    <p className="font-medium truncate">{a.title}</p>
+                    <Fact.Kind>{assignmentTypeLabel(a.kind)}</Fact.Kind>
                   </div>
                   <Facts className="mt-1 text-xs text-muted-foreground">
-                    {due && <Fact.Due verb="Due" at={due} />}
+                    <Fact.Due verb="Due" at={due} />
                     {sub && (
                       <span className="text-muted-foreground">
                         Attempt #{sub.number}

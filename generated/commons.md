@@ -3270,7 +3270,7 @@ Authored path: `Course.grades.mayReadItem`.
 ### (user) may read learner assignment (assignment)
 
 Authored path: `Course.assignments.mayReadLearnerAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 38.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
 
 ```view
 (user) may read learner assignment (assignment) — inputs (user, assignment); outputs (); bindings (status)
@@ -3288,7 +3288,7 @@ Authored path: `Course.assignments.mayReadLearnerAssignment`.
 ### (user) may read staff assignment details
 
 Authored path: `Course.assignments.mayReadStaffAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 38.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
 
 ```view
 (user) may read staff assignment details — inputs (user); outputs (); bindings ()
@@ -3299,7 +3299,7 @@ Authored path: `Course.assignments.mayReadStaffAssignment`.
 ### (user) may submit assignment (assignment) at (at)
 
 Authored path: `Course.assignments.maySubmitAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 64.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 66.
 
 ```view
 (user) may submit assignment (assignment) at (at) — inputs (user, assignment, at); outputs (); bindings (detail, section, allowed)
@@ -3608,7 +3608,7 @@ the asks out about (round) — inputs (round); outputs (asksOut); bindings () �
 ### the assignment (assignment)
 
 Authored path: `Course.assignments.theAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 36.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 38.
 
 ```view
 the assignment (assignment) — inputs (assignment); outputs (detail); bindings () — answers at most one (detail)
@@ -4532,14 +4532,19 @@ Authored path: `Course.assignments.theAssignmentsOf`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 34.
 
 ```former
-Former "the assignments of (student)" — inputs (student); bindings (assignment, release, dueOverride, releaseStatus); promises exactly one record — forms:
+Former "the assignments of (student)" — inputs (student); bindings (assignment, release, dueOverride, releaseStatus, title, kind, dueAt, closeAt, acceptsSubmissions); promises exactly one record — forms:
   each Assigning._getAssigned (assignee: student) has (assignment, dueOverride, release, status: releaseStatus)
-    where Assigning._getAssignments () has (assignment, status: "PUBLISHED")
+    where Assigning._getAssignments () has (acceptsSubmissions, assignment, closeAt, dueAt, kind, status: "PUBLISHED", title)
     form a record of
+      acceptsSubmissions
       assignment
+      closeAt
+      dueAt
       dueOverride
+      kind
       release
       status: releaseStatus
+      title
 ```
 
 ### the attempts for (assignment) by (submitter)
@@ -6308,7 +6313,7 @@ Former "the selected summary of (conversation) for (reader)" — inputs (convers
 ### the staff assignments ()
 
 Authored path: `Course.assignments.theStaffAssignments`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 39.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 41.
 
 ```former
 Former "the staff assignments ()" — inputs (); bindings (assignment, author, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, status, createdAt, updatedAt); promises exactly one record — forms:
@@ -9006,7 +9011,7 @@ then
 
 Authored path: `Course.assignments.Archive`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 7.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 48.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/archive", requestId, session)
@@ -9021,7 +9026,7 @@ then
 
 Authored path: `Course.assignments.Archive`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 7.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 48.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/archive", requestId, session)
@@ -9037,7 +9042,7 @@ then
 
 Authored path: `Course.assignments.Archive`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 7.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 48.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
 
 ```reaction
 when Assigning.archive (assignment, at, result.assignment: archived), asked by Course.assignments.Archive:success
@@ -9050,7 +9055,7 @@ then
 ### Course.assignments.AssignmentReleaseNotifiesStudent
 
 Authored path: `Course.assignments.AssignmentReleaseNotifiesStudent`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 61.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 63.
 
 ```reaction
 when Assigning.assign (assignee, assignment, at)
@@ -9080,7 +9085,7 @@ then
 
 Authored path: `Course.assignments.ClearDueOverride`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 10.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 49.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 51.
 
 ```reaction
 when RequestBoundary.request (assignee, assignment, path: "/assignments/clear-due-override", requestId, session)
@@ -9095,7 +9100,7 @@ then
 
 Authored path: `Course.assignments.ClearDueOverride`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 10.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 49.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 51.
 
 ```reaction
 when RequestBoundary.request (assignee, assignment, path: "/assignments/clear-due-override", requestId, session)
@@ -9110,7 +9115,7 @@ then
 
 Authored path: `Course.assignments.ClearDueOverride`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 10.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 49.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 51.
 
 ```reaction
 when Assigning.clearDueOverride (assignee, assignment, release), asked by Course.assignments.ClearDueOverride:success
@@ -9124,7 +9129,7 @@ then
 
 Authored path: `Course.assignments.CreateDraft`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 4.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 52.
 
 ```reaction
 when RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, targets, title)
@@ -9139,7 +9144,7 @@ then
 
 Authored path: `Course.assignments.CreateDraft`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 4.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 52.
 
 ```reaction
 when RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, targets, title)
@@ -9155,7 +9160,7 @@ then
 
 Authored path: `Course.assignments.CreateDraft`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 4.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 52.
 
 ```reaction
 when Assigning.createDraft (acceptsSubmissions, at, audience, author: user, availableAt, closeAt, dueAt, instructions, kind, targets, title, assignment), asked by Course.assignments.CreateDraft:success
@@ -9169,7 +9174,7 @@ then
 
 Authored path: `Course.assignments.ForMe`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 35.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 51.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 53.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/for-me", requestId, session)
@@ -9184,7 +9189,7 @@ then
 
 Authored path: `Course.assignments.ForMe`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 35.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 51.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 53.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/for-me", requestId, session)
@@ -9198,8 +9203,8 @@ then
 ### Course.assignments.GetAssignment:forbidden
 
 Authored path: `Course.assignments.GetAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 37.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 52.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 39.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 54.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
@@ -9213,8 +9218,8 @@ then
 ### Course.assignments.GetAssignment:found
 
 Authored path: `Course.assignments.GetAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 37.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 52.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 39.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 54.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
@@ -9232,8 +9237,8 @@ then
 ### Course.assignments.GetAssignment:unavailable
 
 Authored path: `Course.assignments.GetAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 37.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 52.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 39.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 54.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
@@ -9249,7 +9254,7 @@ then
 
 Authored path: `Course.assignments.Publish`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 6.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 53.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 55.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/publish", requestId, session)
@@ -9264,7 +9269,7 @@ then
 
 Authored path: `Course.assignments.Publish`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 6.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 53.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 55.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/publish", requestId, session)
@@ -9280,7 +9285,7 @@ then
 
 Authored path: `Course.assignments.Publish`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 6.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 53.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 55.
 
 ```reaction
 when Assigning.publish (assignment, at, result.assignment: published), asked by Course.assignments.Publish:success
@@ -9338,7 +9343,7 @@ then
 
 Authored path: `Course.assignments.Revise`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 5.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 54.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 56.
 
 ```reaction
 when RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, targets, title)
@@ -9353,7 +9358,7 @@ then
 
 Authored path: `Course.assignments.Revise`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 5.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 54.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 56.
 
 ```reaction
 when RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, targets, title)
@@ -9369,7 +9374,7 @@ then
 
 Authored path: `Course.assignments.Revise`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 5.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 54.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 56.
 
 ```reaction
 when Assigning.revise (acceptsSubmissions, assignment, at, audience, availableAt, closeAt, dueAt, instructions, kind, targets, title, result.assignment: revised), asked by Course.assignments.Revise:success
@@ -9416,7 +9421,7 @@ then
 
 Authored path: `Course.assignments.SetDueOverride`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 9.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 55.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 57.
 
 ```reaction
 when RequestBoundary.request (assignee, assignment, dueAt, path: "/assignments/set-due-override", requestId, session)
@@ -9431,7 +9436,7 @@ then
 
 Authored path: `Course.assignments.SetDueOverride`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 9.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 55.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 57.
 
 ```reaction
 when RequestBoundary.request (assignee, assignment, dueAt, path: "/assignments/set-due-override", requestId, session)
@@ -9446,7 +9451,7 @@ then
 
 Authored path: `Course.assignments.SetDueOverride`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 9.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 55.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 57.
 
 ```reaction
 when Assigning.setDueOverride (assignee, assignment, dueAt, release), asked by Course.assignments.SetDueOverride:success
@@ -9459,8 +9464,8 @@ then
 ### Course.assignments.StaffList:forbidden
 
 Authored path: `Course.assignments.StaffList`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 38.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 56.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 58.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/staff-list", requestId, session)
@@ -9474,8 +9479,8 @@ then
 ### Course.assignments.StaffList:success
 
 Authored path: `Course.assignments.StaffList`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 38.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 56.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 58.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/staff-list", requestId, session)
@@ -9489,8 +9494,8 @@ then
 ### Course.assignments.StaffSummary:forbidden
 
 Authored path: `Course.assignments.StaffSummary`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 38.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 57.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 59.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
@@ -9505,8 +9510,8 @@ then
 ### Course.assignments.StaffSummary:found
 
 Authored path: `Course.assignments.StaffSummary`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 38.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 57.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 59.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
@@ -9521,8 +9526,8 @@ then
 ### Course.assignments.StaffSummary:missing
 
 Authored path: `Course.assignments.StaffSummary`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 38.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 57.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 59.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
@@ -9537,8 +9542,8 @@ then
 ### Course.assignments.Submit:success
 
 Authored path: `Course.assignments.Submit`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 41.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 58.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 60.
 
 ```reaction
 when RequestBoundary.request (assignment, content, path: "/assignments/submit", requestId, session)
@@ -9553,8 +9558,8 @@ then
 ### Course.assignments.Submit:success#2
 
 Authored path: `Course.assignments.Submit`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 41.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 58.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 60.
 
 ```reaction
 when Posting.create (at, author: user, content, post), asked by Course.assignments.Submit:success
@@ -9567,8 +9572,8 @@ then
 ### Course.assignments.Submit:success#3
 
 Authored path: `Course.assignments.Submit`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 41.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 58.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 60.
 
 ```reaction
 when Submitting.submit (artifact: post, assignment, at, submitter: user, submission), asked by Course.assignments.Submit:success#2
@@ -9581,8 +9586,8 @@ then
 ### Course.assignments.Submit:unavailable
 
 Authored path: `Course.assignments.Submit`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 41.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 58.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 60.
 
 ```reaction
 when RequestBoundary.request (assignment, content, path: "/assignments/submit", requestId, session)

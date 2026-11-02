@@ -10,7 +10,7 @@ An active student uses [Course.lateDays.Apply](reaction:Course.lateDays.Apply) t
 [Course.lateDays.Change](reaction:Course.lateDays.Change) replaces the amount of that student's standing use.
 [Course.lateDays.Cancel](reaction:Course.lateDays.Cancel) cancels the standing use without removing its history.
 [Course.lateDays.List](reaction:Course.lateDays.List) forms the student's
-[complete applied and canceled use history](former:Course.lateDays.theLateDayUsesOf) beside the policy's hours per day, which the client uses to calculate effective due and close dates.
+[complete applied and canceled use history](former:Course.lateDays.theLateDayUsesOf) beside the policy's hours per day and per-assignment limit.
 [Course.lateDays.Balance](reaction:Course.lateDays.Balance) forms the learner's
 [current granted, used, and remaining balance](former:Course.lateDays.theLateDayBalanceOf)
 for the learner or a caller holding `student-records`. Requests naming a non-student, and unauthorized
@@ -23,7 +23,7 @@ student's standing use. [Course.lateDays.ForAssignment](reaction:Course.lateDays
 `student-records` capability; general policy reads return `FORBIDDEN` when it is
 missing.
 
-Banking owns balance and per-item limits but treats an assignment as opaque. The application permits applying or changing days only for a published assignment released to the learner. Effective due and close dates add the standing use's days times the policy unit, and the learner submission gate uses the effective close. A later archive prevents further changes but leaves use history in place.
+Banking owns balance and per-item limits but treats an assignment as opaque. The application permits applying or changing days only for a published assignment released to the learner; a student may cancel a standing use on any assignment, including one archived since. Days may be applied, changed, or canceled at any time, before or after the due date. No backend computes an effective due date: the student's due date is their due override or the assignment's due date, and pages that show lateness add the standing use's days times the hours per day. The close date is a separate cutoff that late days don't move, and the submission gate reads it as set. A later archive prevents further changes but leaves use history in place.
 
 ```endpoints
 Course.lateDays.Apply at /late-days/apply
