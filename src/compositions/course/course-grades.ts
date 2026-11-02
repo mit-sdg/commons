@@ -134,21 +134,16 @@ export const theOpenRelease = view(
 /** Every policy, without its specification. */
 export const thePolicies = former(
   "the course-grade policies",
-  (_inputs, { policy, name, version, author, savedAt, final }) =>
-    each(Policymaking._policies({}).is({ policy, name, version, author, savedAt, final })).form({
-      policy,
-      name,
-      version,
-      author,
-      savedAt,
-      final,
-    }),
+  (_inputs, { policy, name, version, author, authorName, savedAt, final }) =>
+    each(Policymaking._policies({}).is({ policy, name, version, author, savedAt, final }))
+      .where(whether(Profiling._getProfileFields({ user: author }).is({ displayName: authorName })))
+      .form({ policy, name, version, author, authorName, savedAt, final }),
 );
 
 /** Every release to the class, newest first, without the inputs it was computed from. */
 export const theReleaseHistory = former(
   "the course-grade release history",
-  (_inputs, { edition, open, openedAt, closedAt, value, summary }) =>
+  (_inputs, { edition, open, openedAt, closedAt, author, authorName, value, summary }) =>
     each(
       CourseGradePublishing._editionsFor({ material: COURSE_GRADES }).is({
         edition,
@@ -158,10 +153,12 @@ export const theReleaseHistory = former(
       }),
     )
       .where(
+        CourseGradePublishing._edition({ edition }).is({ author }),
+        whether(Profiling._getProfileFields({ user: author }).is({ displayName: authorName })),
         whether(CourseGradeSnapshotting._snapshot({ subject: edition }).is({ value })),
         compute(c.releaseSummary, { value }, summary),
       )
-      .form({ edition, open, openedAt, closedAt, release: summary }),
+      .form({ edition, open, openedAt, closedAt, authorName, release: summary }),
 );
 
 /** The standing updates of single students, newest first, without their inputs. */
@@ -206,7 +203,7 @@ export const Read = endpoint("/course-grades/read", ({ session, user }) =>
 
 export const ReadPolicy = endpoint(
   "/course-grades/policy",
-  ({ session, user, policy, name, version, specification, author, savedAt, final }) =>
+  ({ session, user, policy, name, version, specification, author, authorName, savedAt, final }) =>
     receive({ session, policy }).then(
       where(
         activeUser({ session }).is({ user }),
@@ -219,8 +216,9 @@ export const ReadPolicy = endpoint(
           savedAt,
           final,
         }),
+        whether(Profiling._getProfileFields({ user: author }).is({ displayName: authorName })),
       )
-        .then(respond({ policy, name, version, specification, author, savedAt, final }))
+        .then(respond({ policy, name, version, specification, author, authorName, savedAt, final }))
         .named("success"),
       where(
         activeUser({ session }).is({ user }),

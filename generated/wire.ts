@@ -632,7 +632,8 @@ export type CommonsWire = {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
-      "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policy"]>>>, ["author"]>>;
+      "author": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policy"]>>>, ["author"]>]>>;
+      "authorName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
       "final": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policy"]>>>, ["final"]>>;
       "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policy"]>>>, ["name"]>>;
       "policy": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policy"]>[0], ["policy"]>>;
@@ -649,21 +650,23 @@ export type CommonsWire = {
     output: {
       "page": {
         "inputs": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["courseGradeInputs"]["fn"]>>, []>>;
-        "policies": {
-          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policies"]>>>, ["author"]>>;
+        "policies": ({
+          "author": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policies"]>>>, ["author"]>]>>;
+          "authorName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
           "final": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policies"]>>>, ["final"]>>;
           "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policies"]>>>, ["name"]>>;
           "policy": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policies"]>>>, ["policy"]>>;
           "savedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policies"]>>>, ["savedAt"]>>;
           "version": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policies"]>>>, ["version"]>>;
-        }[];
-        "releases": {
+        })[];
+        "releases": ({
+          "authorName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
           "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["CourseGradePublishing"]["_editionsFor"]>>>, ["closedAt"]>>;
-          "edition": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradeSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["CourseGradePublishing"]["_editionsFor"]>>>, ["edition"]>]>>;
+          "edition": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradePublishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradeSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["CourseGradePublishing"]["_editionsFor"]>>>, ["edition"]>]>>;
           "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["CourseGradePublishing"]["_editionsFor"]>>>, ["open"]>>;
           "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["CourseGradePublishing"]["_editionsFor"]>>>, ["openedAt"]>>;
           "release": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["releaseSummary"]["fn"]>>, []>>;
-        }[];
+        })[];
         "sections": {
           "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["name"]>>;
           "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>>;
@@ -5858,7 +5861,8 @@ export type CommonsWireHttp = {
       "policy": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policy"]>[0], ["policy"]>>;
     };
     output: {
-      "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policy"]>>>, ["author"]>>;
+      "author": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policy"]>>>, ["author"]>]>>;
+      "authorName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
       "final": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policy"]>>>, ["final"]>>;
       "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policy"]>>>, ["name"]>>;
       "policy": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policy"]>[0], ["policy"]>>;
@@ -5873,21 +5877,23 @@ export type CommonsWireHttp = {
     output: {
       "page": {
         "inputs": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["courseGradeInputs"]["fn"]>>, []>>;
-        "policies": {
-          "author": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policies"]>>>, ["author"]>>;
+        "policies": ({
+          "author": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policies"]>>>, ["author"]>]>>;
+          "authorName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
           "final": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policies"]>>>, ["final"]>>;
           "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policies"]>>>, ["name"]>>;
           "policy": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policies"]>>>, ["policy"]>>;
           "savedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policies"]>>>, ["savedAt"]>>;
           "version": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["_policies"]>>>, ["version"]>>;
-        }[];
-        "releases": {
+        })[];
+        "releases": ({
+          "authorName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
           "closedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["CourseGradePublishing"]["_editionsFor"]>>>, ["closedAt"]>>;
-          "edition": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradeSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["CourseGradePublishing"]["_editionsFor"]>>>, ["edition"]>]>>;
+          "edition": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradePublishing"]["_edition"]>[0], ["edition"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradeSnapshotting"]["_snapshot"]>[0], ["subject"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["CourseGradePublishing"]["_editionsFor"]>>>, ["edition"]>]>>;
           "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["CourseGradePublishing"]["_editionsFor"]>>>, ["open"]>>;
           "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["CourseGradePublishing"]["_editionsFor"]>>>, ["openedAt"]>>;
           "release": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["releaseSummary"]["fn"]>>, []>>;
-        }[];
+        })[];
         "sections": {
           "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["name"]>>;
           "section": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSections"]>>>, ["section"]>>;

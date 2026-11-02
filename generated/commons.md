@@ -5152,10 +5152,12 @@ Authored path: `Course.courseGrades.thePolicies`.
 - Covered by [Course grades](../design/compositions/course/course-grades.md), line 55.
 
 ```former
-Former "the course-grade policies" — inputs (); bindings (policy, name, version, author, savedAt, final); promises exactly one record — forms:
+Former "the course-grade policies" — inputs (); bindings (policy, name, version, author, authorName, savedAt, final); promises exactly one record — forms:
   each Policymaking._policies () has (author, final, name, policy, savedAt, version)
+    where whether Profiling._getProfileFields (user: author) has (displayName: authorName)
     form a record of
       author
+      authorName
       final
       name
       policy
@@ -5169,11 +5171,14 @@ Authored path: `Course.courseGrades.theReleaseHistory`.
 - Covered by [Course grades](../design/compositions/course/course-grades.md), line 56.
 
 ```former
-Former "the course-grade release history" — inputs (); bindings (edition, open, openedAt, closedAt, value, summary); promises exactly one record — forms:
+Former "the course-grade release history" — inputs (); bindings (edition, open, openedAt, closedAt, author, authorName, value, summary); promises exactly one record — forms:
   each CourseGradePublishing._editionsFor (material: "course-grades") has (closedAt, edition, open, openedAt)
+    where CourseGradePublishing._edition (edition) has (author)
+    where whether Profiling._getProfileFields (user: author) has (displayName: authorName)
     where whether CourseGradeSnapshotting._snapshot (subject: edition) has (value)
     where summary is releaseSummary (value)
     form a record of
+      authorName
       closedAt
       edition
       open
@@ -10558,8 +10563,9 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may read the class's grades" with (user)
   Policymaking._policy (policy) has (author, final, name, savedAt, specification, version)
+  whether Profiling._getProfileFields (user: author) has (displayName: authorName)
 then
-  RequestBoundary.respond (author, final, name, policy, requestId, savedAt, specification, version)
+  RequestBoundary.respond (author, authorName, final, name, policy, requestId, savedAt, specification, version)
 ```
 
 ### Course.courseGrades.ReadVersion:forbidden

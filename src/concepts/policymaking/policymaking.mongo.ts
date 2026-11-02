@@ -13,7 +13,7 @@ interface PolicyDoc {
   /** The trimmed, lower-cased name that keeps names unique. */
   key: string;
   version: number;
-  specification: unknown;
+  specification: object;
   author: string;
   savedAt: Date;
 }
@@ -22,7 +22,7 @@ interface VersionDoc {
   _id: string;
   policy: string;
   number: number;
-  specification: unknown;
+  specification: object;
   author: string;
   savedAt: Date;
 }
@@ -63,7 +63,7 @@ export class MongoPolicymakingConcept {
     at,
   }: {
     name: string;
-    specification: unknown;
+    specification: object;
     author: string;
     at: Date;
   }) {
@@ -104,7 +104,7 @@ export class MongoPolicymakingConcept {
   }: {
     policy: string;
     version: number;
-    specification: unknown;
+    specification: object;
     author: string;
     at: Date;
   }) {

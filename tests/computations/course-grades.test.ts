@@ -430,7 +430,9 @@ describe("the download and the policy's shape", () => {
 
   test("a policy is checked before it is saved", () => {
     expect(policyIsWellFormed({ specification: policy() })).toBe(true);
-    expect(policyIsWellFormed({ specification: { ...policy(), late: "sometimes" } })).toBe(false);
+    expect(policyIsWellFormed({ specification: { ...policy(), late: "sometimes" } as never })).toBe(
+      false,
+    );
     const p = policy();
     p.groups[0]!.rows.push({
       key: "x",
@@ -441,6 +443,6 @@ describe("the download and the policy's shape", () => {
       from: "all",
     } as never);
     expect(policyIsWellFormed({ specification: p })).toBe(false);
-    expect(policyIsWellFormed({ specification: null })).toBe(false);
+    expect(policyIsWellFormed({ specification: null as never })).toBe(false);
   });
 });

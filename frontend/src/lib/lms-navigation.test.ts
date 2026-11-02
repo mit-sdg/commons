@@ -28,7 +28,7 @@ describe("Commons navigation", () => {
     expect(
       lmsNavigation(true).find(({ href }) => href === "/staff/gradebook")
         ?.label,
-    ).toBe("Gradebook");
+    ).toBe("Course grades");
   });
 
   test("class settings is offered only to a course manager", () => {
@@ -93,7 +93,11 @@ test("grouped navigation keeps late-day staff and graders on authorized destinat
     courseSectionNavigation("/staff/skills", (c) => c === "grade").map(
       (i) => i.href,
     ),
-  ).toEqual(["/staff/gradebook", "/staff/skills"]);
+  ).toEqual([
+    "/staff/gradebook",
+    "/staff/gradebook/assessments",
+    "/staff/skills",
+  ]);
   expect(
     coursePrimaryNavigation(true, () => true).some(
       (i) => i.href === "/staff/skills" || i.href === "/staff/class",

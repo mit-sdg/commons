@@ -962,8 +962,8 @@ const finite = (value: unknown): value is number =>
 const text = (value: unknown): value is string => typeof value === "string";
 
 /** Whether a value is a complete policy specification, checked before it is saved. */
-export function policyIsWellFormed({ specification }: { specification: unknown }): boolean {
-  const spec = specification as CoursePolicy;
+export function policyIsWellFormed({ specification }: { specification: CoursePolicy }): boolean {
+  const spec = specification as CoursePolicy | null;
   if (spec === null || typeof spec !== "object") return false;
   if (!spec.ratings || !RATING_NAMES.every((name) => finite(spec.ratings[name]))) return false;
   if (!finite(spec.missing) || !["missing", "graded"].includes(spec.late)) return false;
@@ -1065,11 +1065,11 @@ export function validReleaseSettings({
   includeOverrides,
   release,
 }: {
-  dueBy: unknown;
-  breakdown: unknown;
-  letter: unknown;
-  includeOverrides: unknown;
-  release: unknown;
+  dueBy: string;
+  breakdown: boolean;
+  letter: boolean;
+  includeOverrides: boolean;
+  release: string[];
 }): boolean {
   return (
     typeof dueBy === "string" &&

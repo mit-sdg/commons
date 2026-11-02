@@ -759,12 +759,12 @@ function StaffAssignmentDetailPageContent({
   return (
     <PageContainer>
       <BackLink
-        href={canManage ? "/staff/assignments" : "/staff/gradebook"}
+        href={canManage ? "/staff/assignments" : "/staff/gradebook/assessments"}
         onClick={(event) => {
           if (!setupDirty && !gradingDirty) return;
           event.preventDefault();
           setPendingLeave(
-            canManage ? "/staff/assignments" : "/staff/gradebook",
+            canManage ? "/staff/assignments" : "/staff/gradebook/assessments",
           );
         }}
       >
