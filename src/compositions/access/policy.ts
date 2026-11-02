@@ -265,3 +265,48 @@ export const mayNotEditPost = view(
     ),
   ],
 ).holds();
+
+/** Lecture attendance is visible to anyone carrying a staff capability or `live:host`. */
+export const mayViewAttendance = view(
+  "(user) may view lecture attendance",
+  ({ user }, _outputs, _bindings) => [
+    where(mayViewStaffCalendar({ user })),
+    where(
+      Roling._hasCapability({ user, context: COMMONS, capability: "live:host" }).is({
+        allowed: true,
+      }),
+    ),
+  ],
+).holds();
+
+export const mayNotViewAttendance = view(
+  "(user) may not view lecture attendance",
+  ({ user }, _outputs, _bindings) =>
+    where(
+      mayNotViewStaffCalendar({ user }),
+      Roling._hasCapability({ user, context: COMMONS, capability: "live:host" }).is({
+        allowed: false,
+      }),
+    ),
+).holds();
+
+/** Marking a run as a lecture needs `live:host` or `course:manage`. */
+export const mayMarkLectures = view("(user) may mark lectures", ({ user }, _outputs, _bindings) => [
+  where(mayManageCourse({ user })),
+  where(
+    Roling._hasCapability({ user, context: COMMONS, capability: "live:host" }).is({
+      allowed: true,
+    }),
+  ),
+]).holds();
+
+export const mayNotMarkLectures = view(
+  "(user) may not mark lectures",
+  ({ user }, _outputs, _bindings) =>
+    where(
+      mayNotManageCourse({ user }),
+      Roling._hasCapability({ user, context: COMMONS, capability: "live:host" }).is({
+        allowed: false,
+      }),
+    ),
+).holds();

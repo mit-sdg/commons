@@ -20,8 +20,9 @@ import {
   theQuestionCount,
 } from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
+import { LECTURES } from "./lectures.ts";
 
-const { Publishing, Questioning, Relaying, Sharing } = concepts;
+const { Pinning, Publishing, Questioning, Relaying, Sharing } = concepts;
 
 /**
  * Every questionnaire on the staff shelf, newest first, with its open run when
@@ -90,6 +91,7 @@ export const theQuestionnaire = former(
       openedAt,
       closedAt,
       token,
+      lecture,
     },
   ) =>
     where(
@@ -125,8 +127,11 @@ export const theQuestionnaire = former(
           closedAt,
         }),
       )
-        .where(whether(Sharing._sharesFor({ subject: run }).is({ token })))
-        .form({ run, open, openedAt, closedAt, token }),
+        .where(
+          whether(Sharing._sharesFor({ subject: run }).is({ token })),
+          Pinning._isPinned({ item: run, scope: LECTURES }).is({ pinned: lecture }),
+        )
+        .form({ run, open, openedAt, closedAt, token, lecture }),
     }),
 ).optional();
 

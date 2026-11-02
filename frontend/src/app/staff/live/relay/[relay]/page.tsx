@@ -9,6 +9,7 @@ import { Fact, Facts } from "@/components/facts";
 import { Link } from "@/components/link";
 import { GuideText, RelayBasics } from "@/components/live/host-guide";
 import { LaunchOptions } from "@/components/live/launch-options";
+import { LectureSwitch } from "@/components/live/lecture-switch";
 import { FormTag, RETIRE_NOTE } from "@/components/live/quiz-meta";
 import { refusalSentence } from "@/components/live/refusals";
 import { bareVote } from "@/components/live/round-preview";
@@ -214,10 +215,13 @@ function RelayOverviewContent() {
           ) : (
             <ul className="space-y-2">
               {found.runs.map((run) => (
-                <li key={run.run}>
+                <li
+                  key={run.run}
+                  className="flex items-center gap-4 rounded-xl border border-border bg-card pe-4 transition-colors has-[a:hover]:bg-muted/50"
+                >
                   <Link
                     href={`/staff/live/run/${run.run}`}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-muted/50"
+                    className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-3 py-3 ps-4"
                   >
                     <div className="flex min-w-0 flex-col gap-1">
                       <Facts className="text-sm">
@@ -245,6 +249,11 @@ function RelayOverviewContent() {
                       <ChevronRight className="size-4 text-muted-foreground" />
                     </span>
                   </Link>
+                  <LectureSwitch
+                    run={run.run}
+                    lecture={run.lecture}
+                    onChanged={refetch}
+                  />
                 </li>
               ))}
             </ul>

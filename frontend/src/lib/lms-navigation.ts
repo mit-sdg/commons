@@ -8,6 +8,7 @@ import {
   Settings,
   Sparkles,
   StickyNote,
+  UserCheck,
   Users,
 } from "lucide-react";
 import type { Capability } from "@/lib/models";
@@ -76,6 +77,18 @@ const STAFF_NAV: {
     label: "Live",
     icon: Radio,
     needs: ["live:host"],
+  },
+  {
+    href: "/staff/attendance",
+    label: "Attendance",
+    icon: UserCheck,
+    needs: [
+      "course:manage",
+      "grade",
+      "student-records",
+      "moderate",
+      "live:host",
+    ],
   },
   {
     href: "/staff/calendar",

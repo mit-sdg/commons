@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Fact, Facts } from "@/components/facts";
 import { Link } from "@/components/link";
+import { LectureSwitch } from "@/components/live/lecture-switch";
 import {
   FormTag,
   QUIZ_NOT_READY_MESSAGE,
@@ -256,10 +257,13 @@ function QuestionnaireOverviewContent() {
           ) : (
             <ul className="space-y-2">
               {sheet.runs.map((run) => (
-                <li key={run.run}>
+                <li
+                  key={run.run}
+                  className="flex items-center gap-4 rounded-xl border border-border bg-card pe-4 transition-colors has-[a:hover]:bg-muted/50"
+                >
                   <Link
                     href={`/staff/live/run/${run.run}`}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-muted/50"
+                    className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-3 py-3 ps-4"
                   >
                     <Facts className="text-sm">
                       <Fact.Range
@@ -270,6 +274,11 @@ function QuestionnaireOverviewContent() {
                     </Facts>
                     {run.open ? <Fact.Status status="OPEN" /> : null}
                   </Link>
+                  <LectureSwitch
+                    run={run.run}
+                    lecture={run.lecture}
+                    onChanged={refetch}
+                  />
                 </li>
               ))}
             </ul>

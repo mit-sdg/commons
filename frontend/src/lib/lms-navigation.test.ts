@@ -42,6 +42,27 @@ describe("Commons navigation", () => {
     expect(grader.some(({ href }) => href === "/staff/class")).toBe(false);
   });
 
+  test("attendance is offered to every staff capability that reads it", () => {
+    for (const held of [
+      "course:manage",
+      "grade",
+      "student-records",
+      "moderate",
+      "live:host",
+    ]) {
+      expect(
+        lmsNavigation(true, (capability) => capability === held).some(
+          ({ href }) => href === "/staff/attendance",
+        ),
+      ).toBe(true);
+    }
+    expect(
+      lmsNavigation(true, () => false).some(
+        ({ href }) => href === "/staff/attendance",
+      ),
+    ).toBe(false);
+  });
+
   test("a seat identifier and assignment capability identify course staff", () => {
     expect(lmsAccess("seat-1", true)).toEqual({
       hasRosterSeat: true,

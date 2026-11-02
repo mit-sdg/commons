@@ -192,6 +192,17 @@ export class MongoRespondingConcept {
     };
   }
 
+  async _participantsAmong({ subjects }: { subjects: string[] }) {
+    await (this.responseIndex ??= this.responses.createIndex(
+      { subject: 1, participant: 1 },
+      { unique: true },
+    ));
+    const participants = await this.responses.distinct("participant", {
+      subject: { $in: subjects },
+    });
+    return { participants: participants.map(String).sort() };
+  }
+
   async _answers({ response }: { response: string }) {
     const doc = await this.responses.findOne({ _id: response });
     return doc?.answers ?? [];

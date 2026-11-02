@@ -206,6 +206,10 @@ export class MongoPublishingConcept {
     return { open: doc !== null };
   }
 
+  async _partsOf({ whole }: { whole: string }) {
+    return { parts: (await this._parts({ whole })).map(({ edition }) => edition) };
+  }
+
   async _editionsFor({ material }: { material: string }) {
     const docs = await this.editions.find({ material }).sort({ openedAt: -1, seq: -1 }).toArray();
     return docs.map((doc) => ({

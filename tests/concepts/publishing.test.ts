@@ -879,3 +879,25 @@ describe("Publishing's reads by whole", () => {
     expect(guard).not.toContain("COLLSCAN");
   });
 });
+
+test("a whole's parts come as one list, earliest published first", async () => {
+  const publishing = new MongoPublishingConcept(await testDb());
+  const at = new Date("2026-03-03T09:00:00Z");
+  const { edition: run } = await publishing.publish({ author: "lee", material: "relay", at });
+  const { edition: first } = await publishing.publishWithin({
+    whole: run,
+    author: "lee",
+    material: "leg-1",
+    at,
+  });
+  await publishing.close({ edition: first, at: new Date("2026-03-03T09:10:00Z") });
+  const { edition: second } = await publishing.publishWithin({
+    whole: run,
+    author: "lee",
+    material: "leg-2",
+    at: new Date("2026-03-03T09:20:00Z"),
+  });
+  expect(await publishing._partsOf({ whole: run })).toEqual({ parts: [first, second] });
+  expect(await publishing._partsOf({ whole: first })).toEqual({ parts: [] });
+  expect(await publishing._partsOf({ whole: "missing" })).toEqual({ parts: [] });
+});

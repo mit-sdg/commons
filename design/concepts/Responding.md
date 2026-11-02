@@ -137,6 +137,10 @@ _responsesOf (subject: String) : one (responses: Seq<ResponseSummary>)
   `{ response, participant, submitted }` entries, earliest begun first
   answers an empty sequence when none match
 
+_participantsAmong (subjects: Seq<String>) : one (participants: Seq<String>)
+  answers every participant with a response to any of the subjects, each once,
+  submitted or not, in identity order
+  answers an empty sequence when none match
 _answers (response: String) : many (item: String, value: String)
   answers the response's answers in first-answer order
   answers no rows when none match

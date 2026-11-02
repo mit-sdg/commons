@@ -52,6 +52,13 @@ import {
 } from "./computations/live-round-opening.ts";
 import { draftContext, draftReferences, draftRequest } from "./computations/live-background.ts";
 import { roomSince } from "./computations/live-room.ts";
+import {
+  classTimezone,
+  lectureSubjects,
+  runKind,
+  runTitle,
+  signedOutJoiners,
+} from "./computations/lectures.ts";
 import { conceptSet } from "@mit-sdg/sync-engine/assembly";
 import type { Db } from "mongodb";
 import { assigning } from "./concepts/assigning/registry.ts";
@@ -547,6 +554,11 @@ export const learningConcepts = conceptSet(registrations, {
   taskMailHtml,
   taskMailSubject,
   taskMailText,
+  classTimezone,
+  lectureSubjects,
+  runKind,
+  runTitle,
+  signedOutJoiners,
 });
 
 export const concepts = learningConcepts.concepts;

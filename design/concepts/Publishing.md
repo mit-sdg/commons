@@ -20,6 +20,9 @@ external Author
 
 external Material
   An application-owned identity naming what an edition releases.
+
+opaque Seq
+  An ordered list of the values its argument names.
 ```
 
 ## State
@@ -106,6 +109,10 @@ _parts (whole: String) : many (edition: String, material: String, open: Flag, op
   answers the whole's parts, earliest published first
   answers no rows when the whole has none or does not exist
 
+_partsOf (whole: String) : one (parts: Seq<String>)
+  answers the same parts as `_parts` as one sequence of edition identities,
+  earliest published first
+  answers an empty sequence when the whole has none or does not exist
 _openPart (whole: String) : optional (edition: String, material: String)
   answers the whole's open part
   answers no row when no part of the whole is open

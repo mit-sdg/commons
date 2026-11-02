@@ -62,6 +62,7 @@ export default {
       new URL("./design/compositions/forum/unread.md", import.meta.url),
       new URL("./design/compositions/live/drafting.md", import.meta.url),
       new URL("./design/compositions/live/edits.md", import.meta.url),
+      new URL("./design/compositions/live/lectures.md", import.meta.url),
       new URL("./design/compositions/live/participation.md", import.meta.url),
       new URL("./design/compositions/live/quizzes.md", import.meta.url),
       new URL("./design/compositions/live/relays.md", import.meta.url),
