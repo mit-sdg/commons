@@ -16,7 +16,7 @@ export function ReleaseLine(props: ReleaseProps) {
   return <ReleaseStatus {...props} />;
 }
 
-/** "Update this student": re-release one student's card with a reason; only while a release is open. */
+/** "Update this student", or "Release <name>" for a held student: re-release one student's card with a reason; only while a release is open. */
 export function UpdateStudentButton(props: {
   student: string;
   page: CourseGradesPage;

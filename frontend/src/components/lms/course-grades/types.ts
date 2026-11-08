@@ -7,6 +7,7 @@ import type {
   ShowAs,
   StudentGrade,
 } from "@/lib/course-grades";
+import type { CopyShows } from "./class-helpers";
 
 /** The policy open in the pane: saved, or new and not saved yet. */
 export interface OpenPolicy {
@@ -55,7 +56,10 @@ export interface Comparison {
   /** "Latest per skill", "Course guide, saved", or "What students see". */
   name: string;
   policy: CoursePolicy;
+  /** Each student's grade under the compared policy; empty for what students see. */
   grades: StudentGrade[];
+  /** For what students see: what each student's current copy shows. */
+  copies: Map<string, CopyShows> | null;
   differsIn: string[];
 }
 

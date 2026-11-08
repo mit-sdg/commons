@@ -8,7 +8,6 @@ import {
   type GradeSet,
   gradeOrder,
   lineGrade,
-  notCounted,
   type PolicyGroup,
   type PolicyRow,
   policyIsWellFormed,
@@ -27,7 +26,7 @@ export type {
   ReleaseSettings,
   StudentGrade,
 };
-export { courseGrades, gradeOrder, lineGrade, notCounted, policyIsWellFormed };
+export { courseGrades, gradeOrder, lineGrade, policyIsWellFormed };
 
 export type CourseGradesPage = NonNullable<
   Output<"/course-grades/read">["page"]

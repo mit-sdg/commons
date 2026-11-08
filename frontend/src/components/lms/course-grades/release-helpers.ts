@@ -26,12 +26,6 @@ import {
 
 export type { ReleaseSummary };
 
-/** "P4" from "P4: Code complete"; a title without a colon stays whole. */
-export function shortTitle(title: string): string {
-  const head = title.split(":")[0]?.trim();
-  return head || title;
-}
-
 function number(value: number): string {
   return Number.isInteger(value)
     ? String(value)
@@ -40,15 +34,15 @@ function number(value: number): string {
 
 /**
  * One assignment's work in words for the review list, when it is counted as
- * Missing or left out of what counts: "P4 late, no late days: 0",
+ * Missing or left out of what counts, by its full title, since two titles
+ * can share the part before a colon: "P4: Code complete late, no late days: 0",
  * "E2 missing: 0", "P3 draft", "P2 not graded yet".
  */
 export function workWords(
   work: WorkResult,
-  title: string,
+  name: string,
   missing: number,
 ): string | null {
-  const name = shortTitle(title);
   switch (work.status) {
     case "late":
       return `${name} late, no late days: ${number(missing)}`;
@@ -155,19 +149,19 @@ export function dayIn(at: string | Date, timezone: string | null): string {
   }).format(new Date(at));
 }
 
-/** The form a dialog opens with: the open release's settings, else today with the defaults. */
+/** The form a dialog opens with: the newest release's settings, open or hidden, else today with the defaults. */
 export function startingForm(
-  open: ReleaseSummary | null,
+  latest: ReleaseSummary | null,
   timezone: string | null,
   now: Date,
 ): ReleaseForm {
-  if (open)
+  if (latest)
     return {
-      date: dayIn(open.settings.dueBy, timezone),
-      breakdown: open.settings.breakdown,
-      letter: open.settings.letter,
-      includeOverrides: open.settings.letter
-        ? open.settings.includeOverrides
+      date: dayIn(latest.settings.dueBy, timezone),
+      breakdown: latest.settings.breakdown,
+      letter: latest.settings.letter,
+      includeOverrides: latest.settings.letter
+        ? latest.settings.includeOverrides
         : true,
     };
   return {
@@ -228,6 +222,76 @@ export function sameCard(
   return stable(left) === stable(right);
 }
 
+/**
+ * Each student's copy under a release: their own update when it is at least
+ * as new as the release, else the release's card.
+ */
+export function currentCopies(
+  page: Pick<CourseGradesPage, "updates">,
+  entry: ReleaseEntry,
+): Map<string, CourseGradeCard> {
+  const release = releaseOf(entry);
+  const copies = new Map<string, CourseGradeCard>(
+    release
+      ? (Object.entries(release.cards) as [string, CourseGradeCard][])
+      : [],
+  );
+  const newest = new Map<string, number>();
+  for (const update of page.updates) {
+    const value = update.update as unknown as UpdateSummary | null;
+    if (!value || value.kind !== "update") continue;
+    const at = time(update.openedAt);
+    if (at < time(entry.openedAt)) continue;
+    const student = String(update.student);
+    if (at < (newest.get(student) ?? -Infinity)) continue;
+    newest.set(student, at);
+    copies.set(student, value.card);
+  }
+  return copies;
+}
+
+/** Whether a student's copy under the open release is held; false without a copy. */
+export function copyHeld(
+  page: Pick<CourseGradesPage, "updates">,
+  entry: ReleaseEntry,
+  student: string,
+): boolean {
+  return currentCopies(page, entry).get(student)?.status === "held";
+}
+
+/**
+ * The students a dialog starts on Release: those the newest release, open or
+ * hidden, released by name. Their copy is released although that release's
+ * own policy and cutoff hold them over today's work. A student held only by
+ * a later cutoff or another policy starts on Hold.
+ */
+export function releasedByName(
+  page: Pick<CourseGradesPage, "inputs" | "updates">,
+  entry: ReleaseEntry | null,
+  now: Date,
+): Set<string> {
+  const release = entry ? releaseOf(entry) : null;
+  if (!entry || !release) return new Set();
+  const spec = release.policy.specification;
+  const copies = currentCopies(page, entry);
+  return new Set(
+    courseGrades(spec, page.inputs, new Date(release.settings.dueBy), now)
+      .filter(
+        (grade) =>
+          copies.get(grade.student)?.status === "released" &&
+          holdReasons(spec, grade).length > 0,
+      )
+      .map((grade) => grade.student),
+  );
+}
+
+/** "Release to 45 students": the footer button, counting students who will see a grade. */
+export function releaseLabel(students: number): string {
+  return students === 1
+    ? "Release to 1 student"
+    : `Release to ${students} students`;
+}
+
 export interface SinceRelease {
   /** The final policy is another policy, or saved again, since the release. */
   policyMoved: boolean;
@@ -255,15 +319,7 @@ export function sinceRelease(
     final.policy !== release.policy.policy ||
     final.version !== release.policy.version;
   const spec = release.policy.specification;
-  const copies = new Map<string, CourseGradeCard>(
-    Object.entries(release.cards) as [string, CourseGradeCard][],
-  );
-  for (const update of page.updates) {
-    const value = update.update as unknown as UpdateSummary | null;
-    if (!value || value.kind !== "update") continue;
-    if (time(update.openedAt) < time(entry.openedAt)) continue;
-    copies.set(String(update.student), value.card);
-  }
+  const copies = currentCopies(page, entry);
   const grades = courseGrades(
     spec,
     page.inputs,

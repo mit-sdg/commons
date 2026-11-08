@@ -30,9 +30,12 @@ import { cn } from "@/lib/utils";
 import { courseGradeCard } from "../../../../../src/computations/course-grades.ts";
 import {
   lateAsMissingCount,
+  latestRelease,
   lateWarning,
   openRelease,
   type ReleaseForm,
+  releasedByName,
+  releaseLabel,
   releaseOf,
   reviewList,
   settingsFrom,
@@ -159,10 +162,12 @@ function ReleaseControls({
   const timezone = inputs.timezone;
   const now = useMemo(() => new Date(), []);
   const [form, setForm] = useState<ReleaseForm>(() => {
-    const entry = openRelease(page);
+    const entry = latestRelease(page);
     return startingForm(entry ? releaseOf(entry) : null, timezone, now);
   });
-  const [released, setReleased] = useState<Set<string>>(() => new Set());
+  const [released, setReleased] = useState<Set<string>>(() =>
+    releasedByName(page, latestRelease(page), now),
+  );
   const [busy, setBusy] = useState(false);
 
   const spec = final.specification;
@@ -182,6 +187,7 @@ function ReleaseControls({
   const late = lateAsMissingCount(grades);
   const heldStudents = new Set(review.map((row) => row.student));
   const stillHeld = review.filter((row) => !released.has(row.student)).length;
+  const seeing = grades.length - stillHeld;
 
   const [preview, setPreview] = useState<string | null>(null);
   const previewStudent =
@@ -315,7 +321,7 @@ function ReleaseControls({
           </Button>
         </DialogClose>
         <Button onClick={submit} aria-disabled={busy || !settings || undefined}>
-          {busy ? "Working…" : again ? "Release again" : "Release"}
+          {busy ? "Working…" : releaseLabel(seeing)}
         </Button>
       </DialogFooter>
     </>

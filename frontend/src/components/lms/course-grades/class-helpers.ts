@@ -4,21 +4,27 @@
  * the By skill grid. The pane's components render what these return.
  */
 import type {
+  CourseGradeCard,
   CourseGradeInputs,
+  CourseGradesPage,
   CoursePolicy,
+  ReleaseEntry,
+  ReleaseSettings,
   ShowAs,
   StudentGrade,
 } from "@/lib/course-grades";
-import { gradeOrder, nearCutoff } from "@/lib/course-grades";
+import { gradeOrder, nearCutoff, showAverage } from "@/lib/course-grades";
 import {
   type AssignmentInput,
   belowC,
   countedAssignments,
   type GradeLine,
+  holdReasons,
   type RatingName,
   TEAM_KIND,
   type WorkStatus,
 } from "../../../../../src/computations/course-grades.ts";
+import { currentCopies, releaseOf } from "./release-helpers";
 
 export type { AssignmentInput, RatingName, WorkStatus };
 export { TEAM_KIND };
@@ -188,10 +194,11 @@ export function headline({
   grades: readonly StudentGrade[];
   /** The median letter as shown, or null when no student has a grade. */
   median: string | null;
-  comparison: { name: string; grades: readonly StudentGrade[] } | null;
+  /** While comparing: its name and how many students differ under it. */
+  comparison: { name: string; differ: number } | null;
 }): string {
   if (comparison) {
-    const n = differentLetters(grades, comparison.grades).size;
+    const n = comparison.differ;
     if (n === 0)
       return `No student gets a different letter under ${comparison.name}`;
     return `${plural(n, "student gets", "students get")} a different letter under ${comparison.name}`;
@@ -216,14 +223,141 @@ export function differentLetters(
   return differ;
 }
 
+/* ---------- What students see ---------- */
+
+/** What one student's current copy shows: held, a letter, or an average on the rating scale. */
+export type CopyShows =
+  | { kind: "held" }
+  | { kind: "letter"; letter: string; includeOverrides: boolean }
+  | { kind: "average"; average: number | null };
+
+/** What a card shows, under the settings it was released with. */
+export function copyShows(
+  card: CourseGradeCard,
+  settings: ReleaseSettings,
+): CopyShows {
+  if (card.status === "held") return { kind: "held" };
+  if (card.letter !== null)
+    return {
+      kind: "letter",
+      letter: card.letter,
+      includeOverrides: settings.includeOverrides,
+    };
+  return { kind: "average", average: card.average };
+}
+
+/** What each student's current copy shows: their update when newer, else the release's card. */
+export function copiesShown(
+  page: Pick<CourseGradesPage, "updates">,
+  entry: ReleaseEntry,
+): Map<string, CopyShows> {
+  const release = releaseOf(entry);
+  const shown = new Map<string, CopyShows>();
+  if (!release) return shown;
+  for (const [student, card] of currentCopies(page, entry))
+    shown.set(student, copyShows(card, release.settings));
+  return shown;
+}
+
+/**
+ * Whether a copy shows something other than what the open policy gives
+ * today: letter against letter when the copy shows one, average against
+ * average otherwise. A held copy differs only once the student is no longer
+ * held.
+ */
+export function copyDiffers(
+  copy: CopyShows,
+  grade: StudentGrade,
+  policy: CoursePolicy,
+): boolean {
+  switch (copy.kind) {
+    case "held":
+      return holdReasons(policy, grade).length === 0;
+    case "letter":
+      return (
+        copy.letter !==
+        (copy.includeOverrides ? grade.grade : grade.policyGrade)
+      );
+    default:
+      return copy.average !== grade.average;
+  }
+}
+
+/** A copy in the Compared column: "Held", its letter as Show as shows it, or its average. */
+export function showCopy(
+  copy: CopyShows,
+  policy: CoursePolicy,
+  showAs: ShowAs,
+): string {
+  switch (copy.kind) {
+    case "held":
+      return "Held";
+    case "letter":
+      return showLetter(copy.letter, policy, showAs);
+    default:
+      return showAverage(copy.average, policy, showAs);
+  }
+}
+
+/** The students who differ under a comparison: by copy for what students see, else by policy letter. */
+export function differingStudents(
+  grades: readonly StudentGrade[],
+  policy: CoursePolicy,
+  comparison: {
+    grades: readonly StudentGrade[];
+    copies: ReadonlyMap<string, CopyShows> | null;
+  },
+): Set<string> {
+  const { copies } = comparison;
+  if (!copies) return differentLetters(grades, comparison.grades);
+  const differ = new Set<string>();
+  for (const grade of grades) {
+    const copy = copies.get(grade.student);
+    if (copy && copyDiffers(copy, grade, policy)) differ.add(grade.student);
+  }
+  return differ;
+}
+
+/* ---------- What counts ---------- */
+
+/** What the headline's hint counts: drafts by student, and each other kind of left-out or zeroed work. */
+export function leftOut(grades: readonly StudentGrade[]): {
+  draftStudents: number;
+  ungraded: number;
+  excused: number;
+  notDue: number;
+  missing: number;
+  late: number;
+} {
+  const all = grades.flatMap((grade) => Object.values(grade.work));
+  const count = (status: WorkStatus) =>
+    all.filter((work) => work.status === status).length;
+  return {
+    draftStudents: grades.filter((grade) =>
+      Object.values(grade.work).some((work) => work.status === "draft"),
+    ).length,
+    ungraded: count("ungraded"),
+    excused: count("excused"),
+    notDue: new Set(
+      all
+        .filter((work) => work.status === "notDue")
+        .map((work) => work.assignment),
+    ).size,
+    missing: count("missing"),
+    late: count("late"),
+  };
+}
+
 /**
  * The hint under the headline, naming each count only when it isn't zero:
- * "Not counted: drafts from 2 students, 2 excused, 5 assignments not due yet.
- * 6 missing assignments count as 0." Null when there is nothing to say.
+ * "Not counted: drafts from 2 students, 3 not graded yet, 2 excused, 5
+ * assignments not due yet. 6 missing assignments count as 0." Null when there
+ * is nothing to say.
  */
 export function notCountedHint(
   counts: {
     draftStudents: number;
+    ungraded: number;
     excused: number;
     notDue: number;
     missing: number;
@@ -236,6 +370,7 @@ export function notCountedHint(
     left.push(
       `drafts from ${plural(counts.draftStudents, "student", "students")}`,
     );
+  if (counts.ungraded > 0) left.push(`${counts.ungraded} not graded yet`);
   if (counts.excused > 0) left.push(`${counts.excused} excused`);
   if (counts.notDue > 0)
     left.push(

@@ -114,13 +114,8 @@ export function OpenedStudent({
     policy.groups.flatMap((group) => group.rows.map((row) => [row.key, row])),
   );
   const show = (value: number | null) => showAverage(value, policy, showAs);
-  const letter = grade.lineGrade
-    ? showGrade(
-        { ...grade, grade: grade.lineGrade, override: null, cappedBy: null },
-        policy,
-        showAs,
-      )
-    : null;
+  // The grade the student gets, as the row shows it.
+  const letter = grade.grade ? showGrade(grade, policy, showAs) : null;
 
   return (
     <div className="grid max-w-4xl gap-4 text-sm whitespace-normal">

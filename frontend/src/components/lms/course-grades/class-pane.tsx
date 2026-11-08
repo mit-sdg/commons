@@ -7,16 +7,17 @@ import { Input } from "@/components/ui/input";
 import {
   letterCounts,
   medianGrade,
-  notCounted,
   type StudentGrade,
 } from "@/lib/course-grades";
 import { cn } from "@/lib/utils";
 import {
   bySkill,
   CHIPS,
+  differingStudents,
   type Filters,
   headline,
   isFiltered,
+  leftOut,
   matchesFilters,
   NO_FILTERS,
   notCountedHint,
@@ -60,12 +61,21 @@ export function ClassPane({
   const grid = useMemo(() => bySkill(inputs), [inputs]);
 
   const median = medianGrade(grades, policy);
+  const differ = useMemo(
+    () =>
+      comparison
+        ? differingStudents(grades, policy, comparison)
+        : new Set<string>(),
+    [grades, policy, comparison],
+  );
   const said = headline({
     grades,
     median: median === null ? null : showLetter(median, policy, showAs),
-    comparison,
+    comparison: comparison
+      ? { name: comparison.name, differ: differ.size }
+      : null,
   });
-  const hint = notCountedHint(notCounted(grades), policy.missing);
+  const hint = notCountedHint(leftOut(grades), policy.missing);
   const counts = letterCounts(grades, policy);
 
   const visible = grades.filter((grade) =>
@@ -84,9 +94,11 @@ export function ClassPane({
             grades: new Map(
               comparison.grades.map((grade) => [grade.student, grade]),
             ),
+            copies: comparison.copies,
+            differ,
           }
         : null,
-    [comparison],
+    [comparison, differ],
   );
   const showReasons =
     "chip" in filters.filter && filters.filter.chip === "adjusted";

@@ -1,16 +1,25 @@
 import { describe, expect, test } from "bun:test";
 import {
+  type CourseGradeCard,
   type CourseGradeInputs,
+  type CourseGradesPage,
+  type ReleaseEntry,
+  type ReleaseSettings,
   type StudentGrade,
   startingPolicy,
 } from "@/lib/course-grades";
 import {
   assignmentCaptions,
   bySkill,
+  copiesShown,
+  copyDiffers,
+  copyShows,
   differentLetters,
+  differingStudents,
   groupShare,
   headline,
   isFiltered,
+  leftOut,
   matchesFilters,
   movedPolicyGrade,
   moveLine,
@@ -19,6 +28,7 @@ import {
   rankGrades,
   reasonOf,
   shortNames,
+  showCopy,
   showLetter,
   stackDots,
   stripRange,
@@ -256,46 +266,84 @@ describe("the headline", () => {
       grade("cy", 2.5, { policyGrade: "C" }),
     ];
     expect(differentLetters(mine, theirs)).toEqual(new Set(["ana", "ben"]));
-    const comparison = { name: "Latest per skill", grades: theirs };
-    expect(headline({ grades: mine, median: "C", comparison })).toBe(
-      "2 students get a different letter under Latest per skill",
-    );
+    const name = "Latest per skill";
+    const differ = (grades: StudentGrade[]) =>
+      differingStudents(grades, policy, { grades: theirs, copies: null }).size;
+    expect(
+      headline({
+        grades: mine,
+        median: "C",
+        comparison: { name, differ: differ(mine) },
+      }),
+    ).toBe("2 students get a different letter under Latest per skill");
     expect(
       headline({
         grades: mine.slice(2),
         median: "C",
-        comparison,
+        comparison: { name, differ: differ(mine.slice(2)) },
       }),
     ).toBe("No student gets a different letter under Latest per skill");
     expect(
-      headline({ grades: mine.slice(0, 1), median: "B", comparison }),
+      headline({
+        grades: mine.slice(0, 1),
+        median: "B",
+        comparison: { name, differ: differ(mine.slice(0, 1)) },
+      }),
     ).toBe("1 student gets a different letter under Latest per skill");
   });
 
   test("the hint names only the counts that aren't zero", () => {
     expect(
       notCountedHint(
-        { draftStudents: 2, excused: 2, notDue: 5, missing: 6, late: 0 },
+        {
+          draftStudents: 2,
+          ungraded: 3,
+          excused: 2,
+          notDue: 5,
+          missing: 6,
+          late: 0,
+        },
         0,
       ),
     ).toBe(
-      "Not counted: drafts from 2 students, 2 excused, 5 assignments not due yet. 6 missing assignments count as 0.",
+      "Not counted: drafts from 2 students, 3 not graded yet, 2 excused, 5 assignments not due yet. 6 missing assignments count as 0.",
     );
     expect(
       notCountedHint(
-        { draftStudents: 0, excused: 1, notDue: 0, missing: 0, late: 0 },
+        {
+          draftStudents: 0,
+          ungraded: 0,
+          excused: 1,
+          notDue: 0,
+          missing: 0,
+          late: 0,
+        },
         0,
       ),
     ).toBe("Not counted: 1 excused.");
     expect(
       notCountedHint(
-        { draftStudents: 0, excused: 0, notDue: 0, missing: 1, late: 0 },
+        {
+          draftStudents: 0,
+          ungraded: 0,
+          excused: 0,
+          notDue: 0,
+          missing: 1,
+          late: 0,
+        },
         1,
       ),
     ).toBe("1 missing assignment counts as 1.");
     expect(
       notCountedHint(
-        { draftStudents: 1, excused: 0, notDue: 1, missing: 2, late: 3 },
+        {
+          draftStudents: 1,
+          ungraded: 0,
+          excused: 0,
+          notDue: 1,
+          missing: 2,
+          late: 3,
+        },
         0,
       ),
     ).toBe(
@@ -303,10 +351,175 @@ describe("the headline", () => {
     );
     expect(
       notCountedHint(
-        { draftStudents: 0, excused: 0, notDue: 0, missing: 0, late: 0 },
+        {
+          draftStudents: 0,
+          ungraded: 0,
+          excused: 0,
+          notDue: 0,
+          missing: 0,
+          late: 0,
+        },
         0,
       ),
     ).toBeNull();
+  });
+
+  test("counts drafts by student and ungraded work apart", () => {
+    const work = (assignment: string, status: string) =>
+      ({ assignment, status, value: null }) as never;
+    expect(
+      leftOut([
+        grade("ana", 3, {
+          work: { a: work("a", "draft"), b: work("b", "ungraded") },
+        }),
+        grade("ben", 3, {
+          work: { a: work("a", "ungraded"), b: work("b", "notDue") },
+        }),
+        grade("cy", 3, {
+          work: { a: work("a", "draft"), b: work("b", "notDue") },
+        }),
+      ]),
+    ).toEqual({
+      draftStudents: 2,
+      ungraded: 2,
+      excused: 0,
+      notDue: 1,
+      missing: 0,
+      late: 0,
+    });
+  });
+});
+
+describe("what students see", () => {
+  const settings = (letter: boolean, includeOverrides = true) =>
+    ({
+      dueBy: "2026-10-16T23:59:59.000Z",
+      breakdown: true,
+      letter,
+      includeOverrides: letter && includeOverrides,
+    }) satisfies ReleaseSettings;
+  const card = (
+    status: "released" | "held",
+    average: number | null,
+    letter: string | null = null,
+  ) =>
+    ({
+      status,
+      dueBy: "2026-10-16T23:59:59.000Z",
+      average: status === "held" ? null : average,
+      scale: { low: 1, high: 4 },
+      letter: status === "held" ? null : letter,
+      groups: null,
+      lectures: null,
+      rules: { ratings: policy.ratings, missing: 0, late: policy.late },
+    }) as CourseGradeCard;
+  const entry = (
+    cards: Record<string, CourseGradeCard>,
+    letter = false,
+  ): ReleaseEntry =>
+    ({
+      open: true,
+      openedAt: "2026-10-17T12:00:00.000Z",
+      release: { kind: "release", settings: settings(letter), cards, held: {} },
+    }) as unknown as ReleaseEntry;
+  const update = (student: string, at: string, value: CourseGradeCard) => ({
+    student,
+    openedAt: at,
+    update: { kind: "update", settings: settings(false), card: value },
+  });
+  const page = (updates: unknown[] = []) =>
+    ({ updates }) as unknown as Pick<CourseGradesPage, "updates">;
+
+  test("a card shows held, its letter, or its average", () => {
+    expect(copyShows(card("held", null), settings(true))).toEqual({
+      kind: "held",
+    });
+    expect(copyShows(card("released", 2.84, "B"), settings(true))).toEqual({
+      kind: "letter",
+      letter: "B",
+      includeOverrides: true,
+    });
+    expect(copyShows(card("released", 2.63), settings(false))).toEqual({
+      kind: "average",
+      average: 2.63,
+    });
+  });
+
+  test("each student's copy is their update when at least as new as the release", () => {
+    const release = entry({
+      amina: card("released", 2.63),
+      jonas: card("held", null),
+      rin: card("released", 2.41),
+    });
+    const copies = copiesShown(
+      page([
+        update("rin", "2026-10-10T12:00:00.000Z", card("released", 9)),
+        update("jonas", "2026-10-17T12:00:00.000Z", card("released", 2.39)),
+        update("amina", "2026-10-20T12:00:00.000Z", card("released", 2.68)),
+        update("amina", "2026-10-18T12:00:00.000Z", card("released", 2.5)),
+      ]),
+      release,
+    );
+    expect(copies.get("amina")).toEqual({ kind: "average", average: 2.68 });
+    expect(copies.get("jonas")).toEqual({ kind: "average", average: 2.39 });
+    expect(copies.get("rin")).toEqual({ kind: "average", average: 2.41 });
+    expect(copies.has("noor")).toBe(false);
+    expect(
+      copiesShown(page(), {
+        ...release,
+        release: null,
+      } as unknown as ReleaseEntry).size,
+    ).toBe(0);
+  });
+
+  test("a copy differs by letter, by average, or once a held student is no longer held", () => {
+    const today = grade("rin", 2.84, {
+      lineGrade: "C",
+      policyGrade: "C",
+      grade: "B",
+    });
+    const letter = (includeOverrides: boolean) =>
+      copyShows(card("released", 2.84, "C"), settings(true, includeOverrides));
+    expect(copyDiffers(letter(false), today, policy)).toBe(false);
+    expect(copyDiffers(letter(true), today, policy)).toBe(true);
+    const average = copyShows(card("released", 2.63), settings(false));
+    expect(copyDiffers(average, today, policy)).toBe(true);
+    expect(copyDiffers(average, { ...today, average: 2.63 }, policy)).toBe(
+      false,
+    );
+    const held = copyShows(card("held", null), settings(false));
+    const below = grade("jonas", 1.5, { policyGrade: "F", grade: "F" });
+    expect(copyDiffers(held, below, policy)).toBe(false);
+    expect(copyDiffers(held, today, policy)).toBe(true);
+  });
+
+  test("the Compared column and the headline read the copies", () => {
+    const copies = copiesShown(
+      page(),
+      entry({
+        ana: card("released", 2.63),
+        ben: card("held", null),
+        cy: card("released", 3),
+      }),
+    );
+    expect(showCopy(copies.get("ana")!, policy, "letters")).toBe("2.63");
+    expect(showCopy(copies.get("ben")!, policy, "letters")).toBe("Held");
+    expect(
+      showCopy(
+        { kind: "letter", letter: "B", includeOverrides: true },
+        policy,
+        "gpa",
+      ),
+    ).toBe("4.0");
+    const grades = [
+      grade("ana", 2.84, { policyGrade: "B", grade: "B" }),
+      grade("ben", 1.5, { policyGrade: "F", grade: "F" }),
+      grade("cy", 3, { policyGrade: "B", grade: "B" }),
+      grade("dana", 3.5, { policyGrade: "A", grade: "A" }),
+    ];
+    expect(differingStudents(grades, policy, { grades: [], copies })).toEqual(
+      new Set(["ana"]),
+    );
   });
 });
 

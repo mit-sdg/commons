@@ -1088,36 +1088,6 @@ export function policyIsWellFormed({ specification }: { specification: CoursePol
   );
 }
 
-/* ---------- The class headline's hint ---------- */
-
-/** What the class's grades leave out or count as Missing, for the hint under the headline. */
-export function notCounted(grades: StudentGrade[]): {
-  drafts: number;
-  draftStudents: number;
-  excused: number;
-  notDue: number;
-  missing: number;
-  late: number;
-} {
-  const all = grades.flatMap((grade) => Object.values(grade.work));
-  const count = (status: WorkStatus) => all.filter((work) => work.status === status).length;
-  const notDueAssignments = new Set(
-    all.filter((work) => work.status === "notDue").map((work) => work.assignment),
-  );
-  return {
-    drafts: count("draft") + count("ungraded"),
-    draftStudents: grades.filter((grade) =>
-      Object.values(grade.work).some(
-        (work) => work.status === "draft" || work.status === "ungraded",
-      ),
-    ).length,
-    excused: count("excused"),
-    notDue: notDueAssignments.size,
-    missing: count("missing"),
-    late: count("late"),
-  };
-}
-
 /* ---------- Small pieces the endpoints read through ---------- */
 
 /** The user identities of the active students. */

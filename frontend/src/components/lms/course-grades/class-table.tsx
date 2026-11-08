@@ -10,8 +10,10 @@ import {
 } from "@/lib/course-grades";
 import { cn } from "@/lib/utils";
 import {
+  type CopyShows,
   movedPolicyGrade,
   reasonOf,
+  showCopy,
   showLetter,
   type TableRow,
 } from "./class-helpers";
@@ -74,10 +76,15 @@ export function ClassTable({
   showAs: ShowAs;
   studentOf: (student: string) => { name: string; section: string | null };
   sectionName: (section: string | null) => string | null;
-  /** The compared policy and each student's grade under it, while comparing. */
+  /**
+   * While comparing: the compared policy, each student's grade under it (or,
+   * for what students see, what each student's copy shows), and who differs.
+   */
   compared: {
     policy: CoursePolicy;
     grades: Map<string, StudentGrade>;
+    copies: ReadonlyMap<string, CopyShows> | null;
+    differ: ReadonlySet<string>;
   } | null;
   showReasons: boolean;
   open: string | null;
@@ -154,6 +161,7 @@ export function ClassTable({
             const section = sectionName(student.section);
             const isOpen = open === grade.student;
             const theirs = compared?.grades.get(grade.student) ?? null;
+            const copy = compared?.copies?.get(grade.student) ?? null;
             return (
               <Fragment key={grade.student}>
                 <tr
@@ -200,22 +208,24 @@ export function ClassTable({
                     <td
                       className={cn(
                         "px-3 py-2 whitespace-nowrap",
-                        theirs?.policyGrade === grade.policyGrade
-                          ? "text-muted-foreground"
-                          : "font-semibold",
+                        compared.differ.has(grade.student)
+                          ? "font-semibold"
+                          : "text-muted-foreground",
                       )}
                     >
-                      {theirs
-                        ? showGrade(
-                            {
-                              ...theirs,
-                              grade: theirs.policyGrade,
-                              override: null,
-                            },
-                            compared.policy,
-                            showAs,
-                          )
-                        : "–"}
+                      {compared.copies
+                        ? copy && showCopy(copy, compared.policy, showAs)
+                        : theirs
+                          ? showGrade(
+                              {
+                                ...theirs,
+                                grade: theirs.policyGrade,
+                                override: null,
+                              },
+                              compared.policy,
+                              showAs,
+                            )
+                          : "–"}
                     </td>
                   )}
                   <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">

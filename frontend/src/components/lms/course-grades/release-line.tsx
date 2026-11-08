@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { type CourseGradesPage, courseGradeActions } from "@/lib/course-grades";
 import { shortDate } from "@/lib/format";
 import {
+  copyHeld,
   historyRows,
   latestRelease,
   openRelease,
@@ -145,7 +146,11 @@ function History({ page }: { page: CourseGradesPage }) {
   );
 }
 
-/** "Update this student": re-release one student's card under the open release, with a reason. */
+/**
+ * "Update this student": re-release one student's card under the open release,
+ * with a reason. An update is never held, so for a held student it reads
+ * "Release <name>".
+ */
 export function UpdateStudent({
   student,
   page,
@@ -158,9 +163,11 @@ export function UpdateStudent({
   const [reason, setReason] = useState("");
   const entry = openRelease(page);
   const release = entry ? releaseOf(entry) : null;
-  if (!release) return null;
+  if (!entry || !release) return null;
   const name =
     page.inputs.students.find((entry) => entry.user === student)?.name ?? "";
+  const held = copyHeld(page, entry, student);
+  const title = held ? `Release ${name}` : "Update this student";
 
   async function update() {
     const result = await courseGradeActions.updateStudent(
@@ -172,7 +179,7 @@ export function UpdateStudent({
         result.code === "CONFLICT" ? "Nothing is released." : result.error,
       );
     setReason("");
-    toast.success("Updated.");
+    toast.success(held ? "Released." : "Updated.");
     onChanged();
   }
 
@@ -180,14 +187,14 @@ export function UpdateStudent({
     <ConfirmAction
       trigger={
         <Button variant="outline" size="sm">
-          Update this student
+          {title}
         </Button>
       }
-      title="Update this student"
+      title={title}
       description={
         <div className="grid gap-3">
           <div className="flex flex-wrap gap-x-4 gap-y-0.5">
-            <span className="text-foreground">{name}</span>
+            {!held && <span className="text-foreground">{name}</span>}
             <span>
               {release.policy.name}, version {release.policy.version}
             </span>
@@ -203,7 +210,7 @@ export function UpdateStudent({
           </label>
         </div>
       }
-      confirmLabel="Update"
+      confirmLabel={held ? "Release" : "Update"}
       confirmDisabled={reason.trim() === ""}
       onConfirm={update}
     />

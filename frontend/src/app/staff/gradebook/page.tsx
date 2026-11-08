@@ -1,9 +1,11 @@
 "use client";
 
 import { Download } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
+import { copiesShown } from "@/components/lms/course-grades/class-helpers";
 import { ClassPane } from "@/components/lms/course-grades/class-pane";
 import { PolicyPane } from "@/components/lms/course-grades/policy-pane";
 import {
@@ -176,13 +178,25 @@ function CourseGrades({
         : compareWith.kind === "saved"
           ? `${open.name}, saved`
           : "What students see";
+    // What students see is each student's released copy, not a recalculation.
+    const released = compareWith.kind === "released" && latestRelease;
     return {
       name,
       policy: comparePolicy,
-      grades: courseGrades(comparePolicy, inputs, now, now),
+      grades: released ? [] : courseGrades(comparePolicy, inputs, now, now),
+      copies: released ? copiesShown(page, released) : null,
       differsIn: differsIn(policy, comparePolicy),
     };
-  }, [comparePolicy, compareWith, policy, inputs, now, open.name, page]);
+  }, [
+    comparePolicy,
+    compareWith,
+    latestRelease,
+    policy,
+    inputs,
+    now,
+    open.name,
+    page,
+  ]);
 
   const dirty =
     saved === null || JSON.stringify(saved) !== JSON.stringify(policy);
@@ -195,6 +209,42 @@ function CourseGrades({
     if (dirty && !readOnly) setPendingLeave(() => go);
     else void go();
   }
+
+  // Leaving the page asks too: an in-app link opens the same dialog, and
+  // closing or reloading the tab gets the browser's own prompt.
+  const router = useRouter();
+  const guarded = dirty && !readOnly;
+  useEffect(() => {
+    if (!guarded) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    const guardLink = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+        return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest("a[href]");
+      if (!(link instanceof HTMLAnchorElement)) return;
+      if (link.hasAttribute("download")) return;
+      if (link.target && link.target !== "_self") return;
+      const destination = new URL(link.href, window.location.href);
+      if (destination.origin !== window.location.origin) return;
+      if (destination.pathname === window.location.pathname) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const href = `${destination.pathname}${destination.search}${destination.hash}`;
+      setPendingLeave(() => () => router.push(href));
+    };
+    window.addEventListener("beforeunload", warn);
+    document.addEventListener("click", guardLink, true);
+    return () => {
+      window.removeEventListener("beforeunload", warn);
+      document.removeEventListener("click", guardLink, true);
+    };
+  }, [guarded, router]);
 
   async function save() {
     if (open.policy === null || open.version === null) {

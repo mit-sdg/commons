@@ -10,16 +10,19 @@ import {
   updateValue,
 } from "../../../../../src/computations/course-grades.ts";
 import {
+  copyHeld,
   dayIn,
   historyRows,
   lateAsMissingCount,
   lateWarning,
+  releasedByName,
+  releaseLabel,
   reviewList,
   settingsFrom,
   settingsWords,
-  shortTitle,
   sinceRelease,
   startingForm,
+  workWords,
 } from "./release-helpers";
 
 const day = (n: number) => new Date(Date.UTC(2026, 8, n, 4)).toISOString();
@@ -177,7 +180,7 @@ describe("the review list", () => {
         grade: "F",
         reasons: [
           "Below C",
-          "Exercise 1 late, no late days: 0",
+          "Exercise 1: Problem Framing late, no late days: 0",
           "Exercise 2 draft",
         ],
       },
@@ -188,7 +191,7 @@ describe("the review list", () => {
         grade: "F",
         reasons: [
           "Below C",
-          "Exercise 1 missing: 0",
+          "Exercise 1: Problem Framing missing: 0",
           "Exercise 2 not graded yet",
         ],
       },
@@ -215,13 +218,20 @@ describe("the review list", () => {
     const spec = { ...policy(), missing: 0.5 };
     const grades = courseGrades(spec, inputs(), DUE_BY, AT);
     expect(reviewList(spec, inputs(), grades)[1]?.reasons).toContain(
-      "Exercise 1 missing: 0.5",
+      "Exercise 1: Problem Framing missing: 0.5",
     );
   });
 
-  test("a short title is the part before the colon", () => {
-    expect(shortTitle("P4: Code complete")).toBe("P4");
-    expect(shortTitle("Final Project")).toBe("Final Project");
+  test("names work by its full title, so titles sharing a head stay apart", () => {
+    const draft = { assignment: "fp1", status: "draft" } as Parameters<
+      typeof workWords
+    >[0];
+    expect(workWords(draft, "Final project: Proposal", 0)).toBe(
+      "Final project: Proposal draft",
+    );
+    expect(workWords(draft, "Final project: Beta", 0)).toBe(
+      "Final project: Beta draft",
+    );
   });
 });
 
@@ -277,7 +287,7 @@ describe("settings", () => {
     ).toBe(false);
   });
 
-  test("a dialog opens with the open release's settings, else today and the defaults", () => {
+  test("a dialog opens with the newest release's settings, else today and the defaults", () => {
     const now = new Date("2026-11-02T15:00:00Z");
     expect(startingForm(null, "America/New_York", now)).toEqual({
       date: "2026-11-02",
@@ -302,6 +312,11 @@ describe("settings", () => {
       includeOverrides: false,
     });
     expect(dayIn(settings.dueBy, "America/New_York")).toBe("2026-11-12");
+  });
+
+  test("the footer button counts the students who will see a grade", () => {
+    expect(releaseLabel(45)).toBe("Release to 45 students");
+    expect(releaseLabel(1)).toBe("Release to 1 student");
   });
 
   test("words for the switches that were on", () => {
@@ -334,13 +349,17 @@ const SETTINGS = {
 };
 const RELEASED_AT = new Date(day(30));
 
-function released(data: CourseGradeInputs, release: string[] = []) {
+function released(
+  data: CourseGradeInputs,
+  release: string[] = [],
+  specification: CoursePolicy = policy(),
+) {
   const value = releaseValue({
     policy: {
       policy: "p1",
       name: "Course guide",
       version: 4,
-      specification: policy(),
+      specification,
     },
     inputs: data,
     settings: SETTINGS,
@@ -514,6 +533,94 @@ describe("changed since release", () => {
       stale: 0,
       changed: true,
     });
+  });
+});
+
+describe("the next release starts from the newest one", () => {
+  const updateFor = (
+    value: ReturnType<typeof released>["value"],
+    student: string,
+  ) => ({
+    edition: `u-${student}`,
+    student,
+    openedAt: new Date(day(30)).toISOString(),
+    update: releaseSummary({
+      value: updateValue({
+        release: value,
+        inputs: inputs(),
+        student,
+        reason: "Talked it over",
+        by: "staff",
+        at: new Date(day(30)),
+      }),
+    }),
+  });
+
+  test("a student released by name starts on Release; one still held starts on Hold", () => {
+    const { entry } = released(inputs(), ["ben"]);
+    const start = releasedByName(page(inputs()), entry as unknown as Entry, AT);
+    expect([...start]).toEqual(["ben"]);
+  });
+
+  test("a hidden release counts too, with its updates", () => {
+    const { entry, value } = released(inputs());
+    const hidden = { ...entry, open: false, closedAt: day(31) };
+    const start = releasedByName(
+      page(inputs(), 4, [updateFor(value, "cam")]),
+      hidden as unknown as Entry,
+      AT,
+    );
+    expect([...start]).toEqual(["cam"]);
+  });
+
+  test("a student held only by a later cutoff starts on Hold", () => {
+    const spec = policy();
+    spec.groups[0]!.rows.push({
+      key: "r3",
+      type: "assignment",
+      assignment: "e3",
+      weight: 1,
+    });
+    const data = inputs();
+    data.assignments.push({
+      assignment: "e3",
+      title: "Exercise 3",
+      kind: "EXERCISE",
+      dueAt: day(33),
+      acceptsSubmissions: true,
+    });
+    data.releases.push({
+      assignment: "e3",
+      assignee: "ana",
+      dueOverride: null,
+    });
+    data.attempts.push(attempt("e3", "ana", "a3", day(32)));
+    const { entry } = released(data, [], spec);
+    const later = new Date(day(35));
+    // Under a later cutoff Ana's ungraded Exercise 3 holds her...
+    expect(
+      reviewList(spec, data, courseGrades(spec, data, later, later)).map(
+        (row) => row.student,
+      ),
+    ).toContain("ana");
+    // ...but the release did not hold her for review, so she starts on Hold.
+    expect(
+      releasedByName(page(data), entry as unknown as Entry, later).has("ana"),
+    ).toBe(false);
+  });
+
+  test("with no release, nobody starts on Release", () => {
+    expect(releasedByName(page(inputs()), null, AT).size).toBe(0);
+  });
+
+  test("a held copy is held until an update releases it", () => {
+    const { entry, value } = released(inputs());
+    const asEntry = entry as unknown as Entry;
+    expect(copyHeld(page(inputs()), asEntry, "ben")).toBe(true);
+    expect(copyHeld(page(inputs()), asEntry, "ana")).toBe(false);
+    expect(
+      copyHeld(page(inputs(), 4, [updateFor(value, "ben")]), asEntry, "ben"),
+    ).toBe(false);
   });
 });
 
