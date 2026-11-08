@@ -182,6 +182,8 @@ export interface WorkResult {
   /** Ratings by standard from a released assessment. */
   skills: Record<string, RatingName>;
   points: { score: number; outOf: number } | null;
+  /** Whether a row of the policy reads this assignment, by itself or through a skill. */
+  counted: boolean;
 }
 
 export interface RowResult {
@@ -219,7 +221,14 @@ export interface StudentGrade {
 
 /* ---------- The calculation ---------- */
 
-const round2 = (value: number) => Math.round(value * 100 + Number.EPSILON) / 100;
+/**
+ * Two decimals, with an exact half rounding up: 0.7 × 1.85 + 0.3 × 3 is 2.195
+ * on paper but 2.19499… in binary, so the value is read to 15 digits first.
+ */
+export function round2(value: number): number {
+  const text = value.toPrecision(15);
+  return text.includes("e") ? Math.round(value * 100) / 100 : Math.round(Number(`${text}e2`)) / 100;
+}
 const time = (value: string | Date) => new Date(value).getTime();
 
 function ratingRange(policy: CoursePolicy) {
@@ -244,13 +253,13 @@ function workFor(
   assignment: AssignmentInput,
   dueBy: Date,
   at: Date,
-): WorkResult {
+): Omit<WorkResult, "counted"> {
   const result = (
     status: WorkStatus,
     value: number | null = null,
     skills: Record<string, RatingName> = {},
     points: WorkResult["points"] = null,
-  ): WorkResult => ({ assignment: assignment.assignment, status, value, skills, points });
+  ) => ({ assignment: assignment.assignment, status, value, skills, points });
   const release = index.releases.get(`${assignment.assignment}:${student}`);
   if (!release) return result("notAssigned");
   if (time(assignment.dueAt) > dueBy.getTime()) return result("notDue");
@@ -460,10 +469,20 @@ export function studentGrade(
   lectures: Lectures = lecturesBy(inputs, dueBy),
 ): StudentGrade {
   const assignments = countedAssignments(inputs);
-  const work = Object.fromEntries(
+  const rows = policy.groups.flatMap((group) => group.rows);
+  const named = new Set(rows.flatMap((row) => (row.type === "assignment" ? [row.assignment] : [])));
+  const skillFrom = new Set(rows.flatMap((row) => (row.type === "skill" ? [row.from] : [])));
+  const readByPolicy = (assignment: AssignmentInput) =>
+    named.has(assignment.assignment) ||
+    skillFrom.has("all") ||
+    (skillFrom.has("personal") && assignment.kind !== TEAM_KIND);
+  const work: Record<string, WorkResult> = Object.fromEntries(
     assignments.map((assignment) => [
       assignment.assignment,
-      workFor(policy, inputs, index, student, assignment, dueBy, at),
+      {
+        ...workFor(policy, inputs, index, student, assignment, dueBy, at),
+        counted: readByPolicy(assignment),
+      },
     ]),
   );
   const groups = policy.groups.map((group) => groupResult(policy, group, assignments, work));
@@ -515,13 +534,13 @@ export function courseGrades(
   );
 }
 
-/** Why a student is held at a release: below C, or drafts and ungraded work in what counts. */
+/** Why a student is held at a release: below C, or drafts and ungraded work the policy counts. */
 export function holdReasons(policy: CoursePolicy, grade: StudentGrade): string[] {
   const reasons: string[] = [];
   if (grade.grade !== null && belowC(policy, grade.grade)) reasons.push("below C");
-  if (Object.values(grade.work).some((work) => work.status === "draft")) reasons.push("draft");
-  if (Object.values(grade.work).some((work) => work.status === "ungraded"))
-    reasons.push("ungraded");
+  const counted = Object.values(grade.work).filter((work) => work.counted);
+  if (counted.some((work) => work.status === "draft")) reasons.push("draft");
+  if (counted.some((work) => work.status === "ungraded")) reasons.push("ungraded");
   return reasons;
 }
 
@@ -1038,6 +1057,8 @@ export function courseGradesCsv({
 const finite = (value: unknown): value is number =>
   typeof value === "number" && Number.isFinite(value);
 const text = (value: unknown): value is string => typeof value === "string";
+const object = (value: unknown): value is object =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
 
 /** Whether a value is a complete policy specification, checked before it is saved. */
 export function policyIsWellFormed({ specification }: { specification: CoursePolicy }): boolean {
@@ -1052,22 +1073,29 @@ export function policyIsWellFormed({ specification }: { specification: CoursePol
   )
     return false;
   if (
-    !Object.values(spec.lines).every((lines) =>
-      lines.every((line) => text(line.grade) && finite(line.at)),
+    !(["letters", "plusMinus"] as const).every((set) =>
+      spec.lines[set].every((line) => object(line) && text(line.grade) && finite(line.at)),
     )
   )
     return false;
   if (!spec.skillWeights || typeof spec.skillWeights !== "object") return false;
   if (
-    !Object.values(spec.skillWeights).every((weights) => Object.values(weights ?? {}).every(finite))
+    !Object.values(spec.skillWeights).every(
+      (weights) => object(weights) && Object.values(weights).every(finite),
+    )
   )
     return false;
   if (!Array.isArray(spec.attendance)) return false;
-  if (!spec.attendance.every((rule) => text(rule.key) && finite(rule.below) && text(rule.atMost)))
+  if (
+    !spec.attendance.every(
+      (rule) => object(rule) && text(rule.key) && finite(rule.below) && text(rule.atMost),
+    )
+  )
     return false;
   if (!Array.isArray(spec.groups)) return false;
   return spec.groups.every(
     (group) =>
+      object(group) &&
       text(group.key) &&
       text(group.name) &&
       finite(group.weight) &&
@@ -1076,6 +1104,7 @@ export function policyIsWellFormed({ specification }: { specification: CoursePol
       Array.isArray(group.rows) &&
       group.rows.every(
         (row) =>
+          object(row) &&
           text(row.key) &&
           finite(row.weight) &&
           row.weight >= 0 &&

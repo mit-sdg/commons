@@ -193,6 +193,17 @@ describe("course grades", () => {
       expect(await call("grader", path, body)).toEqual({ error: "FORBIDDEN" });
   });
 
+  test("Grade policies without grade changes and downloads nothing", async () => {
+    await person("organizer", ["course:manage", "grade-policies"]);
+    for (const [path, body] of [
+      ["/course-grades/read", {}],
+      ["/grades/export", {}],
+      ["/course-grades/create", { name: "Theirs", specification: policy() }],
+      ["/course-grades/override", { student: users.ana, value: "A", reason: "r", policy: "p" }],
+    ] as const)
+      expect(await call("organizer", path, body)).toEqual({ error: "FORBIDDEN" });
+  });
+
   test("a save from an older version is refused, and a malformed policy never saves", async () => {
     const created = await call("manager", "/course-grades/create", {
       name: "Draft",

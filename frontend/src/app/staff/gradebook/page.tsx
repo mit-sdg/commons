@@ -58,6 +58,13 @@ type CompareWith =
 
 export default function CourseGradesPageRoute() {
   const { session, permissions } = useAuth();
+  // A learner's assessments are on Assessments, so a learner link opens there.
+  const router = useRouter();
+  useEffect(() => {
+    const search = window.location.search;
+    if (new URLSearchParams(search).has("learner"))
+      router.replace(`/staff/gradebook/assessments${search}`);
+  }, [router]);
   const query = useQuery(session ? () => loadCourseGradesPage() : null, [
     session,
   ]);

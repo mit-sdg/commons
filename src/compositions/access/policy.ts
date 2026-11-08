@@ -382,7 +382,10 @@ export const mayNotGradeWork = view(
   ],
 ).holds();
 
-/** Changing policies, overrides, and releases, and downloading, needs `grade-policies`. */
+/**
+ * Changing policies, overrides, and releases, and downloading, needs
+ * `grade-policies` on top of reading the class's grades.
+ */
 export const mayChangeCourseGrades = view(
   "(user) may change course grades",
   ({ user }, _outputs, _bindings) => [
@@ -390,7 +393,7 @@ export const mayChangeCourseGrades = view(
       Roling._hasCapability({ user, context: COMMONS, capability: "grade-policies" }).is({
         allowed: true,
       }),
-      isNotActiveStudent({ user }),
+      mayReadClassGrades({ user }),
     ),
     where(mayAdminister({ user }), isNotActiveStudent({ user })),
   ],
@@ -405,6 +408,6 @@ export const mayNotChangeCourseGrades = view(
       }),
       mayNotAdminister({ user }),
     ),
-    where(isActiveStudent({ user })),
+    where(mayNotReadClassGrades({ user })),
   ],
 ).holds();

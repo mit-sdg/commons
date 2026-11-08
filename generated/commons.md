@@ -3007,13 +3007,22 @@ Authored path: `Forum.profiles.profileDisplayReader`.
   where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
 ```
 
+### (user) may read the class's grades
+
+```view
+(user) may read the class's grades — inputs (user); outputs (); bindings ()
+  where
+    view "(user) may grade" with (user)
+    view "(user) is not an active student" with (user)
+```
+
 ### (user) may change course grades
 
 ```view
 (user) may change course grades — inputs (user); outputs (); bindings ()
   where
     Roling._hasCapability (capability: "grade-policies", context: "commons", user) has (allowed: true)
-    view "(user) is not an active student" with (user)
+    view "(user) may read the class's grades" with (user)
   where
     view "(user) may administer" with (user)
     view "(user) is not an active student" with (user)
@@ -3367,6 +3376,23 @@ Authored path: `Course.grades.mayGradeAssessment`.
   where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: false)
 ```
 
+### (user) may not grade
+
+```view
+(user) may not grade — inputs (user); outputs (); bindings ()
+  where
+    Roling._hasCapability (capability: "grade", context: "commons", user) has (allowed: false)
+    Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: false)
+```
+
+### (user) may not read the class's grades
+
+```view
+(user) may not read the class's grades — inputs (user); outputs (); bindings ()
+  where view "(user) may not grade" with (user)
+  where view "(user) is an active student" with (user)
+```
+
 ### (user) may not change course grades
 
 ```view
@@ -3374,7 +3400,7 @@ Authored path: `Course.grades.mayGradeAssessment`.
   where
     Roling._hasCapability (capability: "grade-policies", context: "commons", user) has (allowed: false)
     view "(user) may not administer" with (user)
-  where view "(user) is an active student" with (user)
+  where view "(user) may not read the class's grades" with (user)
 ```
 
 ### (user) may not edit (post)
@@ -3390,15 +3416,6 @@ Authored path: `Course.grades.mayGradeAssessment`.
     Conversing._getNodeByItem (item: post) has (node)
     Conversing._getConversation (node) has (conversation)
     Locking._isLocked (target: conversation) has (locked: true)
-```
-
-### (user) may not grade
-
-```view
-(user) may not grade — inputs (user); outputs (); bindings ()
-  where
-    Roling._hasCapability (capability: "grade", context: "commons", user) has (allowed: false)
-    Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: false)
 ```
 
 ### (user) may not grade the work of (learner) on (item)
@@ -3504,14 +3521,6 @@ Authored path: `Course.grades.mayNotGradeAssessment`.
   where view "(user) is an active student" with (user)
 ```
 
-### (user) may not read the class's grades
-
-```view
-(user) may not read the class's grades — inputs (user); outputs (); bindings ()
-  where view "(user) may not grade" with (user)
-  where view "(user) is an active student" with (user)
-```
-
 ### (user) may read (artifact) submitted by (submitter) for (assignment)
 
 Authored path: `Course.submissions.mayReadSubmissionArtifact`.
@@ -3610,15 +3619,6 @@ Authored path: `Course.assignments.mayReadStaffAssignment`.
 (user) may read the attendance grid — inputs (user); outputs (); bindings ()
   where
     view "(user) may view lecture attendance" with (user)
-    view "(user) is not an active student" with (user)
-```
-
-### (user) may read the class's grades
-
-```view
-(user) may read the class's grades — inputs (user); outputs (); bindings ()
-  where
-    view "(user) may grade" with (user)
     view "(user) is not an active student" with (user)
 ```
 

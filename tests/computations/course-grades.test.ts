@@ -9,6 +9,7 @@ import {
   ownCourseGrade,
   policyIsWellFormed,
   releaseValue,
+  round2,
   studentGrade,
   updateValue,
 } from "../../src/computations/course-grades.ts";
@@ -294,6 +295,23 @@ describe("groups and grades", () => {
     const [g] = courseGrades(policy(), i, DUE_BY, AT);
     expect(holdReasons(policy(), g!)).toEqual(["below C", "draft"]);
   });
+
+  test("a draft on work no row of the policy reads holds no one", () => {
+    const i = inputs();
+    i.assessments[1]!.status = "DRAFT";
+    const only = policy();
+    only.groups[0]!.rows = [only.groups[0]!.rows[0]!];
+    const [g] = courseGrades(only, i, DUE_BY, AT);
+    expect(g!.work.e2!.status).toBe("draft");
+    expect(holdReasons(only, g!)).toEqual([]);
+  });
+
+  test("an exact half-cent rounds up, so a student shown 2.20 is graded C", () => {
+    expect(round2(0.7 * 1.85 + 0.3 * 3)).toBe(2.2);
+    expect(round2(0.7 * 2.25 + 0.3 * 2)).toBe(2.18);
+    expect(round2(2.194)).toBe(2.19);
+    expect(round2(3)).toBe(3);
+  });
 });
 
 describe("what a student sees", () => {
@@ -427,6 +445,22 @@ describe("the download and the policy's shape", () => {
       "Student name,Email,Section,Personal,Personal (2),Average,Grade,Policy grade,Reason,Lectures attended,Lectures,Policy,Version,As of",
     );
     expect(row).toContain('Ana Ruiz,ana@example.edu,,2.75,2.75,2.75,C,C,,0,0,"Guide, v2",2,');
+  });
+
+  test("a policy with an empty entry is refused, not thrown on", () => {
+    const broken = (change: (spec: Record<string, unknown>) => void) => {
+      const spec = structuredClone(policy()) as unknown as Record<string, unknown>;
+      change(spec);
+      return policyIsWellFormed({ specification: spec as never });
+    };
+    expect(broken((spec) => ((spec.lines as { letters: unknown[] }).letters = [null]))).toBe(false);
+    expect(broken((spec) => (spec.groups = [null]))).toBe(false);
+    expect(broken((spec) => (spec.attendance = [null]))).toBe(false);
+    expect(broken((spec) => ((spec.groups as { rows: unknown[] }[])[0]!.rows = [null]))).toBe(
+      false,
+    );
+    expect(broken((spec) => (spec.skillWeights = { x: 3 }))).toBe(false);
+    expect(broken((spec) => ((spec.lines as Record<string, unknown>).extra = 1))).toBe(true);
   });
 
   test("a policy is checked before it is saved", () => {

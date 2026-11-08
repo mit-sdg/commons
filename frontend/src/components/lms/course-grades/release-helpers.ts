@@ -106,7 +106,9 @@ export function reviewList(
 /** How many students have work handed in late, without late days, counted as Missing. */
 export function lateAsMissingCount(grades: StudentGrade[]): number {
   return grades.filter((grade) =>
-    Object.values(grade.work).some((work) => work.status === "late"),
+    Object.values(grade.work).some(
+      (work) => work.counted && work.status === "late",
+    ),
   ).length;
 }
 

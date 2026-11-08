@@ -11,9 +11,9 @@ term.
 ## Who reads and changes what
 
 The page shows every student's average and rank, so it is read by a caller
-holding `grade` who is not enrolled as an active student; the same rule now
+holding `grade` who is not enrolled as an active student; the same rule
 guards the staff gradebook. Changing policies, overrides, and releases, and
-downloading, needs `grade-policies`, and also not being an active student.
+downloading, needs `grade-policies` as well as reading the page.
 Administrators hold both through `administer`. A student reads only their own
 released card.
 
