@@ -72,7 +72,17 @@ export function ClassPane({
     grades,
     median: median === null ? null : showLetter(median, policy, showAs),
     comparison: comparison
-      ? { name: comparison.name, differ: differ.size }
+      ? {
+          name: comparison.name,
+          differ: differ.size,
+          by:
+            comparison.copies &&
+            ![...comparison.copies.values()].some(
+              (copy) => copy.kind === "letter",
+            )
+              ? "average"
+              : "letter",
+        }
       : null,
   });
   const hint = notCountedHint(leftOut(grades), policy.missing);

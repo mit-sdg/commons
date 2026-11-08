@@ -290,6 +290,13 @@ describe("the headline", () => {
         comparison: { name, differ: differ(mine.slice(0, 1)) },
       }),
     ).toBe("1 student gets a different letter under Latest per skill");
+    expect(
+      headline({
+        grades: mine,
+        median: "C",
+        comparison: { name: "What students see", differ: 3, by: "average" },
+      }),
+    ).toBe("3 students get a different average under What students see");
   });
 
   test("the hint names only the counts that aren't zero", () => {
@@ -306,7 +313,7 @@ describe("the headline", () => {
         0,
       ),
     ).toBe(
-      "Not counted: drafts from 2 students, 3 not graded yet, 2 excused, 5 assignments not due yet. 6 missing assignments count as 0.",
+      "Not counted: drafts from 2 students, 3 submissions not graded yet, 2 excused, 5 assignments not due yet. 6 missing assignments count as 0.",
     );
     expect(
       notCountedHint(

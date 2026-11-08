@@ -194,14 +194,23 @@ export function headline({
   grades: readonly StudentGrade[];
   /** The median letter as shown, or null when no student has a grade. */
   median: string | null;
-  /** While comparing: its name and how many students differ under it. */
-  comparison: { name: string; differ: number } | null;
+  /**
+   * While comparing: its name, how many students differ under it, and
+   * whether they differ by letter or, for copies released without letters,
+   * by average.
+   */
+  comparison: {
+    name: string;
+    differ: number;
+    by?: "letter" | "average";
+  } | null;
 }): string {
   if (comparison) {
     const n = comparison.differ;
+    const what = comparison.by === "average" ? "average" : "letter";
     if (n === 0)
-      return `No student gets a different letter under ${comparison.name}`;
-    return `${plural(n, "student gets", "students get")} a different letter under ${comparison.name}`;
+      return `No student gets a different ${what} under ${comparison.name}`;
+    return `${plural(n, "student gets", "students get")} a different ${what} under ${comparison.name}`;
   }
   if (grades.length === 0) return "No students yet";
   if (median === null) return "No grades yet";
@@ -350,7 +359,7 @@ export function leftOut(grades: readonly StudentGrade[]): {
 
 /**
  * The hint under the headline, naming each count only when it isn't zero:
- * "Not counted: drafts from 2 students, 3 not graded yet, 2 excused, 5
+ * "Not counted: drafts from 2 students, 3 submissions not graded yet, 2 excused, 5
  * assignments not due yet. 6 missing assignments count as 0." Null when there
  * is nothing to say.
  */
@@ -370,7 +379,10 @@ export function notCountedHint(
     left.push(
       `drafts from ${plural(counts.draftStudents, "student", "students")}`,
     );
-  if (counts.ungraded > 0) left.push(`${counts.ungraded} not graded yet`);
+  if (counts.ungraded > 0)
+    left.push(
+      `${plural(counts.ungraded, "submission", "submissions")} not graded yet`,
+    );
   if (counts.excused > 0) left.push(`${counts.excused} excused`);
   if (counts.notDue > 0)
     left.push(
