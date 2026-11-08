@@ -736,29 +736,102 @@ export interface ReleasedPolicy {
   specification: CoursePolicy;
 }
 
-/** What one class release keeps: its policy, settings, inputs, and every student's card. */
+/** What a release keeps once for the class: the assignments and the lecture dates. */
+export interface ReleasedCourse {
+  assignments: AssignmentInput[];
+  unitHours: number;
+  lectureRuns: { run: string; openedAt: string | Date }[];
+  timezone: string | null;
+}
+
+/** One student's rows of the inputs, and the lecture runs they joined. */
+export interface StudentRecord {
+  student: StudentInput;
+  releases: ReleaseInput[];
+  attempts: AttemptInput[];
+  assessments: AssessmentInput[];
+  uses: UseInput[];
+  lectures: string[];
+  override: OverrideInput | null;
+}
+
+/** What a release keeps for one student: their card, why they were held, and their inputs. */
+export interface StudentCopy {
+  card: CourseGradeCard;
+  held: string[] | null;
+  record: StudentRecord;
+}
+
+/** What one class release keeps: its policy, settings, the course once, and a copy per student. */
 export interface CourseGradeRelease {
   kind: "release";
   policy: ReleasedPolicy;
   settings: ReleaseSettings;
-  inputs: CourseGradeInputs;
+  course: ReleasedCourse;
   releasedBy: string;
   releasedAt: string;
-  cards: Record<string, CourseGradeCard>;
-  held: Record<string, string[]>;
+  students: Record<string, StudentCopy>;
 }
 
-/** What an update of one student's course grade keeps. */
+/** What an update of one student's course grade keeps: the same, for that student alone. */
 export interface CourseGradeUpdate {
   kind: "update";
   policy: ReleasedPolicy;
   settings: ReleaseSettings;
-  inputs: CourseGradeInputs;
+  course: ReleasedCourse;
   student: string;
   reason: string;
   releasedBy: string;
   releasedAt: string;
-  card: CourseGradeCard;
+  copy: StudentCopy;
+}
+
+function releasedCourse(inputs: CourseGradeInputs): ReleasedCourse {
+  return {
+    assignments: inputs.assignments,
+    unitHours: inputs.unitHours,
+    lectureRuns: inputs.lectureRuns.map(({ run, openedAt }) => ({ run, openedAt })),
+    timezone: inputs.timezone,
+  };
+}
+
+function studentRecord(inputs: CourseGradeInputs, student: string): StudentRecord {
+  return {
+    student: inputs.students.find((entry) => entry.user === student) ?? {
+      user: student,
+      section: null,
+      email: "",
+      name: "",
+    },
+    releases: inputs.releases.filter((entry) => entry.assignee === student),
+    attempts: inputs.attempts.filter((entry) => entry.submitter === student),
+    assessments: inputs.assessments.filter((entry) => entry.learner === student),
+    uses: inputs.uses.filter((entry) => entry.learner === student),
+    lectures: inputs.lectureRuns
+      .filter((run) => run.joined.includes(student))
+      .map((run) => run.run),
+    override: inputs.overrides.find((entry) => entry.subject === student) ?? null,
+  };
+}
+
+/** The inputs one student's copy was computed from, rebuilt from what the release keeps. */
+export function copyInputs(course: ReleasedCourse, record: StudentRecord): CourseGradeInputs {
+  const user = record.student.user;
+  return {
+    assignments: course.assignments,
+    releases: record.releases,
+    attempts: record.attempts,
+    assessments: record.assessments,
+    uses: record.uses,
+    unitHours: course.unitHours,
+    students: [record.student],
+    lectureRuns: course.lectureRuns.map((run) => ({
+      ...run,
+      joined: record.lectures.includes(run.run) ? [user] : [],
+    })),
+    timezone: course.timezone,
+    overrides: record.override === null ? [] : [record.override],
+  };
 }
 
 /**
@@ -782,23 +855,24 @@ export function releaseValue({
 }): CourseGradeRelease {
   const spec = policy.specification;
   const grades = courseGrades(spec, inputs, new Date(settings.dueBy), at);
-  const cards: Record<string, CourseGradeCard> = {};
-  const held: Record<string, string[]> = {};
+  const students: Record<string, StudentCopy> = {};
   for (const grade of grades) {
     const reasons = holdReasons(spec, grade);
     const holding = reasons.length > 0 && !release.includes(grade.student);
-    if (holding) held[grade.student] = reasons;
-    cards[grade.student] = courseGradeCard(spec, inputs, grade, settings, holding);
+    students[grade.student] = {
+      card: courseGradeCard(spec, inputs, grade, settings, holding),
+      held: holding ? reasons : null,
+      record: studentRecord(inputs, grade.student),
+    };
   }
   return {
     kind: "release",
     policy,
     settings,
-    inputs,
+    course: releasedCourse(inputs),
     releasedBy: by,
     releasedAt: at.toISOString(),
-    cards,
-    held,
+    students,
   };
 }
 
@@ -824,12 +898,16 @@ export function updateValue({
     kind: "update",
     policy: release.policy,
     settings: release.settings,
-    inputs,
+    course: releasedCourse(inputs),
     student,
     reason,
     releasedBy: by,
     releasedAt: at.toISOString(),
-    card: courseGradeCard(spec, inputs, grade, release.settings, false),
+    copy: {
+      card: courseGradeCard(spec, inputs, grade, release.settings, false),
+      held: null,
+      record: studentRecord(inputs, student),
+    },
   };
 }
 
@@ -862,7 +940,7 @@ export function ownCourseGrade({
     updateOpen === true &&
     update.student === student &&
     time(updateOpenedAt!) >= time(releaseOpenedAt!);
-  const card = newer ? update.card : (release.cards[student] ?? null);
+  const card = newer ? update.copy.card : (release.students[student]?.card ?? null);
   return card === null ? { state: "none", card: null } : { state: "released", card };
 }
 
@@ -1097,13 +1175,32 @@ export function releaseSettings({
   };
 }
 
-/** What staff see of a release: everything but the inputs it was computed from. */
+/** What staff see of a class release: every card and who was held, without the inputs. */
+export type ReleaseSummary = Omit<CourseGradeRelease, "course" | "students"> & {
+  cards: Record<string, CourseGradeCard>;
+  held: Record<string, string[]>;
+};
+
+/** What staff see of an update: its card, without the inputs. */
+export type UpdateSummary = Omit<CourseGradeUpdate, "course" | "copy"> & { card: CourseGradeCard };
+
+/** What staff see of a release or an update: everything but the inputs it was computed from. */
 export function releaseSummary({
   value,
 }: {
   value: CourseGradeRelease | CourseGradeUpdate | null;
-}): Omit<CourseGradeRelease, "inputs"> | Omit<CourseGradeUpdate, "inputs"> | null {
+}): ReleaseSummary | UpdateSummary | null {
   if (value === null) return null;
-  const { inputs: _inputs, ...summary } = value;
-  return summary;
+  if (value.kind === "update") {
+    const { course: _course, copy, ...summary } = value;
+    return { ...summary, card: copy.card };
+  }
+  const { course: _course, students, ...summary } = value;
+  const cards: Record<string, CourseGradeCard> = {};
+  const held: Record<string, string[]> = {};
+  for (const [student, copy] of Object.entries(students)) {
+    cards[student] = copy.card;
+    if (copy.held !== null) held[student] = copy.held;
+  }
+  return { ...summary, cards, held };
 }

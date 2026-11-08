@@ -966,19 +966,19 @@ export type CommonsWire = {
   };
   "/grades/discard": {
     input: {
-      "grade": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["discard"]>[0], ["grade"]>>;
+      "grade": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>[0], ["grade"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["discard"]>[0], ["grade"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "version": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["discard"]>[0], ["version"]>>;
     };
     output: {
       "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["discard"]>>, ["grade"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "GRADE_CONFLICT" | "GRADE_NOT_FOUND" | "INVALID_INPUT" };
+    error: { error: AppWideError | "FORBIDDEN" | "GRADE_CONFLICT" | "GRADE_NOT_FOUND" | "INVALID_INPUT" | "NOT_FOUND" };
   };
   "/grades/excuse": {
     input: {
       "feedback": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["excuse"]>[0], ["feedback"]>>;
-      "grade": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["excuse"]>[0], ["grade"]>>;
+      "grade": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>[0], ["grade"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["excuse"]>[0], ["grade"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "version": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["excuse"]>[0], ["version"]>>;
     };
@@ -986,7 +986,7 @@ export type CommonsWire = {
       "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["excuse"]>>, ["grade"]>>;
       "version": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["excuse"]>>, ["version"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "GRADE_CONFLICT" | "GRADE_NOT_FOUND" | "INVALID_INPUT" | "INVALID_JUDGMENTS" };
+    error: { error: AppWideError | "FORBIDDEN" | "GRADE_CONFLICT" | "GRADE_NOT_FOUND" | "INVALID_INPUT" | "INVALID_JUDGMENTS" | "NOT_FOUND" };
   };
   "/grades/export": {
     input: {
@@ -1162,8 +1162,8 @@ export type CommonsWire = {
   "/grades/record": {
     input: {
       "evidence": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["evidence"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getAssessment"]>[0], ["evidence"]>]>>;
-      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getAssessment"]>[0], ["item"]>]>>;
-      "learner": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["learner"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getAssessment"]>[0], ["learner"]>]>>;
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getAssessment"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["_getDelegation"]>[0], ["item"]>]>>;
+      "learner": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["learner"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getAssessment"]>[0], ["learner"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["_getDelegation"]>[0], ["subject"]>]>>;
       "revision": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["gradingRevisionMatches"]["fn"]>[0], ["right"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
@@ -1180,7 +1180,7 @@ export type CommonsWire = {
   };
   "/grades/release": {
     input: {
-      "grade": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["release"]>[0], ["grade"]>>;
+      "grade": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>[0], ["grade"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["release"]>[0], ["grade"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "version": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["release"]>[0], ["version"]>>;
     };
@@ -1188,7 +1188,7 @@ export type CommonsWire = {
       "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["release"]>>, ["grade"]>>;
       "version": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["release"]>>, ["version"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "GRADE_CONFLICT" | "GRADE_INCOMPLETE" | "GRADE_NOT_FOUND" | "INVALID_INPUT" };
+    error: { error: AppWideError | "FORBIDDEN" | "GRADE_CONFLICT" | "GRADE_INCOMPLETE" | "GRADE_NOT_FOUND" | "INVALID_INPUT" | "NOT_FOUND" };
   };
   "/grades/release-item": {
     input: {
@@ -1204,7 +1204,7 @@ export type CommonsWire = {
   };
   "/grades/restore-excused": {
     input: {
-      "grade": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["restoreExcused"]>[0], ["grade"]>>;
+      "grade": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>[0], ["grade"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["restoreExcused"]>[0], ["grade"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "version": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["restoreExcused"]>[0], ["version"]>>;
     };
@@ -1212,11 +1212,11 @@ export type CommonsWire = {
       "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["restoreExcused"]>>, ["grade"]>>;
       "version": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["restoreExcused"]>>, ["version"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "GRADE_CONFLICT" | "GRADE_NOT_FOUND" | "INVALID_INPUT" };
+    error: { error: AppWideError | "FORBIDDEN" | "GRADE_CONFLICT" | "GRADE_NOT_FOUND" | "INVALID_INPUT" | "NOT_FOUND" };
   };
   "/grades/retract": {
     input: {
-      "grade": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["retract"]>[0], ["grade"]>>;
+      "grade": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>[0], ["grade"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["retract"]>[0], ["grade"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "version": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["retract"]>[0], ["version"]>>;
     };
@@ -1224,7 +1224,7 @@ export type CommonsWire = {
       "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["retract"]>>, ["grade"]>>;
       "version": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["retract"]>>, ["version"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "GRADE_CONFLICT" | "GRADE_NOT_FOUND" | "INVALID_INPUT" };
+    error: { error: AppWideError | "FORBIDDEN" | "GRADE_CONFLICT" | "GRADE_NOT_FOUND" | "INVALID_INPUT" | "NOT_FOUND" };
   };
   "/grades/revise-standard": {
     input: {
@@ -1248,7 +1248,7 @@ export type CommonsWire = {
   "/grades/save": {
     input: {
       "feedback": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["save"]>[0], ["feedback"]>>;
-      "grade": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["save"]>[0], ["grade"]>>;
+      "grade": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>[0], ["grade"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["save"]>[0], ["grade"]>]>>;
       "judgments": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["save"]>[0], ["judgments"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
       "version": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["save"]>[0], ["version"]>>;
@@ -1257,7 +1257,7 @@ export type CommonsWire = {
       "grade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["save"]>>, ["grade"]>>;
       "version": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grading"]["save"]>>, ["version"]>>;
     };
-    error: { error: AppWideError | "FORBIDDEN" | "GRADE_CONFLICT" | "GRADE_NOT_FOUND" | "INVALID_INPUT" | "INVALID_JUDGMENTS" };
+    error: { error: AppWideError | "FORBIDDEN" | "GRADE_CONFLICT" | "GRADE_NOT_FOUND" | "INVALID_INPUT" | "INVALID_JUDGMENTS" | "NOT_FOUND" };
   };
   "/grades/standards": {
     input: {
@@ -4336,9 +4336,9 @@ export type CommonsWire = {
   };
   "/submissions/attempts": {
     input: {
-      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getAttempts"]>[0], ["assignment"]>>;
+      "assignment": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getAttempts"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["_getDelegation"]>[0], ["item"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "submitter": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>>;
+      "submitter": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["_getDelegation"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>]>>;
     };
     output: {
       "attempts": {
@@ -4393,14 +4393,22 @@ export type CommonsWire = {
         "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["submission"]>>;
         "submittedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["submittedAt"]>>;
       }[];
+    } | {
+      "submissions": {
+        "assignment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["assignment"]>>;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["number"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["status"]>>;
+        "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["submission"]>>;
+        "submittedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["submittedAt"]>>;
+      }[];
     };
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" };
   };
   "/submissions/latest": {
     input: {
-      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getLatest"]>[0], ["assignment"]>>;
+      "assignment": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["_getDelegation"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getLatest"]>[0], ["assignment"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "submitter": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>>;
+      "submitter": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["_getDelegation"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>]>>;
     };
     output: {
       "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getLatest"]>>>, ["latest"]>> | null;
@@ -6171,7 +6179,7 @@ export type CommonsWireHttp = {
   };
   "/grades/discard": {
     input: {
-      "grade": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["discard"]>[0], ["grade"]>>;
+      "grade": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>[0], ["grade"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["discard"]>[0], ["grade"]>]>>;
       "version": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["discard"]>[0], ["version"]>>;
     };
     output: {
@@ -6182,7 +6190,7 @@ export type CommonsWireHttp = {
   "/grades/excuse": {
     input: {
       "feedback": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["excuse"]>[0], ["feedback"]>>;
-      "grade": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["excuse"]>[0], ["grade"]>>;
+      "grade": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>[0], ["grade"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["excuse"]>[0], ["grade"]>]>>;
       "version": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["excuse"]>[0], ["version"]>>;
     };
     output: {
@@ -6356,8 +6364,8 @@ export type CommonsWireHttp = {
   "/grades/record": {
     input: {
       "evidence": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["evidence"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getAssessment"]>[0], ["evidence"]>]>>;
-      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getAssessment"]>[0], ["item"]>]>>;
-      "learner": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["learner"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getAssessment"]>[0], ["learner"]>]>>;
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getAssessment"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["_getDelegation"]>[0], ["item"]>]>>;
+      "learner": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["record"]>[0], ["learner"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getAssessment"]>[0], ["learner"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["_getDelegation"]>[0], ["subject"]>]>>;
       "revision": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["gradingRevisionMatches"]["fn"]>[0], ["right"]>>;
     };
     output: {
@@ -6373,7 +6381,7 @@ export type CommonsWireHttp = {
   };
   "/grades/release": {
     input: {
-      "grade": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["release"]>[0], ["grade"]>>;
+      "grade": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>[0], ["grade"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["release"]>[0], ["grade"]>]>>;
       "version": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["release"]>[0], ["version"]>>;
     };
     output: {
@@ -6395,7 +6403,7 @@ export type CommonsWireHttp = {
   };
   "/grades/restore-excused": {
     input: {
-      "grade": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["restoreExcused"]>[0], ["grade"]>>;
+      "grade": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>[0], ["grade"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["restoreExcused"]>[0], ["grade"]>]>>;
       "version": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["restoreExcused"]>[0], ["version"]>>;
     };
     output: {
@@ -6406,7 +6414,7 @@ export type CommonsWireHttp = {
   };
   "/grades/retract": {
     input: {
-      "grade": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["retract"]>[0], ["grade"]>>;
+      "grade": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>[0], ["grade"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["retract"]>[0], ["grade"]>]>>;
       "version": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["retract"]>[0], ["version"]>>;
     };
     output: {
@@ -6436,7 +6444,7 @@ export type CommonsWireHttp = {
   "/grades/save": {
     input: {
       "feedback": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["save"]>[0], ["feedback"]>>;
-      "grade": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["save"]>[0], ["grade"]>>;
+      "grade": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["_getGrade"]>[0], ["grade"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["save"]>[0], ["grade"]>]>>;
       "judgments": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["save"]>[0], ["judgments"]>>;
       "version": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grading"]["save"]>[0], ["version"]>>;
     };
@@ -9305,8 +9313,8 @@ export type CommonsWireHttp = {
   };
   "/submissions/attempts": {
     input: {
-      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getAttempts"]>[0], ["assignment"]>>;
-      "submitter": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>>;
+      "assignment": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getAttempts"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["_getDelegation"]>[0], ["item"]>]>>;
+      "submitter": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["_getDelegation"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>]>>;
     };
     output: {
       "attempts": {
@@ -9359,13 +9367,21 @@ export type CommonsWireHttp = {
         "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["submission"]>>;
         "submittedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["submittedAt"]>>;
       }[];
+    } | {
+      "submissions": {
+        "assignment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["assignment"]>>;
+        "number": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["number"]>>;
+        "status": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["status"]>>;
+        "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["submission"]>>;
+        "submittedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForSubmitter"]>>>, ["submittedAt"]>>;
+      }[];
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
   };
   "/submissions/latest": {
     input: {
-      "assignment": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getLatest"]>[0], ["assignment"]>>;
-      "submitter": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>>;
+      "assignment": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["_getDelegation"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getLatest"]>[0], ["assignment"]>]>>;
+      "submitter": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Delegating"]["_getDelegation"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>]>>;
     };
     output: {
       "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getLatest"]>>>, ["latest"]>> | null;

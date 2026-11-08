@@ -13,20 +13,18 @@ import {
 import {
   type CourseGradeCard,
   type CourseGradeInputs,
-  type CourseGradeRelease,
-  type CourseGradeUpdate,
   type CoursePolicy,
   courseGradeCard,
   courseGrades,
   holdReasons,
   type ReleaseSettings,
+  type ReleaseSummary,
   type StudentGrade,
+  type UpdateSummary,
   type WorkResult,
 } from "../../../../../src/computations/course-grades.ts";
 
-/** What staff see of a class release: everything but its inputs. */
-export type ReleaseSummary = Omit<CourseGradeRelease, "inputs">;
-type UpdateSummary = Omit<CourseGradeUpdate, "inputs">;
+export type { ReleaseSummary };
 
 /** "P4" from "P4: Code complete"; a title without a colon stays whole. */
 export function shortTitle(title: string): string {

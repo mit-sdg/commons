@@ -350,8 +350,9 @@ describe("what a student sees", () => {
       by: "dj",
       at: AT,
     });
-    expect(held.held).toEqual({ ben: ["below C"] });
-    expect(held.cards.ben!.status).toBe("held");
+    expect(held.students.ben!.held).toEqual(["below C"]);
+    expect(held.students.ana!.held).toBeNull();
+    expect(held.students.ben!.card.status).toBe("held");
     const released = releaseValue({
       policy: final,
       inputs: i,
@@ -360,7 +361,7 @@ describe("what a student sees", () => {
       by: "dj",
       at: AT,
     });
-    expect(released.held).toEqual({});
+    expect(Object.values(released.students).every((copy) => copy.held === null)).toBe(true);
     const own = (student: string, open = true) =>
       ownCourseGrade({
         student,
@@ -371,7 +372,7 @@ describe("what a student sees", () => {
         updateOpen: null,
         updateOpenedAt: null,
       });
-    expect(own("ana").card).toEqual(held.cards.ana);
+    expect(own("ana").card).toEqual(held.students.ana!.card);
     expect(own("ben").card!.status).toBe("held");
     expect(own("someone-else")).toEqual({ state: "none", card: null });
     expect(own("ana", false)).toEqual({ state: "withdrawn", card: null });
@@ -407,7 +408,7 @@ describe("what a student sees", () => {
         updateOpenedAt,
       }).card!.average;
     expect(read(day(30))).toBe(3.75);
-    expect(read(day(29))).toBe(release.cards.ana!.average);
+    expect(read(day(29))).toBe(release.students.ana!.card.average);
   });
 });
 

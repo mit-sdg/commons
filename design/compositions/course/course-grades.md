@@ -85,9 +85,11 @@ in CourseGradePublishing, and CourseGradeSnapshotting keeps what it released.
 [Course.courseGrades.Release](reaction:Course.courseGrades.Release) uses
 [the final policy](view:Course.courseGrades.theFinalPolicy) as saved, and
 answers `NO_FINAL_POLICY` without one. [releaseValue](computation:releaseValue)
-computes every active student's grade with work due by the chosen date and
-keeps the policy, the settings, the inputs, who released, when, and each
-student's card. A student below C in the policy's grade set, or with a draft or
+computes every active student's grade with work due by the chosen date. It
+keeps the policy, the settings, the class's assignments and lecture dates, who
+released, and when once, and for each student their card, why they were held,
+and only their own inputs: their releases, attempts, assessments, late-day
+uses, the lectures they joined, and their override. A student below C in the policy's grade set, or with a draft or
 an ungraded submission among the counted work, is held and gets the held card,
 unless the request names them among those released after a look. The release
 is published first and its value captured with it after, computed from the
@@ -100,7 +102,8 @@ from a caller who may not change course grades.
 
 [Course.courseGrades.UpdateStudent](reaction:Course.courseGrades.UpdateStudent)
 re-releases one student under the open release's policy and settings, with a
-reason, as an edition whose material is that student;
+reason, as an edition whose material is that student and which keeps that
+student's copy alone;
 [Course.courseGrades.UpdateStudentAgain](reaction:Course.courseGrades.UpdateStudentAgain)
 closes the student's older update first, and
 [Course.courseGrades.UpdateStudentRefused](reaction:Course.courseGrades.UpdateStudentRefused)
@@ -148,13 +151,13 @@ releaseValue(policy: Json, inputs: Json, settings: Json, release: Seq, by: Strin
   Computes every active student's card under the policy and settings, holding students below C or with drafts or ungraded work unless released by name.
 
 updateValue(release: CourseGradeRelease, inputs: Json, student: String, reason: String, by: String, at: Date) : CourseGradeRelease
-  Computes one student's card again under the open release's policy and settings.
+  Computes one student's card again under the open release's policy and settings, keeping only that student's inputs.
 
 ownCourseGrade(student: String, release: CourseGradeRelease, releaseOpen: Bool, releaseOpenedAt: Date, update: CourseGradeRelease, updateOpen: Bool, updateOpenedAt: Date) : Json
   Answers the student's own card and whether it is released, withdrawn, or not released yet.
 
 releaseSummary(value: CourseGradeRelease) : Json
-  Answers what staff see of a release or an update: everything but its inputs.
+  Answers what staff see of a release or an update: every card and who was held, without the inputs.
 
 courseGradesCsv(policy: Json, inputs: Json, sections: Seq, at: Date) : String
   Writes the final grades as CSV with CRLF line endings, quoting text that needs it.

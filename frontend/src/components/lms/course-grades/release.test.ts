@@ -2,7 +2,10 @@ import { describe, expect, test } from "bun:test";
 import {
   type CourseGradeInputs,
   type CoursePolicy,
+  copyInputs,
+  courseGradeCard,
   courseGrades,
+  releaseSummary,
   releaseValue,
   updateValue,
 } from "../../../../../src/computations/course-grades.ts";
@@ -323,15 +326,6 @@ describe("settings", () => {
 
 /* ---------- Since the release ---------- */
 
-/** What staff see of a release or an update: everything but its inputs. */
-function withoutInputs<T extends { inputs: unknown }>(
-  value: T,
-): Omit<T, "inputs"> {
-  const summary: Partial<T> = { ...value };
-  delete summary.inputs;
-  return summary as Omit<T, "inputs">;
-}
-
 const SETTINGS = {
   dueBy: DUE_BY.toISOString(),
   breakdown: true,
@@ -354,7 +348,7 @@ function released(data: CourseGradeInputs, release: string[] = []) {
     by: "staff",
     at: RELEASED_AT,
   });
-  const summary = withoutInputs(value);
+  const summary = releaseSummary({ value });
   return {
     entry: {
       edition: "r1",
@@ -367,6 +361,54 @@ function released(data: CourseGradeInputs, release: string[] = []) {
     value,
   };
 }
+
+describe("what a release keeps", () => {
+  test("each student's copy holds only their own inputs and gives back their card", () => {
+    const { value } = released(inputs());
+    for (const [student, copy] of Object.entries(value.students)) {
+      const { record } = copy;
+      expect(record.student.user).toBe(student);
+      for (const rows of [
+        record.releases.map((row) => row.assignee),
+        record.attempts.map((row) => row.submitter),
+        record.assessments.map((row) => row.learner),
+        record.uses.map((row) => row.learner),
+      ])
+        expect(rows.every((owner) => owner === student)).toBe(true);
+      const again = courseGrades(
+        value.policy.specification,
+        copyInputs(value.course, record),
+        DUE_BY,
+        RELEASED_AT,
+      )[0]!;
+      const card = courseGradeCard(
+        value.policy.specification,
+        copyInputs(value.course, record),
+        again,
+        value.settings,
+        copy.held !== null,
+      );
+      expect(card).toEqual(copy.card);
+    }
+  });
+
+  test("an update keeps one student", () => {
+    const { value } = released(inputs());
+    const update = updateValue({
+      release: value,
+      inputs: inputs(),
+      student: "ana",
+      reason: "Regrade",
+      by: "staff",
+      at: new Date(day(30)),
+    });
+    expect(update.copy.record.student.user).toBe("ana");
+    expect(
+      update.copy.record.assessments.every((row) => row.learner === "ana"),
+    ).toBe(true);
+    expect(update.copy.card).toEqual(value.students.ana!.card);
+  });
+});
 
 type Page = Parameters<typeof sinceRelease>[0];
 type Entry = Parameters<typeof sinceRelease>[1];
@@ -449,7 +491,7 @@ describe("changed since release", () => {
       by: "staff",
       at: new Date(day(30)),
     });
-    const summary = withoutInputs(update);
+    const summary = releaseSummary({ value: update });
     const updates = [
       {
         edition: "u1",
