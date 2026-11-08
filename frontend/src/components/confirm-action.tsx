@@ -18,6 +18,7 @@ export function ConfirmAction({
   title,
   description,
   confirmLabel,
+  cancelLabel = "Cancel",
   onConfirm,
   destructive = false,
   confirmDisabled = false,
@@ -29,6 +30,7 @@ export function ConfirmAction({
   title: string;
   description: React.ReactNode;
   confirmLabel: string;
+  cancelLabel?: string;
   onConfirm: () => void | Promise<void>;
   destructive?: boolean;
   confirmDisabled?: boolean;
@@ -69,7 +71,7 @@ export function ConfirmAction({
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="outline" aria-disabled={busy || undefined}>
-              Cancel
+              {cancelLabel}
             </Button>
           </DialogClose>
           {/* Busy is said, not enforced by the browser, so the focus stays

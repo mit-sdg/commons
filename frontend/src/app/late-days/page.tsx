@@ -4,7 +4,6 @@ import { CalendarClock } from "lucide-react";
 import { Fact, Facts } from "@/components/facts";
 import { Link } from "@/components/link";
 import {
-  CoverLateness,
   LateDayCancel,
   LateDayStepper,
 } from "@/components/lms/late-day-stepper";
@@ -17,7 +16,6 @@ import { count } from "@/lib/format";
 import {
   daysLeft,
   type LateDayRow,
-  type LateDayTerms,
   lateBy,
   lateDayRows,
   lateDayTerms,
@@ -100,12 +98,7 @@ export default function LateDaysPage() {
       ) : (
         <ul className="space-y-2">
           {rows.map((row) => (
-            <LateDayItem
-              key={row.assignment}
-              row={row}
-              terms={terms}
-              onMoved={refetchDays}
-            />
+            <LateDayItem key={row.assignment} row={row} onMoved={refetchDays} />
           ))}
         </ul>
       )}
@@ -115,11 +108,9 @@ export default function LateDaysPage() {
 
 function LateDayItem({
   row,
-  terms,
   onMoved,
 }: {
   row: LateDayRow;
-  terms: LateDayTerms;
   onMoved: () => void;
 }) {
   const archived = row.title === null;
@@ -159,14 +150,6 @@ function LateDayItem({
         )}
       </div>
       <div className="flex flex-wrap items-center gap-3 sm:justify-end">
-        {!archived && (
-          <CoverLateness
-            row={row}
-            terms={terms}
-            onMoved={onMoved}
-            className="sm:max-w-56"
-          />
-        )}
         {archived ? (
           <>
             <span className="text-sm tabular-nums">

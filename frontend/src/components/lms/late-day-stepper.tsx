@@ -80,6 +80,7 @@ function CancelConfirm({
         row.days > 0 ? `You get ${count(row.days, "late day")} back.` : null
       }
       confirmLabel="Cancel late days"
+      cancelLabel="Keep"
       destructive
       onConfirm={onConfirm}
       open={open}
@@ -182,9 +183,16 @@ export function LateDayCancel({
   );
 }
 
+/** "Use 2 late days", or "Use 1 more late day" when some are on already. */
+export function coverLabel(row: Pick<LateDayRow, "days" | "daysNeeded">) {
+  return row.days > 0
+    ? `Use ${count(row.daysNeeded - row.days, "more late day")}`
+    : `Use ${count(row.daysNeeded, "late day")}`;
+}
+
 /**
- * For a late hand-in the days don't cover: "Use 2 late days", or why the
- * balance or the per-assignment limit can't cover it.
+ * For a late hand-in the days don't cover: the button that covers it, or why
+ * the balance or the per-assignment limit can't.
  */
 export function CoverLateness({
   row,
@@ -214,7 +222,7 @@ export function CoverLateness({
       disabled={busy}
       onClick={() => void send(move)}
     >
-      Use {count(row.daysNeeded, "late day")}
+      {coverLabel(row)}
     </Button>
   );
 }

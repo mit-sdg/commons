@@ -768,7 +768,7 @@ function StaffAssignmentDetailPageContent({
           );
         }}
       >
-        {canManage ? "Back to assignments" : "Back to assessment book"}
+        {canManage ? "Back to assignments" : "Back to Assessments"}
       </BackLink>
 
       <PageTitle parts={[detail.title, "Assignments", "Staff"]} />

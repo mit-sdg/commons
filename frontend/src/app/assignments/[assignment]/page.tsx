@@ -213,10 +213,15 @@ export default function AssignmentDetailPage({
     lateDays: appliedLateUse?.days ?? 0,
     unitHours: lateUseData?.unitHours ?? 24,
   };
-  const dueMs = effectiveDue(dueTerms);
+  const dueMs = effectiveDue({ ...dueTerms, lateDays: 0 });
   const due = Number.isNaN(dueMs)
     ? detail.dueAt
     : new Date(dueMs).toISOString();
+  const movedMs = effectiveDue(dueTerms);
+  const moved =
+    dueTerms.lateDays > 0 && !Number.isNaN(movedMs)
+      ? new Date(movedMs).toISOString()
+      : null;
   const effectiveClose = detail.closeAt;
   const now = new Date();
   const isOverdue = overdue({
@@ -422,6 +427,7 @@ export default function AssignmentDetailPage({
             dueAt={due}
             closeAt={effectiveClose}
             overdue={isOverdue}
+            moved={moved ? { at: moved, days: dueTerms.lateDays } : null}
           />
 
           {detail.status === "PUBLISHED" &&
