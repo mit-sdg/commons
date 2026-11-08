@@ -34,6 +34,13 @@ Point totals and denominators derive from the snapshot and are finite. Excused
 public rows hide private draft judgments and scores. Learners see only their own
 released or excused records.
 
+A grader who is also an active student grades only the classmates Delegating
+names them for on each item, and never their own work. Every read or write of
+one learner's work checks the grade's learner and item, and a list of an item's
+or a learner's assessments keeps only the rows the caller may grade; a hidden
+assessment answers `NOT_FOUND`. Releasing a whole item is refused to a grader
+who is an active student.
+
 Consumers selecting one result for an attempt use its exact evidence assessment
 first. Only when none exists may an empty-evidence `EXCUSED` assessment serve as
 the assignment-wide fallback; an attempt-specific excusal never applies to other
@@ -41,7 +48,9 @@ attempts.
 
 [Authorize current item setup through staff authority or assigned published work](view:Course.grades.mayReadItem).
 
-[Authorize one assessment through staff authority or learner ownership and public status](view:Course.grades.mayReadAssessment).
+[Authorize grading one assessment through its learner and item](view:Course.grades.mayGradeAssessment), or [refuse it](view:Course.grades.mayNotGradeAssessment).
+
+[Authorize one assessment through grading authority or learner ownership and public status](view:Course.grades.mayReadAssessment).
 
 [Authorize first creation through active enrollment, assigned published work, and matching submitted evidence or the empty excusal marker](view:Course.grades.mayStartAssessment).
 
@@ -49,9 +58,11 @@ attempts.
 
 [Form the learner-visible released and excused assessment history](former:Course.grades.theReleasedGradesOf).
 
-[Form all assessments of one learner for staff](former:Course.grades.theGradesOf).
+[Form all assessments of one learner for the class gradebook](former:Course.grades.theGradesOf).
 
-[Form every assessment on one item for staff](former:Course.grades.theGradesOn).
+[Form the assessments of one learner that the caller may grade](former:Course.grades.theGradableGradesOf).
+
+[Form every assessment on one item that the caller may grade](former:Course.grades.theGradesOn).
 
 [Form one assessment with supporting-work metadata](former:Course.grades.theAssessment).
 

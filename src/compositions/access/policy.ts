@@ -2,7 +2,8 @@ import { no, view, where } from "@mit-sdg/sync-engine/language";
 import { concepts } from "../../concepts.ts";
 import { ADMINISTER, COMMONS } from "./capabilities.ts";
 
-const { Archiving, Conversing, Locking, Posting, Roling, Rostering, Trashing } = concepts;
+const { Archiving, Conversing, Delegating, Locking, Posting, Roling, Rostering, Trashing } =
+  concepts;
 
 /**
  * Every capability check passes for a holder of `administer`, so each `may…`
@@ -290,6 +291,21 @@ export const mayNotViewAttendance = view(
     ),
 ).holds();
 
+/** The attendance grid names every student, so an active student is refused it. */
+export const mayReadAttendance = view(
+  "(user) may read the attendance grid",
+  ({ user }, _outputs, _bindings) =>
+    where(mayViewAttendance({ user }), isNotActiveStudent({ user })),
+).holds();
+
+export const mayNotReadAttendance = view(
+  "(user) may not read the attendance grid",
+  ({ user }, _outputs, _bindings) => [
+    where(mayNotViewAttendance({ user })),
+    where(isActiveStudent({ user })),
+  ],
+).holds();
+
 /** Marking a run as a lecture needs `live:host` or `course:manage`. */
 export const mayMarkLectures = view("(user) may mark lectures", ({ user }, _outputs, _bindings) => [
   where(mayManageCourse({ user })),
@@ -313,8 +329,9 @@ export const mayNotMarkLectures = view(
 
 /**
  * The gradebook and course grades show every student's ratings, averages, and
- * ranks, so a caller holding `grade` reads them only while not enrolled as an
- * active student.
+ * ranks, and releasing an item or choosing who grades whom acts on every
+ * student's work, so a caller holding `grade` does these only while not
+ * enrolled as an active student.
  */
 export const mayReadClassGrades = view(
   "(user) may read the class's grades",
@@ -326,6 +343,42 @@ export const mayNotReadClassGrades = view(
   ({ user }, _outputs, _bindings) => [
     where(mayNotGrade({ user })),
     where(isActiveStudent({ user })),
+  ],
+).holds();
+
+/**
+ * A grader who is also an active student sees and grades a classmate's work on
+ * an item only when Delegating names them that classmate's grader there, and
+ * never their own work.
+ */
+export const mayGradeWork = view(
+  "(user) may grade the work of (learner) on (item)",
+  ({ user, learner, item }, _outputs, _bindings) => [
+    where(mayGrade({ user }), isNotActiveStudent({ user })),
+    where(
+      mayGrade({ user }),
+      isActiveStudent({ user }),
+      Delegating._getDelegation({ item, subject: learner })
+        .is({ delegate: user })
+        .is.not({ delegate: learner }),
+    ),
+  ],
+).holds();
+
+export const mayNotGradeWork = view(
+  "(user) may not grade the work of (learner) on (item)",
+  ({ user, learner, item }, _outputs, _bindings) => [
+    where(mayNotGrade({ user })),
+    where(
+      isActiveStudent({ user }),
+      no(Delegating._getDelegation({ item, subject: learner }).is({ delegate: user })),
+    ),
+    where(
+      isActiveStudent({ user }),
+      Delegating._getDelegation({ item, subject: learner })
+        .is({ delegate: user })
+        .is({ delegate: learner }),
+    ),
   ],
 ).holds();
 

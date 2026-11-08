@@ -3,7 +3,13 @@ import { compute, each, former, is, no, view, where, whether } from "@mit-sdg/sy
 import { computations, concepts } from "../../concepts.ts";
 import { COMMONS } from "../access/capabilities.ts";
 import { activeUser } from "../access/session.ts";
-import { mayGrade, mayNotGrade } from "../access/policy.ts";
+import {
+  mayGrade,
+  mayGradeWork,
+  mayNotGrade,
+  mayNotReadClassGrades,
+  mayReadClassGrades,
+} from "../access/policy.ts";
 
 const { Archiving, Assigning, Authenticating, Delegating, Profiling, Roling } = concepts;
 const GRADE = "grade";
@@ -31,10 +37,11 @@ export const availableGrader = view(
 ).holds();
 
 export const theDelegationsOn = former(
-  "the grading delegations on (item)",
-  ({ item }, { learner, grader, graderName, graderUsername }) =>
+  "the grading delegations on (item) that (user) may see",
+  ({ item, user }, { learner, grader, graderName, graderUsername }) =>
     each(Delegating._getDelegations({ item }).is({ subject: learner, delegate: grader }))
       .where(
+        mayGradeWork({ user, learner, item }),
         whether(Profiling._getProfileFields({ user: grader }).is({ displayName: graderName })),
         whether(Authenticating._getById({ user: grader }).is({ username: graderUsername })),
       )
@@ -87,7 +94,7 @@ export const DelegationForItem = endpoint(
         is.among(valid, [true]),
         Assigning._getAssignments({}).is({ assignment: item }),
       )
-        .then(respond({ delegations: theDelegationsOn({ item }) }))
+        .then(respond({ delegations: theDelegationsOn({ item, user }) }))
         .named("success"),
       where(
         activeUser({ session }).is({ user }),
@@ -119,7 +126,7 @@ export const DelegationSet = endpoint(
     receive({ session, item, learner, grader }).then(
       where(
         activeUser({ session }).is({ user }),
-        mayGrade({ user }),
+        mayReadClassGrades({ user }),
         compute(computations.validDelegationIdentityInput, { item, learner, grader }, valid),
         is.among(valid, [true]),
         Assigning._getAssignments({}).is({ assignment: item }),
@@ -135,7 +142,7 @@ export const DelegationSet = endpoint(
         .named("success"),
       where(
         activeUser({ session }).is({ user }),
-        mayGrade({ user }),
+        mayReadClassGrades({ user }),
         compute(computations.validDelegationIdentityInput, { item, learner, grader }, valid),
         is.among(valid, [true]),
         no(Assigning._getAssignments({}).is({ assignment: item })),
@@ -144,7 +151,7 @@ export const DelegationSet = endpoint(
         .named("assignment-missing"),
       where(
         activeUser({ session }).is({ user }),
-        mayGrade({ user }),
+        mayReadClassGrades({ user }),
         compute(computations.validDelegationIdentityInput, { item, learner, grader }, valid),
         is.among(valid, [true]),
         Assigning._getAssignments({}).is({ assignment: item }),
@@ -154,7 +161,7 @@ export const DelegationSet = endpoint(
         .named("learner-missing"),
       where(
         activeUser({ session }).is({ user }),
-        mayGrade({ user }),
+        mayReadClassGrades({ user }),
         compute(computations.validDelegationIdentityInput, { item, learner, grader }, valid),
         is.among(valid, [true]),
         Assigning._getAssignments({}).is({ assignment: item }),
@@ -165,13 +172,13 @@ export const DelegationSet = endpoint(
         .named("grader-unavailable"),
       where(
         activeUser({ session }).is({ user }),
-        mayGrade({ user }),
+        mayReadClassGrades({ user }),
         compute(computations.validDelegationIdentityInput, { item, learner, grader }, valid),
         is.among(valid, [false]),
       )
         .then(respond({ error: "INVALID_REQUEST" }))
         .named("invalid-input"),
-      where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
+      where(activeUser({ session }).is({ user }), mayNotReadClassGrades({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -184,7 +191,7 @@ export const DelegationClear = endpoint(
     receive({ session, item, learner }).then(
       where(
         activeUser({ session }).is({ user }),
-        mayGrade({ user }),
+        mayReadClassGrades({ user }),
         compute(computations.validDelegationIdentityInput, { item, learner }, valid),
         is.among(valid, [true]),
         Assigning._getAssignments({}).is({ assignment: item }),
@@ -195,7 +202,7 @@ export const DelegationClear = endpoint(
         .named("success"),
       where(
         activeUser({ session }).is({ user }),
-        mayGrade({ user }),
+        mayReadClassGrades({ user }),
         compute(computations.validDelegationIdentityInput, { item, learner }, valid),
         is.among(valid, [true]),
         no(Assigning._getAssignments({}).is({ assignment: item })),
@@ -204,7 +211,7 @@ export const DelegationClear = endpoint(
         .named("assignment-missing"),
       where(
         activeUser({ session }).is({ user }),
-        mayGrade({ user }),
+        mayReadClassGrades({ user }),
         compute(computations.validDelegationIdentityInput, { item, learner }, valid),
         is.among(valid, [true]),
         Assigning._getAssignments({}).is({ assignment: item }),
@@ -214,13 +221,13 @@ export const DelegationClear = endpoint(
         .named("learner-missing"),
       where(
         activeUser({ session }).is({ user }),
-        mayGrade({ user }),
+        mayReadClassGrades({ user }),
         compute(computations.validDelegationIdentityInput, { item, learner }, valid),
         is.among(valid, [false]),
       )
         .then(respond({ error: "INVALID_REQUEST" }))
         .named("invalid-input"),
-      where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
+      where(activeUser({ session }).is({ user }), mayNotReadClassGrades({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -233,7 +240,7 @@ export const DelegationSpread = endpoint(
     receive({ session, item, learners, graders, replace }).then(
       where(
         activeUser({ session }).is({ user }),
-        mayGrade({ user }),
+        mayReadClassGrades({ user }),
         compute(
           computations.validDelegationSpreadInput,
           { item, learners, graders, replace },
@@ -255,7 +262,7 @@ export const DelegationSpread = endpoint(
         .named("success"),
       where(
         activeUser({ session }).is({ user }),
-        mayGrade({ user }),
+        mayReadClassGrades({ user }),
         compute(
           computations.validDelegationSpreadInput,
           { item, learners, graders, replace },
@@ -268,7 +275,7 @@ export const DelegationSpread = endpoint(
         .named("grader-unavailable"),
       where(
         activeUser({ session }).is({ user }),
-        mayGrade({ user }),
+        mayReadClassGrades({ user }),
         compute(
           computations.validDelegationSpreadInput,
           { item, learners, graders, replace },
@@ -282,7 +289,7 @@ export const DelegationSpread = endpoint(
         .named("learner-unavailable"),
       where(
         activeUser({ session }).is({ user }),
-        mayGrade({ user }),
+        mayReadClassGrades({ user }),
         compute(
           computations.validDelegationSpreadInput,
           { item, learners, graders, replace },
@@ -292,7 +299,7 @@ export const DelegationSpread = endpoint(
       )
         .then(respond({ error: "INVALID_REQUEST" }))
         .named("invalid-input"),
-      where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
+      where(activeUser({ session }).is({ user }), mayNotReadClassGrades({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
@@ -305,7 +312,7 @@ export const DelegationClearItem = endpoint(
     receive({ session, item }).then(
       where(
         activeUser({ session }).is({ user }),
-        mayGrade({ user }),
+        mayReadClassGrades({ user }),
         compute(computations.validDelegationIdentityInput, { item }, valid),
         is.among(valid, [true]),
         Assigning._getAssignments({}).is({ assignment: item }),
@@ -315,7 +322,7 @@ export const DelegationClearItem = endpoint(
         .named("success"),
       where(
         activeUser({ session }).is({ user }),
-        mayGrade({ user }),
+        mayReadClassGrades({ user }),
         compute(computations.validDelegationIdentityInput, { item }, valid),
         is.among(valid, [true]),
         no(Assigning._getAssignments({}).is({ assignment: item })),
@@ -324,13 +331,13 @@ export const DelegationClearItem = endpoint(
         .named("missing"),
       where(
         activeUser({ session }).is({ user }),
-        mayGrade({ user }),
+        mayReadClassGrades({ user }),
         compute(computations.validDelegationIdentityInput, { item }, valid),
         is.among(valid, [false]),
       )
         .then(respond({ error: "INVALID_REQUEST" }))
         .named("invalid-input"),
-      where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
+      where(activeUser({ session }).is({ user }), mayNotReadClassGrades({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),

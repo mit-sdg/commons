@@ -13,7 +13,9 @@ import { activeUser } from "../access/session.ts";
 import {
   mayMarkLectures,
   mayNotMarkLectures,
+  mayNotReadAttendance,
   mayNotViewAttendance,
+  mayReadAttendance,
   mayViewAttendance,
 } from "../access/policy.ts";
 import { computations, concepts } from "../../concepts.ts";
@@ -174,7 +176,7 @@ export const Attendance = endpoint(
     receive({ session }).then(
       where(
         activeUser({ session }).is({ user }),
-        mayViewAttendance({ user }),
+        mayReadAttendance({ user }),
         whether(Rostering._getClass({}).is({ detail })),
         compute(computations.classTimezone, { detail }, timezone),
       )
@@ -186,7 +188,7 @@ export const Attendance = endpoint(
           }),
         )
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotViewAttendance({ user }))
+      where(activeUser({ session }).is({ user }), mayNotReadAttendance({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),
