@@ -52,7 +52,7 @@ test("staff save a policy, mark it final, and release it; a student reads their 
   await page.getByRole("button", { name: "Release to students" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByText("Held for review")).toBeVisible();
-  await dialog.getByRole("button", { name: "Release", exact: true }).last().click();
+  await dialog.getByRole("button", { name: /^Release to \d+ students?$/ }).click();
   await expect(page.getByText(/Released to students [A-Z]/).first()).toBeVisible();
 
   const learner =
