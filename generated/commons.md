@@ -1742,7 +1742,7 @@ Concrete types:
 - `carriesAdminister(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 571.
 - `carryUses() : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 92.
 - `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 685.
-- `classTimezone(detail: Class) : String` — [Lectures](../design/compositions/live/lectures.md), line 40.
+- `classTimezone(detail: Class) : String` — [Lectures](../design/compositions/live/lectures.md), line 42.
 - `cleanupAdmission(authorized: Json, openRun: Json, unlocked: Json, applied: Json, standing: Json) : String` — [The wall](../design/compositions/live/walls.md), line 40.
 - `cleanupBrief(account: String, candidates: Seq) : String` — [The wall](../design/compositions/live/walls.md), line 43.
 - `cleanupCategories(brief: String) : Seq` — [The wall](../design/compositions/live/walls.md), line 46.
@@ -1813,7 +1813,7 @@ Concrete types:
 - `kindCap(kind: String, cap: Number) : Number` — [Relays and their runs](../design/compositions/live/relays.md), line 88.
 - `kindChoices(kind: String, choices: Strings) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 80.
 - `kindParts(kind: String, parts: Strings) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 84.
-- `lectureSubjects(run: String, parts: Seq) : Seq` — [Lectures](../design/compositions/live/lectures.md), line 43.
+- `lectureSubjects(run: String, parts: Seq) : Seq` — [Lectures](../design/compositions/live/lectures.md), line 45.
 - `legIdentities(legs: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 46.
 - `legMaterials(legs: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 43.
 - `lidLines(reply: String, categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 171.
@@ -1872,8 +1872,8 @@ Concrete types:
 - `roomSince(at: Date) : Date` — [Relays and their runs](../design/compositions/live/relays.md), line 107.
 - `roundMaterialIsValid(title: String, prompt: String, choices: Strings, parts: Strings, cap: Number) : Boolean` — [Relays and their runs](../design/compositions/live/relays.md), line 167.
 - `roundPresentation(content: Json, kind: String, use: Json, groups: Json, sourceValue: Json, sourceNumber: Json) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 75.
-- `runKind(quizForm: String, relayTitle: String) : String` — [Lectures](../design/compositions/live/lectures.md), line 49.
-- `runTitle(quizTitle: String, relayTitle: String) : String` — [Lectures](../design/compositions/live/lectures.md), line 46.
+- `runKind(quizForm: String, relayTitle: String) : String` — [Lectures](../design/compositions/live/lectures.md), line 51.
+- `runTitle(quizTitle: String, relayTitle: String) : String` — [Lectures](../design/compositions/live/lectures.md), line 48.
 - `sampledAnswers(reply: String) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 34.
 - `sampledGroups(reply: String, kind: String, choices: Json, use: String, carried?: Json) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 39.
 - `sampledPiles(reply: String) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 63.
@@ -1887,7 +1887,7 @@ Concrete types:
 - `selectedIdentities(holders: Strings, kind: String) : Strings` — [Commons application](../design/application.md), line 483.
 - `selectedSection(section: Any) : Strings` — [Commons application](../design/application.md), line 507.
 - `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 640.
-- `signedOutJoiners(participants: Seq, accounts: Seq, seats: Seq) : Seq` — [Lectures](../design/compositions/live/lectures.md), line 52.
+- `signedOutJoiners(participants: Seq, accounts: Seq, seats: Seq) : Seq` — [Lectures](../design/compositions/live/lectures.md), line 54.
 - `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 643.
 - `snapshotForm(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 125.
 - `snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 128.
@@ -3278,6 +3278,14 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
     Roling._hasCapability (capability: "live:host", context: "commons", user) has (allowed: false)
 ```
 
+### (user) may not read the attendance grid
+
+```view
+(user) may not read the attendance grid — inputs (user); outputs (); bindings ()
+  where view "(user) may not view lecture attendance" with (user)
+  where view "(user) is an active student" with (user)
+```
+
 ### (user) may read (artifact) submitted by (submitter) for (assignment)
 
 Authored path: `Course.submissions.mayReadSubmissionArtifact`.
@@ -3351,22 +3359,6 @@ Authored path: `Course.assignments.mayReadStaffAssignment`.
   where view "(user) may grade" with (user)
 ```
 
-### (user) may submit assignment (assignment) at (at)
-
-Authored path: `Course.assignments.maySubmitAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 66.
-
-```view
-(user) may submit assignment (assignment) at (at) — inputs (user, assignment, at); outputs (); bindings (detail, section, allowed)
-  where
-    view "(user) is an active student" with (user)
-    Assigning._isAssigned (assignee: user, assignment) has (assigned: true)
-    Assigning._getDetail (assignment) has (detail)
-    Rostering._getSeatByUser (user) has (section)
-    allowed is submissionAllowed (at, detail, section)
-    allowed is among [true]
-```
-
 ### (user) may view the staff calendar
 
 ```view
@@ -3384,6 +3376,31 @@ Authored path: `Course.assignments.maySubmitAssignment`.
 (user) may view lecture attendance — inputs (user); outputs (); bindings ()
   where view "(user) may view the staff calendar" with (user)
   where Roling._hasCapability (capability: "live:host", context: "commons", user) has (allowed: true)
+```
+
+### (user) may read the attendance grid
+
+```view
+(user) may read the attendance grid — inputs (user); outputs (); bindings ()
+  where
+    view "(user) may view lecture attendance" with (user)
+    view "(user) is not an active student" with (user)
+```
+
+### (user) may submit assignment (assignment) at (at)
+
+Authored path: `Course.assignments.maySubmitAssignment`.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 66.
+
+```view
+(user) may submit assignment (assignment) at (at) — inputs (user, assignment, at); outputs (); bindings (detail, section, allowed)
+  where
+    view "(user) is an active student" with (user)
+    Assigning._isAssigned (assignee: user, assignment) has (assigned: true)
+    Assigning._getDetail (assignment) has (detail)
+    Rostering._getSeatByUser (user) has (section)
+    allowed is submissionAllowed (at, detail, section)
+    allowed is among [true]
 ```
 
 ### (user) receives a staff notification for (holders)
@@ -3875,7 +3892,7 @@ the item count of (candidate) — inputs (candidate); outputs (total); bindings 
 ### the label of (run)
 
 Authored path: `Live.lectures.theRunLabel`.
-- Covered by [Lectures](../design/compositions/live/lectures.md), line 26.
+- Covered by [Lectures](../design/compositions/live/lectures.md), line 28.
 
 ```view
 the label of (run) — inputs (run); outputs (title, kind, openedAt); bindings (material, quizTitle, quizForm, relayTitle) — answers at most one (title, kind, openedAt)
@@ -5987,6 +6004,7 @@ Former "the questionnaire runs" — inputs (); bindings (questionnaire, title, k
       kind
       questionnaire
       runs: each Publishing._editionsFor (material: questionnaire) has (closedAt, edition: run, open, openedAt)
+        where view "(run) stands alone" with (run)
         where Pinning._isPinned (item: run, scope: "lectures") has (pinned: lecture)
         form a record of
           closedAt
@@ -20755,13 +20773,13 @@ then
 
 Authored path: `Live.lectures.Attendance`.
 - Covered by [Lectures](../design/compositions/live/lectures.md), line 21.
-- Covered by [Lectures](../design/compositions/live/lectures.md), line 57.
+- Covered by [Lectures](../design/compositions/live/lectures.md), line 59.
 
 ```reaction
 when RequestBoundary.request (path: "/live/lectures/attendance", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may not view lecture attendance" with (user)
+  view "(user) may not read the attendance grid" with (user)
 then
   RequestBoundary.respond (error: "FORBIDDEN", requestId)
 ```
@@ -20770,13 +20788,13 @@ then
 
 Authored path: `Live.lectures.Attendance`.
 - Covered by [Lectures](../design/compositions/live/lectures.md), line 21.
-- Covered by [Lectures](../design/compositions/live/lectures.md), line 57.
+- Covered by [Lectures](../design/compositions/live/lectures.md), line 59.
 
 ```reaction
 when RequestBoundary.request (path: "/live/lectures/attendance", requestId, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may view lecture attendance" with (user)
+  view "(user) may read the attendance grid" with (user)
   whether Rostering._getClass () has (detail)
   timezone is classTimezone (detail)
 then
@@ -20787,7 +20805,7 @@ then
 
 Authored path: `Live.lectures.Mark`.
 - Covered by [Lectures](../design/compositions/live/lectures.md), line 7.
-- Covered by [Lectures](../design/compositions/live/lectures.md), line 58.
+- Covered by [Lectures](../design/compositions/live/lectures.md), line 60.
 
 ```reaction
 when RequestBoundary.request (path: "/live/lectures/mark", requestId, run, session)
@@ -20804,7 +20822,7 @@ then
 
 Authored path: `Live.lectures.Mark`.
 - Covered by [Lectures](../design/compositions/live/lectures.md), line 7.
-- Covered by [Lectures](../design/compositions/live/lectures.md), line 58.
+- Covered by [Lectures](../design/compositions/live/lectures.md), line 60.
 
 ```reaction
 when RequestBoundary.request (path: "/live/lectures/mark", requestId, run, session)
@@ -20819,7 +20837,7 @@ then
 
 Authored path: `Live.lectures.Mark`.
 - Covered by [Lectures](../design/compositions/live/lectures.md), line 7.
-- Covered by [Lectures](../design/compositions/live/lectures.md), line 58.
+- Covered by [Lectures](../design/compositions/live/lectures.md), line 60.
 
 ```reaction
 when RequestBoundary.request (path: "/live/lectures/mark", requestId, run, session)
@@ -20835,7 +20853,7 @@ then
 
 Authored path: `Live.lectures.Mark`.
 - Covered by [Lectures](../design/compositions/live/lectures.md), line 7.
-- Covered by [Lectures](../design/compositions/live/lectures.md), line 58.
+- Covered by [Lectures](../design/compositions/live/lectures.md), line 60.
 
 ```reaction
 when RequestBoundary.request (path: "/live/lectures/mark", requestId, run, session)
@@ -20853,7 +20871,7 @@ then
 
 Authored path: `Live.lectures.Mark`.
 - Covered by [Lectures](../design/compositions/live/lectures.md), line 7.
-- Covered by [Lectures](../design/compositions/live/lectures.md), line 58.
+- Covered by [Lectures](../design/compositions/live/lectures.md), line 60.
 
 ```reaction
 when Pinning.pin (at, item: run, priority: 0, scope: "lectures"), asked by Live.lectures.Mark:success
@@ -20867,7 +20885,7 @@ then
 
 Authored path: `Live.lectures.Runs`.
 - Covered by [Lectures](../design/compositions/live/lectures.md), line 17.
-- Covered by [Lectures](../design/compositions/live/lectures.md), line 59.
+- Covered by [Lectures](../design/compositions/live/lectures.md), line 61.
 
 ```reaction
 when RequestBoundary.request (path: "/live/lectures/runs", requestId, session)
@@ -20882,7 +20900,7 @@ then
 
 Authored path: `Live.lectures.Runs`.
 - Covered by [Lectures](../design/compositions/live/lectures.md), line 17.
-- Covered by [Lectures](../design/compositions/live/lectures.md), line 59.
+- Covered by [Lectures](../design/compositions/live/lectures.md), line 61.
 
 ```reaction
 when RequestBoundary.request (path: "/live/lectures/runs", requestId, session)
@@ -20897,7 +20915,7 @@ then
 
 Authored path: `Live.lectures.Unmark`.
 - Covered by [Lectures](../design/compositions/live/lectures.md), line 14.
-- Covered by [Lectures](../design/compositions/live/lectures.md), line 60.
+- Covered by [Lectures](../design/compositions/live/lectures.md), line 62.
 
 ```reaction
 when RequestBoundary.request (path: "/live/lectures/unmark", requestId, run, session)
@@ -20912,7 +20930,7 @@ then
 
 Authored path: `Live.lectures.Unmark`.
 - Covered by [Lectures](../design/compositions/live/lectures.md), line 14.
-- Covered by [Lectures](../design/compositions/live/lectures.md), line 60.
+- Covered by [Lectures](../design/compositions/live/lectures.md), line 62.
 
 ```reaction
 when RequestBoundary.request (path: "/live/lectures/unmark", requestId, run, session)
@@ -20927,7 +20945,7 @@ then
 
 Authored path: `Live.lectures.Unmark`.
 - Covered by [Lectures](../design/compositions/live/lectures.md), line 14.
-- Covered by [Lectures](../design/compositions/live/lectures.md), line 60.
+- Covered by [Lectures](../design/compositions/live/lectures.md), line 62.
 
 ```reaction
 when Pinning.unpin (item: run, scope: "lectures"), asked by Live.lectures.Unmark:success

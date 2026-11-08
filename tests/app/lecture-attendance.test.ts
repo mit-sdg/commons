@@ -204,4 +204,16 @@ describe("lecture attendance", () => {
     expect(await call("ana", "/live/lectures/runs")).toEqual({ error: "FORBIDDEN" });
     await call("host", "/live/runs/close", { run });
   });
+
+  test("a grader who is an active student is refused the attendance grid", async () => {
+    await person("tara", "student");
+    const { role } = await edge.application.concepts.Roling.ensureRole({
+      name: "student-grader",
+      capabilities: ["grade"],
+    });
+    await edge.application.concepts.Roling.assign({ user: users.tara!, context: "commons", role });
+    await edge.application.whenIdle();
+    expect(await call("tara", "/live/lectures/attendance")).toEqual({ error: "FORBIDDEN" });
+    expect(await call("grader", "/live/lectures/attendance")).toHaveProperty("students");
+  });
 });

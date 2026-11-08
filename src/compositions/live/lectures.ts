@@ -13,7 +13,9 @@ import { activeUser } from "../access/session.ts";
 import {
   mayMarkLectures,
   mayNotMarkLectures,
+  mayNotReadAttendance,
   mayNotViewAttendance,
+  mayReadAttendance,
   mayViewAttendance,
 } from "../access/policy.ts";
 import { computations, concepts } from "../../concepts.ts";
@@ -67,7 +69,8 @@ export const theRunLabel = view(
 /**
  * Every quiz and survey run, newest first, retired questionnaires included,
  * with whether it is held as a lecture. A relay round's questionnaire is
- * reached through its relay.
+ * reached through its relay, and a round it ran in a relay stays with that
+ * relay's run.
  */
 export const theQuestionnaireRuns = former(
   "the questionnaire runs",
@@ -86,7 +89,10 @@ export const theQuestionnaireRuns = former(
             closedAt,
           }),
         )
-          .where(Pinning._isPinned({ item: run, scope: LECTURES }).is({ pinned: lecture }))
+          .where(
+            runStandsAlone({ run }),
+            Pinning._isPinned({ item: run, scope: LECTURES }).is({ pinned: lecture }),
+          )
           .form({ run, open, openedAt, closedAt, lecture }),
       }),
 );
@@ -174,7 +180,7 @@ export const Attendance = endpoint(
     receive({ session }).then(
       where(
         activeUser({ session }).is({ user }),
-        mayViewAttendance({ user }),
+        mayReadAttendance({ user }),
         whether(Rostering._getClass({}).is({ detail })),
         compute(computations.classTimezone, { detail }, timezone),
       )
@@ -186,7 +192,7 @@ export const Attendance = endpoint(
           }),
         )
         .named("success"),
-      where(activeUser({ session }).is({ user }), mayNotViewAttendance({ user }))
+      where(activeUser({ session }).is({ user }), mayNotReadAttendance({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
     ),

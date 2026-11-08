@@ -290,6 +290,21 @@ export const mayNotViewAttendance = view(
     ),
 ).holds();
 
+/** The attendance grid names every student, so an active student is refused it. */
+export const mayReadAttendance = view(
+  "(user) may read the attendance grid",
+  ({ user }, _outputs, _bindings) =>
+    where(mayViewAttendance({ user }), isNotActiveStudent({ user })),
+).holds();
+
+export const mayNotReadAttendance = view(
+  "(user) may not read the attendance grid",
+  ({ user }, _outputs, _bindings) => [
+    where(mayNotViewAttendance({ user })),
+    where(isActiveStudent({ user })),
+  ],
+).holds();
+
 /** Marking a run as a lecture needs `live:host` or `course:manage`. */
 export const mayMarkLectures = view("(user) may mark lectures", ({ user }, _outputs, _bindings) => [
   where(mayManageCourse({ user })),

@@ -1594,7 +1594,7 @@ export type CommonsWire = {
           "lecture": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>>>, ["pinned"]>>;
           "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["open"]>>;
           "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["openedAt"]>>;
-          "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["edition"]>]>>;
+          "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["edition"]>]>>;
         }[];
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["title"]>>;
       }[];
@@ -6553,7 +6553,7 @@ export type CommonsWireHttp = {
           "lecture": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>>>, ["pinned"]>>;
           "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["open"]>>;
           "openedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["openedAt"]>>;
-          "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["edition"]>]>>;
+          "run": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Pinning"]["_isPinned"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Publishing"]["_edition"]>[0], ["edition"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Publishing"]["_editionsFor"]>>>, ["edition"]>]>>;
         }[];
         "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Questioning"]["_getQuestionnaires"]>>>, ["title"]>>;
       }[];

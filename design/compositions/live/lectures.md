@@ -22,7 +22,9 @@ a lecture. [Live.lectures.Attendance](reaction:Live.lectures.Attendance) forms
 [each run held as a lecture](former:Live.lectures.theLectureRuns) beside
 [the active students](former:Live.lectures.theAttendanceRoster) and the class
 time zone, read by [classTimezone](computation:classTimezone). Both reads are
-open to anyone holding a staff capability or `live:host`. Each run is named by
+open to anyone holding a staff capability or `live:host`, but the attendance
+grid names every student, so it is refused to an active student. Each run is
+named by
 [its label](view:Live.lectures.theRunLabel): its questionnaire's or relay's
 title, its kind, and when it opened.
 
