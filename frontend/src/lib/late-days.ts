@@ -150,7 +150,7 @@ export function daysLeft(balance: {
 export function lateBy(ms: number): string {
   const minutes = Math.max(1, Math.ceil(ms / 60_000));
   if (minutes < 60) return count(minutes, "minute");
-  const hours = Math.round(minutes / 60);
+  const hours = Math.ceil(minutes / 60);
   const days = Math.floor(hours / 24);
   const rest = hours % 24;
   if (days === 0) return count(rest, "hour");
