@@ -6404,6 +6404,7 @@ Former "the questionnaire runs" — inputs (); bindings (questionnaire, title, k
       kind
       questionnaire
       runs: each Publishing._editionsFor (material: questionnaire) has (closedAt, edition: run, open, openedAt)
+        where view "(run) stands alone" with (run)
         where Pinning._isPinned (item: run, scope: "lectures") has (pinned: lecture)
         form a record of
           closedAt

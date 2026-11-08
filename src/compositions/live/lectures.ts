@@ -69,7 +69,8 @@ export const theRunLabel = view(
 /**
  * Every quiz and survey run, newest first, retired questionnaires included,
  * with whether it is held as a lecture. A relay round's questionnaire is
- * reached through its relay.
+ * reached through its relay, and a round it ran in a relay stays with that
+ * relay's run.
  */
 export const theQuestionnaireRuns = former(
   "the questionnaire runs",
@@ -88,7 +89,10 @@ export const theQuestionnaireRuns = former(
             closedAt,
           }),
         )
-          .where(Pinning._isPinned({ item: run, scope: LECTURES }).is({ pinned: lecture }))
+          .where(
+            runStandsAlone({ run }),
+            Pinning._isPinned({ item: run, scope: LECTURES }).is({ pinned: lecture }),
+          )
           .form({ run, open, openedAt, closedAt, lecture }),
       }),
 );
