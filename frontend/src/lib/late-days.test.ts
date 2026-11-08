@@ -307,4 +307,9 @@ describe("lateBy", () => {
   test("days and hours", () => {
     expect(lateBy(27 * HOUR)).toBe("1 day 3 hours");
   });
+
+  test("a part hour counts as an hour, so the text never sits below the days it needs", () => {
+    expect(lateBy(24 * HOUR + 20 * 60_000)).toBe("1 day 1 hour");
+    expect(lateBy(HOUR + 29 * 60_000)).toBe("2 hours");
+  });
 });

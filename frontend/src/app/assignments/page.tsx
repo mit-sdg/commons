@@ -13,7 +13,7 @@ import { useQuery } from "@/hooks/use-query";
 import { assignmentTypeLabel } from "@/lib/assignment-types";
 import { useAuth } from "@/lib/auth";
 import { type Assessment, assessmentForEvidence } from "@/lib/grading";
-import { handedInAttempt, overdue } from "@/lib/late-days";
+import { effectiveDue, handedInAttempt, overdue } from "@/lib/late-days";
 import {
   loadAssignments,
   loadGradesForMe,
@@ -104,10 +104,17 @@ export default function AssignmentsPage() {
         unitHours: lateDaysData.unitHours,
         at: now,
       });
-    return { a, sub, grade, settled, isOverdue };
+    const dueMs = effectiveDue({
+      dueAt: a.dueAt,
+      dueOverride: a.dueOverride,
+      lateDays: standingDays.get(String(a.assignment)) ?? 0,
+      unitHours: lateDaysData?.unitHours ?? 24,
+    });
+    const isUpcoming = !sub && !settled && !(dueMs <= now.getTime());
+    return { a, sub, grade, isOverdue, isUpcoming };
   });
 
-  const filtered = rows.filter(({ a, sub, grade, settled, isOverdue }) => {
+  const filtered = rows.filter(({ a, sub, grade, isOverdue, isUpcoming }) => {
     if (search) {
       const q = search.toLowerCase();
       if (
@@ -120,7 +127,7 @@ export default function AssignmentsPage() {
     if (filter === "all") return true;
     if (filter === "submitted") return !!sub;
     if (filter === "graded") return grade?.status === "RELEASED";
-    if (filter === "upcoming") return !sub && !settled && !isOverdue;
+    if (filter === "upcoming") return isUpcoming;
     if (filter === "overdue") return isOverdue;
     return true;
   });
