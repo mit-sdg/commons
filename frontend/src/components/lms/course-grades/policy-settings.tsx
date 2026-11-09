@@ -190,9 +190,8 @@ export function GradeLines({ policy, onChange, readOnly }: SettingProps) {
             is F.
           </p>
           <p>
-            Release, Download, Below C, and the attendance rule use this
-            policy&apos;s letters. Show as changes only how this screen shows
-            grades.
+            Download, Below C, and the attendance rule use this policy&apos;s
+            letters. Show as changes only how this screen shows grades.
           </p>
         </div>
       }

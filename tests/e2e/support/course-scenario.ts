@@ -23,7 +23,7 @@ import {
  * late days, lecture attendance, and course grades together: a configured
  * class with sections and students, four kinds of account, skills, six
  * assignments, late days, live runs marked as lectures, and a final policy
- * released to students. Every action goes through the API paths a browser
+ * with one override. Every action goes through the API paths a browser
  * calls, in one of two ways.
  *
  * **Over HTTP** (`seedCourseScenario`), the server stamps every action with
@@ -1747,11 +1747,11 @@ export async function seedCourseScenario(
   const runs = await runLive(api, admin, students, course.plans);
   progress(`live runs: ${runs.length}`);
 
-  // A final policy, one override, and a release of grades so far.
+  // A final policy and one override.
   let released: Awaited<ReturnType<typeof releaseCourse>> = { coursePolicy: null, release: null };
   if (release) {
     released = await releaseCourse(course, false, Date.now);
-    progress("policy saved, marked final, and released");
+    progress("policy saved and marked final, with one override");
   }
 
   return describeCourse(course, {
@@ -2161,7 +2161,7 @@ export async function seedCourseScenarioOnClock(
       },
     });
 
-    // A final policy with the attendance rule, one override, and a release, yesterday evening.
+    // A final policy with the attendance rule and one override, yesterday evening.
     let released: Awaited<ReturnType<typeof releaseCourse>> = { coursePolicy: null, release: null };
     if (release)
       steps.push({
