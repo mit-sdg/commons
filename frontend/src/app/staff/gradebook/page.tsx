@@ -8,11 +8,6 @@ import { ConfirmAction } from "@/components/confirm-action";
 import { copiesShown } from "@/components/lms/course-grades/class-helpers";
 import { ClassPane } from "@/components/lms/course-grades/class-pane";
 import { PolicyPane } from "@/components/lms/course-grades/policy-pane";
-import {
-  ReleaseButton,
-  ReleaseLine,
-  UpdateStudentButton,
-} from "@/components/lms/course-grades/release";
 import type {
   Comparison,
   OpenPolicy,
@@ -360,13 +355,6 @@ function CourseGrades({
                 <Download className="size-4" /> Download
               </Button>
             )}
-            {!readOnly && (
-              <ReleaseButton
-                page={page}
-                readOnly={readOnly}
-                onChanged={refetch}
-              />
-            )}
           </div>
         }
       />
@@ -384,7 +372,6 @@ function CourseGrades({
           setPendingLeave(null);
         }}
       />
-      <ReleaseLine page={page} readOnly={readOnly} onChanged={refetch} />
       <div className="mt-4 grid gap-6 lg:grid-cols-[24rem_minmax(0,1fr)]">
         <div className="order-2 lg:order-1">
           <PolicyPane
@@ -452,17 +439,6 @@ function CourseGrades({
             readOnly={readOnly}
             savedPolicy={open.policy}
             onChanged={refetch}
-            studentActions={
-              readOnly
-                ? undefined
-                : (student) => (
-                    <UpdateStudentButton
-                      student={student}
-                      page={page}
-                      onChanged={refetch}
-                    />
-                  )
-            }
           />
         </div>
       </div>

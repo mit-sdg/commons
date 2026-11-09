@@ -57,15 +57,10 @@ import {
   courseGradesCsv,
   lectureSubjectList,
   overrideReplaced,
-  ownCourseGrade,
   policyIsWellFormed,
-  releaseSettings,
   releaseSummary,
-  releaseValue,
   releasedPolicy,
   studentUsers,
-  updateValue,
-  validReleaseSettings,
 } from "./computations/course-grades.ts";
 import {
   classTimezone,
@@ -584,15 +579,10 @@ export const learningConcepts = conceptSet(registrations, {
   courseGradesCsv,
   lectureSubjectList,
   overrideReplaced,
-  ownCourseGrade,
   policyIsWellFormed,
-  releaseSettings,
   releaseSummary,
-  releaseValue,
   releasedPolicy,
   studentUsers,
-  updateValue,
-  validReleaseSettings,
 });
 
 export const concepts = learningConcepts.concepts;

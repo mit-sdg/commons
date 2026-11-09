@@ -34,7 +34,6 @@ export type CourseGradesPage = NonNullable<
 export type PolicySummary = CourseGradesPage["policies"][number];
 export type ReleaseEntry = CourseGradesPage["releases"][number];
 export type StudentUpdate = CourseGradesPage["updates"][number];
-export type MyCourseGrade = Output<"/course-grades/mine">["courseGrade"];
 
 /* ---------- Reads and actions ---------- */
 
@@ -52,10 +51,6 @@ export async function loadPolicy(policy: string) {
 export async function loadVersion(policy: string, version: number) {
   const read = unwrap(await api["course-grades"].version({ policy, version }));
   return { ...read, specification: read.specification as CoursePolicy };
-}
-
-export async function loadMyCourseGrade(): Promise<MyCourseGrade> {
-  return unwrap(await api["course-grades"].mine({})).courseGrade;
 }
 
 type Result<T> =
@@ -98,12 +93,6 @@ export const courseGradeActions = {
     attempt(api["course-grades"].override({ student, value, reason, policy })),
   clearOverride: (student: string) =>
     attempt(api["course-grades"]["clear-override"]({ student })),
-  /** `release` names the held students staff released after a look. */
-  release: (settings: ReleaseSettings, release: string[]) =>
-    attempt(api["course-grades"].release({ ...settings, release })),
-  updateStudent: (student: string, reason: string) =>
-    attempt(api["course-grades"]["update-student"]({ student, reason })),
-  hide: () => attempt(api["course-grades"].hide({})),
   exportCsv: () => attempt(api.grades.export({})),
 };
 

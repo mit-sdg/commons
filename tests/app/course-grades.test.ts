@@ -45,12 +45,7 @@ function guide(): CoursePolicy {
   };
 }
 
-interface Card {
-  status: string;
-  average: number | null;
-  letter: string | null;
-  groups: { rows: { title: string; value: number | null }[] }[] | null;
-}
+const UNKNOWN = { error: "NOT_FOUND" };
 
 describe("course grades", () => {
   let edge: Edge;
@@ -59,8 +54,6 @@ describe("course grades", () => {
   let exercise = "";
   const call = async (who: string, path: string, body: Body = {}) =>
     (await (await post(edge, path, body, cookies[who])).json()) as Body;
-  const mine = async (who: string) =>
-    (await call(who, "/course-grades/mine")).courseGrade as { state: string; card: Card | null };
 
   async function person(name: string, capabilities: string[], student = false) {
     const concepts = edge.application.concepts;
@@ -184,10 +177,6 @@ describe("course grades", () => {
     });
     for (const [path, body] of [
       ["/course-grades/override", { student: users.ana, value: "A", reason: "r", policy: "p" }],
-      [
-        "/course-grades/release",
-        { dueBy: past(0), breakdown: true, letter: true, includeOverrides: true, release: [] },
-      ],
       ["/grades/export", {}],
     ] as const)
       expect(await call("grader", path, body)).toEqual({ error: "FORBIDDEN" });
@@ -234,39 +223,12 @@ describe("course grades", () => {
     await call("manager", "/course-grades/remove", { policy: created.policy });
   });
 
-  test("a release holds students below C, and a student reads only their own current copy", async () => {
-    const settings = { dueBy: past(0), breakdown: true, letter: true, includeOverrides: true };
-    expect(await mine("ana")).toEqual({ state: "none", card: null });
-    expect(await call("manager", "/course-grades/release", { ...settings, release: [] })).toEqual({
-      error: "CONFLICT",
-    });
+  test("a student reaches no policy or version, and no route releases course grades", async () => {
     const { policy: guideId } = await call("manager", "/course-grades/create", {
       name: "Course guide",
       specification: policy(),
     });
     await call("manager", "/course-grades/mark-final", { policy: guideId });
-    expect(
-      await call("manager", "/course-grades/release", { ...settings, release: [] }),
-    ).toHaveProperty("release");
-    const ana = await mine("ana");
-    expect(ana.state).toBe("released");
-    expect(ana.card).toMatchObject({ status: "released", average: 4, letter: "A" });
-    expect(ana.card!.groups![0]!.rows).toEqual([
-      { title: "Exercise 1", value: 4, points: null, note: null },
-    ]);
-    expect((await mine("ben")).card).toMatchObject({ status: "held", average: null });
-    expect(JSON.stringify(ana)).not.toContain(users.ben!);
-
-    // A later policy edit leaves what students saw unchanged.
-    const edited = policy();
-    edited.ratings.EXPERT = 3.5;
-    await call("manager", "/course-grades/save", {
-      policy: guideId,
-      version: 1,
-      specification: edited,
-    });
-    expect((await mine("ana")).card!.average).toBe(4);
-    // Students reach no policy, version, or other copy by id.
     expect(await call("ana", "/course-grades/policy", { policy: guideId })).toEqual({
       error: "FORBIDDEN",
     });
@@ -274,43 +236,14 @@ describe("course grades", () => {
       error: "FORBIDDEN",
     });
     expect(await call("ana", "/course-grades/read")).toEqual({ error: "FORBIDDEN" });
-
-    // Update this student replaces one copy; a new release replaces every copy.
-    expect(
-      await call("manager", "/course-grades/update-student", {
-        student: users.ben,
-        reason: "Looked at it",
-      }),
-    ).toHaveProperty("update");
-    expect((await mine("ben")).card).toMatchObject({ status: "released", average: 1, letter: "F" });
-    expect(
-      await call("manager", "/course-grades/update-student", {
-        student: users.ben,
-        reason: "Again",
-      }),
-    ).toHaveProperty("update");
-    expect((await mine("ben")).card!.status).toBe("released");
-    await call("manager", "/course-grades/release", { ...settings, release: [] });
-    expect((await mine("ana")).card!.average).toBe(3.5);
-    expect((await mine("ben")).card!.status).toBe("held");
-
-    // Hiding shows the withdrawn line.
-    await call("manager", "/course-grades/hide");
-    expect(await mine("ana")).toEqual({ state: "withdrawn", card: null });
-    expect(
-      await call("manager", "/course-grades/update-student", { student: users.ana, reason: "r" }),
-    ).toEqual({
-      error: "CONFLICT",
-    });
-
-    const history = (await call("manager", "/course-grades/read")) as {
-      page: { releases: { open: boolean; release: { held: Record<string, string[]> } }[] };
-    };
-    expect(history.page.releases.map((release) => release.open)).toEqual([false, false]);
-    expect(Object.keys(history.page.releases[0]!.release.held).sort()).toEqual(
-      [users.ben!, users.tara!].sort(),
-    );
-    expect(JSON.stringify(history.page.releases)).not.toContain('"inputs"');
+    const settings = { dueBy: past(0), breakdown: true, letter: true, includeOverrides: true };
+    for (const [path, body] of [
+      ["/course-grades/release", { ...settings, release: [] }],
+      ["/course-grades/update-student", { student: users.ana, reason: "r" }],
+      ["/course-grades/hide", {}],
+    ] as const)
+      expect(await call("manager", path, body)).toEqual(UNKNOWN);
+    expect(await call("ana", "/course-grades/mine")).toEqual(UNKNOWN);
   });
 
   test("an override records the grade it replaced, worked out on the server", async () => {
@@ -339,7 +272,7 @@ describe("course grades", () => {
     expect(csv.split("\r\n")[0]).toBe(
       "Student name,Email,Section,Personal,Average,Grade,Policy grade,Reason,Lectures attended,Lectures,Policy,Version,As of",
     );
-    expect(csv).toContain("ben,ben@example.edu,,1,1,C,F,Strong late work,0,0,Course guide,2,");
+    expect(csv).toContain("ben,ben@example.edu,,1,1,C,F,Strong late work,0,0,Course guide,1,");
     await call("manager", "/course-grades/clear-override", { student: users.ben });
     expect((await call("manager", "/grades/export")).csv).toContain(
       "ben,ben@example.edu,,1,1,F,F,,0,0",

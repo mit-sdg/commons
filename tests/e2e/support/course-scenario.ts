@@ -3,7 +3,6 @@ import {
   type CourseGradeInputs,
   type CoursePolicy,
   courseGrades,
-  holdReasons,
 } from "../../../src/computations/course-grades.ts";
 import {
   lectureAttendance,
@@ -1253,7 +1252,7 @@ function guidePolicy(
 
 export interface CourseScenarioOptions {
   students?: number;
-  /** Save a final policy and release grades so far to students (default true). */
+  /** Save a final policy and one override (default true). */
   release?: boolean;
   /** Called with a short line as each phase ends. */
   progress?: (line: string) => void;
@@ -1445,11 +1444,11 @@ async function gradePapers(
   });
 }
 
-/** A final policy, one override, and a release of grades so far, as of `now`. */
+/** A final policy and one override. Commons doesn't release course grades. */
 async function releaseCourse(
   course: StartedCourse,
   attendance: boolean,
-  now: () => number,
+  _now: () => number,
 ): Promise<{ coursePolicy: SeededCourse["coursePolicy"]; release: SeededCourse["release"] }> {
   const { api, manager, students } = course;
   const specification = guidePolicy(course.assignments, attendance);
@@ -1477,33 +1476,7 @@ async function releaseCourse(
     attendance: specification.attendance,
     override: { student: overridden.user, value: OVERRIDE.value, reason: OVERRIDE.reason },
   };
-  const page = await api.call<{ page: { inputs: CourseGradeInputs } | null }>(
-    manager,
-    "/course-grades/read",
-  );
-  const dueBy = new Date(now()).toISOString();
-  if (!page.page) return { coursePolicy, release: null };
-  const grades = courseGrades(specification, page.page.inputs, new Date(dueBy), new Date(now()));
-  const held = grades.filter((grade) => holdReasons(specification, grade).length > 0).length;
-  const username = new Map(students.map((student) => [student.user, student.username]));
-  const capped = grades
-    .filter((grade) => grade.cappedBy !== null)
-    .map((grade) => username.get(grade.student) ?? grade.student);
-  const { release: edition } = await api.call<{ release: string }>(
-    manager,
-    "/course-grades/release",
-    {
-      dueBy,
-      breakdown: true,
-      letter: false,
-      includeOverrides: false,
-      release: [],
-    },
-  );
-  return {
-    coursePolicy,
-    release: { release: edition, dueBy, held, released: grades.length - held, capped },
-  };
+  return { coursePolicy, release: null };
 }
 
 /** What the seed returns. */
@@ -2269,7 +2242,6 @@ export interface CourseChecks {
     bytes: number;
   };
   studentLateDays: { uses: number; days: number[]; unitHours: number; maxDaysPerItem: number };
-  studentCourseGrade: unknown;
   enrolledGraderCourseGrades: string;
 }
 
@@ -2319,7 +2291,6 @@ export async function checkCourseScenario(seeded: SeededCourse): Promise<CourseC
     unitHours: number;
     maxDaysPerItem: number;
   }>(student, "/late-days/list");
-  const mine = await api.call<{ courseGrade: unknown }>(student, "/course-grades/mine");
   let enrolledRead = "allowed";
   try {
     await api.call(enrolled, "/course-grades/read");
@@ -2355,7 +2326,6 @@ export async function checkCourseScenario(seeded: SeededCourse): Promise<CourseC
       unitHours: lateDays.unitHours,
       maxDaysPerItem: lateDays.maxDaysPerItem,
     },
-    studentCourseGrade: mine.courseGrade,
     enrolledGraderCourseGrades: enrolledRead,
   };
 }

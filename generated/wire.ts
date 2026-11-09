@@ -581,15 +581,6 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_POLICY" | "POLICY_NAME_REQUIRED" | "POLICY_NAME_TAKEN" };
   };
-  "/course-grades/hide": {
-    input: {
-      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-    };
-    output: {
-      "hidden": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradePublishing"]["close"]>[0], ["edition"]>>;
-    };
-    error: { error: AppWideError | "ALREADY_CLOSED" | "EDITION_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" | "NOT_RELEASED" };
-  };
   "/course-grades/mark-final": {
     input: {
       "policy": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Policymaking"]["markFinal"]>[0], ["policy"]>>;
@@ -600,15 +591,6 @@ export type CommonsWire = {
       "policy": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Policymaking"]["markFinal"]>[0], ["policy"]>>;
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "POLICY_NOT_FOUND" };
-  };
-  "/course-grades/mine": {
-    input: {
-      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-    };
-    output: {
-      "courseGrade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["ownCourseGrade"]["fn"]>>, []>>;
-    };
-    error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
   };
   "/course-grades/override": {
     input: {
@@ -681,22 +663,6 @@ export type CommonsWire = {
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" };
   };
-  "/course-grades/release": {
-    input: {
-      "breakdown": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validReleaseSettings"]["fn"]>[0], ["breakdown"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["releaseSettings"]["fn"]>[0], ["breakdown"]>]>>;
-      "dueBy": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validReleaseSettings"]["fn"]>[0], ["dueBy"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["releaseSettings"]["fn"]>[0], ["dueBy"]>]>>;
-      "includeOverrides": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validReleaseSettings"]["fn"]>[0], ["includeOverrides"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["releaseSettings"]["fn"]>[0], ["includeOverrides"]>]>>;
-      "letter": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validReleaseSettings"]["fn"]>[0], ["letter"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["releaseSettings"]["fn"]>[0], ["letter"]>]>>;
-      "release": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validReleaseSettings"]["fn"]>[0], ["release"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["releaseValue"]["fn"]>[0], ["release"]>]>>;
-      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-    };
-    output: {
-      "release": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradeSnapshotting"]["capture"]>[0], ["subject"]>>;
-    } | {
-      "release": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradeSnapshotting"]["capture"]>[0], ["subject"]>>;
-    };
-    error: { error: AppWideError | "ALREADY_CLOSED" | "EDITION_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_REQUEST" | "MATERIAL_ALREADY_SHARED" | "NO_FINAL_POLICY" | "SNAPSHOT_EXISTS" };
-  };
   "/course-grades/remove": {
     input: {
       "policy": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Policymaking"]["remove"]>[0], ["policy"]>>;
@@ -731,19 +697,6 @@ export type CommonsWire = {
       "version": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["save"]>>, ["version"]>>;
     };
     error: { error: AppWideError | "FORBIDDEN" | "INVALID_INPUT" | "INVALID_POLICY" | "POLICY_NOT_FOUND" | "POLICY_STALE" };
-  };
-  "/course-grades/update-student": {
-    input: {
-      "reason": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["updateValue"]["fn"]>[0], ["reason"]>>;
-      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
-      "student": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradePublishing"]["publish"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>]>>;
-    };
-    output: {
-      "update": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradeSnapshotting"]["capture"]>[0], ["subject"]>>;
-    } | {
-      "update": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradeSnapshotting"]["capture"]>[0], ["subject"]>>;
-    };
-    error: { error: AppWideError | "ALREADY_CLOSED" | "EDITION_NOT_FOUND" | "FORBIDDEN" | "INVALID_INPUT" | "MATERIAL_ALREADY_SHARED" | "NOT_FOUND" | "NOT_RELEASED" | "SNAPSHOT_EXISTS" };
   };
   "/course-grades/version": {
     input: {
@@ -5825,13 +5778,6 @@ export type CommonsWireHttp = {
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
   };
-  "/course-grades/hide": {
-    input: Record<string, never>;
-    output: {
-      "hidden": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradePublishing"]["close"]>[0], ["edition"]>>;
-    };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
-  };
   "/course-grades/mark-final": {
     input: {
       "policy": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Policymaking"]["markFinal"]>[0], ["policy"]>>;
@@ -5841,13 +5787,6 @@ export type CommonsWireHttp = {
       "policy": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Policymaking"]["markFinal"]>[0], ["policy"]>>;
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
-  };
-  "/course-grades/mine": {
-    input: Record<string, never>;
-    output: {
-      "courseGrade": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["ownCourseGrade"]["fn"]>>, []>>;
-    };
-    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
   };
   "/course-grades/override": {
     input: {
@@ -5916,21 +5855,6 @@ export type CommonsWireHttp = {
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" };
   };
-  "/course-grades/release": {
-    input: {
-      "breakdown": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validReleaseSettings"]["fn"]>[0], ["breakdown"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["releaseSettings"]["fn"]>[0], ["breakdown"]>]>>;
-      "dueBy": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validReleaseSettings"]["fn"]>[0], ["dueBy"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["releaseSettings"]["fn"]>[0], ["dueBy"]>]>>;
-      "includeOverrides": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validReleaseSettings"]["fn"]>[0], ["includeOverrides"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["releaseSettings"]["fn"]>[0], ["includeOverrides"]>]>>;
-      "letter": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validReleaseSettings"]["fn"]>[0], ["letter"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["releaseSettings"]["fn"]>[0], ["letter"]>]>>;
-      "release": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["validReleaseSettings"]["fn"]>[0], ["release"]>, AtPath<Parameters<(typeof ApplicationConceptSet.computations)["releaseValue"]["fn"]>[0], ["release"]>]>>;
-    };
-    output: {
-      "release": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradeSnapshotting"]["capture"]>[0], ["subject"]>>;
-    } | {
-      "release": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradeSnapshotting"]["capture"]>[0], ["subject"]>>;
-    };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
-  };
   "/course-grades/remove": {
     input: {
       "policy": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Policymaking"]["remove"]>[0], ["policy"]>>;
@@ -5960,18 +5884,6 @@ export type CommonsWireHttp = {
     output: {
       "policy": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Policymaking"]["save"]>[0], ["policy"]>>;
       "version": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Policymaking"]["save"]>>, ["version"]>>;
-    };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
-  };
-  "/course-grades/update-student": {
-    input: {
-      "reason": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["updateValue"]["fn"]>[0], ["reason"]>>;
-      "student": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradePublishing"]["publish"]>[0], ["material"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>]>>;
-    };
-    output: {
-      "update": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradeSnapshotting"]["capture"]>[0], ["subject"]>>;
-    } | {
-      "update": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["CourseGradeSnapshotting"]["capture"]>[0], ["subject"]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" };
   };

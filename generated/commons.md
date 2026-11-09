@@ -1840,8 +1840,8 @@ Concrete types:
 - `connectCodeVoucher(code: String) : String` — [Commons application](../design/application.md), line 656.
 - `connectDisplayName(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 664.
 - `connectVerifierChallenge(verifier?: String) : String|Null` — [Commons application](../design/application.md), line 669.
-- `courseGradeInputs(assignments: Seq, releases: Seq, attempts: Seq, ratings: Seq, uses: Seq, unitHours: Number, students: Seq, names: Seq, lectures: Seq, editions: Seq, parts: Seq, participation: Seq, detail: Class, overrides: Seq) : Json` — [Course grades](../design/compositions/course/course-grades.md), line 126.
-- `courseGradesCsv(policy: Json, inputs: Json, sections: Seq, at: Date) : String` — [Course grades](../design/compositions/course/course-grades.md), line 162.
+- `courseGradeInputs(assignments: Seq, releases: Seq, attempts: Seq, ratings: Seq, uses: Seq, unitHours: Number, students: Seq, names: Seq, lectures: Seq, editions: Seq, parts: Seq, participation: Seq, detail: Class, overrides: Seq) : Json` — [Course grades](../design/compositions/course/course-grades.md), line 93.
+- `courseGradesCsv(policy: Json, inputs: Json, sections: Seq, at: Date) : String` — [Course grades](../design/compositions/course/course-grades.md), line 119.
 - `currentAddressing(user: String, holders: Strings, known: Bool, activePeople: Strings, staffPeople: Strings, trashed: Bool, groups: Bool, sections: Bool, ownSection: Any) : Bool` — [Commons application](../design/application.md), line 511.
 - `currentAudienceMembership(user: String, holders: Strings, groupMember: Bool, activeSections: Bool, section: Any, seatStatus: Any, activeStudent: Bool, capabilities: Any) : Bool` — [Commons application](../design/application.md), line 538.
 - `definedSortingPiles(categories: Json, texts: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 241.
@@ -1894,7 +1894,7 @@ Concrete types:
 - `kindCap(kind: String, cap: Number) : Number` — [Relays and their runs](../design/compositions/live/relays.md), line 88.
 - `kindChoices(kind: String, choices: Strings) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 80.
 - `kindParts(kind: String, parts: Strings) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 84.
-- `lectureSubjectList(lectures: Seq, parts: Seq) : Seq` — [Course grades](../design/compositions/course/course-grades.md), line 129.
+- `lectureSubjectList(lectures: Seq, parts: Seq) : Seq` — [Course grades](../design/compositions/course/course-grades.md), line 96.
 - `lectureSubjects(run: String, parts: Seq) : Seq` — [Lectures](../design/compositions/live/lectures.md), line 45.
 - `legIdentities(legs: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 46.
 - `legMaterials(legs: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 43.
@@ -1914,8 +1914,7 @@ Concrete types:
 - `notificationDiscussionTitle(content: Any) : String` — [Commons application](../design/application.md), line 562.
 - `notificationMailSubject(kind: String, title: String) : String` — [Commons application](../design/application.md), line 571.
 - `openingGroups(picked: Strings, categories: Json, values: Json, value: Json) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 71.
-- `overrideReplaced(specification: Json, inputs: Json, student: String, at: Date) : String` — [Course grades](../design/compositions/course/course-grades.md), line 138.
-- `ownCourseGrade(student: String, release: CourseGradeRelease, releaseOpen: Bool, releaseOpenedAt: Date, update: CourseGradeRelease, updateOpen: Bool, updateOpenedAt: Date) : Json` — [Course grades](../design/compositions/course/course-grades.md), line 156.
+- `overrideReplaced(specification: Json, inputs: Json, student: String, at: Date) : String` — [Course grades](../design/compositions/course/course-grades.md), line 105.
 - `ownsTaskScope(user: String, scope: String) : Boolean` — [Tasks](../design/compositions/tasks/tasks.md), line 116.
 - `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 729.
 - `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 733.
@@ -1937,7 +1936,7 @@ Concrete types:
 - `placingReading(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 151.
 - `placingReason(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 162.
 - `placingRepairPassage(value: Json, categories: Json, values: Json, removed: Json, notes: String, offering: String, account: String) : String` — [The wall](../design/compositions/live/walls.md), line 143.
-- `policyIsWellFormed(specification: Json) : Bool` — [Course grades](../design/compositions/course/course-grades.md), line 135.
+- `policyIsWellFormed(specification: Json) : Bool` — [Course grades](../design/compositions/course/course-grades.md), line 102.
 - `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 752.
 - `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 757.
 - `postPreview(content: String) : Record` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 40.
@@ -1949,10 +1948,8 @@ Concrete types:
 - `relayDraftRepairPassage(passage: String, offering: String, account: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 50.
 - `relayEditLines(reply: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 63.
 - `relayGiven(relay: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 143.
-- `releaseSettings(dueBy: String, breakdown: Bool, letter: Bool, includeOverrides: Bool) : Json` — [Course grades](../design/compositions/course/course-grades.md), line 147.
-- `releaseSummary(value: CourseGradeRelease) : Json` — [Course grades](../design/compositions/course/course-grades.md), line 159.
-- `releaseValue(policy: Json, inputs: Json, settings: Json, release: Seq, by: String, at: Date) : CourseGradeRelease` — [Course grades](../design/compositions/course/course-grades.md), line 150.
-- `releasedPolicy(policy: String, name: String, version: Number, specification: Json) : Json` — [Course grades](../design/compositions/course/course-grades.md), line 141.
+- `releaseSummary(value: CourseGradeRelease) : Json` — [Course grades](../design/compositions/course/course-grades.md), line 116.
+- `releasedPolicy(policy: String, name: String, version: Number, specification: Json) : Json` — [Course grades](../design/compositions/course/course-grades.md), line 108.
 - `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 724.
 - `resolveGradingCriteria(criteria: Json, editions: Json) : Json` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 138.
 - `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 714.
@@ -1991,7 +1988,7 @@ Concrete types:
 - `sortingPileSubjects(categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 238.
 - `staffCapabilities(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 535.
 - `staffQuestion(holders: Seq, nonStaffAuthor: Any) : Boolean` — [Feeds and thread context](../design/compositions/forum/feed.md), line 32.
-- `studentUsers(students: Seq) : Seq` — [Course grades](../design/compositions/course/course-grades.md), line 132.
+- `studentUsers(students: Seq) : Seq` — [Course grades](../design/compositions/course/course-grades.md), line 99.
 - `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 683.
 - `submissionAllowed(detail: Json, section: String, at: Date) : Bool` — [Commons application](../design/application.md), line 484.
 - `summaryAdmission(items: Number) : String` — [The wall](../design/compositions/live/walls.md), line 50.
@@ -2006,14 +2003,12 @@ Concrete types:
 - `threadPostIds(nodes: Rows) : Strings` — [Commons application](../design/application.md), line 493.
 - `threadReplyCount(posts: Rows) : Number` — [Commons application](../design/application.md), line 499.
 - `trayHoldsACard(values: Json, categories: Json, removed: Seq) : Bool` — [The wall](../design/compositions/live/walls.md), line 97.
-- `updateValue(release: CourseGradeRelease, inputs: Json, student: String, reason: String, by: String, at: Date) : CourseGradeRelease` — [Course grades](../design/compositions/course/course-grades.md), line 153.
 - `useFit(use: String, kind: String, choices: Strings, parts: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 101.
 - `validDelegationIdentityInput(item: String, learner?: String, grader?: String) : Bool` — [Commons application](../design/application.md), line 481.
 - `validDelegationSpreadInput(item: String, learners: Strings, graders: Strings, replace: Bool) : Bool` — [Commons application](../design/application.md), line 478.
 - `validFeedOrder(order: String) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 34.
 - `validPostControlSelection(posts: Seq) : Boolean` — [Selected post controls](../design/compositions/forum/post-controls.md), line 33.
 - `validProfileSelection(users: Strings) : Bool` — [Commons application](../design/application.md), line 487.
-- `validReleaseSettings(dueBy: String, breakdown: Bool, letter: Bool, includeOverrides: Bool, release: Seq) : Bool` — [Course grades](../design/compositions/course/course-grades.md), line 144.
 - `validThreadSelection(conversations: Seq) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 36.
 - `visibleAnswer(answer: Any) : Bool` — [Commons application](../design/application.md), line 544.
 - `visibleThreadPosts(nodes: Any, posts: Any, trashed: Any) : Rows` — [Commons application](../design/application.md), line 496.
@@ -2993,88 +2988,6 @@ Authored path: `Forum.profiles.profileDisplayReader`.
     view "(user) is an active course member" with (user: reader)
 ```
 
-### (user) is not an active student
-
-```view
-(user) is not an active student — inputs (user); outputs (); bindings ()
-  where Rostering._isActiveStudent (user) has (active: false)
-```
-
-### (user) may administer
-
-```view
-(user) may administer — inputs (user); outputs (); bindings ()
-  where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
-```
-
-### (user) may read the class's grades
-
-```view
-(user) may read the class's grades — inputs (user); outputs (); bindings ()
-  where
-    view "(user) may grade" with (user)
-    view "(user) is not an active student" with (user)
-```
-
-### (user) may change course grades
-
-```view
-(user) may change course grades — inputs (user); outputs (); bindings ()
-  where
-    Roling._hasCapability (capability: "grade-policies", context: "commons", user) has (allowed: true)
-    view "(user) may read the class's grades" with (user)
-  where
-    view "(user) may administer" with (user)
-    view "(user) is not an active student" with (user)
-```
-
-### the final course-grade policy
-
-Authored path: `Course.courseGrades.theFinalPolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 86.
-
-```view
-the final course-grade policy — inputs (); outputs (final); bindings (policy, name, version, specification) — answers at most one (final)
-  where
-    Policymaking._final () has (name, policy, specification, version)
-    final is releasedPolicy (name, policy, specification, version)
-```
-
-### (session) may release (dueBy) (breakdown) (letter) (includeOverrides) (release)
-
-```view
-(session) may release (dueBy) (breakdown) (letter) (includeOverrides) (release) — inputs (session, dueBy, breakdown, letter, includeOverrides, release); outputs (); bindings (user, valid)
-  where
-    view "the active user of (session)" with (session) has (user)
-    view "(user) may change course grades" with (user)
-    valid is validReleaseSettings (breakdown, dueBy, includeOverrides, letter, release)
-    valid is among [true]
-    view "the final course-grade policy"
-```
-
-### the open course-grade release
-
-Authored path: `Course.courseGrades.theOpenRelease`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 96.
-
-```view
-the open course-grade release — inputs (); outputs (release, value); bindings () — answers at most one (release, value)
-  where
-    CourseGradePublishing._openEditions () has (edition: release, material: "course-grades")
-    CourseGradeSnapshotting._snapshot (subject: release) has (value)
-```
-
-### (session) may update (student)
-
-```view
-(session) may update (student) — inputs (session, student); outputs (); bindings (user)
-  where
-    view "the active user of (session)" with (session) has (user)
-    view "(user) may change course grades" with (user)
-    view "(user) is an active student" with (user: student)
-    view "the open course-grade release"
-```
-
 ### (user) may read forum target (target)
 
 ```view
@@ -3148,6 +3061,13 @@ Authored path: `Forum.threads.publicTarget`.
 (user) is in the current course community — inputs (user); outputs (); bindings ()
   where Rostering._getSeatByUser (user) has (status: "ACTIVE")
   where view "(user) belongs to Staff" with (user)
+```
+
+### (user) is not an active student
+
+```view
+(user) is not an active student — inputs (user); outputs (); bindings ()
+  where Rostering._isActiveStudent (user) has (active: false)
 ```
 
 ### (user) is not mentioned in (post)
@@ -3227,6 +3147,34 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
   where
     Rostering._getSections () has (section, status: "ACTIVE")
     Rostering._getSeatByUser (user) has (section, status: "ACTIVE")
+```
+
+### (user) may administer
+
+```view
+(user) may administer — inputs (user); outputs (); bindings ()
+  where Roling._hasCapability (capability: "administer", context: "commons", user) has (allowed: true)
+```
+
+### (user) may read the class's grades
+
+```view
+(user) may read the class's grades — inputs (user); outputs (); bindings ()
+  where
+    view "(user) may grade" with (user)
+    view "(user) is not an active student" with (user)
+```
+
+### (user) may change course grades
+
+```view
+(user) may change course grades — inputs (user); outputs (); bindings ()
+  where
+    Roling._hasCapability (capability: "grade-policies", context: "commons", user) has (allowed: true)
+    view "(user) may read the class's grades" with (user)
+  where
+    view "(user) may administer" with (user)
+    view "(user) is not an active student" with (user)
 ```
 
 ### (user) may currently address the complete audience (holders)
@@ -4027,7 +3975,7 @@ the conversation placing (item) for (reader) — inputs (item, reader); outputs 
 ### the course-grade inputs
 
 Authored path: `Course.courseGrades.theCourseGradeInputs`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 22.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 20.
 
 ```view
 the course-grade inputs — inputs (); outputs (inputs); bindings (assignments, releases, attempts, ratings, uses, unitHours, students, users, names, lectures, editions, parts, subjects, participation, detail, overrides) — answers at most one (inputs)
@@ -4132,6 +4080,18 @@ the email context of notification subject (subject) of kind (kind) for (user) �
     due is dueWallTime (detail, dueAt)
     text is assignmentNotificationMailText (author, due, kind, title, url)
     html is assignmentNotificationMailHtml (author, due, kind, title, url)
+```
+
+### the final course-grade policy
+
+Authored path: `Course.courseGrades.theFinalPolicy`.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 88.
+
+```view
+the final course-grade policy — inputs (); outputs (final); bindings (policy, name, version, specification) — answers at most one (final)
+  where
+    Policymaking._final () has (name, policy, specification, version)
+    final is releasedPolicy (name, policy, specification, version)
 ```
 
 ### the invitation for (address)
@@ -4364,18 +4324,6 @@ the readable parent (parent) for (user) — inputs (parent, user); outputs (conv
     Conversing._getConversation (node: parent) has (conversation)
 ```
 
-### the release value for (session) (dueBy) (breakdown) (letter) (includeOverrides) (release) at (at)
-
-```view
-the release value for (session) (dueBy) (breakdown) (letter) (includeOverrides) (release) at (at) — inputs (session, dueBy, breakdown, letter, includeOverrides, release, at); outputs (value); bindings (user, final, inputs, settings) — answers at most one (value)
-  where
-    view "the active user of (session)" with (session) has (user)
-    view "the final course-grade policy" has (final)
-    view "the course-grade inputs" has (inputs)
-    settings is releaseSettings (breakdown, dueBy, includeOverrides, letter)
-    value is releaseValue (at, by: user, inputs, policy: final, release, settings)
-```
-
 ### the retained name of (identity) as (kind)
 
 ```view
@@ -4564,17 +4512,6 @@ the unread items for (user) in (scope) — inputs (user, scope); outputs (item);
     Tracking._getUnread (scope, user) has (item)
     view "(user) may read forum post (post)" with (post: item, user)
     view "the structural conversation containing post (post)" with (post: item) has (conversation: scope)
-```
-
-### the update value for (session) (student) (reason) at (at)
-
-```view
-the update value for (session) (student) (reason) at (at) — inputs (session, student, reason, at); outputs (value); bindings (user, release, inputs) — answers at most one (value)
-  where
-    view "the active user of (session)" with (session) has (user)
-    view "the open course-grade release" has (value: release)
-    view "the course-grade inputs" has (inputs)
-    value is updateValue (at, by: user, inputs, reason, release, student)
 ```
 
 ### the user named (username)
@@ -5261,7 +5198,7 @@ Former "the controls selected by (posts) in (conversation) for (reader)" — inp
 ### the course-grade policies
 
 Authored path: `Course.courseGrades.thePolicies`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 55.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 53.
 
 ```former
 Former "the course-grade policies" — inputs (); bindings (policy, name, version, author, authorName, savedAt, final); promises exactly one record — forms:
@@ -5280,7 +5217,7 @@ Former "the course-grade policies" — inputs (); bindings (policy, name, versio
 ### the course-grade release history
 
 Authored path: `Course.courseGrades.theReleaseHistory`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 56.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 54.
 
 ```former
 Former "the course-grade release history" — inputs (); bindings (edition, open, openedAt, closedAt, author, authorName, value, summary); promises exactly one record — forms:
@@ -5301,7 +5238,7 @@ Former "the course-grade release history" — inputs (); bindings (edition, open
 ### the course-grade student updates
 
 Authored path: `Course.courseGrades.theStudentUpdates`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 57.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 55.
 
 ```former
 Former "the course-grade student updates" — inputs (); bindings (edition, material, openedAt, value, summary); promises exactly one record — forms:
@@ -5318,7 +5255,7 @@ Former "the course-grade student updates" — inputs (); bindings (edition, mate
 ### the course grades page
 
 Authored path: `Course.courseGrades.theCourseGradesPage`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 54.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 52.
 
 ```former
 Former "the course grades page" — inputs (); bindings (inputs, section, name); promises at most one record — forms:
@@ -10325,8 +10262,8 @@ then
 ### Course.courseGrades.ClearOverride:forbidden
 
 Authored path: `Course.courseGrades.ClearOverride`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 78.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 167.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 76.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 124.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/clear-override", requestId, session, student)
@@ -10340,8 +10277,8 @@ then
 ### Course.courseGrades.ClearOverride:success
 
 Authored path: `Course.courseGrades.ClearOverride`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 78.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 167.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 76.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 124.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/clear-override", requestId, session, student)
@@ -10355,8 +10292,8 @@ then
 ### Course.courseGrades.ClearOverride:success#2
 
 Authored path: `Course.courseGrades.ClearOverride`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 78.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 167.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 76.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 124.
 
 ```reaction
 when Overriding.clear (subject: student), asked by Course.courseGrades.ClearOverride:success
@@ -10369,8 +10306,8 @@ then
 ### Course.courseGrades.CreatePolicy:forbidden
 
 Authored path: `Course.courseGrades.CreatePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 63.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 168.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 61.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 125.
 
 ```reaction
 when RequestBoundary.request (name, path: "/course-grades/create", requestId, session, specification)
@@ -10384,8 +10321,8 @@ then
 ### Course.courseGrades.CreatePolicy:invalid
 
 Authored path: `Course.courseGrades.CreatePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 63.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 168.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 61.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 125.
 
 ```reaction
 when RequestBoundary.request (name, path: "/course-grades/create", requestId, session, specification)
@@ -10401,8 +10338,8 @@ then
 ### Course.courseGrades.CreatePolicy:success
 
 Authored path: `Course.courseGrades.CreatePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 63.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 168.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 61.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 125.
 
 ```reaction
 when RequestBoundary.request (name, path: "/course-grades/create", requestId, session, specification)
@@ -10419,8 +10356,8 @@ then
 ### Course.courseGrades.CreatePolicy:success#2
 
 Authored path: `Course.courseGrades.CreatePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 63.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 168.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 61.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 125.
 
 ```reaction
 when Policymaking.create (at, author: user, name, specification, policy, version), asked by Course.courseGrades.CreatePolicy:success
@@ -10433,8 +10370,8 @@ then
 ### Course.courseGrades.Export:forbidden
 
 Authored path: `Course.courseGrades.Export`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 119.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 169.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 86.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 126.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -10448,8 +10385,8 @@ then
 ### Course.courseGrades.Export:no-final
 
 Authored path: `Course.courseGrades.Export`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 119.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 169.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 86.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 126.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -10464,8 +10401,8 @@ then
 ### Course.courseGrades.Export:success
 
 Authored path: `Course.courseGrades.Export`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 119.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 169.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 86.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 126.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -10481,73 +10418,11 @@ then
   RequestBoundary.respond (csv, requestId)
 ```
 
-### Course.courseGrades.Hide:forbidden
-
-Authored path: `Course.courseGrades.Hide`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 110.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 170.
-
-```reaction
-when RequestBoundary.request (path: "/course-grades/hide", requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may not change course grades" with (user)
-then
-  RequestBoundary.respond (error: "FORBIDDEN", requestId)
-```
-
-### Course.courseGrades.Hide:not-released
-
-Authored path: `Course.courseGrades.Hide`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 110.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 170.
-
-```reaction
-when RequestBoundary.request (path: "/course-grades/hide", requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may change course grades" with (user)
-  no view "the open course-grade release"
-then
-  RequestBoundary.respond (error: "NOT_RELEASED", requestId)
-```
-
-### Course.courseGrades.Hide:success
-
-Authored path: `Course.courseGrades.Hide`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 110.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 170.
-
-```reaction
-when RequestBoundary.request (path: "/course-grades/hide", requestId, session)
-where
-  at is the current flow's instant
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may change course grades" with (user)
-  view "the open course-grade release" has (release: open)
-then
-  CourseGradePublishing.close (at, edition: open)
-```
-
-### Course.courseGrades.Hide:success#2
-
-Authored path: `Course.courseGrades.Hide`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 110.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 170.
-
-```reaction
-when CourseGradePublishing.close (at, edition: open), asked by Course.courseGrades.Hide:success
-where
-  earlier, RequestBoundary.request (path: "/course-grades/hide", requestId, session)
-then
-  RequestBoundary.respond (hidden: open, requestId)
-```
-
 ### Course.courseGrades.MarkFinal:forbidden
 
 Authored path: `Course.courseGrades.MarkFinal`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 71.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 171.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 69.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 127.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/mark-final", policy, requestId, session)
@@ -10561,8 +10436,8 @@ then
 ### Course.courseGrades.MarkFinal:success
 
 Authored path: `Course.courseGrades.MarkFinal`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 71.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 171.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 69.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 127.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/mark-final", policy, requestId, session)
@@ -10576,8 +10451,8 @@ then
 ### Course.courseGrades.MarkFinal:success#2
 
 Authored path: `Course.courseGrades.MarkFinal`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 71.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 171.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 69.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 127.
 
 ```reaction
 when Policymaking.markFinal (policy), asked by Course.courseGrades.MarkFinal:success
@@ -10587,46 +10462,11 @@ then
   RequestBoundary.respond (final: true, policy, requestId)
 ```
 
-### Course.courseGrades.Mine:forbidden
-
-Authored path: `Course.courseGrades.Mine`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 113.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 172.
-
-```reaction
-when RequestBoundary.request (path: "/course-grades/mine", requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) is not an active student" with (user)
-then
-  RequestBoundary.respond (error: "FORBIDDEN", requestId)
-```
-
-### Course.courseGrades.Mine:success
-
-Authored path: `Course.courseGrades.Mine`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 113.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 172.
-
-```reaction
-when RequestBoundary.request (path: "/course-grades/mine", requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) is an active student" with (user)
-  whether CourseGradePublishing._latestFor (material: "course-grades") has (edition: latest, open: releaseOpen, openedAt: releaseOpenedAt)
-  whether CourseGradeSnapshotting._snapshot (subject: latest) has (value: release)
-  whether CourseGradePublishing._latestFor (material: user) has (edition: own, open: updateOpen, openedAt: updateOpenedAt)
-  whether CourseGradeSnapshotting._snapshot (subject: own) has (value: update)
-  outcome is ownCourseGrade (release, releaseOpen, releaseOpenedAt, student: user, update, updateOpen, updateOpenedAt)
-then
-  RequestBoundary.respond (courseGrade: outcome, requestId)
-```
-
 ### Course.courseGrades.Read:forbidden
 
 Authored path: `Course.courseGrades.Read`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 53.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 173.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 51.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 128.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/read", requestId, session)
@@ -10640,8 +10480,8 @@ then
 ### Course.courseGrades.Read:success
 
 Authored path: `Course.courseGrades.Read`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 53.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 173.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 51.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 128.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/read", requestId, session)
@@ -10655,8 +10495,8 @@ then
 ### Course.courseGrades.ReadPolicy:forbidden
 
 Authored path: `Course.courseGrades.ReadPolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 58.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 174.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 56.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 129.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/policy", policy, requestId, session)
@@ -10670,8 +10510,8 @@ then
 ### Course.courseGrades.ReadPolicy:missing
 
 Authored path: `Course.courseGrades.ReadPolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 58.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 174.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 56.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 129.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/policy", policy, requestId, session)
@@ -10686,8 +10526,8 @@ then
 ### Course.courseGrades.ReadPolicy:success
 
 Authored path: `Course.courseGrades.ReadPolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 58.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 174.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 56.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 129.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/policy", policy, requestId, session)
@@ -10703,8 +10543,8 @@ then
 ### Course.courseGrades.ReadVersion:forbidden
 
 Authored path: `Course.courseGrades.ReadVersion`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 60.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 175.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 58.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 130.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/version", policy, requestId, session, version)
@@ -10718,8 +10558,8 @@ then
 ### Course.courseGrades.ReadVersion:missing
 
 Authored path: `Course.courseGrades.ReadVersion`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 60.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 175.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 58.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 130.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/version", policy, requestId, session, version)
@@ -10734,8 +10574,8 @@ then
 ### Course.courseGrades.ReadVersion:success
 
 Authored path: `Course.courseGrades.ReadVersion`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 60.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 175.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 58.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 130.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/version", policy, requestId, session, version)
@@ -10747,167 +10587,11 @@ then
   RequestBoundary.respond (author, policy, requestId, savedAt, specification, version)
 ```
 
-### Course.courseGrades.Release
-
-Authored path: `Course.courseGrades.Release`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 85.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 176.
-
-```reaction
-when RequestBoundary.request (breakdown, dueBy, includeOverrides, letter, path: "/course-grades/release", release, requestId, session)
-where
-  at is the current flow's instant
-  view "the active user of (session)" with (session) has (user)
-  view "(session) may release (dueBy) (breakdown) (letter) (includeOverrides) (release)" with (breakdown, dueBy, includeOverrides, letter, release, session)
-  no view "the open course-grade release"
-then
-  CourseGradePublishing.publish (at, author: user, material: "course-grades")
-```
-
-### Course.courseGrades.Release#2
-
-Authored path: `Course.courseGrades.Release`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 85.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 176.
-
-```reaction
-when CourseGradePublishing.publish (at, author: user, material: "course-grades", edition), asked by Course.courseGrades.Release
-where
-  earlier, RequestBoundary.request (breakdown, dueBy, includeOverrides, letter, path: "/course-grades/release", release, requestId, session)
-  view "the release value for (session) (dueBy) (breakdown) (letter) (includeOverrides) (release) at (at)" with (at, breakdown, dueBy, includeOverrides, letter, release, session) has (value)
-then
-  CourseGradeSnapshotting.capture (subject: edition, value)
-```
-
-### Course.courseGrades.Release#3
-
-Authored path: `Course.courseGrades.Release`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 85.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 176.
-
-```reaction
-when CourseGradeSnapshotting.capture (subject: edition, value), asked by Course.courseGrades.Release#2
-where
-  earlier, RequestBoundary.request (breakdown, dueBy, includeOverrides, letter, path: "/course-grades/release", release, requestId, session)
-then
-  RequestBoundary.respond (release: edition, requestId)
-```
-
-### Course.courseGrades.ReleaseAgain
-
-Authored path: `Course.courseGrades.ReleaseAgain`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 97.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 177.
-
-```reaction
-when RequestBoundary.request (breakdown, dueBy, includeOverrides, letter, path: "/course-grades/release", release, requestId, session)
-where
-  at is the current flow's instant
-  view "(session) may release (dueBy) (breakdown) (letter) (includeOverrides) (release)" with (breakdown, dueBy, includeOverrides, letter, release, session)
-  view "the open course-grade release" has (release: open)
-then
-  CourseGradePublishing.close (at, edition: open)
-```
-
-### Course.courseGrades.ReleaseAgain#2
-
-Authored path: `Course.courseGrades.ReleaseAgain`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 97.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 177.
-
-```reaction
-when CourseGradePublishing.close (at, edition: open), asked by Course.courseGrades.ReleaseAgain
-where
-  earlier, RequestBoundary.request (breakdown, dueBy, includeOverrides, letter, path: "/course-grades/release", release, requestId, session)
-  view "the active user of (session)" with (session) has (user)
-then
-  CourseGradePublishing.publish (at, author: user, material: "course-grades")
-```
-
-### Course.courseGrades.ReleaseAgain#3
-
-Authored path: `Course.courseGrades.ReleaseAgain`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 97.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 177.
-
-```reaction
-when CourseGradePublishing.publish (at, author: user, material: "course-grades", edition), asked by Course.courseGrades.ReleaseAgain#2
-where
-  earlier, RequestBoundary.request (breakdown, dueBy, includeOverrides, letter, path: "/course-grades/release", release, requestId, session)
-  view "the release value for (session) (dueBy) (breakdown) (letter) (includeOverrides) (release) at (at)" with (at, breakdown, dueBy, includeOverrides, letter, release, session) has (value)
-then
-  CourseGradeSnapshotting.capture (subject: edition, value)
-```
-
-### Course.courseGrades.ReleaseAgain#4
-
-Authored path: `Course.courseGrades.ReleaseAgain`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 97.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 177.
-
-```reaction
-when CourseGradeSnapshotting.capture (subject: edition, value), asked by Course.courseGrades.ReleaseAgain#3
-where
-  earlier, RequestBoundary.request (breakdown, dueBy, includeOverrides, letter, path: "/course-grades/release", release, requestId, session)
-then
-  RequestBoundary.respond (release: edition, requestId)
-```
-
-### Course.courseGrades.ReleaseRefused:forbidden
-
-Authored path: `Course.courseGrades.ReleaseRefused`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 99.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 178.
-
-```reaction
-when RequestBoundary.request (breakdown, dueBy, includeOverrides, letter, path: "/course-grades/release", release, requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may not change course grades" with (user)
-then
-  RequestBoundary.respond (error: "FORBIDDEN", requestId)
-```
-
-### Course.courseGrades.ReleaseRefused:invalid
-
-Authored path: `Course.courseGrades.ReleaseRefused`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 99.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 178.
-
-```reaction
-when RequestBoundary.request (breakdown, dueBy, includeOverrides, letter, path: "/course-grades/release", release, requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may change course grades" with (user)
-  valid is validReleaseSettings (breakdown, dueBy, includeOverrides, letter, release)
-  valid is among [false]
-then
-  RequestBoundary.respond (error: "INVALID_REQUEST", requestId)
-```
-
-### Course.courseGrades.ReleaseRefused:no-final
-
-Authored path: `Course.courseGrades.ReleaseRefused`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 99.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 178.
-
-```reaction
-when RequestBoundary.request (breakdown, dueBy, includeOverrides, letter, path: "/course-grades/release", release, requestId, session)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may change course grades" with (user)
-  valid is validReleaseSettings (breakdown, dueBy, includeOverrides, letter, release)
-  valid is among [true]
-  no view "the final course-grade policy"
-then
-  RequestBoundary.respond (error: "NO_FINAL_POLICY", requestId)
-```
-
 ### Course.courseGrades.RemovePolicy:forbidden
 
 Authored path: `Course.courseGrades.RemovePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 70.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 179.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 68.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 131.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/remove", policy, requestId, session)
@@ -10921,8 +10605,8 @@ then
 ### Course.courseGrades.RemovePolicy:success
 
 Authored path: `Course.courseGrades.RemovePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 70.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 179.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 68.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 131.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/remove", policy, requestId, session)
@@ -10936,8 +10620,8 @@ then
 ### Course.courseGrades.RemovePolicy:success#2
 
 Authored path: `Course.courseGrades.RemovePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 70.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 179.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 68.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 131.
 
 ```reaction
 when Policymaking.remove (policy), asked by Course.courseGrades.RemovePolicy:success
@@ -10950,8 +10634,8 @@ then
 ### Course.courseGrades.RenamePolicy:forbidden
 
 Authored path: `Course.courseGrades.RenamePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 69.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 180.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 67.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 132.
 
 ```reaction
 when RequestBoundary.request (name, path: "/course-grades/rename", policy, requestId, session)
@@ -10965,8 +10649,8 @@ then
 ### Course.courseGrades.RenamePolicy:success
 
 Authored path: `Course.courseGrades.RenamePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 69.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 180.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 67.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 132.
 
 ```reaction
 when RequestBoundary.request (name, path: "/course-grades/rename", policy, requestId, session)
@@ -10980,8 +10664,8 @@ then
 ### Course.courseGrades.RenamePolicy:success#2
 
 Authored path: `Course.courseGrades.RenamePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 69.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 180.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 67.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 132.
 
 ```reaction
 when Policymaking.rename (name, policy), asked by Course.courseGrades.RenamePolicy:success
@@ -10994,8 +10678,8 @@ then
 ### Course.courseGrades.SavePolicy:forbidden
 
 Authored path: `Course.courseGrades.SavePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 64.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 181.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 62.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 133.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/save", policy, requestId, session, specification, version)
@@ -11009,8 +10693,8 @@ then
 ### Course.courseGrades.SavePolicy:invalid
 
 Authored path: `Course.courseGrades.SavePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 64.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 181.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 62.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 133.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/save", policy, requestId, session, specification, version)
@@ -11026,8 +10710,8 @@ then
 ### Course.courseGrades.SavePolicy:success
 
 Authored path: `Course.courseGrades.SavePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 64.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 181.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 62.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 133.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/save", policy, requestId, session, specification, version)
@@ -11044,8 +10728,8 @@ then
 ### Course.courseGrades.SavePolicy:success#2
 
 Authored path: `Course.courseGrades.SavePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 64.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 181.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 62.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 133.
 
 ```reaction
 when Policymaking.save (at, author: user, policy, specification, version, result.version: saved), asked by Course.courseGrades.SavePolicy:success
@@ -11058,8 +10742,8 @@ then
 ### Course.courseGrades.SetOverride:forbidden
 
 Authored path: `Course.courseGrades.SetOverride`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 74.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 182.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 72.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 134.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/override", policy, reason, requestId, session, student, value)
@@ -11073,8 +10757,8 @@ then
 ### Course.courseGrades.SetOverride:no-policy
 
 Authored path: `Course.courseGrades.SetOverride`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 74.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 182.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 72.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 134.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/override", policy, reason, requestId, session, student, value)
@@ -11090,8 +10774,8 @@ then
 ### Course.courseGrades.SetOverride:not-a-student
 
 Authored path: `Course.courseGrades.SetOverride`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 74.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 182.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 72.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 134.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/override", policy, reason, requestId, session, student, value)
@@ -11106,8 +10790,8 @@ then
 ### Course.courseGrades.SetOverride:success
 
 Authored path: `Course.courseGrades.SetOverride`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 74.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 182.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 72.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 134.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/override", policy, reason, requestId, session, student, value)
@@ -11126,8 +10810,8 @@ then
 ### Course.courseGrades.SetOverride:success#2
 
 Authored path: `Course.courseGrades.SetOverride`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 74.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 182.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 72.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 134.
 
 ```reaction
 when Overriding.set (at, author: user, reason, replaced, subject: student, value, override), asked by Course.courseGrades.SetOverride:success
@@ -11135,160 +10819,6 @@ where
   earlier, RequestBoundary.request (path: "/course-grades/override", policy, reason, requestId, session, student, value)
 then
   RequestBoundary.respond (reason, replaced, requestId, student, value)
-```
-
-### Course.courseGrades.UpdateStudent
-
-Authored path: `Course.courseGrades.UpdateStudent`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 103.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 183.
-
-```reaction
-when RequestBoundary.request (path: "/course-grades/update-student", reason, requestId, session, student)
-where
-  at is the current flow's instant
-  view "the active user of (session)" with (session) has (user)
-  view "(session) may update (student)" with (session, student)
-  no CourseGradePublishing._openEditions () has (material: student)
-then
-  CourseGradePublishing.publish (at, author: user, material: student)
-```
-
-### Course.courseGrades.UpdateStudent#2
-
-Authored path: `Course.courseGrades.UpdateStudent`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 103.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 183.
-
-```reaction
-when CourseGradePublishing.publish (at, author: user, material: student, edition), asked by Course.courseGrades.UpdateStudent
-where
-  earlier, RequestBoundary.request (path: "/course-grades/update-student", reason, requestId, session, student)
-  view "the update value for (session) (student) (reason) at (at)" with (at, reason, session, student) has (value)
-then
-  CourseGradeSnapshotting.capture (subject: edition, value)
-```
-
-### Course.courseGrades.UpdateStudent#3
-
-Authored path: `Course.courseGrades.UpdateStudent`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 103.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 183.
-
-```reaction
-when CourseGradeSnapshotting.capture (subject: edition, value), asked by Course.courseGrades.UpdateStudent#2
-where
-  earlier, RequestBoundary.request (path: "/course-grades/update-student", reason, requestId, session, student)
-then
-  RequestBoundary.respond (requestId, update: edition)
-```
-
-### Course.courseGrades.UpdateStudentAgain
-
-Authored path: `Course.courseGrades.UpdateStudentAgain`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 107.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 184.
-
-```reaction
-when RequestBoundary.request (path: "/course-grades/update-student", reason, requestId, session, student)
-where
-  at is the current flow's instant
-  view "(session) may update (student)" with (session, student)
-  CourseGradePublishing._openEditions () has (edition: standing, material: student)
-then
-  CourseGradePublishing.close (at, edition: standing)
-```
-
-### Course.courseGrades.UpdateStudentAgain#2
-
-Authored path: `Course.courseGrades.UpdateStudentAgain`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 107.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 184.
-
-```reaction
-when CourseGradePublishing.close (at, edition: standing), asked by Course.courseGrades.UpdateStudentAgain
-where
-  earlier, RequestBoundary.request (path: "/course-grades/update-student", reason, requestId, session, student)
-  view "the active user of (session)" with (session) has (user)
-then
-  CourseGradePublishing.publish (at, author: user, material: student)
-```
-
-### Course.courseGrades.UpdateStudentAgain#3
-
-Authored path: `Course.courseGrades.UpdateStudentAgain`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 107.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 184.
-
-```reaction
-when CourseGradePublishing.publish (at, author: user, material: student, edition), asked by Course.courseGrades.UpdateStudentAgain#2
-where
-  earlier, RequestBoundary.request (path: "/course-grades/update-student", reason, requestId, session, student)
-  view "the update value for (session) (student) (reason) at (at)" with (at, reason, session, student) has (value)
-then
-  CourseGradeSnapshotting.capture (subject: edition, value)
-```
-
-### Course.courseGrades.UpdateStudentAgain#4
-
-Authored path: `Course.courseGrades.UpdateStudentAgain`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 107.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 184.
-
-```reaction
-when CourseGradeSnapshotting.capture (subject: edition, value), asked by Course.courseGrades.UpdateStudentAgain#3
-where
-  earlier, RequestBoundary.request (path: "/course-grades/update-student", reason, requestId, session, student)
-then
-  RequestBoundary.respond (requestId, update: edition)
-```
-
-### Course.courseGrades.UpdateStudentRefused:forbidden
-
-Authored path: `Course.courseGrades.UpdateStudentRefused`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 109.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 185.
-
-```reaction
-when RequestBoundary.request (path: "/course-grades/update-student", reason, requestId, session, student)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may not change course grades" with (user)
-then
-  RequestBoundary.respond (error: "FORBIDDEN", requestId)
-```
-
-### Course.courseGrades.UpdateStudentRefused:not-a-student
-
-Authored path: `Course.courseGrades.UpdateStudentRefused`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 109.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 185.
-
-```reaction
-when RequestBoundary.request (path: "/course-grades/update-student", reason, requestId, session, student)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may change course grades" with (user)
-  view "the open course-grade release"
-  view "(user) is not an active student" with (user: student)
-then
-  RequestBoundary.respond (error: "NOT_FOUND", requestId)
-```
-
-### Course.courseGrades.UpdateStudentRefused:not-released
-
-Authored path: `Course.courseGrades.UpdateStudentRefused`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 109.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 185.
-
-```reaction
-when RequestBoundary.request (path: "/course-grades/update-student", reason, requestId, session, student)
-where
-  view "the active user of (session)" with (session) has (user)
-  view "(user) may change course grades" with (user)
-  no view "the open course-grade release"
-then
-  RequestBoundary.respond (error: "NOT_RELEASED", requestId)
 ```
 
 ### Course.delegation.DelegationClear:assignment-missing
@@ -32163,17 +31693,13 @@ not listed here have no explicit input contract.
 - `/connect/withdraw` — requires `session`, `connection`
 - `/course-grades/clear-override` — requires `session`, `student`
 - `/course-grades/create` — requires `session`, `name`, `specification`
-- `/course-grades/hide` — requires `session`
 - `/course-grades/mark-final` — requires `session`, `policy`
-- `/course-grades/mine` — requires `session`
 - `/course-grades/override` — requires `session`, `student`, `value`, `reason`, `policy`
 - `/course-grades/policy` — requires `session`, `policy`
 - `/course-grades/read` — requires `session`
-- `/course-grades/release` — requires `session`, `dueBy`, `breakdown`, `letter`, `includeOverrides`, `release`
 - `/course-grades/remove` — requires `session`, `policy`
 - `/course-grades/rename` — requires `session`, `policy`, `name`
 - `/course-grades/save` — requires `session`, `policy`, `version`, `specification`
-- `/course-grades/update-student` — requires `session`, `student`, `reason`
 - `/course-grades/version` — requires `session`, `policy`, `version`
 - `/delegation/clear` — requires `session`, `item`, `learner`
 - `/delegation/clear-item` — requires `session`, `item`

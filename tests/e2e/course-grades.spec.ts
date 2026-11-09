@@ -8,8 +8,7 @@ import {
 
 /**
  * Does each new screen open in a browser and carry its first journey: a
- * policy saved, marked final, and released; a student reading their card;
- * and the attendance pages?
+ * policy saved and marked final, and the attendance pages?
  */
 
 let seeded: SeededScenario;
@@ -32,9 +31,7 @@ function failOnPageErrors(page: Page) {
   return () => expect(errors).toEqual([]);
 }
 
-test("staff save a policy, mark it final, and release it; a student reads their card", async ({
-  page,
-}) => {
+test("staff save a policy and mark it final, with nothing to release", async ({ page }) => {
   test.setTimeout(120_000);
   const noErrors = failOnPageErrors(page);
   await authenticate(page);
@@ -48,19 +45,7 @@ test("staff save a policy, mark it final, and release it; a student reads their 
   await page.getByRole("button", { name: /More actions for/ }).click();
   await page.getByRole("menuitem", { name: "Mark final" }).click();
   await expect(page.getByText("Final", { exact: true }).first()).toBeVisible();
-
-  await page.getByRole("button", { name: "Release to students" }).click();
-  const dialog = page.getByRole("dialog");
-  await expect(dialog.getByText("Held for review")).toBeVisible();
-  await dialog.getByRole("button", { name: /^Release to \d+ students?$/ }).click();
-  await expect(page.getByText(/Released to students [A-Z]/).first()).toBeVisible();
-
-  const learner =
-    seeded.learners.find((entry) => entry.state === "released") ?? seeded.learners[0]!;
-  await page.unrouteAll({ behavior: "ignoreErrors" });
-  await authenticate(page, learner.username);
-  await page.goto("/grades");
-  await expect(page.getByText("Course grade", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Release/ })).toHaveCount(0);
   noErrors();
 });
 
