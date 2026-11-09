@@ -57,7 +57,7 @@ function GradebookContent() {
         description={
           learner
             ? undefined
-            : "Point and competency assessments for every learner."
+            : "Point and competency assessments for every student."
         }
       />
       {permissions.can("grade") && query.data && !query.error && (

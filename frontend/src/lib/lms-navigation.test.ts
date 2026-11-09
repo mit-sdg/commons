@@ -104,3 +104,14 @@ test("grouped navigation keeps late-day staff and graders on authorized destinat
     ),
   ).toBe(false);
 });
+
+test("a grader who can't change course grades lands on Assessments", () => {
+  const grader = (c: string) => c === "grade";
+  const primary = coursePrimaryNavigation(true, grader).map((i) => i.href);
+  expect(primary).toContain("/staff/gradebook/assessments");
+  expect(primary).not.toContain("/staff/gradebook");
+  const manager = (c: string) => c === "grade" || c === "grade-policies";
+  expect(coursePrimaryNavigation(true, manager).map((i) => i.href)).toContain(
+    "/staff/gradebook",
+  );
+});

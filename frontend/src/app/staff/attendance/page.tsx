@@ -4,7 +4,10 @@ import { CalendarCheck, Download } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Facts } from "@/components/facts";
 import { Link } from "@/components/link";
-import { LectureSwitch } from "@/components/live/lecture-switch";
+import {
+  LectureSwitch,
+  useCanMarkLectures,
+} from "@/components/live/lecture-switch";
 import { FormTag } from "@/components/live/quiz-meta";
 import { PageContainer, PageHeader } from "@/components/page";
 import { RequireCapability } from "@/components/require-capability";
@@ -192,6 +195,7 @@ function LectureDialog({
 
 function AttendanceContent() {
   const { session } = useAuth();
+  const canMark = useCanMarkLectures();
   const course = useCourse();
   const [section, setSection] = useState<string>(ALL);
   const [openDate, setOpenDate] = useState<string | null>(null);
@@ -248,9 +252,11 @@ function AttendanceContent() {
         icon={CalendarCheck}
         title="No lectures marked"
         action={
-          <Button size="sm" asChild>
-            <Link href="/staff/attendance/runs">Mark lectures</Link>
-          </Button>
+          canMark ? (
+            <Button size="sm" asChild>
+              <Link href="/staff/attendance/runs">Mark lectures</Link>
+            </Button>
+          ) : undefined
         }
       />
     );
@@ -321,7 +327,8 @@ function AttendanceContent() {
         title="Attendance"
         actions={
           // The empty state carries this link when no lecture is marked.
-          query.error || (grid !== null && grid.lectures.length > 0) ? (
+          canMark &&
+          (query.error || (grid !== null && grid.lectures.length > 0)) ? (
             <Button variant="outline" size="sm" asChild>
               <Link href="/staff/attendance/runs">Mark lectures</Link>
             </Button>

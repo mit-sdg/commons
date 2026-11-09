@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { InlineHelp } from "@/components/ui/inline-help";
 import { courseTimezone } from "@/lib/course";
 import { dateTime, shortDate } from "@/lib/format";
 import { PolicyNameDialog } from "./policy-name-dialog";
@@ -119,6 +120,9 @@ export function PolicyHeader({
             </>
           )}
           {open.final ? <Badge variant="secondary">Final</Badge> : null}
+          <InlineHelp label="Final">
+            Download uses the policy marked final. Nothing goes to students.
+          </InlineHelp>
         </div>
       </div>
 

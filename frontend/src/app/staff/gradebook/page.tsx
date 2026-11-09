@@ -51,6 +51,8 @@ type CompareWith =
   | { kind: "saved" }
   | { kind: "released" };
 
+const NO_COMPARISON: CompareWith = { kind: "none" };
+
 export default function CourseGradesPageRoute() {
   const { session, permissions } = useAuth();
   // A learner's assessments are on Assessments, so a learner link opens there.
@@ -138,7 +140,7 @@ function CourseGrades({
     () => first?.specification ?? startingPolicy(inputs),
   );
   const [conflict, setConflict] = useState<SaveConflict | null>(null);
-  const [compareWith, setCompareWith] = useState<CompareWith>({
+  const [chosenCompare, setCompareWith] = useState<CompareWith>({
     kind: "none",
   });
   const [showAs, setShowAs] = useState<ShowAs>("letters");
@@ -151,7 +153,13 @@ function CourseGrades({
     setConflict(null);
   }
 
-  // The policy compared with: another saved policy, this one as saved, or what students see.
+  const dirty =
+    saved === null || JSON.stringify(saved) !== JSON.stringify(policy);
+
+  // The policy compared with: another saved policy, this one as saved while
+  // it has unsaved edits, or what students see.
+  const compareWith: CompareWith =
+    chosenCompare.kind === "saved" && !dirty ? NO_COMPARISON : chosenCompare;
   const latestRelease = page.releases.find((entry) => entry.open) ?? null;
   const compared = useQuery(
     compareWith.kind === "policy" ? () => loadPolicy(compareWith.policy) : null,
@@ -199,9 +207,6 @@ function CourseGrades({
     open.name,
     page,
   ]);
-
-  const dirty =
-    saved === null || JSON.stringify(saved) !== JSON.stringify(policy);
 
   // Leaving a policy with unsaved changes asks first.
   const [pendingLeave, setPendingLeave] = useState<
@@ -326,7 +331,9 @@ function CourseGrades({
               }}
             >
               <option value="none">Compare with…</option>
-              {open.policy && <option value="saved">{open.name}, saved</option>}
+              {open.policy && dirty && (
+                <option value="saved">{open.name}, saved</option>
+              )}
               {latestRelease && (
                 <option value="released">What students see</option>
               )}

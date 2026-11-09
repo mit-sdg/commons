@@ -148,6 +148,15 @@ export function coursePrimaryNavigation(
       label: "Roster",
       icon: Users,
     });
+  const courseGrades = primary.findIndex(
+    (item) => item.href === "/staff/gradebook",
+  );
+  if (courseGrades >= 0 && !can("grade-policies"))
+    primary[courseGrades] = {
+      href: "/staff/gradebook/assessments",
+      label: "Assessments",
+      icon: BookOpen,
+    };
   return primary;
 }
 export function courseSectionNavigation(
