@@ -30,13 +30,6 @@ import {
   type GradingSetup,
 } from "@/lib/grading";
 import {
-  effectiveDue,
-  handedInAttempt,
-  lateDayRowFor,
-  lateDayTerms,
-  overdue,
-} from "@/lib/late-days";
-import {
   loadAssignmentDetail,
   loadAssignments,
   loadGradesForMe,
@@ -86,7 +79,15 @@ export default function AssignmentDetailPage({
     [assignment, me, asgnData],
   );
 
-  const { data: attemptsData, refetch: refetchAttempts } = useQuery(
+  const { data: attemptsData, refetch: refetchAttempts } = useQuery<{
+    attempts: {
+      submission: string;
+      artifacts: string[];
+      submittedAt: string;
+      number: number;
+      status: string;
+    }[];
+  }>(
     me && asgnData && !("error" in asgnData)
       ? () => loadSubmissionAttempts(assignment, String(me.user))
       : null,
@@ -148,17 +149,6 @@ export default function AssignmentDetailPage({
   const appliedLateUse = lateUseData?.uses.find(
     (use) => use.item === assignment && use.status === "APPLIED",
   );
-  const lateTerms =
-    lateUseData && balance ? lateDayTerms(lateUseData, balance) : null;
-  const lateRow =
-    lateTerms && assignmentsData
-      ? lateDayRowFor(assignment, {
-          releases: assignmentsData.assignments,
-          attempts: attempts.map((attempt) => ({ ...attempt, assignment })),
-          uses: lateUseData?.uses ?? [],
-          terms: lateTerms,
-        })
-      : null;
 
   async function submit() {
     if (!session || !content.trim()) return;
@@ -204,31 +194,16 @@ export default function AssignmentDetailPage({
       </PageContainer>
     );
 
-  const dueTerms = {
-    dueAt: detail.dueAt,
-    dueOverride:
-      assignmentsData?.assignments.find(
-        (release) => release.assignment === assignment,
-      )?.dueOverride ?? null,
-    lateDays: appliedLateUse?.days ?? 0,
-    unitHours: lateUseData?.unitHours ?? 24,
-  };
-  const dueMs = effectiveDue({ ...dueTerms, lateDays: 0 });
-  const due = Number.isNaN(dueMs)
-    ? detail.dueAt
-    : new Date(dueMs).toISOString();
-  const movedMs = effectiveDue(dueTerms);
-  const moved =
-    dueTerms.lateDays > 0 && !Number.isNaN(movedMs)
-      ? new Date(movedMs).toISOString()
-      : null;
+  const baseDue =
+    assignmentsData?.assignments.find(
+      (release) => release.assignment === assignment,
+    )?.dueOverride ?? detail.dueAt;
+  const unitHours = lateUseData?.unitHours ?? 24;
+  const extensionMs = (appliedLateUse?.days ?? 0) * unitHours * 3600000;
+  const due = new Date(new Date(baseDue).getTime() + extensionMs).toISOString();
   const effectiveClose = detail.closeAt;
   const now = new Date();
-  const isOverdue = overdue({
-    ...dueTerms,
-    handedIn: handedInAttempt(attempts) !== undefined,
-    at: now,
-  });
+  const isOverdue = new Date(due) < now;
   const isPastClose = effectiveClose ? new Date(effectiveClose) < now : false;
   const canSubmit =
     Boolean(asgnData && "canSubmit" in asgnData && asgnData.canSubmit) &&
@@ -427,20 +402,19 @@ export default function AssignmentDetailPage({
             dueAt={due}
             closeAt={effectiveClose}
             overdue={isOverdue}
-            moved={moved ? { at: moved, days: dueTerms.lateDays } : null}
           />
 
-          {detail.status === "PUBLISHED" &&
-            lateRow?.title != null &&
-            lateTerms &&
-            balance && (
-              <LateDayControls
-                row={lateRow}
-                terms={lateTerms}
-                balance={balance}
-                onUpdate={handleUpdate}
-              />
-            )}
+          {detail.status === "PUBLISHED" && (
+            <LateDayControls
+              assignment={assignment}
+              balance={balance}
+              appliedDays={appliedLateUse?.days ?? 0}
+              dueAt={baseDue}
+              closeAt={detail.closeAt}
+              unitHours={unitHours}
+              onUpdate={handleUpdate}
+            />
+          )}
         </aside>
       </div>
     </PageContainer>

@@ -2,7 +2,6 @@ import { Clock } from "lucide-react";
 import { Fact } from "@/components/facts";
 import { TaskMarkdown } from "@/components/tasks/task-markdown";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { count, dueTime } from "@/lib/format";
 import type { Criterion } from "@/lib/grading";
 import { competencyCriteria, pointCriteria } from "@/lib/grading";
 import { RubricDescription } from "./assessment-history";
@@ -27,14 +26,11 @@ export function AssignmentDates({
   dueAt,
   closeAt,
   overdue = false,
-  moved = null,
 }: {
   availableAt: string;
   dueAt: string;
   closeAt: string | null;
   overdue?: boolean;
-  /** The due date with the student's late days, and how many. */
-  moved?: { at: string; days: number } | null;
 }) {
   return (
     <Card density="compact">
@@ -52,13 +48,8 @@ export function AssignmentDates({
           <p className="text-muted-foreground">Due</p>
           <Fact.Due
             at={dueAt}
-            className={overdue && !moved ? "text-destructive" : undefined}
+            className={overdue ? "text-destructive" : undefined}
           />
-          {moved && (
-            <p className={overdue ? "text-destructive" : undefined}>
-              {`${dueTime(moved.at)} with ${count(moved.days, "late day")}`}
-            </p>
-          )}
         </div>
         {closeAt && (
           <div>

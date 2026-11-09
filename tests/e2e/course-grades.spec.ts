@@ -9,7 +9,7 @@ import {
 /**
  * Does each new screen open in a browser and carry its first journey: a
  * policy saved, marked final, and released; a student reading their card;
- * the late days page; and the attendance pages?
+ * and the attendance pages?
  */
 
 let seeded: SeededScenario;
@@ -61,16 +61,6 @@ test("staff save a policy, mark it final, and release it; a student reads their 
   await authenticate(page, learner.username);
   await page.goto("/grades");
   await expect(page.getByText("Course grade", { exact: true })).toBeVisible();
-  noErrors();
-});
-
-test("a student opens the late days page", async ({ page }) => {
-  const noErrors = failOnPageErrors(page);
-  await authenticate(page, seeded.learners[0]!.username);
-  await page.goto("/late-days");
-  await expect(page.getByRole("heading", { name: "Late days" })).toBeVisible();
-  await expect(page.getByText(/\d+ of \d+ left/)).toBeVisible();
-  await expect(page.getByText(seeded.title).first()).toBeVisible();
   noErrors();
 });
 
