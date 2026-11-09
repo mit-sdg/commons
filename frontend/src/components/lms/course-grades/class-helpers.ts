@@ -92,11 +92,12 @@ export function withDividers(
 
 /* ---------- Filters ---------- */
 
-export type Chip = "everyone" | "near" | "belowC" | "adjusted";
+export type Chip = "changed" | "everyone" | "near" | "belowC" | "adjusted";
 
+/** The chips always shown; Changed joins them while comparing. */
 export const CHIPS: [Chip, string][] = [
   ["everyone", "Everyone"],
-  ["near", "Near a cutoff"],
+  ["near", "Near a line"],
   ["belowC", "Below C"],
   ["adjusted", "Overrides and attendance"],
 ];
@@ -126,6 +127,8 @@ export function matchesFilters(
   student: { name: string; email: string; section: string | null } | undefined,
   policy: CoursePolicy,
   filters: Filters,
+  /** While comparing, the students who change; Changed shows only them. */
+  changed: ReadonlySet<string> | null = null,
 ): boolean {
   const search = filters.search.trim().toLowerCase();
   if (
@@ -140,6 +143,8 @@ export function matchesFilters(
   const { filter } = filters;
   if ("letter" in filter) return grade.grade === filter.letter;
   switch (filter.chip) {
+    case "changed":
+      return changed === null || changed.has(grade.student);
     case "near":
       return nearCutoff(grade, policy);
     case "belowC":
@@ -184,7 +189,7 @@ const plural = (n: number, one: string, many: string) =>
 
 /**
  * The class headline: "B, median of 64 students", or while comparing
- * "24 students get a different letter under Latest per skill".
+ * "24 students change letter". The compared policy is named on its button.
  */
 export function headline({
   grades,
@@ -195,12 +200,10 @@ export function headline({
   /** The median letter as shown, or null when no student has a grade. */
   median: string | null;
   /**
-   * While comparing: its name, how many students differ under it, and
-   * whether they differ by letter or, for copies released without letters,
-   * by average.
+   * While comparing: how many students differ under it, and whether they
+   * differ by letter or, for copies released without letters, by average.
    */
   comparison: {
-    name: string;
     differ: number;
     by?: "letter" | "average";
   } | null;
@@ -208,9 +211,8 @@ export function headline({
   if (comparison) {
     const n = comparison.differ;
     const what = comparison.by === "average" ? "average" : "letter";
-    if (n === 0)
-      return `No student gets a different ${what} under ${comparison.name}`;
-    return `${plural(n, "student gets", "students get")} a different ${what} under ${comparison.name}`;
+    if (n === 0) return `No student changes ${what}`;
+    return `${plural(n, "student changes", "students change")} ${what}`;
   }
   if (grades.length === 0) return "No students yet";
   if (median === null) return "No grades yet";

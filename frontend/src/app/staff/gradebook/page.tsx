@@ -5,8 +5,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
-import { copiesShown } from "@/components/lms/course-grades/class-helpers";
+import {
+  copiesShown,
+  differentLetters,
+} from "@/components/lms/course-grades/class-helpers";
 import { ClassPane } from "@/components/lms/course-grades/class-pane";
+import { FINAL_HINT } from "@/components/lms/course-grades/policy-header";
 import { PolicyPane } from "@/components/lms/course-grades/policy-pane";
 import type {
   Comparison,
@@ -17,6 +21,7 @@ import { PageContainer, PageHeader } from "@/components/page";
 import { ErrorState, LoadingState } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { InlineHelp } from "@/components/ui/inline-help";
 import { useQuery } from "@/hooks/use-query";
 import { useAuth } from "@/lib/auth";
 import { useCourse } from "@/lib/course";
@@ -45,13 +50,8 @@ const NEW_POLICY: OpenPolicy = {
   final: false,
 };
 
-type CompareWith =
-  | { kind: "none" }
-  | { kind: "policy"; policy: string }
-  | { kind: "saved" }
-  | { kind: "released" };
-
-const NO_COMPARISON: CompareWith = { kind: "none" };
+/** What the open policy is compared with: "saved", "released", or "policy:<id>". */
+type CompareWith = string | null;
 
 export default function CourseGradesPageRoute() {
   const { session, permissions } = useAuth();
@@ -140,9 +140,7 @@ function CourseGrades({
     () => first?.specification ?? startingPolicy(inputs),
   );
   const [conflict, setConflict] = useState<SaveConflict | null>(null);
-  const [chosenCompare, setCompareWith] = useState<CompareWith>({
-    kind: "none",
-  });
+  const [chosenCompare, setCompareWith] = useState<CompareWith>(null);
   const [showAs, setShowAs] = useState<ShowAs>("letters");
 
   async function openPolicy(id: string) {
@@ -156,23 +154,37 @@ function CourseGrades({
   const dirty =
     saved === null || JSON.stringify(saved) !== JSON.stringify(policy);
 
-  // The policy compared with: another saved policy, this one as saved while
-  // it has unsaved edits, or what students see.
-  const compareWith: CompareWith =
-    chosenCompare.kind === "saved" && !dirty ? NO_COMPARISON : chosenCompare;
+  // The policy compared with: this one as saved while it has unsaved edits,
+  // what students see, or another saved policy.
   const latestRelease = page.releases.find((entry) => entry.open) ?? null;
-  const compared = useQuery(
-    compareWith.kind === "policy" ? () => loadPolicy(compareWith.policy) : null,
-    [compareWith],
-  );
-  const comparePolicy: CoursePolicy | null =
-    compareWith.kind === "policy"
-      ? (compared.data?.specification ?? null)
-      : compareWith.kind === "saved"
-        ? saved
-        : compareWith.kind === "released" && latestRelease?.release
-          ? (latestRelease.release.policy.specification as CoursePolicy)
+  const others = page.policies.filter((entry) => entry.policy !== open.policy);
+  const savedChoice = open.policy !== null && dirty && saved !== null;
+  const compareWith: CompareWith =
+    chosenCompare === "saved"
+      ? savedChoice
+        ? "saved"
+        : null
+      : chosenCompare === "released"
+        ? latestRelease
+          ? "released"
+          : null
+        : others.some((entry) => `policy:${entry.policy}` === chosenCompare)
+          ? chosenCompare
           : null;
+  const otherPolicy = compareWith?.startsWith("policy:")
+    ? compareWith.slice("policy:".length)
+    : null;
+  const compared = useQuery(
+    otherPolicy ? () => loadPolicy(otherPolicy) : null,
+    [otherPolicy],
+  );
+  const comparePolicy: CoursePolicy | null = otherPolicy
+    ? (compared.data?.specification ?? null)
+    : compareWith === "saved"
+      ? saved
+      : compareWith === "released" && latestRelease?.release
+        ? (latestRelease.release.policy.specification as CoursePolicy)
+        : null;
 
   const [now] = useState(() => new Date());
   const grades = useMemo(
@@ -180,16 +192,15 @@ function CourseGrades({
     [policy, inputs, now],
   );
   const comparison: Comparison | null = useMemo(() => {
-    if (!comparePolicy || compareWith.kind === "none") return null;
-    const name =
-      compareWith.kind === "policy"
-        ? (page.policies.find((entry) => entry.policy === compareWith.policy)
-            ?.name ?? "")
-        : compareWith.kind === "saved"
-          ? `${open.name}, saved`
-          : "What students see";
+    if (!comparePolicy || compareWith === null) return null;
+    const name = otherPolicy
+      ? (page.policies.find((entry) => entry.policy === otherPolicy)?.name ??
+        "")
+      : compareWith === "saved"
+        ? `${open.name}, saved`
+        : "What students see";
     // What students see is each student's released copy, not a recalculation.
-    const released = compareWith.kind === "released" && latestRelease;
+    const released = compareWith === "released" && latestRelease;
     return {
       name,
       policy: comparePolicy,
@@ -200,6 +211,7 @@ function CourseGrades({
   }, [
     comparePolicy,
     compareWith,
+    otherPolicy,
     latestRelease,
     policy,
     inputs,
@@ -207,6 +219,34 @@ function CourseGrades({
     open.name,
     page,
   ]);
+
+  // While editing, Saved carries a live count of the students who change letter.
+  const savedGrades = useMemo(
+    () => (savedChoice && saved ? courseGrades(saved, inputs, now, now) : null),
+    [savedChoice, saved, inputs, now],
+  );
+  const compareOptions = [
+    ...(savedChoice
+      ? [
+          {
+            key: "saved",
+            name: "Saved",
+            count: savedGrades
+              ? differentLetters(grades, savedGrades).size
+              : null,
+          },
+        ]
+      : []),
+    ...(latestRelease
+      ? [{ key: "released", name: "What students see", count: null }]
+      : []),
+    ...others.map((entry) => ({
+      key: `policy:${entry.policy}`,
+      name: entry.name,
+      count: null,
+    })),
+  ];
+  const finalPolicy = page.policies.find((entry) => entry.final) ?? null;
 
   // Leaving a policy with unsaved changes asks first.
   const [pendingLeave, setPendingLeave] = useState<
@@ -314,38 +354,6 @@ function CourseGrades({
           <div className="flex flex-wrap items-center gap-2">
             {readOnly && <Badge variant="secondary">View only</Badge>}
             <select
-              aria-label="Compare with"
-              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-              value={
-                compareWith.kind === "policy"
-                  ? `policy:${compareWith.policy}`
-                  : compareWith.kind
-              }
-              onChange={(event) => {
-                const value = event.target.value;
-                setCompareWith(
-                  value.startsWith("policy:")
-                    ? { kind: "policy", policy: value.slice(7) }
-                    : ({ kind: value } as CompareWith),
-                );
-              }}
-            >
-              <option value="none">Compare with…</option>
-              {open.policy && dirty && (
-                <option value="saved">{open.name}, saved</option>
-              )}
-              {latestRelease && (
-                <option value="released">What students see</option>
-              )}
-              {page.policies
-                .filter((entry) => entry.policy !== open.policy)
-                .map((entry) => (
-                  <option key={entry.policy} value={`policy:${entry.policy}`}>
-                    {entry.name}
-                  </option>
-                ))}
-            </select>
-            <select
               aria-label="Show as"
               className="h-9 rounded-md border border-input bg-background px-2 text-sm"
               value={showAs}
@@ -353,14 +361,30 @@ function CourseGrades({
             >
               {SHOW_AS.map((option) => (
                 <option key={option.value} value={option.value}>
-                  Grades: {option.label}
+                  Show as: {option.label}
                 </option>
               ))}
             </select>
+            <InlineHelp label="Show as">
+              Changes only how this screen shows grades. Download uses the final
+              policy&apos;s letters.
+            </InlineHelp>
             {!readOnly && (
-              <Button variant="outline" size="sm" onClick={download}>
-                <Download className="size-4" /> Download
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={finalPolicy === null}
+                  onClick={download}
+                >
+                  <Download className="size-4" /> Download final grades
+                </Button>
+                <InlineHelp label="About Download">
+                  {finalPolicy
+                    ? `A CSV of each student's grade under ${finalPolicy.name}, the final policy, as last saved. Unsaved edits are not in it.`
+                    : `No policy is final yet. ${FINAL_HINT}`}
+                </InlineHelp>
+              </>
             )}
           </div>
         }
@@ -382,8 +406,10 @@ function CourseGrades({
       <div className="mt-4 grid gap-6 lg:grid-cols-[24rem_minmax(0,1fr)]">
         <div className="order-2 lg:order-1">
           <PolicyPane
+            key={open.policy ?? "new"}
             inputs={inputs}
             policy={policy}
+            saved={saved}
             onChange={setPolicy}
             open={open}
             policies={page.policies}
@@ -441,6 +467,11 @@ function CourseGrades({
             onChange={setPolicy}
             grades={grades}
             comparison={comparison}
+            compare={{
+              options: compareOptions,
+              selected: compareWith,
+              onSelect: setCompareWith,
+            }}
             showAs={showAs}
             sections={page.sections}
             readOnly={readOnly}

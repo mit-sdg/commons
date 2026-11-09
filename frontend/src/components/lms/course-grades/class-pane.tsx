@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import {
   bySkill,
   CHIPS,
+  type Chip,
   differingStudents,
   type Filters,
   headline,
@@ -40,6 +41,7 @@ export function ClassPane({
   onChange,
   grades,
   comparison,
+  compare,
   showAs,
   sections,
   readOnly,
@@ -73,7 +75,6 @@ export function ClassPane({
     median: median === null ? null : showLetter(median, policy, showAs),
     comparison: comparison
       ? {
-          name: comparison.name,
           differ: differ.size,
           by:
             comparison.copies &&
@@ -88,10 +89,32 @@ export function ClassPane({
   const hint = notCountedHint(leftOut(grades), policy.missing);
   const counts = letterCounts(grades, policy);
 
+  // Changed shows only while comparing; without a comparison it is Everyone.
+  const shown: Filters =
+    !comparison && "chip" in filters.filter && filters.filter.chip === "changed"
+      ? { ...filters, filter: { chip: "everyone" } }
+      : filters;
   const visible = grades.filter((grade) =>
-    matchesFilters(grade, students.get(grade.student), policy, filters),
+    matchesFilters(
+      grade,
+      students.get(grade.student),
+      policy,
+      shown,
+      comparison ? differ : null,
+    ),
   );
-  const filtered = isFiltered(filters);
+  const filtered = isFiltered(shown);
+  const chips: [Chip, string, number?][] = comparison
+    ? [["changed", "Changed", differ.size], ...CHIPS]
+    : CHIPS;
+
+  function choose(key: string | null) {
+    compare.onSelect(key);
+    setFilters({
+      ...filters,
+      filter: { chip: key === null ? "everyone" : "changed" },
+    });
+  }
   const rows = withDividers(
     rankGrades(visible, nameOf),
     policy.lines[policy.gradeSet],
@@ -111,7 +134,7 @@ export function ClassPane({
     [comparison, differ],
   );
   const showReasons =
-    "chip" in filters.filter && filters.filter.chip === "adjusted";
+    "chip" in shown.filter && shown.filter.chip === "adjusted";
 
   function openStudent(student: string) {
     if (!visible.some((grade) => grade.student === student))
@@ -126,6 +149,54 @@ export function ClassPane({
 
   return (
     <section aria-label="Class" className="grid min-w-0 gap-4">
+      {compare.options.length > 0 && (
+        <div
+          role="group"
+          aria-label="Compare with"
+          className="flex flex-wrap items-center gap-1.5 text-sm"
+        >
+          <span className="mr-0.5 text-muted-foreground">Compare with</span>
+          {compare.options.map((option) => {
+            const on = compare.selected === option.key;
+            return (
+              <button
+                key={option.key}
+                type="button"
+                aria-pressed={on}
+                onClick={() => choose(on ? null : option.key)}
+                className={cn(
+                  PILL,
+                  "py-0.5",
+                  on
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border bg-card hover:border-foreground/40",
+                )}
+              >
+                {option.name}
+                {option.count !== null && !on && (
+                  <span
+                    className={cn(
+                      "tabular-nums",
+                      option.count > 0
+                        ? "font-bold"
+                        : on
+                          ? "text-background/75"
+                          : "text-muted-foreground",
+                    )}
+                  >
+                    {option.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+          <InlineHelp label="Compare">
+            Shows who gets a different letter under another policy, or under the
+            saved version while you have unsaved edits. Overrides are left out.
+            The number on Saved counts them as you edit.
+          </InlineHelp>
+        </div>
+      )}
       <div className="grid gap-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <h2 className="font-display text-2xl font-semibold">{said}</h2>
@@ -155,6 +226,7 @@ export function ClassPane({
         highlighted={
           filtered ? new Set(visible.map((grade) => grade.student)) : null
         }
+        compared={comparison && !comparison.copies ? comparison.policy : null}
         nameOf={nameOf}
         onOpen={openStudent}
       />
@@ -234,8 +306,8 @@ export function ClassPane({
           )}
         </div>
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Show">
-          {CHIPS.map(([chip, label]) => {
-            const on = "chip" in filters.filter && filters.filter.chip === chip;
+          {chips.map(([chip, label, count]) => {
+            const on = "chip" in shown.filter && shown.filter.chip === chip;
             return (
               <button
                 key={chip}
@@ -251,6 +323,9 @@ export function ClassPane({
                 )}
               >
                 {label}
+                {count !== undefined && (
+                  <b className="font-bold tabular-nums">{count}</b>
+                )}
               </button>
             );
           })}

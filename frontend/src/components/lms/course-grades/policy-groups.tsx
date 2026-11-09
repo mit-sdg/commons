@@ -2,8 +2,6 @@
 
 import { ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
-import { InlineHelp } from "@/components/ui/inline-help";
-import { Segmented } from "@/components/ui/segmented";
 import {
   type CourseGradeInputs,
   type CoursePolicy,
@@ -22,6 +20,7 @@ import {
   RemoveButton,
   TextField,
 } from "./policy-fields";
+import { changed, type StepProps } from "./policy-settings";
 
 type Combine = PolicyGroup["combine"];
 type SkillRow = Extract<PolicyRow, { type: "skill" }>;
@@ -32,11 +31,11 @@ const COMBINE: [Combine, string][] = [
   ["dropLowest", "Drop lowest"],
 ];
 
-const COMBINE_HINT: Record<Combine, string> = {
-  average: "Rows are averaged by their weights.",
-  best: "The group takes its highest row.",
-  dropLowest:
-    "The lowest row is left out, then the rest are averaged by weight.",
+/** How a group combines its rows, named only when it isn't Average. */
+const COMBINED: Record<Combine, string> = {
+  average: "",
+  best: "best row counts",
+  dropLowest: "lowest row left out",
 };
 
 const COUNT: [SkillRow["count"], string][] = [
@@ -49,6 +48,10 @@ const FROM: [SkillRow["from"], string][] = [
   ["personal", "personal work"],
   ["all", "all work"],
 ];
+
+/** A neutral tone per group, for its swatch and its part of the weight bar. */
+const TONES = ["bg-foreground/60", "bg-foreground/35", "bg-foreground/20"];
+const tone = (index: number) => TONES[index % TONES.length];
 
 interface Skill {
   standard: string;
@@ -129,63 +132,170 @@ function newGroupName(groups: PolicyGroup[]): string {
   return name;
 }
 
+/** Each group's share of the average, and each row's when the group averages its rows. */
+interface Shares {
+  group: PolicyGroup;
+  share: number;
+  rows: { row: PolicyRow; share: number | null }[];
+}
+
+function sharesOf(policy: CoursePolicy): Shares[] {
+  const total = policy.groups.reduce((sum, group) => sum + group.weight, 0);
+  return policy.groups.map((group) => {
+    const share = total > 0 ? (group.weight / total) * 100 : 0;
+    const rowTotal = group.rows.reduce((sum, row) => sum + row.weight, 0);
+    return {
+      group,
+      share,
+      rows: group.rows.map((row) => ({
+        row,
+        share:
+          group.combine === "average" && rowTotal > 0
+            ? (share * row.weight) / rowTotal
+            : null,
+      })),
+    };
+  });
+}
+
+/** "14%", or "14.3%" when it isn't whole. */
+function percent(share: number | null): string {
+  if (share === null) return "";
+  const whole = Math.round(share);
+  return `${Math.abs(share - whole) < 0.05 ? whole : share.toFixed(1)}%`;
+}
+
+const rowKey = (row: PolicyRow) => row.key;
+
+/** The whole average as one bar, split into groups and their rows. */
+function WeightBar({
+  shares,
+  lit,
+  onLight,
+}: {
+  shares: Shares[];
+  lit: string | null;
+  onLight: (key: string | null) => void;
+}) {
+  const dim = (key: string, group: string) =>
+    lit !== null && lit !== key && lit !== group && "opacity-30";
+  return (
+    <div className="grid gap-1">
+      <div aria-hidden className="flex h-3.5 gap-[3px]">
+        {shares.map(({ group, share, rows }, index) => (
+          <div
+            key={group.key}
+            className="flex min-w-0 gap-[1.5px]"
+            style={{ flex: `${Math.max(share, 0.01)} 1 0` }}
+          >
+            {rows.length > 0 && rows.every((entry) => entry.share !== null) ? (
+              rows.map(({ row }) => (
+                <span
+                  key={row.key}
+                  onMouseEnter={() => onLight(rowKey(row))}
+                  onMouseLeave={() => onLight(null)}
+                  className={cn(
+                    "min-w-0.5 rounded-[3px] transition-opacity",
+                    tone(index),
+                    dim(row.key, group.key),
+                  )}
+                  style={{ flex: `${Math.max(row.weight, 0.01)} 1 0` }}
+                />
+              ))
+            ) : (
+              <span
+                onMouseEnter={() => onLight(group.key)}
+                onMouseLeave={() => onLight(null)}
+                className={cn(
+                  "flex-1 rounded-[3px] transition-opacity",
+                  tone(index),
+                  dim(group.key, group.key),
+                )}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** The policy's groups: each with a name, a weight, how it combines, and its rows. */
 export function PolicyGroups({
   inputs,
   policy,
+  saved,
   onChange,
   readOnly,
-}: {
-  inputs: CourseGradeInputs;
-  policy: CoursePolicy;
-  onChange: (policy: CoursePolicy) => void;
-  readOnly: boolean;
-}) {
+}: StepProps & { inputs: CourseGradeInputs }) {
+  const [editing, setEditing] = useState(false);
+  const [lit, setLit] = useState<string | null>(null);
+  const edit = editing && !readOnly;
   const known = useMemo(() => catalog(inputs), [inputs]);
-  const total = policy.groups.reduce((sum, group) => sum + group.weight, 0);
+  const shares = sharesOf(policy);
+  const nameOf = (row: PolicyRow) =>
+    row.type === "assignment"
+      ? (known.title.get(row.assignment) ?? "Removed assignment")
+      : (known.skillName.get(row.standard) ?? row.standard);
   const setGroups = (groups: PolicyGroup[]) => onChange({ ...policy, groups });
-  const setGroup = (key: string, next: PolicyGroup) =>
-    setGroups(policy.groups.map((group) => (group.key === key ? next : group)));
+  const lightable = (key: string) => ({
+    onMouseEnter: () => setLit(key),
+    onMouseLeave: () => setLit(null),
+  });
+  const litRow = (key: string, group: string) =>
+    lit !== null && (lit === key || lit === group) && "bg-foreground/[0.05]";
 
   return (
     <PolicySection
+      step={2}
       title="Groups"
       hint={
         <div className="grid gap-2">
           <p>
-            The average is the weighted mean of the groups. Each group combines
-            its rows. A row is an assignment, or one skill followed across the
-            term.
+            The average weighs each group by its weight. Average weighs a
+            group&apos;s rows by their weights, Best takes the highest row, and
+            Drop lowest leaves out the lowest row.
           </p>
-          <p>Team work is Final project work. Personal work is the rest.</p>
+          <p>
+            A row is an assignment, or one skill followed across the term. Team
+            work is Final project work. Personal work is the rest.
+          </p>
         </div>
       }
+      edited={changed(saved, policy, (p) => [p.groups, p.skillWeights])}
+      editing={edit}
+      onEditing={readOnly ? undefined : setEditing}
     >
-      <div className="grid gap-2.5">
-        {policy.groups.map((group) => (
-          <Group
-            key={group.key}
-            group={group}
-            share={
-              total > 0 && total !== 100
-                ? Math.round((group.weight / total) * 100)
-                : null
-            }
-            known={known}
-            policy={policy}
-            onChange={onChange}
-            onGroup={(next) => setGroup(group.key, next)}
-            onRemove={() =>
-              setGroups(
-                policy.groups.filter((entry) => entry.key !== group.key),
-              )
-            }
-            readOnly={readOnly}
-          />
-        ))}
-      </div>
-      {readOnly ? null : (
-        <div>
+      <WeightBar shares={shares} lit={lit} onLight={setLit} />
+      {edit ? (
+        <div className="grid gap-3">
+          {shares.map((entry, index) => (
+            <Group
+              key={entry.group.key}
+              index={index}
+              entry={entry}
+              known={known}
+              nameOf={nameOf}
+              policy={policy}
+              onChange={onChange}
+              onGroup={(next) =>
+                setGroups(
+                  policy.groups.map((group) =>
+                    group.key === next.key ? next : group,
+                  ),
+                )
+              }
+              onRemove={() =>
+                setGroups(
+                  policy.groups.filter(
+                    (group) => group.key !== entry.group.key,
+                  ),
+                )
+              }
+              lit={litRow}
+              lightable={lightable}
+            />
+          ))}
           <AddButton
             onClick={() =>
               setGroups([
@@ -203,36 +313,101 @@ export function PolicyGroups({
             + Group
           </AddButton>
         </div>
+      ) : (
+        <div className="grid gap-2.5 text-sm">
+          {shares.map(({ group, share, rows }, index) => (
+            <div key={group.key} className="grid">
+              <div
+                {...lightable(group.key)}
+                className={cn(
+                  "flex items-baseline gap-2 rounded py-0.5",
+                  litRow(group.key, group.key),
+                )}
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    "size-2.5 shrink-0 self-center rounded-[3px]",
+                    tone(index),
+                  )}
+                />
+                <b className="font-semibold">{group.name || "Group"}</b>
+                <span className="text-xs text-muted-foreground">
+                  {COMBINED[group.combine]}
+                </span>
+                <span className="ml-auto font-semibold tabular-nums">
+                  {percent(share)}
+                </span>
+              </div>
+              {rows.map(({ row, share: rowShare }) => (
+                <div
+                  key={row.key}
+                  {...lightable(row.key)}
+                  className={cn(
+                    "ml-4 flex items-baseline gap-2 rounded py-0.5",
+                    litRow(row.key, group.key),
+                  )}
+                >
+                  <span className="min-w-0">
+                    {nameOf(row)}
+                    {row.type === "skill" ? (
+                      <span className="text-xs text-muted-foreground">
+                        {" "}
+                        {COUNT.find(
+                          ([count]) => count === row.count,
+                        )?.[1].toLowerCase()}{" "}
+                        rating, from{" "}
+                        {FROM.find(([from]) => from === row.from)?.[1]}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="ml-auto text-xs text-muted-foreground tabular-nums">
+                    {percent(rowShare)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ))}
+          {policy.groups.length === 0 ? (
+            <p className="text-muted-foreground">None</p>
+          ) : null}
+        </div>
       )}
     </PolicySection>
   );
 }
 
+type Light = (key: string) => {
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+};
+
 function Group({
-  group,
-  share,
+  index,
+  entry,
   known,
+  nameOf,
   policy,
   onChange,
   onGroup,
   onRemove,
-  readOnly,
+  lit,
+  lightable,
 }: {
-  group: PolicyGroup;
-  /** The group's share of the average, shown when the weights don't total 100. */
-  share: number | null;
+  index: number;
+  entry: Shares;
   known: Catalog;
+  nameOf: (row: PolicyRow) => string;
   policy: CoursePolicy;
   onChange: (policy: CoursePolicy) => void;
   onGroup: (group: PolicyGroup) => void;
   onRemove: () => void;
-  readOnly: boolean;
+  lit: (key: string, group: string) => string | false;
+  lightable: Light;
 }) {
-  const [open, setOpen] = useState(true);
+  const { group, share, rows } = entry;
   const name = group.name || "Group";
-  const setRows = (rows: PolicyRow[]) => onGroup({ ...group, rows });
-  const setRow = (key: string, row: PolicyRow) =>
-    setRows(group.rows.map((entry) => (entry.key === key ? row : entry)));
+  const setRows = (next: PolicyRow[]) => onGroup({ ...group, rows: next });
   const inGroup = new Set(
     group.rows.map((row) =>
       row.type === "assignment" ? row.assignment : `skill:${row.standard}`,
@@ -240,154 +415,142 @@ function Group({
   );
 
   return (
-    <div className="rounded-lg border bg-background">
-      <div className="flex items-center gap-1.5 p-2">
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-label={name}
-          onClick={() => setOpen(!open)}
-          className="inline-grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-        >
-          <ChevronRight
-            aria-hidden
-            className={cn("size-3.5 transition-transform", open && "rotate-90")}
-          />
-        </button>
+    <div className="grid gap-0.5">
+      <div
+        {...lightable(group.key)}
+        className={cn(
+          "group/item grid grid-cols-[0.625rem_minmax(0,1fr)_auto_auto_2.75rem_1.5rem] items-center gap-1.5 rounded",
+          lit(group.key, group.key),
+        )}
+      >
+        <span
+          aria-hidden
+          className={cn("size-2.5 rounded-[3px]", tone(index))}
+        />
         <TextField
           label="Group name"
           value={group.name}
           onChange={(value) => onGroup({ ...group, name: value })}
-          readOnly={readOnly}
-          className="flex-1 font-semibold"
+          readOnly={false}
+          className="font-semibold"
+        />
+        <ChoiceField
+          label={`Combine the rows of ${name}`}
+          value={group.combine}
+          options={COMBINE}
+          onChange={(combine) => onGroup({ ...group, combine })}
+          readOnly={false}
+          quiet
         />
         <NumberField
           label={`Weight of ${name}`}
           value={group.weight}
           onChange={(weight) => onGroup({ ...group, weight })}
-          readOnly={readOnly}
+          readOnly={false}
         />
-        {share === null ? null : (
-          <span className="w-10 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-            {share}%
-          </span>
-        )}
-        {readOnly ? null : (
-          <RemoveButton label={`Remove ${name}`} onClick={onRemove} />
-        )}
+        <span className="text-right text-xs text-muted-foreground tabular-nums">
+          {percent(share)}
+        </span>
+        <RemoveButton label={`Remove ${name}`} onClick={onRemove} />
       </div>
-      {open ? (
-        <div className="grid gap-2 px-2.5 pb-2.5">
-          <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-            Combine
-            {readOnly ? (
-              <span className="text-foreground">
-                {COMBINE.find(([value]) => value === group.combine)?.[1]}
-              </span>
-            ) : (
-              <Segmented
-                label={`Combine the rows of ${name}`}
-                value={group.combine}
-                options={COMBINE}
-                onChange={(combine) => onGroup({ ...group, combine })}
-              />
-            )}
-            <InlineHelp label="Combine">
-              {COMBINE_HINT[group.combine]}
-            </InlineHelp>
-          </div>
-          {group.rows.length > 0 ? (
-            <ul className="grid">
-              {group.rows.map((row) => (
-                <Row
-                  key={row.key}
-                  row={row}
-                  weighted={group.combine !== "best"}
-                  known={known}
-                  policy={policy}
-                  onChange={onChange}
-                  onRow={(next) => setRow(row.key, next)}
-                  onRemove={() =>
-                    setRows(group.rows.filter((entry) => entry.key !== row.key))
+      <ul className="ml-4 grid">
+        {rows.map(({ row, share: rowShare }) => (
+          <Row
+            key={row.key}
+            row={row}
+            share={rowShare}
+            weighted={group.combine !== "best"}
+            name={nameOf(row)}
+            known={known}
+            policy={policy}
+            onChange={onChange}
+            onRow={(next) =>
+              setRows(
+                group.rows.map((entry) =>
+                  entry.key === row.key ? next : entry,
+                ),
+              )
+            }
+            onRemove={() =>
+              setRows(group.rows.filter((entry) => entry.key !== row.key))
+            }
+            className={cn(lit(row.key, group.key) || undefined)}
+            light={lightable(row.key)}
+          />
+        ))}
+      </ul>
+      <div className="ml-4">
+        <AddPicker
+          said="+ Add"
+          label={`Add to ${name}`}
+          groups={[
+            {
+              label: "Assignments",
+              options: known.assignments
+                .filter((entry) => !inGroup.has(entry.assignment))
+                .map((entry) => [`a:${entry.assignment}`, entry.title]),
+            },
+            {
+              label: "A skill across the term",
+              options: known.skills
+                .filter((skill) => !inGroup.has(`skill:${skill.standard}`))
+                .map((skill) => [`s:${skill.standard}`, skill.name]),
+            },
+          ]}
+          onPick={(picked) => {
+            const id = picked.slice(2);
+            setRows([
+              ...group.rows,
+              picked.startsWith("a:")
+                ? {
+                    key: newKey("r"),
+                    type: "assignment",
+                    assignment: id,
+                    weight: 1,
                   }
-                  readOnly={readOnly}
-                />
-              ))}
-            </ul>
-          ) : null}
-          {readOnly ? null : (
-            <div className="flex flex-wrap gap-1.5">
-              <AddPicker
-                said="+ Assignment"
-                label={`Add an assignment to ${name}`}
-                options={known.assignments
-                  .filter((entry) => !inGroup.has(entry.assignment))
-                  .map((entry) => [entry.assignment, entry.title])}
-                onPick={(assignment) =>
-                  setRows([
-                    ...group.rows,
-                    {
-                      key: newKey("r"),
-                      type: "assignment",
-                      assignment,
-                      weight: 1,
-                    },
-                  ])
-                }
-              />
-              <AddPicker
-                said="+ Skill"
-                label={`Add a skill to ${name}`}
-                options={known.skills
-                  .filter((skill) => !inGroup.has(`skill:${skill.standard}`))
-                  .map((skill) => [skill.standard, skill.name])}
-                onPick={(standard) =>
-                  setRows([
-                    ...group.rows,
-                    {
-                      key: newKey("r"),
-                      type: "skill",
-                      standard,
-                      weight: 1,
-                      count: "latest",
-                      from: "personal",
-                    },
-                  ])
-                }
-              />
-            </div>
-          )}
-        </div>
-      ) : null}
+                : {
+                    key: newKey("r"),
+                    type: "skill",
+                    standard: id,
+                    weight: 1,
+                    count: "latest",
+                    from: "personal",
+                  },
+            ]);
+          }}
+        />
+      </div>
     </div>
   );
 }
 
 function Row({
   row,
+  share,
   weighted,
+  name,
   known,
   policy,
   onChange,
   onRow,
   onRemove,
-  readOnly,
+  className,
+  light,
 }: {
   row: PolicyRow;
+  share: number | null;
   /** Whether row weights count: not under Best. */
   weighted: boolean;
+  name: string;
   known: Catalog;
   policy: CoursePolicy;
   onChange: (policy: CoursePolicy) => void;
   onRow: (row: PolicyRow) => void;
   onRemove: () => void;
-  readOnly: boolean;
+  className?: string;
+  light: ReturnType<Light>;
 }) {
   const [open, setOpen] = useState(false);
-  const name =
-    row.type === "assignment"
-      ? (known.title.get(row.assignment) ?? "Removed assignment")
-      : (known.skillName.get(row.standard) ?? row.standard);
   const skills =
     row.type === "assignment" && !known.points.has(row.assignment)
       ? (known.skillsOf.get(row.assignment) ?? [])
@@ -398,7 +561,13 @@ function Row({
       : {};
 
   return (
-    <li className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-x-1.5 gap-y-1 border-t py-1.5 text-sm first:border-t-0">
+    <li
+      {...light}
+      className={cn(
+        "group/item grid grid-cols-[minmax(0,1fr)_auto_2.75rem_1.5rem] items-center gap-x-1.5 gap-y-0.5 rounded py-0.5 text-sm",
+        className,
+      )}
+    >
       {row.type === "skill" ? (
         <span className="flex min-w-0 items-center gap-1.5">
           <KindTag>Skill</KindTag>
@@ -408,8 +577,9 @@ function Row({
         <button
           type="button"
           aria-expanded={open}
+          aria-label={`Skill weights of ${name}`}
           onClick={() => setOpen(!open)}
-          className="flex min-w-0 items-center gap-1 text-left hover:underline hover:decoration-dotted hover:underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
+          className="flex min-w-0 items-center gap-1 text-left focus-visible:outline-2 focus-visible:outline-ring"
         >
           <ChevronRight
             aria-hidden
@@ -421,54 +591,52 @@ function Row({
           <span className="truncate">{name}</span>
         </button>
       ) : (
-        <span className="flex min-w-0 items-center gap-1.5">
+        <span className="flex min-w-0 items-center gap-1.5 pl-4">
           <span className="truncate">{name}</span>
           {row.type === "assignment" && known.points.has(row.assignment) ? (
             <KindTag>Points</KindTag>
           ) : null}
         </span>
       )}
-      {row.type === "skill" ? (
-        <ChoiceField
-          label={`Which rating of ${name} counts`}
-          value={row.count}
-          options={COUNT}
-          onChange={(count) => onRow({ ...row, count })}
-          readOnly={readOnly}
-        />
-      ) : (
-        <span />
-      )}
       {weighted ? (
         <NumberField
           label={`Weight of ${name}`}
           value={row.weight}
           onChange={(weight) => onRow({ ...row, weight })}
-          readOnly={readOnly}
+          readOnly={false}
         />
       ) : (
         <span />
       )}
-      {readOnly ? (
-        <span />
-      ) : (
-        <RemoveButton label={`Remove ${name}`} onClick={onRemove} />
-      )}
+      <span className="text-right text-xs text-muted-foreground tabular-nums">
+        {percent(share)}
+      </span>
+      <RemoveButton label={`Remove ${name}`} onClick={onRemove} />
       {row.type === "skill" ? (
-        <span className="col-span-full flex items-center gap-1.5 pl-1 text-xs text-muted-foreground">
-          From
+        <span className="col-span-full flex flex-wrap items-center gap-1 pl-1 text-xs text-muted-foreground">
+          <ChoiceField
+            label={`Which rating of ${name} counts`}
+            value={row.count}
+            options={COUNT}
+            onChange={(count) => onRow({ ...row, count })}
+            readOnly={false}
+            quiet
+            className="h-6 text-xs"
+          />
+          rating, from
           <ChoiceField
             label={`Which work ${name} counts from`}
             value={row.from}
             options={FROM}
             onChange={(from) => onRow({ ...row, from })}
-            readOnly={readOnly}
-            className="h-7 text-xs"
+            readOnly={false}
+            quiet
+            className="h-6 text-xs"
           />
         </span>
       ) : null}
       {row.type === "assignment" && open && skills.length > 0 ? (
-        <div className="col-span-full ml-1.5 grid gap-1 border-l-2 py-1 pl-2.5 text-muted-foreground">
+        <div className="col-span-full mb-1 ml-1.5 grid gap-1 border-l-2 py-1 pl-2.5 text-muted-foreground">
           {skills.map((skill) => (
             <div
               key={skill.standard}
@@ -490,7 +658,7 @@ function Row({
                     },
                   })
                 }
-                readOnly={readOnly}
+                readOnly={false}
               />
             </div>
           ))}

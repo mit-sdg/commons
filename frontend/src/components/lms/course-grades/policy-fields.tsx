@@ -1,36 +1,110 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { InlineHelp } from "@/components/ui/inline-help";
 import { cn } from "@/lib/utils";
 
 const RING =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
+/** A soft field: filled, borderless until focused. */
+const SOFT =
+  "rounded-md border border-transparent bg-foreground/[0.05] hover:bg-foreground/[0.08] focus:border-ring focus:bg-background";
+
 /** A native select sized for the policy list. */
-export const SELECT = cn(
-  "h-8 min-w-0 rounded-md border border-input bg-background px-1.5 text-sm",
+export const SELECT = cn("h-7 min-w-0 px-1 text-sm", SOFT, RING);
+
+/** A select that reads as plain muted text until hovered: "Average", "Latest". */
+const QUIET_SELECT = cn(
+  "h-7 min-w-0 rounded-md border border-transparent bg-transparent px-0.5 text-sm text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground",
   RING,
 );
 
-/** One part of the policy list: a small heading, its ? hint, and its body. */
+/**
+ * One step of the policy, in the order a grade is worked out: a numbered
+ * heading with its ? hint, and the step read as the policy says it, or open
+ * for editing. "Edited" marks a step that differs from the saved policy.
+ */
 export function PolicySection({
+  step,
   title,
   hint,
+  edited,
+  editing,
+  onEditing,
   children,
 }: {
+  step: number;
   title: string;
   hint?: React.ReactNode;
+  edited: boolean;
+  editing: boolean;
+  /** Absent when the policy is read only. */
+  onEditing?: (editing: boolean) => void;
   children: React.ReactNode;
 }) {
+  const body = useRef<HTMLDivElement>(null);
+  const toggle = useRef<HTMLButtonElement>(null);
+  // Opening a step moves focus to its first field; Done returns it to the button.
+  const pressed = useRef(false);
+  useEffect(() => {
+    if (!pressed.current) return;
+    pressed.current = false;
+    if (editing)
+      body.current?.querySelector<HTMLElement>("input, select")?.focus();
+    else toggle.current?.focus();
+  }, [editing]);
   return (
-    <section aria-label={title} className="grid gap-2">
-      <h3 className="flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-        {title}
+    <section
+      aria-label={title}
+      className={cn(
+        "group/step -mx-4 grid gap-2.5 border-t border-border px-4 pt-3.5 pb-4 transition-colors",
+        editing
+          ? "bg-foreground/[0.035]"
+          : onEditing && "hover:bg-foreground/[0.025]",
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          aria-hidden
+          className="inline-grid size-5 shrink-0 place-items-center rounded-full border-[1.5px] border-foreground/30 text-[11px] font-bold text-muted-foreground"
+        >
+          {step}
+        </span>
+        <h3 className="text-[0.9rem] font-semibold">{title}</h3>
         {hint ? <InlineHelp label={title}>{hint}</InlineHelp> : null}
-      </h3>
-      {children}
+        {edited ? (
+          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span aria-hidden className="size-1.5 rounded-full bg-foreground" />
+            Edited
+          </span>
+        ) : null}
+        {onEditing ? (
+          <button
+            ref={toggle}
+            type="button"
+            aria-expanded={editing}
+            aria-label={`${editing ? "Done editing" : "Edit"} ${title}`}
+            onClick={() => {
+              pressed.current = true;
+              onEditing(!editing);
+            }}
+            className={cn(
+              "ml-auto rounded-md border px-2 py-px text-[13px] font-medium",
+              editing
+                ? "border-foreground/30 bg-card text-foreground"
+                : "border-transparent text-muted-foreground group-hover/step:border-foreground/20 group-hover/step:text-foreground",
+              RING,
+            )}
+          >
+            {editing ? "Done" : "Edit"}
+          </button>
+        ) : null}
+      </div>
+      <div ref={body} className="grid gap-2.5">
+        {children}
+      </div>
     </section>
   );
 }
@@ -92,7 +166,8 @@ export function NumberField({
       }}
       onBlur={() => setText(null)}
       className={cn(
-        "h-8 w-14 rounded-md border border-input bg-background px-1.5 text-right text-sm tabular-nums aria-invalid:border-destructive",
+        "h-7 w-14 px-1.5 text-right text-sm tabular-nums aria-invalid:border-destructive",
+        SOFT,
         RING,
         className,
       )}
@@ -123,7 +198,7 @@ export function TextField({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       className={cn(
-        "h-8 min-w-0 rounded-md border border-transparent bg-transparent px-1.5 text-sm hover:border-input focus:border-input focus:bg-background",
+        "h-7 min-w-0 rounded-md border border-transparent bg-transparent px-1.5 text-sm hover:bg-foreground/[0.06] focus:border-ring focus:bg-background",
         RING,
         className,
       )}
@@ -138,6 +213,7 @@ export function ChoiceField<T extends string>({
   onChange,
   label,
   readOnly,
+  quiet,
   className,
 }: {
   value: T;
@@ -145,6 +221,8 @@ export function ChoiceField<T extends string>({
   onChange: (value: T) => void;
   label: string;
   readOnly: boolean;
+  /** Muted text until hovered, for a choice beside a name. */
+  quiet?: boolean;
   className?: string;
 }) {
   const said = options.find(([option]) => option === value)?.[1] ?? value;
@@ -154,7 +232,7 @@ export function ChoiceField<T extends string>({
       aria-label={label}
       value={value}
       onChange={(event) => onChange(event.target.value as T)}
-      className={cn(SELECT, className)}
+      className={cn(quiet ? QUIET_SELECT : SELECT, className)}
     >
       {options.map(([option, words]) => (
         <option key={option} value={option}>
@@ -165,7 +243,7 @@ export function ChoiceField<T extends string>({
   );
 }
 
-/** The × that removes a group, row, or rule. */
+/** The × that removes a group, row, or rule; it shows when its row is hovered or focused. */
 export function RemoveButton({
   label,
   onClick,
@@ -179,7 +257,7 @@ export function RemoveButton({
       aria-label={label}
       onClick={onClick}
       className={cn(
-        "inline-grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground",
+        "inline-grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground opacity-0 group-focus-within/item:opacity-100 group-hover/item:opacity-100 hover:bg-muted hover:text-foreground focus-visible:opacity-100",
         RING,
       )}
     >
@@ -189,7 +267,7 @@ export function RemoveButton({
 }
 
 const ADDER = cn(
-  "h-7 max-w-full rounded-md border border-dashed border-border bg-transparent px-2 text-sm text-muted-foreground hover:border-foreground/30 hover:text-foreground",
+  "-ml-1.5 h-7 max-w-full appearance-none justify-self-start rounded-md bg-transparent px-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
   RING,
 );
 
@@ -208,19 +286,20 @@ export function AddButton({
   );
 }
 
-/** "+ Assignment", "+ Skill": adds the thing picked from a list. */
+/** "+ Add": adds the thing picked from a list, in named groups of options. */
 export function AddPicker({
   said,
   label,
-  options,
+  groups,
   onPick,
 }: {
   said: string;
   label: string;
-  options: [string, string][];
+  groups: { label: string; options: [string, string][] }[];
   onPick: (value: string) => void;
 }) {
-  if (options.length === 0) return null;
+  const shown = groups.filter((group) => group.options.length > 0);
+  if (shown.length === 0) return null;
   return (
     <select
       aria-label={label}
@@ -231,10 +310,14 @@ export function AddPicker({
       className={ADDER}
     >
       <option value="">{said}</option>
-      {options.map(([value, words]) => (
-        <option key={value} value={value}>
-          {words}
-        </option>
+      {shown.map((group) => (
+        <optgroup key={group.label} label={group.label}>
+          {group.options.map(([value, words]) => (
+            <option key={value} value={value}>
+              {words}
+            </option>
+          ))}
+        </optgroup>
       ))}
     </select>
   );
