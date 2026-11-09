@@ -364,3 +364,21 @@ test("submission checks required alternatives with the hand-in and permits a com
   );
   expect(await c._answers({ response })).toContainEqual({ item: "second", value: "two" });
 });
+
+test("the participants among several subjects come once each, from the subject index", async () => {
+  const db = await testDb();
+  const c = new MongoRespondingConcept(db);
+  const at = new Date("2026-03-03T09:00:00Z");
+  const { response } = await c.begin({ participant: "mira", subject: "round-1", at });
+  await c.answer({ response, item: "q1", value: "yes" });
+  await c.submit({ response, at });
+  await c.begin({ participant: "leon", subject: "round-1", at });
+  await c.begin({ participant: "mira", subject: "round-2", at });
+  await c.begin({ participant: "ada", subject: "elsewhere", at });
+  expect(await c._participantsAmong({ subjects: ["round-1", "round-2"] })).toEqual({
+    participants: ["leon", "mira"],
+  });
+  expect(await c._participantsAmong({ subjects: [] })).toEqual({ participants: [] });
+  const keys = (await db.collection("responding.responses").indexes()).map((index) => index.key);
+  expect(keys).toContainEqual({ subject: 1, participant: 1 });
+});

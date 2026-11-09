@@ -515,6 +515,21 @@ export class MongoRosteringConcept {
     return { active: doc !== null };
   }
 
+  async _sectionList() {
+    const docs = await this.sections.find().sort({ seq: 1 }).toArray();
+    return { sections: docs.map((doc) => ({ section: doc._id, name: doc.name })) };
+  }
+
+  async _activeStudentList() {
+    return {
+      students: (await this._getActiveStudents({})).map(({ user, section, email }) => ({
+        user,
+        section,
+        email,
+      })),
+    };
+  }
+
   async _getActiveStudents(_: Record<string, never>) {
     await this.#ready();
     const docs = await this.seats

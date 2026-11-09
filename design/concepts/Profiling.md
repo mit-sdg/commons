@@ -20,6 +20,8 @@ external User
   An application-owned identity used in the user role.
 opaque Seq
   An ordered list of the values its argument names.
+opaque NameEntry
+  One profile's name as `{ user, displayName }`.
 ```
 
 ## State
@@ -88,4 +90,7 @@ _getProfileFields (user: String) : optional (displayName: String, bio: String, a
 _getProfilesOf (users: Seq<String>) : many (user: String, displayName: String, bio: String, avatar: String)
   answers the public face of each named User that has a Profile, in the order the names are given
   answers no rows when none match
+_namesOf (users: Seq<String>) : one (names: Seq<NameEntry>)
+  answers the display names of the supplied users that have profiles, in the order supplied, each once
+  answers an empty sequence when none do
 ```

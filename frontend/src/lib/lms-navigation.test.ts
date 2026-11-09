@@ -28,7 +28,7 @@ describe("Commons navigation", () => {
     expect(
       lmsNavigation(true).find(({ href }) => href === "/staff/gradebook")
         ?.label,
-    ).toBe("Gradebook");
+    ).toBe("Course grades");
   });
 
   test("class settings is offered only to a course manager", () => {
@@ -40,6 +40,27 @@ describe("Commons navigation", () => {
 
     const grader = lmsNavigation(true, (capability) => capability === "grade");
     expect(grader.some(({ href }) => href === "/staff/class")).toBe(false);
+  });
+
+  test("attendance is offered to every staff capability that reads it", () => {
+    for (const held of [
+      "course:manage",
+      "grade",
+      "student-records",
+      "moderate",
+      "live:host",
+    ]) {
+      expect(
+        lmsNavigation(true, (capability) => capability === held).some(
+          ({ href }) => href === "/staff/attendance",
+        ),
+      ).toBe(true);
+    }
+    expect(
+      lmsNavigation(true, () => false).some(
+        ({ href }) => href === "/staff/attendance",
+      ),
+    ).toBe(false);
   });
 
   test("a seat identifier and assignment capability identify course staff", () => {
@@ -72,10 +93,25 @@ test("grouped navigation keeps late-day staff and graders on authorized destinat
     courseSectionNavigation("/staff/skills", (c) => c === "grade").map(
       (i) => i.href,
     ),
-  ).toEqual(["/staff/gradebook", "/staff/skills"]);
+  ).toEqual([
+    "/staff/gradebook",
+    "/staff/gradebook/assessments",
+    "/staff/skills",
+  ]);
   expect(
     coursePrimaryNavigation(true, () => true).some(
       (i) => i.href === "/staff/skills" || i.href === "/staff/class",
     ),
   ).toBe(false);
+});
+
+test("a grader who can't change course grades lands on Assessments", () => {
+  const grader = (c: string) => c === "grade";
+  const primary = coursePrimaryNavigation(true, grader).map((i) => i.href);
+  expect(primary).toContain("/staff/gradebook/assessments");
+  expect(primary).not.toContain("/staff/gradebook");
+  const manager = (c: string) => c === "grade" || c === "grade-policies";
+  expect(coursePrimaryNavigation(true, manager).map((i) => i.href)).toContain(
+    "/staff/gradebook",
+  );
 });

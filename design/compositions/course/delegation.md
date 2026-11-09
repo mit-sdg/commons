@@ -2,8 +2,9 @@
 
 Grading delegation belongs to an assignment and learner, not to one submission
 attempt. A later submission therefore keeps the same grader, and changing a
-grader never edits an assessment already underway. These routes organize work;
-they do not narrow the existing `grade` permission.
+grader never edits an assessment already underway. For a grader who is not an
+active student these routes organize work without narrowing `grade`; for one
+who is, the delegation is what lets them grade a classmate at all.
 
 [Course.delegation.DelegationGraders](reaction:Course.delegation.DelegationGraders)
 answers [the active accounts that may grade](former:Course.delegation.theGraders):
@@ -13,11 +14,13 @@ have a roster seat. Archived accounts are omitted.
 [Course.delegation.DelegationForItem](reaction:Course.delegation.DelegationForItem)
 answers [the stored owner beside each learner](former:Course.delegation.theDelegationsOn).
 A former grader is still shown after losing access so staff can see and replace
-the stale ownership, but is absent from the choices.
+the stale ownership, but is absent from the choices. A grader who is also an
+active student is shown only the classmates delegated to them.
 
 [Course.delegation.DelegationSet](reaction:Course.delegation.DelegationSet) and
 [Course.delegation.DelegationClear](reaction:Course.delegation.DelegationClear)
-assign, reassign, and unassign one learner. The caller must hold `grade`; the
+assign, reassign, and unassign one learner. The caller must hold `grade` and
+not be an active student, since who grades whom is set only by staff; the
 assignment and its learner release must exist; and a named grader must be a
 registered, unarchived account [currently available to grade](view:Course.delegation.availableGrader).
 Invalid identities answer `NOT_FOUND`.
@@ -40,7 +43,7 @@ assignment toward an even split.
 
 [Course.delegation.DelegationClearItem](reaction:Course.delegation.DelegationClearItem)
 removes all ownership on one real assignment without touching submissions or
-assessments.
+assessments. It and the spread need the same caller as setting one learner.
 
 Every item, learner, and grader identity on the single-item routes first passes
 [validDelegationIdentityInput](computation:validDelegationIdentityInput), so malformed selector

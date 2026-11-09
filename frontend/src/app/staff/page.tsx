@@ -86,7 +86,7 @@ function StaffDashboardPageContent() {
         </Link>
 
         <Link
-          href="/staff/gradebook"
+          href="/staff/gradebook/assessments"
           className="rounded-xl border border-border bg-card p-4 hover:bg-muted/50 transition-colors"
         >
           <div className="flex items-center gap-2 mb-1">
@@ -163,7 +163,7 @@ function StaffDashboardPageContent() {
               <Users className="size-4" /> Manage the roster and sections
             </Link>
             <Link
-              href="/staff/gradebook"
+              href="/staff/gradebook/assessments"
               className="flex items-center gap-2 text-sm hover:text-primary"
             >
               <FileText className="size-4" /> Open assessments

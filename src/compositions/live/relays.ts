@@ -44,6 +44,7 @@ import {
   theTakeOf,
 } from "./policy.ts";
 import { computations, concepts } from "../../concepts.ts";
+import { LECTURES } from "./lectures.ts";
 import { RESERVED_PILES, SORTING_USE } from "./rounds.ts";
 
 const {
@@ -228,6 +229,7 @@ export const theRelay = former(
       closedAt,
       token,
       code,
+      lecture,
       retired,
       ran,
       pile,
@@ -294,6 +296,7 @@ export const theRelay = former(
         .where(
           whether(Sharing._sharesFor({ subject: run }).is({ token })),
           whether(Locating._for({ subject: run }).is({ code })),
+          Pinning._isPinned({ item: run, scope: LECTURES }).is({ pinned: lecture }),
         )
         .form({
           run,
@@ -302,6 +305,7 @@ export const theRelay = former(
           closedAt,
           token,
           code,
+          lecture,
           rounds: each(Publishing._parts({ whole: run }).is({ edition: ran })).form({
             round: ran,
             figure: whether(theRoundFigure({ round: ran })),

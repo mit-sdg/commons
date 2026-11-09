@@ -1,4 +1,5 @@
 import { roundsWithinRuns } from "./20260923T000100-rounds-within-runs.ts";
+import { gradePoliciesForCourseManagers } from "./20261102T000100-grade-policies-for-course-managers.ts";
 import { threadTrash } from "./20260914T000100-thread-trash.ts";
 import { gradingModes } from "./20260915T000100-grading-modes.ts";
 import { sharedGradingLifecycle } from "./20260915T000200-shared-grading-lifecycle.ts";
@@ -35,4 +36,5 @@ export const commonsMigrations: readonly Migration[] = [
   gradingModes,
   sharedGradingLifecycle,
   roundsWithinRuns,
+  gradePoliciesForCourseManagers,
 ];

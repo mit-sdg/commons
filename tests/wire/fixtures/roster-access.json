@@ -135,6 +135,7 @@
           "moderate",
           "course:manage",
           "grade",
+          "grade-policies",
           "live:host",
           "student-records"
         ]
@@ -496,6 +497,7 @@
           "moderate",
           "course:manage",
           "grade",
+          "grade-policies",
           "live:host",
           "student-records"
         ]

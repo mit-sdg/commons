@@ -129,6 +129,10 @@ _getUserCount () : one (count: Number)
 _selectedUsers (users: Seq<String>) : many (user: String)
   answers the registered account identities among the supplied users without resolving usernames
 
+_accountsAmong (users: Seq<String>) : one (accounts: Seq<String>)
+  answers the supplied identities that name registered accounts, each once, in
+  identity order
+  answers an empty sequence when none do
 _getUsers () : many (user: String, username: String, email: String)
   answers all registered Users with their usernames and email addresses
   orders rows alphabetically by username

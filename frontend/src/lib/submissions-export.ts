@@ -1,5 +1,10 @@
 import type { Output } from "@/lib/api";
 import { downloadCsv, fileSlug, toCsv } from "@/lib/csv";
+import {
+  effectiveDue,
+  selectAttemptAssessment,
+  selectSubmissionAttempt,
+} from "../../../src/computations/coursework.ts";
 
 type Row<T> = T extends readonly (infer Element)[] ? Element : never;
 
@@ -70,37 +75,8 @@ function iso(value: string | null | undefined): string {
   return Number.isNaN(moment.getTime()) ? "" : moment.toISOString();
 }
 
-function latestByNumber(attempts: readonly LearnerAttempt[]) {
-  return [...attempts]
-    .sort(
-      (left, right) =>
-        left.number - right.number ||
-        new Date(left.submittedAt).getTime() -
-          new Date(right.submittedAt).getTime(),
-    )
-    .at(-1);
-}
-
 /** Shared by the submissions workspace and CSV, including withdrawn-only work. */
-export function selectSubmissionAttempt(attempts: readonly LearnerAttempt[]) {
-  return (
-    latestByNumber(
-      attempts.filter((attempt) => attempt.status === "SUBMITTED"),
-    ) ?? latestByNumber(attempts)
-  );
-}
-
-function latestGradeRecord<T extends { createdAt: string; updatedAt: string }>(
-  records: readonly T[],
-) {
-  return [...records]
-    .sort(
-      (left, right) =>
-        new Date(left.updatedAt ?? left.createdAt).getTime() -
-        new Date(right.updatedAt ?? right.createdAt).getTime(),
-    )
-    .at(-1);
-}
+export { selectSubmissionAttempt };
 
 export function selectExportAssessment<
   T extends {
@@ -113,40 +89,32 @@ export function selectExportAssessment<
   records: readonly T[],
   attempt: Pick<LearnerAttempt, "submission" | "number"> | undefined,
 ) {
-  const attemptRecord = attempt
-    ? latestGradeRecord(
-        records.filter(
-          (record) => String(record.evidence) === String(attempt.submission),
-        ),
-      )
-    : undefined;
-  const assignmentExcusal = latestGradeRecord(
-    records.filter(
-      (record) => record.status === "EXCUSED" && record.evidence === "",
-    ),
-  );
+  const { record, scope } = selectAttemptAssessment(records, attempt);
   return {
-    record: attemptRecord ?? assignmentExcusal,
-    scope: attemptRecord
-      ? `Attempt ${attempt?.number}`
-      : assignmentExcusal
-        ? "Assignment excusal"
-        : "",
+    record,
+    scope:
+      scope === "attempt"
+        ? `Attempt ${attempt?.number}`
+        : scope === "excusal"
+          ? "Assignment excusal"
+          : "",
   };
 }
 
-function effectiveDue(
+function effectiveDueIso(
   dueAt: string,
   override: string | null,
   lateDays: number | null,
   unitHours: number | null,
 ): string {
   if (lateDays === null || unitHours === null) return "";
-  const base = new Date(override ?? dueAt);
-  if (Number.isNaN(base.getTime())) return "";
-  return new Date(
-    base.getTime() + lateDays * unitHours * 3_600_000,
-  ).toISOString();
+  const due = effectiveDue({
+    dueAt,
+    dueOverride: override,
+    lateDays,
+    unitHours,
+  });
+  return Number.isNaN(due) ? "" : new Date(due).toISOString();
 }
 
 /**
@@ -200,7 +168,7 @@ export function submissionsCsv(source: SubmissionsExportSource): {
         String(delegation.grader))
       : "";
     const days = source.lateDays?.get(learnerId) ?? 0;
-    const effective = effectiveDue(
+    const effective = effectiveDueIso(
       source.dueAt,
       learner.dueOverride,
       source.lateDays === null ? null : days,

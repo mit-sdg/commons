@@ -8,6 +8,7 @@ import {
   Settings,
   Sparkles,
   StickyNote,
+  UserCheck,
   Users,
 } from "lucide-react";
 import type { Capability } from "@/lib/models";
@@ -49,8 +50,14 @@ const STAFF_NAV: {
   },
   {
     href: "/staff/gradebook",
-    label: "Gradebook",
+    label: "Course grades",
     icon: FileText,
+    needs: ["grade"],
+  },
+  {
+    href: "/staff/gradebook/assessments",
+    label: "Assessments",
+    icon: BookOpen,
     needs: ["grade"],
   },
   {
@@ -76,6 +83,18 @@ const STAFF_NAV: {
     label: "Live",
     icon: Radio,
     needs: ["live:host"],
+  },
+  {
+    href: "/staff/attendance",
+    label: "Attendance",
+    icon: UserCheck,
+    needs: [
+      "course:manage",
+      "grade",
+      "student-records",
+      "moderate",
+      "live:host",
+    ],
   },
   {
     href: "/staff/calendar",
@@ -116,9 +135,12 @@ export function coursePrimaryNavigation(
   if (!isStaff) return all;
   const primary = all.filter(
     (item) =>
-      !["/staff/skills", "/staff/late-days", "/staff/class"].includes(
-        item.href,
-      ),
+      ![
+        "/staff/skills",
+        "/staff/late-days",
+        "/staff/class",
+        "/staff/gradebook/assessments",
+      ].includes(item.href),
   );
   if (!can("course:manage") && can("student-records"))
     primary.splice(1, 0, {
@@ -126,6 +148,15 @@ export function coursePrimaryNavigation(
       label: "Roster",
       icon: Users,
     });
+  const courseGrades = primary.findIndex(
+    (item) => item.href === "/staff/gradebook",
+  );
+  if (courseGrades >= 0 && !can("grade-policies"))
+    primary[courseGrades] = {
+      href: "/staff/gradebook/assessments",
+      label: "Assessments",
+      icon: BookOpen,
+    };
   return primary;
 }
 export function courseSectionNavigation(
@@ -135,7 +166,7 @@ export function courseSectionNavigation(
   const paths =
     pathname.startsWith("/staff/gradebook") ||
     pathname.startsWith("/staff/skills")
-      ? ["/staff/gradebook", "/staff/skills"]
+      ? ["/staff/gradebook", "/staff/gradebook/assessments", "/staff/skills"]
       : pathname.startsWith("/staff/roster") ||
           pathname.startsWith("/staff/late-days")
         ? ["/staff/roster", "/staff/late-days"]

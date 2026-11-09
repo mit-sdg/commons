@@ -1,7 +1,14 @@
 import { activeUser } from "../access/session.ts";
 import { each, former, is, no, view, where, whether } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
-import { isActiveStudent, isNotActiveStudent, mayGrade, mayNotGrade } from "../access/policy.ts";
+import {
+  isActiveStudent,
+  isNotActiveStudent,
+  mayGrade,
+  mayGradeWork,
+  mayNotGrade,
+  mayNotGradeWork,
+} from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 
 const { Assigning, Authenticating, Formatting, Posting, Profiling, Rostering, Submitting } =
@@ -31,7 +38,7 @@ export const mayReadSubmissionArtifact = view(
       submissionHasArtifact({ assignment, submitter: user, artifact }),
     ),
     where(
-      mayGrade({ user }),
+      mayGradeWork({ user, learner: submitter, item: assignment }),
       isActiveStudent({ user: submitter }),
       submissionHasArtifact({ assignment, submitter, artifact }),
     ),
@@ -53,11 +60,11 @@ export const theAttempts = former(
     ).form({ submission, artifacts, submittedAt, number, status }),
 );
 
-/** Which submissions belong to this assignment? */
+/** Which submissions to this assignment may this caller grade? */
 export const theSubmissionsForAssignment = former(
-  "the submissions for (assignment)",
+  "the submissions for (assignment) that (user) may grade",
   (
-    { assignment },
+    { assignment, user },
     { submitter, submitterName, submission, artifacts, submittedAt, number, status },
   ) =>
     each(
@@ -71,6 +78,7 @@ export const theSubmissionsForAssignment = former(
       }),
     )
       .where(
+        mayGradeWork({ user, learner: submitter, item: assignment }),
         whether(
           Profiling._getProfileFields({ user: submitter }).is({ displayName: submitterName }),
         ),
@@ -86,11 +94,11 @@ export const theSubmissionsForAssignment = former(
       }),
 );
 
-/** Who was assigned this assignment, with their seat's standing and the identity fields a staff export needs? */
+/** Which of this assignment's assignees may this caller grade, with their seat's standing and the identity fields a staff export needs? */
 export const theAssignedPopulationForAssignment = former(
-  "the assigned population for (assignment)",
+  "the assigned population for (assignment) that (user) may grade",
   (
-    { assignment },
+    { assignment, user },
     {
       assignee,
       displayName,
@@ -105,6 +113,7 @@ export const theAssignedPopulationForAssignment = former(
   ) =>
     each(Assigning._getAssignees({ assignment }).is({ assignee }))
       .where(
+        mayGradeWork({ user, learner: assignee, item: assignment }),
         whether(Profiling._getProfileFields({ user: assignee }).is({ displayName })),
         whether(Authenticating._getById({ user: assignee }).is({ username })),
         whether(
@@ -145,6 +154,23 @@ export const theSubmissionsBy = former(
     ).form({ assignment, submission, submittedAt, number, status }),
 );
 
+/** Which of this learner's submissions may this caller grade? */
+export const theGradableSubmissionsBy = former(
+  "the submissions by (submitter) that (user) may grade",
+  ({ submitter, user }, { assignment, submission, submittedAt, number, status }) =>
+    each(
+      Submitting._getSubmissionsForSubmitter({ submitter }).is({
+        assignment,
+        submission,
+        submittedAt,
+        number,
+        status,
+      }),
+    )
+      .where(mayGradeWork({ user, learner: submitter, item: assignment }))
+      .form({ assignment, submission, submittedAt, number, status }),
+);
+
 export const Latest = endpoint(
   "/submissions/latest",
   ({ session, assignment, submitter, latest, user }) =>
@@ -165,7 +191,7 @@ export const Latest = endpoint(
         .named("self-missing"),
       where(
         activeUser({ session }).is({ user }).is.not({ user: submitter }),
-        mayGrade({ user }),
+        mayGradeWork({ user, learner: submitter, item: assignment }),
         isActiveStudent({ user: submitter }),
         theLatestSubmission({ assignment, submitter }).is({ latest }),
       )
@@ -173,13 +199,16 @@ export const Latest = endpoint(
         .named("staff-found"),
       where(
         activeUser({ session }).is({ user }).is.not({ user: submitter }),
-        mayGrade({ user }),
+        mayGradeWork({ user, learner: submitter, item: assignment }),
         isActiveStudent({ user: submitter }),
         no(theLatestSubmission({ assignment, submitter })),
       )
         .then(respond({ submission: null }))
         .named("staff-missing"),
-      where(activeUser({ session }).is({ user }).is.not({ user: submitter }), mayNotGrade({ user }))
+      where(
+        activeUser({ session }).is({ user }).is.not({ user: submitter }),
+        mayNotGradeWork({ user, learner: submitter, item: assignment }),
+      )
         .then(respond({ error: "NOT_FOUND" }))
         .named("latest-hidden"),
       where(activeUser({ session }), isNotActiveStudent({ user: submitter }))
@@ -197,12 +226,15 @@ export const Attempts = endpoint(
         .named("attempts"),
       where(
         activeUser({ session }).is({ user }).is.not({ user: submitter }),
-        mayGrade({ user }),
+        mayGradeWork({ user, learner: submitter, item: assignment }),
         isActiveStudent({ user: submitter }),
       )
         .then(respond({ attempts: theAttempts({ assignment, submitter }) }))
         .named("staff-attempts"),
-      where(activeUser({ session }).is({ user }).is.not({ user: submitter }), mayNotGrade({ user }))
+      where(
+        activeUser({ session }).is({ user }).is.not({ user: submitter }),
+        mayNotGradeWork({ user, learner: submitter, item: assignment }),
+      )
         .then(respond({ error: "NOT_FOUND" }))
         .named("attempts-hidden"),
       where(activeUser({ session }), isNotActiveStudent({ user: submitter }))
@@ -249,8 +281,8 @@ export const ForAssignment = endpoint(
       where(activeUser({ session }).is({ user }), mayGrade({ user }))
         .then(
           respond({
-            assigned: theAssignedPopulationForAssignment({ assignment }),
-            submissions: theSubmissionsForAssignment({ assignment }),
+            assigned: theAssignedPopulationForAssignment({ assignment, user }),
+            submissions: theSubmissionsForAssignment({ assignment, user }),
           }),
         )
         .named("success"),
@@ -270,7 +302,7 @@ export const ForStudent = endpoint("/submissions/for-student", ({ session, submi
       mayGrade({ user }),
       isActiveStudent({ user: submitter }),
     )
-      .then(respond({ submissions: theSubmissionsBy({ submitter }) }))
+      .then(respond({ submissions: theGradableSubmissionsBy({ submitter, user }) }))
       .named("staff-for-student"),
     where(activeUser({ session }).is({ user }).is.not({ user: submitter }), mayNotGrade({ user }))
       .then(respond({ error: "NOT_FOUND" }))

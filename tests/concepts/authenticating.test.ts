@@ -372,3 +372,12 @@ test("MongoDB password changes survive a fresh concept instance", async () => {
     await third.authenticate({ username: "restart_user", password: "second-password" }),
   ).toEqual({ user });
 });
+
+test("the accounts among supplied identities come once each", async () => {
+  const auth = new MongoAuthenticatingConcept(await testDb());
+  const { user } = await auth.register(good);
+  expect(await auth._accountsAmong({ users: ["device-7", user, user] })).toEqual({
+    accounts: [user],
+  });
+  expect(await auth._accountsAmong({ users: [] })).toEqual({ accounts: [] });
+});

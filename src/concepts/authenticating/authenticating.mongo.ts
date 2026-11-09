@@ -167,6 +167,13 @@ export class MongoAuthenticatingConcept {
     return docs.map((doc) => ({ user: doc._id }));
   }
 
+  async _accountsAmong({ users }: { users: string[] }) {
+    const docs = await this.users
+      .find({ _id: { $in: [...new Set(users)] } }, { projection: { _id: 1 } })
+      .toArray();
+    return { accounts: docs.map((doc) => String(doc._id)).sort() };
+  }
+
   async _getUsers(_: Record<string, never>) {
     const docs = await this.users.find().sort({ username: 1 }).toArray();
     return docs.map((doc) => ({
