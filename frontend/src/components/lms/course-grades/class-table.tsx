@@ -103,8 +103,7 @@ export function ClassTable({
     return () => observer.disconnect();
   }, []);
 
-  const columns =
-    4 + policy.groups.length + (compared ? 1 : 0) + (showReasons ? 1 : 0);
+  const columns = 4 + policy.groups.length + (showReasons ? 1 : 0);
   const show = (value: number | null) => showAverage(value, policy, showAs);
   const head =
     "px-3 pt-2.5 pb-2 text-xs font-medium whitespace-nowrap text-muted-foreground";
@@ -125,7 +124,6 @@ export function ClassTable({
             ))}
             <th className={cn(head, "text-right text-foreground")}>Average</th>
             <th className={cn(head, "text-left")}>Grade</th>
-            {compared && <th className={cn(head, "text-left")}>Compared</th>}
             <th className={cn(head, "text-right")}>Lectures</th>
             {showReasons && <th className={cn(head, "text-left")}>Reason</th>}
           </tr>
@@ -160,8 +158,20 @@ export function ClassTable({
             const student = studentOf(grade.student);
             const section = sectionName(student.section);
             const isOpen = open === grade.student;
+            // While comparing, a student who changes shows the other letter first: "C → B".
             const theirs = compared?.grades.get(grade.student) ?? null;
             const copy = compared?.copies?.get(grade.student) ?? null;
+            const was =
+              compared && compared.differ.has(grade.student)
+                ? compared.copies
+                  ? copy && showCopy(copy, compared.policy, showAs)
+                  : theirs &&
+                    showGrade(
+                      { ...theirs, grade: theirs.policyGrade, override: null },
+                      compared.policy,
+                      showAs,
+                    )
+                : null;
             return (
               <Fragment key={grade.student}>
                 <tr
@@ -169,6 +179,7 @@ export function ClassTable({
                   className={cn(
                     "cursor-pointer border-b border-border hover:bg-foreground/[0.04]",
                     isOpen && "border-transparent bg-foreground/[0.04]",
+                    was && !isOpen && "bg-foreground/[0.025]",
                   )}
                   onClick={() => onToggle(grade.student)}
                 >
@@ -202,32 +213,27 @@ export function ClassTable({
                     {show(grade.average)}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
-                    <GradeCell grade={grade} policy={policy} showAs={showAs} />
-                  </td>
-                  {compared && (
-                    <td
-                      className={cn(
-                        "px-3 py-2 whitespace-nowrap",
-                        compared.differ.has(grade.student)
-                          ? "font-semibold"
-                          : "text-muted-foreground",
+                    <span className="inline-flex items-center gap-1.5">
+                      {was && (
+                        <>
+                          <span className="font-semibold text-muted-foreground">
+                            {was}
+                          </span>
+                          <span
+                            aria-label="to"
+                            className="text-muted-foreground"
+                          >
+                            →
+                          </span>
+                        </>
                       )}
-                    >
-                      {compared.copies
-                        ? copy && showCopy(copy, compared.policy, showAs)
-                        : theirs
-                          ? showGrade(
-                              {
-                                ...theirs,
-                                grade: theirs.policyGrade,
-                                override: null,
-                              },
-                              compared.policy,
-                              showAs,
-                            )
-                          : "–"}
-                    </td>
-                  )}
+                      <GradeCell
+                        grade={grade}
+                        policy={policy}
+                        showAs={showAs}
+                      />
+                    </span>
+                  </td>
                   <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
                     {grade.lectures.total > 0
                       ? `${grade.lectures.attended} of ${grade.lectures.total}`

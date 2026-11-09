@@ -33,6 +33,8 @@ export interface SaveConflict {
 export interface PolicyPaneProps {
   inputs: CourseGradeInputs;
   policy: CoursePolicy;
+  /** The open policy as saved; null before its first save. */
+  saved: CoursePolicy | null;
   onChange: (policy: CoursePolicy) => void;
   open: OpenPolicy;
   policies: PolicySummary[];
@@ -63,6 +65,18 @@ export interface Comparison {
   differsIn: string[];
 }
 
+/** What the open policy can be compared with, shown as buttons over the class. */
+export interface CompareChoices {
+  /**
+   * "Saved" while there are unsaved edits, "What students see", then each
+   * other saved policy. `count` is how many students change letter, known
+   * live only for Saved.
+   */
+  options: { key: string; name: string; count: number | null }[];
+  selected: string | null;
+  onSelect: (key: string | null) => void;
+}
+
 export interface ClassPaneProps {
   inputs: CourseGradeInputs;
   policy: CoursePolicy;
@@ -70,6 +84,7 @@ export interface ClassPaneProps {
   onChange: (policy: CoursePolicy) => void;
   grades: StudentGrade[];
   comparison: Comparison | null;
+  compare: CompareChoices;
   showAs: ShowAs;
   sections: CourseGradesPage["sections"];
   readOnly: boolean;

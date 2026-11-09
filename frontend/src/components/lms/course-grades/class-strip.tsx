@@ -27,6 +27,7 @@ export function DotStrip({
   readOnly,
   onChange,
   highlighted,
+  compared,
   nameOf,
   onOpen,
 }: {
@@ -37,6 +38,8 @@ export function DotStrip({
   onChange: (policy: CoursePolicy) => void;
   /** The students the filters show; null when nothing is filtered. */
   highlighted: Set<string> | null;
+  /** While comparing with another policy, its lines; those that differ show dashed. */
+  compared: CoursePolicy | null;
   nameOf: (student: string) => string;
   onOpen: (student: string) => void;
 }) {
@@ -65,6 +68,16 @@ export function DotStrip({
   const tallest = dots.reduce((most, dot) => Math.max(most, dot.layer + 1), 0);
   const height = Math.max(72, tallest * DOT + 8);
   const lines = policy.lines[policy.gradeSet];
+  const ghosts = compared
+    ? compared.lines[compared.gradeSet].filter(
+        (other) =>
+          other.at >= range.low &&
+          other.at <= range.high &&
+          !lines.some(
+            (line) => line.grade === other.grade && line.at === other.at,
+          ),
+      )
+    : [];
   const ticks = (Object.entries(policy.ratings) as [RatingName, number][])
     .filter(([, value]) => value >= range.low && value <= range.high)
     .sort((left, right) => left[1] - right[1]);
@@ -104,6 +117,21 @@ export function DotStrip({
           />
         ))}
         {width > 0 &&
+          ghosts.map((line) => (
+            <div
+              key={`ghost:${line.grade}`}
+              aria-hidden
+              className="pointer-events-none absolute -top-1.5 bottom-0"
+              style={{ left: x(line.at) }}
+            >
+              <span className="absolute inset-y-0 -left-px border-l-[1.5px] border-dashed border-foreground/40" />
+              <span className="absolute top-0 left-1 text-[11px] font-semibold whitespace-nowrap text-muted-foreground">
+                {showLetter(line.grade, compared!, showAs)}{" "}
+                {showAverage(line.at, compared!, showAs)}
+              </span>
+            </div>
+          ))}
+        {width > 0 &&
           lines.map((line) => (
             <div
               key={line.grade}
@@ -117,10 +145,11 @@ export function DotStrip({
               <button
                 type="button"
                 disabled={readOnly}
-                aria-label={`${line.grade} cutoff at ${line.at.toFixed(2)}`}
+                aria-label={`${line.grade} line at ${line.at.toFixed(2)}`}
                 className={cn(
                   "pointer-events-auto absolute top-0 left-0 -translate-x-1/2 rounded-md bg-foreground px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap text-background select-none",
-                  !readOnly && "cursor-ew-resize touch-none",
+                  !readOnly &&
+                    "cursor-ew-resize touch-none hover:ring-2 hover:ring-foreground/25",
                   dragging?.grade === line.grade && "ring-2 ring-foreground/30",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                 )}

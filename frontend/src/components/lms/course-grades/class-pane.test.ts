@@ -182,7 +182,7 @@ describe("filters", () => {
     expect(passes(ben, filters)).toBe(true);
   });
 
-  test("Near a cutoff, Below C, and Overrides and attendance", () => {
+  test("Near a line, Below C, and Overrides and attendance", () => {
     const chip = (name: "near" | "belowC" | "adjusted") => ({
       ...NO_FILTERS,
       filter: { chip: name },
@@ -198,6 +198,16 @@ describe("filters", () => {
       cappedBy: { key: "a", below: 70, atMost: "B" },
     });
     expect(passes(capped, chip("adjusted"))).toBe(true);
+    const changed = { ...NO_FILTERS, filter: { chip: "changed" as const } };
+    const differ = new Set(["ben"]);
+    const student = (entry: StudentGrade) =>
+      roster[entry.student as keyof typeof roster];
+    expect(matchesFilters(ben, student(ben), policy, changed, differ)).toBe(
+      true,
+    );
+    expect(matchesFilters(ana, student(ana), policy, changed, differ)).toBe(
+      false,
+    );
     expect(reasonOf(capped)).toBe(
       "Fewer than 70% of lectures, grade at most B",
     );
@@ -266,37 +276,36 @@ describe("the headline", () => {
       grade("cy", 2.5, { policyGrade: "C" }),
     ];
     expect(differentLetters(mine, theirs)).toEqual(new Set(["ana", "ben"]));
-    const name = "Latest per skill";
     const differ = (grades: StudentGrade[]) =>
       differingStudents(grades, policy, { grades: theirs, copies: null }).size;
     expect(
       headline({
         grades: mine,
         median: "C",
-        comparison: { name, differ: differ(mine) },
+        comparison: { differ: differ(mine) },
       }),
-    ).toBe("2 students get a different letter under Latest per skill");
+    ).toBe("2 students change letter");
     expect(
       headline({
         grades: mine.slice(2),
         median: "C",
-        comparison: { name, differ: differ(mine.slice(2)) },
+        comparison: { differ: differ(mine.slice(2)) },
       }),
-    ).toBe("No student gets a different letter under Latest per skill");
+    ).toBe("No student changes letter");
     expect(
       headline({
         grades: mine.slice(0, 1),
         median: "B",
-        comparison: { name, differ: differ(mine.slice(0, 1)) },
+        comparison: { differ: differ(mine.slice(0, 1)) },
       }),
-    ).toBe("1 student gets a different letter under Latest per skill");
+    ).toBe("1 student changes letter");
     expect(
       headline({
         grades: mine,
         median: "C",
-        comparison: { name: "What students see", differ: 3, by: "average" },
+        comparison: { differ: 3, by: "average" },
       }),
-    ).toBe("3 students get a different average under What students see");
+    ).toBe("3 students change average");
   });
 
   test("the hint names only the counts that aren't zero", () => {

@@ -40,11 +40,22 @@ test("staff save a policy and mark it final, with nothing to release", async ({ 
   await expect(page.getByText(/median of \d+ students?/)).toBeVisible();
   await expect(page.getByText("Not saved yet")).toBeVisible();
 
+  const download = page.getByRole("button", { name: "Download final grades" });
+  await expect(download).toBeDisabled();
+
   await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByText("Version 1")).toBeVisible();
+  await expect(page.getByText(/^Saved .+/)).toBeVisible();
   await page.getByRole("button", { name: /More actions for/ }).click();
   await page.getByRole("menuitem", { name: "Mark final" }).click();
   await expect(page.getByText("Final", { exact: true }).first()).toBeVisible();
+  await expect(download).toBeEnabled();
+
+  // An edit opens one step, and Saved counts who changes letter while it is unsaved.
+  await page.getByRole("button", { name: "Edit Grade lines" }).click();
+  await page.getByRole("spinbutton", { name: "B line" }).fill("2.5");
+  await expect(page.getByText("Unsaved edits")).toBeVisible();
+  await page.getByRole("button", { name: /^Saved/ }).click();
+  await expect(page.getByRole("heading", { name: /changes? letter$/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Release/ })).toHaveCount(0);
   noErrors();
 });
