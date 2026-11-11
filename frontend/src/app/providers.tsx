@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { CourseProvider } from "@/lib/course";
+import { DiscussionMarksProvider } from "@/lib/discussion-marks";
 import { NotificationCountProvider } from "@/lib/notification-count";
 import { ProfilesProvider } from "@/lib/profiles";
 
@@ -33,7 +34,9 @@ function AccountProviders({ children }: { children: React.ReactNode }) {
     <CourseProvider key={scope}>
       <NotificationCountProvider>
         <ProfilesProvider>
-          <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
+          <DiscussionMarksProvider>
+            <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
+          </DiscussionMarksProvider>
           <Toaster position="bottom-center" richColors closeButton />
         </ProfilesProvider>
       </NotificationCountProvider>

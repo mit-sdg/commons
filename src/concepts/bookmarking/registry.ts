@@ -11,5 +11,8 @@ export const bookmarking = registerConcept({
     BOOKMARK_ALREADY_EXISTS: BookmarkAlreadyExists,
     BOOKMARK_NOT_FOUND: BookmarkNotFound,
   },
-  floors: { mongo: ({ database }: { database: Db }) => new MongoBookmarkingConcept(database) },
+  floors: {
+    mongo: ({ database }: { database: Db }, instance: string) =>
+      new MongoBookmarkingConcept(database, instance),
+  },
 });

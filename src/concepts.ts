@@ -15,6 +15,7 @@ import { noticeRecord } from "./computations/forum-notices.ts";
 import {
   validFeedOrder,
   validThreadSelection,
+  validSearchText,
   metadataOpeningAuthor,
   postPreview,
 } from "./computations/feed.ts";
@@ -358,6 +359,7 @@ const registrations = {
   Scoring: scoring,
   Sessioning: sessioning,
   Sharing: sharing,
+  Starring: bookmarking,
   RunSnapshotting: snapshotting,
   Submitting: submitting,
   Subscribing: subscribing,
@@ -385,6 +387,7 @@ export const learningConcepts = conceptSet(registrations, {
   validProfileSelection,
   validFeedOrder,
   validThreadSelection,
+  validSearchText,
   metadataOpeningAuthor,
   postPreview,
   hasStoredPosts,

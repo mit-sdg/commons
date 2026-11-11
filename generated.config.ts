@@ -57,6 +57,8 @@ export default {
       new URL("./design/compositions/forum/reactions.md", import.meta.url),
       new URL("./design/compositions/forum/resolutions.md", import.meta.url),
       new URL("./design/compositions/forum/revisions.md", import.meta.url),
+      new URL("./design/compositions/forum/search.md", import.meta.url),
+      new URL("./design/compositions/forum/stars.md", import.meta.url),
       new URL("./design/compositions/forum/subscriptions.md", import.meta.url),
       new URL("./design/compositions/forum/tags.md", import.meta.url),
       new URL("./design/compositions/forum/threads.md", import.meta.url),

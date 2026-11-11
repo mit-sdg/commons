@@ -5,9 +5,12 @@ import {
   GraduationCap,
   MessagesSquare,
   PenLine,
+  Search,
+  Star,
   StickyNote,
+  X,
 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AudienceFilter } from "@/components/forum/audience-picker";
 import { CategoryDot } from "@/components/forum/badges";
 import { TopicList } from "@/components/forum/topic-list";
@@ -16,10 +19,12 @@ import { PageTitle } from "@/components/page-title";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useQuery } from "@/hooks/use-query";
 import { api, unwrap } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { matchesDiscussionAudience } from "@/lib/discussion-filters";
+import { pinnedFirst, useDiscussionMarks } from "@/lib/discussion-marks";
 import {
   loadAssignments,
   loadGradesForMe,
@@ -265,6 +270,28 @@ export default function HomePage() {
   const [audienceFilter, setAudienceFilter] = useState<
     "all" | "everyone" | "private" | "staff"
   >("all");
+  const [starredOnly, setStarredOnly] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchText, setSearchText] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchText(searchInput.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+  const { pinned, starred } = useDiscussionMarks();
+  // The server answers only posts this reader may read; the list then keeps
+  // its own order and filters over the matching discussions.
+  const search = useQuery(
+    me && searchText
+      ? async () =>
+          new Set(
+            unwrap(
+              await api.discussions.search({ text: searchText }),
+            ).matches.map((row) => String(row.conversation)),
+          )
+      : null,
+    [me?.user, searchText],
+  );
+  const searching = searchText.length > 0;
   const {
     data,
     loading: feedLoading,
@@ -295,13 +322,35 @@ export default function HomePage() {
       a.kind.localeCompare(b.kind) ||
       a.holder.localeCompare(b.holder),
   );
-  const visible = data?.filter((conversation) =>
-    matchesDiscussionAudience(
-      conversation.audience,
-      audienceFilter,
-      addressedTo,
-    ),
+  const visible = data?.filter(
+    (conversation) =>
+      matchesDiscussionAudience(
+        conversation.audience,
+        audienceFilter,
+        addressedTo,
+      ) &&
+      (!starredOnly || starred.has(String(conversation.conversation))) &&
+      (!searching ||
+        (search.data?.has(String(conversation.conversation)) ?? false)),
   );
+  const shown = visible
+    ? pinnedFirst(
+        visible.map((row) => String(row.conversation)),
+        pinned,
+      )
+    : undefined;
+  const filtered =
+    Boolean(addressedTo) ||
+    audienceFilter !== "all" ||
+    starredOnly ||
+    searching;
+  const resetFilters = () => {
+    selectRecipient("");
+    setAudienceFilter("all");
+    setStarredOnly(false);
+    setSearchInput("");
+    setSearchText("");
+  };
 
   return (
     <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_18rem] lg:py-10">
@@ -357,6 +406,41 @@ export default function HomePage() {
           </div>
         </div>
 
+        {me ? (
+          <div className="relative mb-3">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") setSearchText(searchInput.trim());
+                if (event.key === "Escape") {
+                  setSearchInput("");
+                  setSearchText("");
+                }
+              }}
+              placeholder="Search discussions and replies"
+              aria-label="Search discussions"
+              maxLength={200}
+              className="pr-9 pl-9"
+            />
+            {searchInput ? (
+              <button
+                type="button"
+                aria-label="Clear search"
+                className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setSearchInput("");
+                  setSearchText("");
+                }}
+              >
+                <X className="size-4" />
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
         <div
           aria-label="Discussion audience filters"
           className="mb-4 flex flex-wrap gap-2"
@@ -384,6 +468,20 @@ export default function HomePage() {
               }
             </Button>
           ))}
+          {me ? (
+            <Button
+              size="sm"
+              variant={starredOnly ? "default" : "outline"}
+              aria-pressed={starredOnly}
+              className="gap-1.5"
+              onClick={() => setStarredOnly((value) => !value)}
+            >
+              <Star
+                className={starredOnly ? "size-4 fill-current" : "size-4"}
+              />
+              Starred
+            </Button>
+          ) : null}
           <AudienceFilter
             options={recipients}
             value={addressedTo}
@@ -391,28 +489,54 @@ export default function HomePage() {
           />
         </div>
 
-        {feedLoading && !data ? (
-          <LoadingState label="Gathering the latest…" />
+        {searching && search.data && shown ? (
+          <p className="mb-2 text-sm text-muted-foreground" aria-live="polite">
+            {shown.length === 1
+              ? "1 discussion matches"
+              : `${shown.length} discussions match`}{" "}
+            “{searchText}”
+          </p>
+        ) : null}
+
+        {(feedLoading && !data) ||
+        (searching && search.loading && !search.data) ? (
+          <LoadingState
+            label={searching ? "Searching…" : "Gathering the latest…"}
+          />
         ) : feedError ? (
           <ErrorState message={feedError} onRetry={refetch} />
-        ) : visible && visible.length > 0 ? (
+        ) : searching && search.error ? (
+          <ErrorState message={search.error} onRetry={search.refetch} />
+        ) : shown && shown.length > 0 ? (
           <TopicList
-            key={JSON.stringify([me?.user, sort, audienceFilter, addressedTo])}
-            conversations={visible.map((row) => String(row.conversation))}
+            key={JSON.stringify([
+              me?.user,
+              sort,
+              audienceFilter,
+              addressedTo,
+              starredOnly,
+              searchText,
+              pinned,
+            ])}
+            conversations={shown}
           />
-        ) : addressedTo || audienceFilter !== "all" ? (
+        ) : filtered ? (
           <EmptyState
-            icon={MessagesSquare}
-            title="No discussions match these filters"
-            description="Only discussions you can read appear here."
+            icon={starredOnly && !searching ? Star : MessagesSquare}
+            title={
+              searching
+                ? "No discussions match your search"
+                : starredOnly
+                  ? "No starred discussions"
+                  : "No discussions match these filters"
+            }
+            description={
+              starredOnly && !searching
+                ? "Star a discussion to find it here. Only you see your stars."
+                : "Only discussions you can read appear here."
+            }
             action={
-              <Button
-                variant="outline"
-                onClick={() => {
-                  selectRecipient("");
-                  setAudienceFilter("all");
-                }}
-              >
+              <Button variant="outline" onClick={resetFilters}>
                 Reset filters
               </Button>
             }

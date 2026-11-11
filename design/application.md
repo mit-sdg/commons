@@ -114,11 +114,14 @@ concrete Trashable
 
 concrete Pinnable
   What is held above the rest: a forum post pinned in its conversation, a
+  whole forum conversation pinned above the discussion list, a
   pile a staff member picked to carry into the next round, a relay run the
   model sorts, or a quiz, survey, or relay run held as a lecture.
 
 concrete PinScope
-  Where pins stand: a forum conversation; a Publishing edition that is a
+  Where pins stand: a forum conversation; the reserved constant
+  `discussions`, in which a pinned conversation stands above the discussion
+  list for every reader; a Publishing edition that is a
   round, whose pinned piles are the ones picked; the reserved constant
   `sorting`, in which a pinned run is one the model sorts; or the reserved
   constant `lectures`, in which a pinned run is one held as a lecture.
@@ -193,6 +196,10 @@ instantiate Banking with
 instantiate Bookmarking with
   User is Authenticating.User
   Item is Posting.Post
+
+instantiate Bookmarking as Starring with
+  User is Authenticating.User
+  Item is Conversing.Conversation
 
 instantiate Categorizing with
   Scope is CategoryScope

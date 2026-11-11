@@ -15,6 +15,8 @@ import * as purge from "./forum/purge.ts";
 import * as reactions from "./forum/reactions.ts";
 import * as resolutions from "./forum/resolutions.ts";
 import * as revisions from "./forum/revisions.ts";
+import * as search from "./forum/search.ts";
+import * as stars from "./forum/stars.ts";
 import * as subscriptions from "./forum/subscriptions.ts";
 import * as tags from "./forum/tags.ts";
 import * as threads from "./forum/threads.ts";
@@ -39,6 +41,8 @@ export const compositions = {
   notices,
   subscriptions,
   pins,
+  stars,
+  search,
   unread,
   links,
   purge,

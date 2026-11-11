@@ -12,6 +12,11 @@ export function validThreadSelection({ conversations }: { conversations: string[
   );
 }
 
+/** Search text is a short literal phrase; whitespace alone searches nothing. */
+export function validSearchText({ text }: { text: string }): boolean {
+  return typeof text === "string" && text.trim().length > 0 && text.length <= 200;
+}
+
 export function metadataOpeningAuthor({
   item,
   posts,

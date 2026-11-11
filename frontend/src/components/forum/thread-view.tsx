@@ -17,6 +17,11 @@ import { AudienceChips } from "@/components/forum/audience-picker";
 import { CategoryBadge } from "@/components/forum/badges";
 import { CategoryAssign } from "@/components/forum/category-assign";
 import { Composer } from "@/components/forum/composer";
+import {
+  DiscussionPinButton,
+  PinnedBadge,
+  StarButton,
+} from "@/components/forum/discussion-marks";
 import { NoticeDialog } from "@/components/forum/notice-dialog";
 import { PostCard } from "@/components/forum/post-card";
 import { PostControlsProvider } from "@/components/forum/post-controls-provider";
@@ -34,6 +39,7 @@ import { useQuery } from "@/hooks/use-query";
 import { useUnread } from "@/hooks/use-unread";
 import { api, publicErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { useDiscussionMarks } from "@/lib/discussion-marks";
 import { replyScope } from "@/lib/drafts";
 import { count, titleFromContent } from "@/lib/format";
 import { loadThreadPage, type ThreadPage } from "@/lib/loaders";
@@ -109,6 +115,7 @@ export function ThreadView({
   fromGroup?: string;
 }) {
   const { session, permissions } = useAuth();
+  const { isPinned } = useDiscussionMarks();
   const { data, error, refused, loading, refetch } = useQuery<ThreadPage>(
     () => loadThreadPage(conversation),
     [conversation],
@@ -266,6 +273,7 @@ export function ThreadView({
               Locked
             </span>
           ) : null}
+          {isPinned(conversation) ? <PinnedBadge /> : null}
         </div>
         <h1 className="font-display text-3xl font-semibold leading-tight text-foreground sm:text-4xl">
           {title}
@@ -310,10 +318,12 @@ export function ThreadView({
                 {allCollapsed ? "Expand all" : "Collapse all"}
               </Button>
             ) : null}
+            <StarButton conversation={conversation} withLabel />
             <SubscribeButton
               key={hashTargetVersion}
               conversation={conversation}
             />
+            <DiscussionPinButton conversation={conversation} />
             {root ? (
               <CategoryAssign
                 item={questionId}
