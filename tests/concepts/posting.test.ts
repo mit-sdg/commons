@@ -34,15 +34,12 @@ for (const [floor, make] of floors) {
         content: "try recursion with (n-1)",
         at: new Date("2026-01-06T09:00:00Z"),
       });
-      expect(await posting._search({ text: "RECURSION" })).toEqual([
-        { post: newer },
-        { post: older },
-      ]);
-      expect(await posting._search({ text: "(n-1)" })).toEqual([{ post: newer }]);
-      expect(await posting._search({ text: ".*" })).toEqual([]);
-      expect(await posting._search({ text: "" })).toEqual([]);
+      expect(await posting._search({ text: "RECURSION" })).toEqual({ posts: [newer, older] });
+      expect(await posting._search({ text: "(n-1)" })).toEqual({ posts: [newer] });
+      expect(await posting._search({ text: ".*" })).toEqual({ posts: [] });
+      expect(await posting._search({ text: "" })).toEqual({ posts: [] });
       await posting.edit({ post: newer, content: "changed", at: new Date("2026-01-07T09:00:00Z") });
-      expect(await posting._search({ text: "recursion" })).toEqual([{ post: older }]);
+      expect(await posting._search({ text: "recursion" })).toEqual({ posts: [older] });
     });
 
     test("_getPost answers a list as its single form did", async () => {

@@ -16,6 +16,7 @@ import {
   validFeedOrder,
   validThreadSelection,
   validSearchText,
+  withoutTrashed,
   metadataOpeningAuthor,
   postPreview,
 } from "./computations/feed.ts";
@@ -388,6 +389,7 @@ export const learningConcepts = conceptSet(registrations, {
   validFeedOrder,
   validThreadSelection,
   validSearchText,
+  withoutTrashed,
   metadataOpeningAuthor,
   postPreview,
   hasStoredPosts,

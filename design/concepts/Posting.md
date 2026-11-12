@@ -75,10 +75,10 @@ _getByAuthor (author: String) : many (post: String)
   answers the author's posts newest first
   answers no rows when none match
 
-_search (text: String) : many (post: String)
-  answers each post whose content contains the text, ignoring letter case, newest first
+_search (text: String) : one (posts: Seq<String>)
+  answers the posts whose content contains the text, ignoring letter case, newest first, as one sequence
   treats the text literally rather than as a pattern
-  answers no rows when the text is empty or none match
+  answers an empty sequence when the text is empty or none match
 
 _getMentions (post: String) : many (handle: String)
   answers each distinct handle such as `@amara` in first-appearance order

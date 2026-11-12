@@ -29,6 +29,25 @@ for (const [floor, make] of floors) {
       expect(await conversing._parentOf({ node })).toEqual([]);
     });
 
+    test("_conversationsHolding answers each conversation once with its first listed item", async () => {
+      const conversing = await make();
+      const at = new Date("2026-02-01T10:00:00Z");
+      const first = await conversing.start({ item: "q1", at });
+      const second = await conversing.start({ item: "q2", at });
+      await conversing.reply({ parent: first.node, item: "r1", at });
+      await conversing.reply({ parent: first.node, item: "r2", at });
+      expect(
+        await conversing._conversationsHolding({
+          items: ["r2", "unplaced", "q2", "q1", "r1", "r2"],
+        }),
+      ).toEqual([
+        { conversation: first.conversation, item: "r2" },
+        { conversation: second.conversation, item: "q2" },
+      ]);
+      expect(await conversing._conversationsHolding({ items: ["unplaced"] })).toEqual([]);
+      expect(await conversing._conversationsHolding({ items: [] })).toEqual([]);
+    });
+
     test("node, conversation and existence reads answer a list as their single forms did", async () => {
       const database = await testDb();
       const conversing = new MongoConversingConcept(database);

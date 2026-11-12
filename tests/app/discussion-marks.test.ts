@@ -88,11 +88,10 @@ test("search finds titles and replies the reader can read, and nothing else", as
         (row) => `${row.conversation}/${row.post}`,
       );
 
-    // Titles and bodies of openings, and replies, match regardless of case, newest first.
-    expect(await hits("recursion")).toEqual([
-      `${open.conversation}/${answer}`,
-      `${open.conversation}/${open.post}`,
-    ]);
+    // Titles, bodies, and replies match regardless of case; each discussion is answered
+    // once, beside its newest match.
+    expect(await hits("recursion")).toEqual([`${open.conversation}/${answer}`]);
+    expect(await hits("why does")).toEqual([`${open.conversation}/${open.post}`]);
     // The outsider's private thread is invisible to the student and to staff outside its audience.
     expect(await hits("private recursion")).toEqual([]);
     expect(await hits("private recursion", staff)).toEqual([]);
@@ -106,7 +105,8 @@ test("search finds titles and replies the reader can read, and nothing else", as
     expect(await hits(".*")).toEqual([]);
     expect(await hits("lunch")).toEqual([`${unrelated.conversation}/${unrelated.post}`]);
 
-    // A trashed reply drops out; a trashed thread drops out entirely.
+    // A trashed reply drops out and its discussion still matches by an older post;
+    // a trashed thread drops out entirely.
     await floor.Trashing.trash({ item: answer, by: staff.user, at: new Date() });
     expect(await hits("recursion")).toEqual([`${open.conversation}/${open.post}`]);
     await floor.Trashing.trash({ item: open.conversation, by: staff.user, at: new Date() });
@@ -116,11 +116,26 @@ test("search finds titles and replies the reader can read, and nothing else", as
     await floor.Accessing.retire({ resource: unrelated.conversation });
     expect(await hits("lunch")).toEqual([]);
 
-    // Posts not placed in a conversation (such as submissions) never surface.
+    // Posts not placed in a conversation (such as submissions) never surface, even when
+    // they are the newest matches.
+    const later = await thread(student.user, "# Lunch artifact talk", shared(student.user));
     await floor.Posting.create({ author: student.user, content: "lunch artifact", at: new Date() });
-    expect(await hits("lunch artifact")).toEqual([]);
+    expect(await hits("lunch artifact")).toEqual([`${later.conversation}/${later.post}`]);
 
-    for (const text of ["", "   ", "x".repeat(201), null, 5, { $ne: "" }]) {
+    // Two characters are enough; one, or text Mongo cannot match, is refused.
+    expect(await hits("UI")).toEqual([]);
+    for (const text of [
+      "",
+      "   ",
+      "x",
+      " x ",
+      "x".repeat(201),
+      "ab\u0000",
+      "ab\ud800",
+      null,
+      5,
+      { $ne: "" },
+    ]) {
       expect(await search(text)).toEqual({ status: 400, body: { error: "INVALID_REQUEST" } });
     }
   } finally {

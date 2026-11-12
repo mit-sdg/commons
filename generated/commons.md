@@ -328,6 +328,7 @@ Defined in [Conversing](../design/concepts/Conversing.md), line 1.
 - `_getRoot(conversation: String) : optional (item: Item)`
 - `_getConversation(node: String) : optional (conversation: String)`
 - `_getNodeByItem(item: String) : optional (node: String)`
+- `_conversationsHolding(items: Seq<String>) : many (conversation: String, item: String)`
 - `_parentOf(node: String) : optional (parent: String)`
 - `_getItem(node: String) : optional (item: String)`
 - `_hasChildren(node: String) : one (present: Flag)`
@@ -942,7 +943,7 @@ Defined in [Posting](../design/concepts/Posting.md), line 1.
 - `_postMetadata(posts: Seq<String>) : one (posts: Seq<PostMetadata>)`
 - `_getPost(post: String) : optional (author: String, content: String, createdAt: Date, editedAt: Date | null)`
 - `_getByAuthor(author: String) : many (post: String)`
-- `_search(text: String) : many (post: String)`
+- `_search(text: String) : one (posts: Seq<String>)`
 - `_getMentions(post: String) : many (handle: String)`
 - `_isMentioned(post: String, handle: String) : one (mentioned: Flag)`
 
@@ -2013,7 +2014,7 @@ Concrete types:
 - `validFeedOrder(order: String) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 34.
 - `validPostControlSelection(posts: Seq) : Boolean` — [Selected post controls](../design/compositions/forum/post-controls.md), line 33.
 - `validProfileSelection(users: Strings) : Bool` — [Commons application](../design/application.md), line 494.
-- `validSearchText(text: String) : Boolean` — [Searching discussions](../design/compositions/forum/search.md), line 29.
+- `validSearchText(text: String) : Boolean` — [Searching discussions](../design/compositions/forum/search.md), line 35.
 - `validThreadSelection(conversations: Seq) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 36.
 - `visibleAnswer(answer: Any) : Bool` — [Commons application](../design/application.md), line 551.
 - `visibleThreadPosts(nodes: Any, posts: Any, trashed: Any) : Rows` — [Commons application](../design/application.md), line 503.
@@ -2021,6 +2022,7 @@ Concrete types:
 - `wallCardIds(values: Json, categories: Json) : Seq` — [The wall](../design/compositions/live/walls.md), line 93.
 - `wallCards(values: Json, categories: Json, trashed: Seq, subscribers: Seq, presentation: Json, viewer: String) : Json` — [The wall](../design/compositions/live/walls.md), line 101.
 - `wallPiles(categories: Json, trashed: Seq, definitions: Json, summaries: Json, picked: Seq) : Json` — [The wall](../design/compositions/live/walls.md), line 108.
+- `withoutTrashed(items: Seq<String>, trashed: Seq<String>) : Seq<String>` — [Searching discussions](../design/compositions/forum/search.md), line 38.
 
 ## Views
 
@@ -4304,6 +4306,21 @@ the readable bookmarks of (user) — inputs (user); outputs (item, savedAt); bin
     view "(post) is readable" with (post: item, reader: user)
 ```
 
+### the readable discussions matching (text) for (reader)
+
+Authored path: `Forum.search.readableSearchHit`.
+- Covered by [Searching discussions](../design/compositions/forum/search.md), line 9.
+
+```view
+the readable discussions matching (text) for (reader) — inputs (text, reader); outputs (post, conversation); bindings (posts, trashed, live) — answers any number of (post, conversation)
+  where
+    Posting._search (text) has (posts)
+    Trashing._trashedAmong (items: posts) has (trashed)
+    live is withoutTrashed (items: posts, trashed)
+    Conversing._conversationsHolding (items: live) has (conversation, item: post)
+    view "(user) belongs to the established audience of (conversation)" with (conversation, user: reader)
+```
+
 ### the readable home of opening (item) for (reader)
 
 Authored path: `Forum.feed.readableHome`.
@@ -4327,19 +4344,6 @@ the readable parent (parent) for (user) — inputs (parent, user); outputs (conv
     Conversing._getItem (node: parent) has (item)
     view "(user) may read forum post (post)" with (post: item, user)
     Conversing._getConversation (node: parent) has (conversation)
-```
-
-### the readable posts matching (text) for (reader)
-
-Authored path: `Forum.search.readableSearchHit`.
-- Covered by [Searching discussions](../design/compositions/forum/search.md), line 10.
-
-```view
-the readable posts matching (text) for (reader) — inputs (text, reader); outputs (post, conversation); bindings () — answers any number of (post, conversation)
-  where
-    Posting._search (text) has (post)
-    view "the structural conversation containing post (post)" with (post) has (conversation)
-    view "(user) may read forum post (post)" with (post, user: reader)
 ```
 
 ### the readable starred discussions of (user)
@@ -5411,7 +5415,7 @@ Authored path: `Forum.search.theSearchHitsOf`.
 
 ```former
 Former "the discussions matching (text) for (reader)" — inputs (text, reader); bindings (post, conversation); promises exactly one record — forms:
-  each view "the readable posts matching (text) for (reader)" with (reader, text) has (conversation, post)
+  each view "the readable discussions matching (text) for (reader)" with (reader, text) has (conversation, post)
     form a record of
       conversation
       post
@@ -18690,7 +18694,7 @@ then
 
 Authored path: `Forum.search.SearchDiscussions`.
 - Covered by [Searching discussions](../design/compositions/forum/search.md), line 3.
-- Covered by [Searching discussions](../design/compositions/forum/search.md), line 25.
+- Covered by [Searching discussions](../design/compositions/forum/search.md), line 31.
 
 ```reaction
 when RequestBoundary.request (path: "/discussions/search", requestId, session, text)
@@ -18706,7 +18710,7 @@ then
 
 Authored path: `Forum.search.SearchDiscussions`.
 - Covered by [Searching discussions](../design/compositions/forum/search.md), line 3.
-- Covered by [Searching discussions](../design/compositions/forum/search.md), line 25.
+- Covered by [Searching discussions](../design/compositions/forum/search.md), line 31.
 
 ```reaction
 when RequestBoundary.request (path: "/discussions/search", requestId, session, text)

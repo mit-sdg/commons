@@ -2,22 +2,24 @@ import { activeUser } from "../access/session.ts";
 import { compute, each, former, is, view, where } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts, computations as c } from "../../concepts.ts";
-import { postConversation, postReader } from "./audience-policy.ts";
+import { establishedConversationReader } from "./audience-policy.ts";
 
-const { Posting } = concepts;
+const { Conversing, Posting, Trashing } = concepts;
 
-/** A matching post counts only while this reader may read it where it stands. */
+/** Each readable discussion holding a live match, beside its newest live match. */
 export const readableSearchHit = view(
-  "the readable posts matching (text) for (reader)",
-  ({ text, reader }, { post, conversation }, _bindings) =>
+  "the readable discussions matching (text) for (reader)",
+  ({ text, reader }, { post, conversation }, { posts, trashed, live }) =>
     where(
-      Posting._search({ text }).is({ post }),
-      postConversation({ post }).is({ conversation }),
-      postReader({ user: reader, post }),
+      Posting._search({ text }).is({ posts }),
+      Trashing._trashedAmong({ items: posts }).is({ trashed }),
+      compute(c.withoutTrashed, { items: posts, trashed }, live),
+      Conversing._conversationsHolding({ items: live }).is({ conversation, item: post }),
+      establishedConversationReader({ user: reader, conversation }),
     ),
 ).many();
 
-/** Which readable posts, and the discussions holding them, contain this text? */
+/** Which discussions hold readable posts containing this text, and the newest such post? */
 export const theSearchHitsOf = former(
   "the discussions matching (text) for (reader)",
   ({ text, reader }, { post, conversation }) =>
