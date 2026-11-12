@@ -10,7 +10,7 @@ import {
   StickyNote,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AudienceFilter } from "@/components/forum/audience-picker";
 import { CategoryDot } from "@/components/forum/badges";
 import { TopicList } from "@/components/forum/topic-list";
@@ -256,6 +256,9 @@ function LmsDashboard({ isStaff }: { isStaff: boolean }) {
   );
 }
 
+/** Shorter text matches nearly every post and finds nothing useful. */
+const SEARCH_MIN_LENGTH = 2;
+
 export default function HomePage() {
   const { me, permissions } = useAuth();
   const [recipientSelection, setRecipientSelection] = useState({
@@ -274,14 +277,18 @@ export default function HomePage() {
   const [searchInput, setSearchInput] = useState("");
   const [searchText, setSearchText] = useState("");
   useEffect(() => {
-    const timer = setTimeout(() => setSearchText(searchInput.trim()), 300);
+    const timer = setTimeout(() => setSearchText(searchInput.trim()), 400);
     return () => clearTimeout(timer);
   }, [searchInput]);
   const { pinned, starred } = useDiscussionMarks();
-  // The server answers only posts this reader may read; the list then keeps
-  // its own order and filters over the matching discussions.
+  // The server answers only discussions this reader may read; the list then
+  // keeps its own order and filters over them.
+  const searching = searchText.length >= SEARCH_MIN_LENGTH;
+  const tooShort =
+    searchInput.trim().length > 0 &&
+    searchInput.trim().length < SEARCH_MIN_LENGTH;
   const search = useQuery(
-    me && searchText
+    me && searching
       ? async () =>
           new Set(
             unwrap(
@@ -291,7 +298,6 @@ export default function HomePage() {
       : null,
     [me?.user, searchText],
   );
-  const searching = searchText.length > 0;
   const {
     data,
     loading: feedLoading,
@@ -301,6 +307,17 @@ export default function HomePage() {
     useCallback(() => loadFeedIndex(sort), [sort]),
     [sort, me?.user],
   );
+
+  // A match the loaded list lacks was posted since the list loaded.
+  const reloadedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!search.data || !data || reloadedFor.current === searchText) return;
+    const listed = new Set(data.map((row) => String(row.conversation)));
+    if ([...search.data].some((conversation) => !listed.has(conversation))) {
+      reloadedFor.current = searchText;
+      refetch();
+    }
+  }, [search.data, data, searchText, refetch]);
 
   const addressable = useQuery(
     me ? async () => unwrap(await api.audiences.options({})) : null,
@@ -339,11 +356,19 @@ export default function HomePage() {
         pinned,
       )
     : undefined;
-  const filtered =
-    Boolean(addressedTo) ||
-    audienceFilter !== "all" ||
-    starredOnly ||
-    searching;
+  const narrowed =
+    Boolean(addressedTo) || audienceFilter !== "all" || starredOnly;
+  const filtered = narrowed || searching;
+  const matchCount = search.data?.size ?? 0;
+  const emptyTitle = searching
+    ? matchCount > 0 && narrowed
+      ? matchCount === 1
+        ? "Your filters hide the 1 match"
+        : `Your filters hide all ${matchCount} matches`
+      : "No discussions match your search"
+    : starredOnly
+      ? "No starred discussions"
+      : "No discussions match these filters";
   const resetFilters = () => {
     selectRecipient("");
     setAudienceFilter("all");
@@ -423,7 +448,8 @@ export default function HomePage() {
               placeholder="Search discussions and replies"
               aria-label="Search discussions"
               maxLength={200}
-              className="pr-9 pl-9"
+              enterKeyHint="search"
+              className="pr-9 pl-9 [&::-webkit-search-cancel-button]:appearance-none"
             />
             {searchInput ? (
               <button
@@ -489,7 +515,11 @@ export default function HomePage() {
           />
         </div>
 
-        {searching && search.data && shown ? (
+        {tooShort ? (
+          <p className="mb-2 text-sm text-muted-foreground" aria-live="polite">
+            Type at least {SEARCH_MIN_LENGTH} characters to search.
+          </p>
+        ) : searching && search.data && shown && shown.length > 0 ? (
           <p className="mb-2 text-sm text-muted-foreground" aria-live="polite">
             {shown.length === 1
               ? "1 discussion matches"
@@ -499,7 +529,8 @@ export default function HomePage() {
         ) : null}
 
         {(feedLoading && !data) ||
-        (searching && search.loading && !search.data) ? (
+        (searching && search.loading && !search.data) ||
+        (searching && feedLoading && matchCount > 0 && shown?.length === 0) ? (
           <LoadingState
             label={searching ? "Searching…" : "Gathering the latest…"}
           />
@@ -523,13 +554,7 @@ export default function HomePage() {
         ) : filtered ? (
           <EmptyState
             icon={starredOnly && !searching ? Star : MessagesSquare}
-            title={
-              searching
-                ? "No discussions match your search"
-                : starredOnly
-                  ? "No starred discussions"
-                  : "No discussions match these filters"
-            }
+            title={emptyTitle}
             description={
               starredOnly && !searching
                 ? "Star a discussion to find it here. Only you see your stars."

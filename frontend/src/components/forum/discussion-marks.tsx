@@ -69,7 +69,7 @@ export function DiscussionPinButton({
       }
     >
       {pinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
-      {pinned ? "Unpin" : "Pin"}
+      {pinned ? "Unpin from top" : "Pin to top"}
     </Button>
   );
 }
