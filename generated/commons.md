@@ -4309,7 +4309,7 @@ the readable bookmarks of (user) — inputs (user); outputs (item, savedAt); bin
 ### the readable discussions matching (text) for (reader)
 
 Authored path: `Forum.search.readableSearchHit`.
-- Covered by [Searching discussions](../design/compositions/forum/search.md), line 9.
+- Covered by [Searching discussions](../design/compositions/forum/search.md), line 10.
 
 ```view
 the readable discussions matching (text) for (reader) — inputs (text, reader); outputs (post, conversation); bindings (posts, trashed, live) — answers any number of (post, conversation)

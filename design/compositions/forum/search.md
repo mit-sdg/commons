@@ -6,15 +6,15 @@ discussion once beside its newest matching post. Posting matches the phrase
 literally and ignores letter case; the opening post's title is part of its
 text, so titles and bodies are searched alike, and so are replies.
 
-[readableSearchHit](view:Forum.search.readableSearchHit) keeps the matches
-the reader may read before they are formed into
-[the reader's matches](former:Forum.search.theSearchHitsOf). It sets aside
-trashed posts, keeps only posts placed in a conversation, so posts used by
-other features never surface, and then admits each discussion through the
-same audience rule as every other forum read: the reader must belong to the
-discussion's current audience, and the discussion must not be in the trash. A
-search therefore never reveals a private discussion, a trashed post, or the
-existence of either.
+Every match passes through
+[readableSearchHit](view:Forum.search.readableSearchHit) before it is formed
+into [the reader's matches](former:Forum.search.theSearchHitsOf). Trashed
+posts are set aside, and only posts placed in a conversation remain, so posts
+used by other features never surface. Each remaining discussion is then
+checked with the same audience rule as every other forum read: the reader
+must belong to the discussion's current audience, and the discussion must not
+be in the trash. A search therefore never reveals a private discussion, a
+trashed post, or the existence of either.
 
 The reader's admission is checked once per discussion rather than once per
 matching post, so a phrase that appears in thousands of posts costs no more
