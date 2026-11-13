@@ -92,6 +92,20 @@ export class MongoPostingConcept {
     return docs.map((doc) => ({ post: doc._id }));
   }
 
+  /** Posts whose content holds the text literally, ignoring case, newest first. */
+  async _search({ text }: { text: string }) {
+    if (typeof text !== "string" || text.length === 0) return { posts: [] };
+    await this.#ready();
+    const pattern = text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    // Sorting here rather than in Mongo keeps whole posts out of an unindexed sort.
+    const docs = await this.posts
+      .find({ content: { $regex: pattern, $options: "i" } })
+      .project<{ _id: string; createdAt: Date; seq: number }>({ _id: 1, createdAt: 1, seq: 1 })
+      .toArray();
+    docs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || b.seq - a.seq);
+    return { posts: docs.map((doc) => doc._id) };
+  }
+
   async _getMentions({ post }: { post: string }) {
     await this.#ready();
     const doc = await this.posts.findOne({ _id: post });

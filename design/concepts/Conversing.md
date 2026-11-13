@@ -122,6 +122,11 @@ _getNodeByItem (item: String) : optional (node: String)
   answers the Node placing the Item
   answers no row when no Node places the Item
 
+_conversationsHolding (items: Seq<String>) : many (conversation: String, item: String)
+  answers each Conversation placing any of the items once, with the first of those items in the order supplied
+  answers the Conversations in the order of those first items
+  answers no rows when no Node places any of the items
+
 _parentOf (node: String) : optional (parent: String)
   answers the parent of the Node
   answers no row for a root or unknown Node

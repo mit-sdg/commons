@@ -4,9 +4,17 @@ import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayModerate, mayNotModerate } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 import { readable } from "./posts.ts";
-import { conversationReader, postConversation } from "./audience-policy.ts";
+import {
+  conversationReader,
+  establishedConversationReader,
+  postConversation,
+  staff,
+} from "./audience-policy.ts";
 
 const { Pinning, Trashing } = concepts;
+
+/** The reserved scope whose pins stand above the discussion list for every reader. */
+export const DISCUSSIONS = "discussions";
 
 export const pinnable = view(
   "(item) belongs to pin scope (scope) for (reader)",
@@ -137,4 +145,85 @@ export const IsPinned = endpoint(
           .named("hidden"),
       ),
   { input: { required: ["session", "item", "scope"] } },
+);
+
+/** Which pinned discussions may this reader see, highest priority first? */
+export const thePinnedDiscussionsOf = former(
+  "the pinned discussions for (reader)",
+  ({ reader }, { item, priority }) =>
+    each(Pinning._getPinned({ scope: DISCUSSIONS }).is({ item, priority }))
+      .where(establishedConversationReader({ user: reader, conversation: item }))
+      .form({ conversation: item }),
+);
+
+export const PinDiscussion = endpoint(
+  "/discussions/pin",
+  ({ session, conversation, user, at, pin }) =>
+    receive({ session, conversation }).then(
+      where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        staff({ user }),
+        conversationReader({ user, conversation }),
+        Pinning._isPinned({ item: conversation, scope: DISCUSSIONS }).is({ pinned: false }),
+      )
+        .then(
+          Pinning.pin({ item: conversation, scope: DISCUSSIONS, priority: 0, at }).responds({
+            pin,
+          }),
+        )
+        .then(respond({ conversation }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        staff({ user }),
+        conversationReader({ user, conversation }),
+        Pinning._isPinned({ item: conversation, scope: DISCUSSIONS }).is({ pinned: true }),
+      )
+        .then(respond({ conversation }))
+        .named("already"),
+      where(
+        activeUser({ session }).is({ user }),
+        no(staff({ user })),
+        conversationReader({ user, conversation }),
+      )
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+      where(activeUser({ session }).is({ user }), no(conversationReader({ user, conversation })))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+    ),
+  { input: { required: ["session", "conversation"] } },
+);
+
+export const UnpinDiscussion = endpoint(
+  "/discussions/unpin",
+  ({ session, conversation, user }) =>
+    receive({ session, conversation }).then(
+      where(
+        activeUser({ session }).is({ user }),
+        staff({ user }),
+        conversationReader({ user, conversation }),
+      )
+        .then(Pinning.unpin({ item: conversation, scope: DISCUSSIONS }).responds())
+        .then(respond({ conversation }))
+        .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        no(staff({ user })),
+        conversationReader({ user, conversation }),
+      )
+        .then(respond({ error: "FORBIDDEN" }))
+        .named("forbidden"),
+      where(activeUser({ session }).is({ user }), no(conversationReader({ user, conversation })))
+        .then(respond({ error: "NOT_FOUND" }))
+        .named("hidden"),
+    ),
+  { input: { required: ["session", "conversation"] } },
+);
+
+export const PinnedDiscussions = endpoint("/discussions/pinned", ({ session, reader }) =>
+  receive({ session })
+    .where(activeUser({ session }).is({ user: reader }))
+    .then(respond({ pinned: thePinnedDiscussionsOf({ reader }) })),
 );

@@ -13,9 +13,11 @@ export class MongoBookmarkingConcept {
   private readonly bookmarks: Collection<BookmarkDoc>;
   private readonly counters: Collection<{ _id: string; value: number }>;
 
-  constructor(db: Db) {
-    this.bookmarks = db.collection<BookmarkDoc>("bookmarking.bookmarks");
-    this.counters = db.collection("bookmarking.counters");
+  /** Each registered instance keeps its own collections, named after it. */
+  constructor(db: Db, instance = "Bookmarking") {
+    const prefix = `${instance[0]?.toLowerCase() ?? ""}${instance.slice(1)}`;
+    this.bookmarks = db.collection<BookmarkDoc>(`${prefix}.bookmarks`);
+    this.counters = db.collection(`${prefix}.counters`);
   }
 
   async #nextSeq(): Promise<number> {

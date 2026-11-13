@@ -274,4 +274,23 @@ export class MongoConversingConcept {
   async _threadNodes({ conversation }: { conversation: string }) {
     return { nodes: await this._getThread({ conversation }) };
   }
+
+  async _conversationsHolding({ items }: { items: string[] }) {
+    const wanted = [...new Set(items)];
+    if (wanted.length === 0) return [];
+    await this.#ready();
+    const docs = await this.nodes
+      .find({ item: { $in: wanted } }, { projection: { _id: 0, item: 1, conversation: 1 } })
+      .toArray();
+    const conversationOf = new Map(docs.map((doc) => [doc.item, doc.conversation]));
+    const rows: { conversation: string; item: string }[] = [];
+    const seen = new Set<string>();
+    for (const item of wanted) {
+      const conversation = conversationOf.get(item);
+      if (conversation === undefined || seen.has(conversation)) continue;
+      seen.add(conversation);
+      rows.push({ conversation, item });
+    }
+    return rows;
+  }
 }

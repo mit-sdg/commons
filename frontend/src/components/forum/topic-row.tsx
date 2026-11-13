@@ -4,8 +4,10 @@ import { CheckCircle2, Lock, MessageSquare } from "lucide-react";
 import { Fact } from "@/components/facts";
 import { AudienceChips } from "@/components/forum/audience-picker";
 import { CategoryBadge, TagBadge } from "@/components/forum/badges";
+import { PinnedBadge, StarButton } from "@/components/forum/discussion-marks";
 import { Link } from "@/components/link";
 import { UserAvatar } from "@/components/user-avatar";
+import { useDiscussionMarks } from "@/lib/discussion-marks";
 import { count } from "@/lib/format";
 import type { ConversationPreview } from "@/lib/models";
 import { useProfile } from "@/lib/profiles";
@@ -40,6 +42,8 @@ export function TopicRow({
   const conversation = String(summary.conversation);
   const author = summary.post?.author ?? "";
   const authorProfile = useProfile(author || null);
+  const { isPinned } = useDiscussionMarks();
+  const pinned = isPinned(conversation);
 
   const title = summary.post?.preview?.title ?? "Opening post unavailable";
   const preview = summary.post?.preview?.excerpt ?? "";
@@ -86,7 +90,13 @@ export function TopicRow({
                 aria-label="Solved"
               />
             ) : null}
+            <StarButton conversation={conversation} className="-mt-0.5" />
           </div>
+          {pinned ? (
+            <div className="mt-1.5">
+              <PinnedBadge />
+            </div>
+          ) : null}
 
           {narrowed ? (
             <div className="mt-2">

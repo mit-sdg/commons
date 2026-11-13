@@ -159,6 +159,8 @@ describe("application-owned design integration", () => {
       "Wording.Place is MailPlace",
       "Submitting.Artifact is Posting.Post",
       "Bookmarking.Item is Posting.Post",
+      "Starring.User is Authenticating.User",
+      "Starring.Item is Conversing.Conversation",
       "Commissioning.Subject is Publishing.Edition",
       "Commissioning.Execution is LiveExecution",
       "Categorizing.Item is Categorizable",
