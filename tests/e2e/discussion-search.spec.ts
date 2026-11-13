@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("search asks for two characters, finds replies and discussions posted since the list loaded, and says when filters hide matches", async ({
+test("search asks for two characters, finds replies and discussions posted since the list loaded or since the last search, and says when filters hide matches", async ({
   page,
 }) => {
   test.setTimeout(120_000);
@@ -41,8 +41,18 @@ test("search asks for two characters, finds replies and discussions posted since
   await expect(page.getByText(`2 discussions match “${shorter}”`)).toBeVisible();
   await expect(page.getByRole("link", { name: `Late ${word} news` })).toBeVisible();
 
+  // The same search again, after another discussion is posted, finds that one too.
+  await call("/threads/create", {
+    holders: ["standing:everyone"],
+    content: `# Later ${word} news\nPosted after the first search.`,
+  });
+  await page.getByRole("button", { name: "Clear search" }).click();
+  await box.fill(shorter);
+  await expect(page.getByText(`3 discussions match “${shorter}”`)).toBeVisible();
+  await expect(page.getByRole("link", { name: `Later ${word} news` })).toBeVisible();
+
   await page.getByRole("button", { name: "Private" }).click();
-  await expect(page.getByText("Your filters hide all 2 matches")).toBeVisible();
+  await expect(page.getByText("Your filters hide all 3 matches")).toBeVisible();
   await page.getByRole("button", { name: "Reset filters" }).click();
   await expect(box).toHaveValue("");
 });

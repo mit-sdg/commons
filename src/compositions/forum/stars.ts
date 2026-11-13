@@ -2,7 +2,7 @@ import { activeUser } from "../access/session.ts";
 import { each, former, no, reaction, view, when, where, now } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { concepts } from "../../concepts.ts";
-import { conversationReader } from "./audience-policy.ts";
+import { conversationReader, establishedConversationReader } from "./audience-policy.ts";
 
 const { Starring, Trashing } = concepts;
 
@@ -11,7 +11,7 @@ export const readableStarsOf = view(
   ({ user }, { conversation, starredAt }, _bindings) =>
     where(
       Starring._getSaved({ user }).is({ item: conversation, savedAt: starredAt }),
-      conversationReader({ user, conversation }),
+      establishedConversationReader({ user, conversation }),
     ),
 ).many();
 

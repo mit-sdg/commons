@@ -4355,7 +4355,7 @@ Authored path: `Forum.stars.readableStarsOf`.
 the readable starred discussions of (user) — inputs (user); outputs (conversation, starredAt); bindings () — answers any number of (conversation, starredAt)
   where
     Starring._getSaved (user) has (item: conversation, savedAt: starredAt)
-    view "(user) may read audience conversation (conversation)" with (conversation, user)
+    view "(user) belongs to the established audience of (conversation)" with (conversation, user)
 ```
 
 ### the retained name of (identity) as (kind)
@@ -6263,7 +6263,7 @@ Authored path: `Forum.pins.thePinnedDiscussionsOf`.
 ```former
 Former "the pinned discussions for (reader)" — inputs (reader); bindings (item, priority); promises exactly one record — forms:
   each Pinning._getPinned (scope: "discussions") has (item, priority)
-    where view "(user) may read audience conversation (conversation)" with (conversation: item, user: reader)
+    where view "(user) belongs to the established audience of (conversation)" with (conversation: item, user: reader)
     form a record of
       conversation: item
 ```

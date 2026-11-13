@@ -16,14 +16,14 @@ must belong to the discussion's current audience, and the discussion must not
 be in the trash. A search therefore never reveals a private discussion, a
 trashed post, or the existence of either.
 
-The reader's admission is checked once per discussion rather than once per
-matching post, so a phrase that appears in thousands of posts costs no more
-than the discussions holding them. Nothing is cut off: every readable
-discussion holding a live match is answered.
+The reader's admission is checked once per discussion, not once per matching
+post. `Posting._search` still reads every stored post on each search.
+Nothing is cut off: every readable discussion holding a live match is
+answered.
 
 The phrase must hold at least two characters besides surrounding whitespace,
 be at most 200 characters, and be well-formed text without a null character;
-anything else is refused with `INVALID_REQUEST` before Posting is asked. The
+anything else is refused with `INVALID_REQUEST` before `Posting._search` runs. The
 browser orders the matching discussions by the discussion list's own order
 and applies its filters to them.
 

@@ -805,7 +805,7 @@ export type CommonsWire = {
     };
     output: {
       "pinned": {
-        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["_getPinned"]>>>, ["item"]>]>>;
+        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["_getPinned"]>>>, ["item"]>]>>;
       }[];
     };
     error: { error: AppWideError | "INVALID_INPUT" };
@@ -843,7 +843,7 @@ export type CommonsWire = {
     };
     output: {
       "starred": {
-        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Starring"]["_getSaved"]>>>, ["item"]>]>>;
+        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Starring"]["_getSaved"]>>>, ["item"]>]>>;
         "starredAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Starring"]["_getSaved"]>>>, ["savedAt"]>>;
       }[];
     };
@@ -6069,7 +6069,7 @@ export type CommonsWireHttp = {
     input: Record<string, never>;
     output: {
       "pinned": {
-        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["_getPinned"]>>>, ["item"]>]>>;
+        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Pinning"]["_getPinned"]>>>, ["item"]>]>>;
       }[];
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" };
@@ -6103,7 +6103,7 @@ export type CommonsWireHttp = {
     input: Record<string, never>;
     output: {
       "starred": {
-        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_threadNodes"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Starring"]["_getSaved"]>>>, ["item"]>]>>;
+        "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Accessing"]["_holders"]>[0], ["resource"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Conversing"]["_exists"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Trashing"]["_isTrashed"]>[0], ["item"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Starring"]["_getSaved"]>>>, ["item"]>]>>;
         "starredAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Starring"]["_getSaved"]>>>, ["savedAt"]>>;
       }[];
     };

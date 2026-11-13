@@ -308,16 +308,17 @@ export default function HomePage() {
     [sort, me?.user],
   );
 
-  // A match the loaded list lacks was posted since the list loaded.
-  const reloadedFor = useRef<string | null>(null);
+  // A match the loaded list lacks was posted since the list loaded. Each
+  // search answer reloads the list at most once.
+  const reloadedFor = useRef<ReadonlySet<string> | null>(null);
   useEffect(() => {
-    if (!search.data || !data || reloadedFor.current === searchText) return;
+    if (!search.data || !data || reloadedFor.current === search.data) return;
     const listed = new Set(data.map((row) => String(row.conversation)));
     if ([...search.data].some((conversation) => !listed.has(conversation))) {
-      reloadedFor.current = searchText;
+      reloadedFor.current = search.data;
       refetch();
     }
-  }, [search.data, data, searchText, refetch]);
+  }, [search.data, data, refetch]);
 
   const addressable = useQuery(
     me ? async () => unwrap(await api.audiences.options({})) : null,

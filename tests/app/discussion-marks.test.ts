@@ -272,3 +272,31 @@ test("stars are private to each account and kept on the server", async () => {
     await db.dropDatabase();
   }
 });
+
+test("purging a discussion removes its pin and every star on it", async () => {
+  const { db, floor, student, classmate, staff, thread, call } = await forum();
+  try {
+    const kept = await thread(student.user, "# Kept", shared(student.user, classmate.user));
+    const gone = await thread(student.user, "# Gone", shared(student.user, classmate.user));
+    for (const { conversation } of [kept, gone]) {
+      await call("/discussions/pin", { conversation }, staff);
+      await call("/discussions/star", { conversation }, student);
+      await call("/discussions/star", { conversation }, classmate);
+    }
+
+    // The classmate moderates: trash, then purge.
+    expect((await call("/trash/trash", { item: gone.conversation }, classmate)).status).toBe(200);
+    expect((await call("/trash/purge", { item: gone.conversation }, classmate)).status).toBe(200);
+
+    expect(await floor.Pinning._getPinned({ scope: "discussions" })).toEqual([
+      { item: kept.conversation, priority: 0 },
+    ]);
+    for (const { user } of [student, classmate]) {
+      expect((await floor.Starring._getSaved({ user })).map((row) => row.item)).toEqual([
+        kept.conversation,
+      ]);
+    }
+  } finally {
+    await db.dropDatabase();
+  }
+});

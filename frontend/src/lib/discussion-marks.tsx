@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { useQuery } from "@/hooks/use-query";
 import { api, publicErrorMessage, unwrap } from "@/lib/api";
@@ -52,6 +52,7 @@ export function DiscussionMarksProvider({
           )
       : null,
     [user],
+    { retainOnTransportError: true },
   );
   const stars = useQuery(
     user
@@ -63,33 +64,52 @@ export function DiscussionMarksProvider({
           )
       : null,
     [user],
+    { retainOnTransportError: true },
   );
   const refetchPins = pins.refetch;
   const refetchStars = stars.refetch;
   const pinned = useMemo(() => pins.data ?? [], [pins.data]);
   const starred = stars.data ?? NONE;
 
+  // A second click on the same control waits for the first to be answered.
+  const saving = useRef(new Set<string>());
+
   const togglePin = useCallback(
     async (conversation: string) => {
-      const was = pinned.includes(conversation);
-      const result = was
-        ? await api.discussions.unpin({ conversation })
-        : await api.discussions.pin({ conversation });
-      if ("error" in result) toast.error(publicErrorMessage(result.error));
-      else toast.success(was ? "Unpinned for everyone" : "Pinned for everyone");
-      refetchPins();
+      const key = `pin ${conversation}`;
+      if (saving.current.has(key)) return;
+      saving.current.add(key);
+      try {
+        const was = pinned.includes(conversation);
+        const result = was
+          ? await api.discussions.unpin({ conversation })
+          : await api.discussions.pin({ conversation });
+        if ("error" in result) toast.error(publicErrorMessage(result.error));
+        else
+          toast.success(was ? "Unpinned for everyone" : "Pinned for everyone");
+        refetchPins();
+      } finally {
+        saving.current.delete(key);
+      }
     },
     [pinned, refetchPins],
   );
 
   const toggleStar = useCallback(
     async (conversation: string) => {
-      const was = starred.has(conversation);
-      const result = was
-        ? await api.discussions.unstar({ conversation })
-        : await api.discussions.star({ conversation });
-      if ("error" in result) toast.error(publicErrorMessage(result.error));
-      refetchStars();
+      const key = `star ${conversation}`;
+      if (saving.current.has(key)) return;
+      saving.current.add(key);
+      try {
+        const was = starred.has(conversation);
+        const result = was
+          ? await api.discussions.unstar({ conversation })
+          : await api.discussions.star({ conversation });
+        if ("error" in result) toast.error(publicErrorMessage(result.error));
+        refetchStars();
+      } finally {
+        saving.current.delete(key);
+      }
     },
     [starred, refetchStars],
   );

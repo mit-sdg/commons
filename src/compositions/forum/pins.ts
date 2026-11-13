@@ -4,7 +4,12 @@ import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { mayModerate, mayNotModerate } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 import { readable } from "./posts.ts";
-import { conversationReader, postConversation, staff } from "./audience-policy.ts";
+import {
+  conversationReader,
+  establishedConversationReader,
+  postConversation,
+  staff,
+} from "./audience-policy.ts";
 
 const { Pinning, Trashing } = concepts;
 
@@ -147,7 +152,7 @@ export const thePinnedDiscussionsOf = former(
   "the pinned discussions for (reader)",
   ({ reader }, { item, priority }) =>
     each(Pinning._getPinned({ scope: DISCUSSIONS }).is({ item, priority }))
-      .where(conversationReader({ user: reader, conversation: item }))
+      .where(establishedConversationReader({ user: reader, conversation: item }))
       .form({ conversation: item }),
 );
 
