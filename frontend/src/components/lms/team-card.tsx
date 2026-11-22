@@ -77,8 +77,10 @@ export function TeamCard({
               {team && latest.authorName && <span>{latest.authorName}</span>}
               <Fact.When form="absolute" at={latest.submittedAt} />
             </>
+          ) : overdue ? (
+            <Fact.Status status="OVERDUE" />
           ) : (
-            <Fact.Status status={overdue ? "OVERDUE" : "PENDING"} />
+            <span className="text-muted-foreground">No submission yet</span>
           )}
         </Facts>
       </CardContent>

@@ -295,6 +295,7 @@ export default function AssignmentDetailPage({
                 <Textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
+                  aria-label="Submission"
                   placeholder="Write your submission…"
                   rows={8}
                   disabled={submitting}
@@ -314,9 +315,11 @@ export default function AssignmentDetailPage({
                         verb="Last submitted"
                         at={latest.submittedAt}
                       />
-                      {team && latestAttempt?.authorName
-                        ? ` by ${latestAttempt.authorName}`
-                        : null}
+                      {!team || !latestAttempt?.authorName
+                        ? null
+                        : String(latestAttempt.author) === String(me?.user)
+                          ? " by you"
+                          : ` by ${latestAttempt.authorName}`}
                     </span>
                   )}
                 </div>

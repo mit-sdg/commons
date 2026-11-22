@@ -79,6 +79,7 @@ import {
 import {
   downloadSubmissionsCsv,
   type ItemAssessment,
+  type LearnerAttempt,
   selectExportAssessment,
   selectSubmissionAttempt,
 } from "@/lib/submissions-export";
@@ -114,6 +115,7 @@ function differingSaid(drafts: readonly ItemAssessment[]): string {
 function teamReleaseSaid(
   rows: readonly SubmitterRow[],
   grades: readonly ItemAssessment[],
+  submissions: readonly LearnerAttempt[],
 ): string {
   const reach = releaseReach(rows, grades);
   const differing = rows
@@ -124,7 +126,24 @@ function teamReleaseSaid(
     reach.differing.length === 0
       ? ""
       : ` ${listed.format(reach.differing)} ${reach.differing.length === 1 ? "has" : "have"} draft grades that differ, and ${differing.length === 1 && differing[0] === 2 ? "both" : "all"} would be released.`;
-  return `${reached}${differ} Incomplete or concurrently changed drafts are skipped and reported.`;
+  const ungraded = rows
+    .filter((row) => {
+      const id = String(row.assignee);
+      const own = grades.filter((grade) => String(grade.learner) === id);
+      return (
+        own.some((grade) => grade.status === "DRAFT") &&
+        learnerState(
+          submissions.filter((attempt) => String(attempt.submitter) === id),
+          own,
+        )?.state === "new-attempt"
+      );
+    })
+    .map((row) => row.displayName ?? String(row.assignee));
+  const later =
+    ungraded.length === 0
+      ? ""
+      : ` ${listed.format(ungraded)} ${ungraded.length === 1 ? "has" : "have"} a later attempt with no grade.`;
+  return `${reached}${differ}${later} Incomplete or concurrently changed drafts are skipped and reported.`;
 }
 
 /**
@@ -777,7 +796,11 @@ function StaffAssignmentDetailPageContent({
       const result = await api.grades["release-item"]({ item: assignment });
       if ("error" in result) toast.error(publicErrorMessage(result.error));
       else {
-        const summary = `${result.released.length} assessments released; ${result.skipped.length} skipped (incomplete or changed).`;
+        const shown = new Set(rows.map((row) => String(row.assignee)));
+        const released = byTeam
+          ? result.released.filter((entry) => shown.has(String(entry.learner)))
+          : result.released;
+        const summary = `${released.length} assessments released; ${result.skipped.length} skipped (incomplete or changed).`;
         if (result.unconfirmed.length)
           toast.error(
             `${summary} ${result.unconfirmed.length} outcomes could not be confirmed. Review the refreshed grades before retrying.`,
@@ -1260,7 +1283,7 @@ function StaffAssignmentDetailPageContent({
                       title="Release all complete assessment drafts for this assignment?"
                       description={
                         byTeam
-                          ? teamReleaseSaid(rows, itemGrades)
+                          ? teamReleaseSaid(rows, itemGrades, submissions)
                           : `This applies across the full assignment, not only the current grader scope.${hiddenDraftCount > 0 ? ` ${hiddenDraftCount} draft${hiddenDraftCount === 1 ? " is" : "s are"} outside the current scope.` : ""} Complete assessment drafts become visible to learners; incomplete or concurrently changed drafts are skipped and reported.`
                       }
                       confirmLabel="Release all assignment drafts"
@@ -1373,13 +1396,21 @@ function StaffAssignmentDetailPageContent({
                               grade.learner === learnerId &&
                               grade.item === assignment,
                           );
-                          const visibleAssessment = selectExportAssessment(
-                            learnerGrades,
-                            latest,
-                          ).record;
                           const newAttemptNeedsReview =
                             learnerState(attempts, learnerGrades)?.state ===
                             "new-attempt";
+                          const visibleAssessment =
+                            selectExportAssessment(learnerGrades, latest)
+                              .record ??
+                            (byTeam && newAttemptNeedsReview
+                              ? learnerGrades
+                                  .filter((grade) => grade.attempt !== null)
+                                  .sort(
+                                    (left, right) =>
+                                      (right.attempt ?? 0) -
+                                      (left.attempt ?? 0),
+                                  )[0]
+                              : undefined);
                           const lateDays = byTeam
                             ? 0
                             : (lateMap.get(learnerId) ?? 0);

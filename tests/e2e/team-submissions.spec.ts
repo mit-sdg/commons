@@ -387,7 +387,7 @@ test("a grader grades a team's row once and every member reads the grade", async
     await row.getByRole("button", { name: "Save draft" }).click();
     await expect(row.getByRole("button", { name: "Review release" })).toBeEnabled();
     await row.getByRole("button", { name: "Review release" }).click();
-    await row.getByRole("button", { name: "Confirm release to learner" }).click();
+    await row.getByRole("button", { name: "Confirm release to Driftline" }).click();
     await expect(row.getByRole("button", { name: "Retract to correct" })).toBeVisible();
     await expect(row.getByText(RELEASED).first()).toBeVisible();
     await expect(row.getByText("8 / 10", { exact: true }).first()).toBeVisible();

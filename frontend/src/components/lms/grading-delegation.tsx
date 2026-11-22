@@ -305,7 +305,8 @@ function SpreadGradersDialog({
               onChange={() => setScope("visible")}
             />
             <span>
-              {words.Many} shown ({visibleLearners.length})
+              {words.many === "teams" ? "Shown" : `${words.Many} shown`} (
+              {visibleLearners.length})
               <span className="block text-xs text-muted-foreground">
                 Includes missing work.
               </span>
@@ -321,7 +322,8 @@ function SpreadGradersDialog({
               onChange={() => setScope("all")}
             />
             <span>
-              All {words.many} ({allLearners.length})
+              {words.many === "teams" ? "All" : `All ${words.many}`} (
+              {allLearners.length})
             </span>
           </label>
         </fieldset>

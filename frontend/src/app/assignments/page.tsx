@@ -269,8 +269,8 @@ export default function AssignmentsPage() {
                 )}
               >
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium truncate">{title}</p>
+                  <div className="flex flex-wrap items-baseline gap-x-2">
+                    <p className="min-w-0 break-words font-medium">{title}</p>
                     {detail?.kind && (
                       <Fact.Kind>{assignmentTypeLabel(detail.kind)}</Fact.Kind>
                     )}
