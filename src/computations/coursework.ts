@@ -1,11 +1,28 @@
 /**
- * Which attempt and assessment stand for a student's work on one assignment,
- * when that work is due for the student, and how late it was handed in. The
+ * Whose work a student's is on one assignment, which attempt and assessment
+ * stand for it, when it is due for the student, and how late it was handed in. The
  * staff submissions export, the late days page, and course grades read the
  * same rules from here.
  */
 
 const HOUR = 3_600_000;
+
+/**
+ * Whose work a student's is on an assignment: their section's when the
+ * assignment is submitted by each section and their seat has one, otherwise
+ * their own.
+ */
+export function submitterFor({
+  submittedBy,
+  section,
+  student,
+}: {
+  submittedBy: string | null;
+  section: string | null;
+  student: string;
+}): string {
+  return submittedBy === "SECTION" && section ? section : student;
+}
 
 export interface Attempt {
   submission: string;

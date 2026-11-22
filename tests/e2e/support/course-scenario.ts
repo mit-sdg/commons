@@ -1396,6 +1396,7 @@ async function createAssignment(
     dueAt: dueAt.toISOString(),
     acceptsSubmissions: true,
     audience: "EVERYONE",
+    submittedBy: "STUDENT",
   };
   const { assignment } = await course.api.call<{ assignment: string }>(
     course.admin,

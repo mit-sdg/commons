@@ -24,6 +24,7 @@ describe("composed application reads", () => {
       acceptsSubmissions: true,
       audience: "EVERYONE",
       targets: [],
+      submittedBy: "STUDENT",
       at,
     });
     await app.concepts.Assigning.publish({ assignment, at });

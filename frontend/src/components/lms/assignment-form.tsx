@@ -37,6 +37,7 @@ interface AssignmentFormProps {
     acceptsSubmissions: boolean;
     audience?: ApiInput<"/assignments/create-draft">["audience"];
     targets?: string[];
+    submittedBy?: ApiInput<"/assignments/revise">["submittedBy"];
     status: string;
   };
   onCancel?: () => void;
@@ -150,6 +151,7 @@ export function AssignmentForm({
             acceptsSubmissions: rawPayload.acceptsSubmissions,
             audience: rawPayload.audience,
             targets: rawPayload.targets,
+            submittedBy: existing.submittedBy ?? "STUDENT",
             assignment: existing.assignment,
           })
         : await api.assignments["create-draft"](rawPayload);

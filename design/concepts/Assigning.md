@@ -2,15 +2,18 @@
 
 ## Purpose
 
-Let an author draft an assignment, publish it to everyone or selected sections,
-and give each assignee a release with an optional individual due date.
+Let an author draft an assignment, say whether each student or each section
+submits it, publish it to everyone or selected sections, and give each assignee
+a release with an optional individual due date.
 
 ## Principle
 
 Dana drafts a problem set for two sections and publishes it. Priya and Omar
 each receive a release. Dana gives Omar a later due date, then clears that
 override. Assigning the problem set to Omar again is refused because he already
-has a release. After Dana archives the problem set, it can no longer be revised.
+has a release. Dana also publishes a final project submitted by each student,
+then revises it to be submitted by each section. After Dana archives the problem
+set, it can no longer be revised.
 
 ## Types
 
@@ -26,7 +29,7 @@ external Sections
 opaque Seq
   An ordered list of the values its argument names.
 opaque CourseAssignment
-  One assignment as `{ assignment, title, kind, dueAt, status, acceptsSubmissions }`.
+  One assignment as `{ assignment, title, kind, dueAt, status, acceptsSubmissions, submittedBy }`.
 
 opaque ReleaseEntry
   One release as `{ assignment, assignee, dueOverride }`.
@@ -46,6 +49,7 @@ a set of Assignments with
   an acceptsSubmissions Flag
   an audience           String
   a targets Sections
+  a submittedBy         String
   a createdAt           Date
   an optional updatedAt Date
 
@@ -61,16 +65,17 @@ a set of Releases with
 
 Rule: an assignment's audience is either everyone or targets; when it is targets, the targets say which sections are addressed, and an assignment addressed to everyone lists none.
 Rule: whether a given audience and targets agree is a calculation over the inputs alone: everyone suits an empty set of targets, targets suits a set holding at least one, and no other audience value suits a set of targets.
+Rule: an assignment is submitted by each student or by each section; one stored without the choice is submitted by each student.
 Rule: an assignment schedule is valid only when availableAt is on or before dueAt and an optional closeAt is on or after dueAt.
 ```
 
 ## Actions
 
 ```actions
-createDraft(author: Author, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Flag, audience: String, targets: Sections, at: Date) : returns (assignment: Assignment)
-  where audience suits targets
+createDraft(author: Author, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Flag, audience: String, targets: Sections, submittedBy: String, at: Date) : returns (assignment: Assignment)
+  where audience suits targets and submittedBy is student or section
   then
-    add a new assignment with author, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, and targets
+    add a new assignment with author, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, and submittedBy
     set assignment's createdAt to at
     add assignment to draft
     returns assignment
@@ -83,14 +88,17 @@ createDraft(author: Author, title: String, instructions: String, kind: String, a
   where audience is not everyone and audience is not targets
   then
     refuses ASSIGNMENT_AUDIENCE_INVALID "The assignment audience must be EVERYONE or TARGETS."
+  where submittedBy is not student and submittedBy is not section
+  then
+    refuses ASSIGNMENT_SUBMITTER_INVALID "An assignment is submitted by each student or by each section."
   where the assignment schedule is invalid
   then
     refuses ASSIGNMENT_SCHEDULE_INVALID "Availability must be on or before the due date, and the due date must be on or before close."
 
-revise(assignment: Assignment, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Flag, audience: String, targets: Sections, at: Date) : returns (assignment: Assignment, status: String, audience: String, targets: Sections, acceptsSubmissions: Flag)
-  where assignment in assignments, assignment not in archived, and audience suits targets
+revise(assignment: Assignment, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Flag, audience: String, targets: Sections, submittedBy: String, at: Date) : returns (assignment: Assignment, status: String, audience: String, targets: Sections, acceptsSubmissions: Flag)
+  where assignment in assignments, assignment not in archived, audience suits targets, and submittedBy is student or section
   then
-    set assignment's title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, and targets from the inputs
+    set assignment's title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, and submittedBy from the inputs
     set assignment's updatedAt to at
     returns assignment, status, audience, targets, acceptsSubmissions
   where assignment not in assignments
@@ -108,6 +116,9 @@ revise(assignment: Assignment, title: String, instructions: String, kind: String
   where audience is not everyone and audience is not targets
   then
     refuses ASSIGNMENT_AUDIENCE_INVALID "The assignment audience must be EVERYONE or TARGETS."
+  where submittedBy is not student and submittedBy is not section
+  then
+    refuses ASSIGNMENT_SUBMITTER_INVALID "An assignment is submitted by each student or by each section."
   where the assignment schedule is invalid
   then
     refuses ASSIGNMENT_SCHEDULE_INVALID "Availability must be on or before the due date, and the due date must be on or before close."
@@ -178,10 +189,10 @@ clearDueOverride(assignment: Assignment, assignee: Assignee) : returns (release:
 
 ```queries
 _getDetail (assignment: String) : optional (detail: Assignment)
-  answers the Assignment's authored fields, audience, status, and dates
+  answers the Assignment's authored fields, audience, who submits it, status, and dates
   answers no row when the Assignment does not exist
 
-_getAssignments () : many (assignment: String, author: String, title: String, instructions: String, kind: String, availableAt: String, dueAt: String, closeAt: String|null, acceptsSubmissions: Flag, audience: String, targets: Seq<String>, status: String, createdAt: Date, updatedAt: Date|null)
+_getAssignments () : many (assignment: String, author: String, title: String, instructions: String, kind: String, availableAt: String, dueAt: String, closeAt: String|null, acceptsSubmissions: Flag, audience: String, targets: Seq<String>, submittedBy: String, status: String, createdAt: Date, updatedAt: Date|null)
   answers every assignment in creation order, including drafts, published assignments, and archived assignments
   answers no rows when none match
 

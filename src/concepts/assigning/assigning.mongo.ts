@@ -8,12 +8,14 @@ import {
   AssignmentNotPublished,
   AssignmentNotRevisable,
   AssignmentScheduleInvalid,
+  AssignmentSubmitterInvalid,
   AssignmentTargetsRequired,
   ReleaseAlreadyExists,
   ReleaseNotFound,
 } from "./errors.ts";
 
 type Audience = "EVERYONE" | "TARGETS";
+type SubmittedBy = "STUDENT" | "SECTION";
 
 interface AssignmentDoc {
   _id: string;
@@ -27,6 +29,8 @@ interface AssignmentDoc {
   acceptsSubmissions: boolean;
   audience: Audience;
   targets: string[];
+  /** Absent on an assignment stored before the choice existed, which each student submits. */
+  submittedBy?: SubmittedBy;
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
   createdAt: Date;
   updatedAt: Date | null;
@@ -99,6 +103,14 @@ export class MongoAssigningConcept {
     }
   }
 
+  #checkSubmittedBy(submittedBy: SubmittedBy) {
+    if (submittedBy !== "STUDENT" && submittedBy !== "SECTION") {
+      throw new AssignmentSubmitterInvalid(
+        "An assignment is submitted by each student or by each section.",
+      );
+    }
+  }
+
   async createDraft({
     author,
     title,
@@ -110,6 +122,7 @@ export class MongoAssigningConcept {
     acceptsSubmissions,
     audience,
     targets,
+    submittedBy,
     at,
   }: {
     author: string;
@@ -122,9 +135,11 @@ export class MongoAssigningConcept {
     acceptsSubmissions: boolean;
     audience: Audience;
     targets: string[];
+    submittedBy: SubmittedBy;
     at: Date;
   }) {
     this.#checkTargets(audience, targets);
+    this.#checkSubmittedBy(submittedBy);
     this.#checkSchedule(availableAt, dueAt, closeAt);
     const assignment = crypto.randomUUID();
     const seq = await this.#nextSeq("assignments");
@@ -140,6 +155,7 @@ export class MongoAssigningConcept {
       acceptsSubmissions,
       audience,
       targets: [...targets],
+      submittedBy,
       status: "DRAFT",
       createdAt: at,
       updatedAt: null,
@@ -159,6 +175,7 @@ export class MongoAssigningConcept {
     acceptsSubmissions,
     audience,
     targets,
+    submittedBy,
     at,
   }: {
     assignment: string;
@@ -171,6 +188,7 @@ export class MongoAssigningConcept {
     acceptsSubmissions: boolean;
     audience: Audience;
     targets: string[];
+    submittedBy: SubmittedBy;
     at: Date;
   }) {
     const doc = await this.assignments.findOne({ _id: assignment });
@@ -181,6 +199,7 @@ export class MongoAssigningConcept {
       throw new AssignmentNotRevisable(assignment);
     }
     this.#checkTargets(audience, targets);
+    this.#checkSubmittedBy(submittedBy);
     this.#checkSchedule(availableAt, dueAt, closeAt);
     await this.assignments.updateOne(
       { _id: assignment },
@@ -195,6 +214,7 @@ export class MongoAssigningConcept {
           acceptsSubmissions,
           audience,
           targets: [...targets],
+          submittedBy,
           updatedAt: at,
         },
       },
@@ -312,6 +332,7 @@ export class MongoAssigningConcept {
           acceptsSubmissions: doc.acceptsSubmissions,
           audience: doc.audience,
           targets: [...doc.targets],
+          submittedBy: doc.submittedBy ?? "STUDENT",
           status: doc.status,
           createdAt: doc.createdAt,
           updatedAt: doc.updatedAt,
@@ -334,6 +355,7 @@ export class MongoAssigningConcept {
       acceptsSubmissions: doc.acceptsSubmissions,
       audience: doc.audience,
       targets: [...doc.targets],
+      submittedBy: doc.submittedBy ?? "STUDENT",
       status: doc.status,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
@@ -386,6 +408,7 @@ export class MongoAssigningConcept {
         dueAt: doc.dueAt,
         status: doc.status,
         acceptsSubmissions: doc.acceptsSubmissions,
+        submittedBy: doc.submittedBy ?? "STUDENT",
       })),
     };
   }

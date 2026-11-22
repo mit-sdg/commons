@@ -109,6 +109,7 @@ describe("course staff composition", () => {
       acceptsSubmissions: true,
       audience: "EVERYONE",
       targets: [],
+      submittedBy: "STUDENT",
       at,
     });
     await app.concepts.Itemizing.configureItem({

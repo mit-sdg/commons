@@ -447,6 +447,7 @@ test("staff delegate persistent grading work and export a fresh scoped CSV", asy
       ...assignmentInput,
       title: revisedTitle,
       dueAt: revisedDue,
+      submittedBy: "STUDENT",
     });
     await page.route(
       "**/api/assignments/staff-summary",

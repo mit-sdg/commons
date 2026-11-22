@@ -25,6 +25,7 @@ const draftInput = (audience: "EVERYONE" | "TARGETS" = "EVERYONE", targets: stri
   acceptsSubmissions: true,
   audience,
   targets,
+  submittedBy: "STUDENT" as "STUDENT" | "SECTION",
   at: T0,
 });
 
@@ -237,6 +238,43 @@ for (const [floor, make] of floors) {
           end: new Date("2026-07-13T23:59:59.999Z"),
         }),
       ).toEqual([{ assignment: at }]);
+    });
+
+    test("an assignment keeps who submits it, and a published one can be revised to each section", async () => {
+      const c = await make();
+      const { assignment } = await c.createDraft(draftInput());
+      await c.publish({ assignment, at: T1 });
+      expect((await c._getDetail({ assignment }))[0]?.detail.submittedBy).toBe("STUDENT");
+
+      await c.revise({ ...draftInput(), assignment, submittedBy: "SECTION", at: T1 });
+      expect((await c._getDetail({ assignment }))[0]?.detail.submittedBy).toBe("SECTION");
+      expect((await c._getAssignments())[0]?.submittedBy).toBe("SECTION");
+      expect((await c._courseAssignments()).assignments[0]?.submittedBy).toBe("SECTION");
+    });
+
+    test("createDraft and revise refuse a submitter that is neither each student nor each section", async () => {
+      const c = await make();
+      const other = "TEAM" as "STUDENT";
+      expect(
+        await refusal(() => c.createDraft({ ...draftInput(), submittedBy: other })),
+      ).toBeInstanceOf(refusalErrors.AssignmentSubmitterInvalid);
+      const { assignment } = await c.createDraft(draftInput());
+      expect(
+        await refusal(() => c.revise({ ...draftInput(), assignment, submittedBy: other, at: T1 })),
+      ).toBeInstanceOf(refusalErrors.AssignmentSubmitterInvalid);
+      expect((await c._getDetail({ assignment }))[0]?.detail.submittedBy).toBe("STUDENT");
+    });
+
+    test("an assignment stored without the choice is submitted by each student", async () => {
+      const db = await testDb();
+      const c = new MongoAssigningConcept(db);
+      const { assignment } = await c.createDraft({ ...draftInput(), submittedBy: "SECTION" });
+      await db
+        .collection<{ _id: string }>("assigning.assignments")
+        .updateOne({ _id: assignment }, { $unset: { submittedBy: "" } });
+
+      expect((await c._getDetail({ assignment }))[0]?.detail.submittedBy).toBe("STUDENT");
+      expect((await c._getAssignments())[0]?.submittedBy).toBe("STUDENT");
     });
   });
 }

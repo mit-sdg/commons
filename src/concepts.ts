@@ -4,6 +4,7 @@ import {
   liveRequiresSignIn,
 } from "./computations/live-access.ts";
 import { submissionAllowed } from "./computations/assessment-eligibility.ts";
+import { submitterFor } from "./computations/coursework.ts";
 import {
   competencyEditionIds,
   gradingRevisionMatches,
@@ -381,6 +382,7 @@ export const learningConcepts = conceptSet(registrations, {
   liveAccessMode,
   liveRequiresSignIn,
   submissionAllowed,
+  submitterFor,
   competencyEditionIds,
   gradingRevisionMatches,
   resolveGradingCriteria,

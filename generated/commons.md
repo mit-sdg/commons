@@ -36,17 +36,19 @@ Defined in [Assigning](../design/concepts/Assigning.md), line 1.
 
 #### Actions
 
-- `createDraft(author: Author, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Flag, audience: String, targets: Sections, at: Date) : returns (assignment: Assignment)`
+- `createDraft(author: Author, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Flag, audience: String, targets: Sections, submittedBy: String, at: Date) : returns (assignment: Assignment)`
   - Refuses `ASSIGNMENT_EVERYONE_NO_TARGETS`: An assignment addressed to everyone cannot list targets.
   - Refuses `ASSIGNMENT_TARGETS_REQUIRED`: A targeted assignment needs at least one target.
   - Refuses `ASSIGNMENT_AUDIENCE_INVALID`: The assignment audience must be EVERYONE or TARGETS.
+  - Refuses `ASSIGNMENT_SUBMITTER_INVALID`: An assignment is submitted by each student or by each section.
   - Refuses `ASSIGNMENT_SCHEDULE_INVALID`: Availability must be on or before the due date, and the due date must be on or before close.
-- `revise(assignment: Assignment, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Flag, audience: String, targets: Sections, at: Date) : returns (assignment: Assignment, status: String, audience: String, targets: Sections, acceptsSubmissions: Flag)`
+- `revise(assignment: Assignment, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Flag, audience: String, targets: Sections, submittedBy: String, at: Date) : returns (assignment: Assignment, status: String, audience: String, targets: Sections, acceptsSubmissions: Flag)`
   - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
   - Refuses `ASSIGNMENT_NOT_REVISABLE`: An archived assignment can no longer be revised.
   - Refuses `ASSIGNMENT_EVERYONE_NO_TARGETS`: An assignment addressed to everyone cannot list targets.
   - Refuses `ASSIGNMENT_TARGETS_REQUIRED`: A targeted assignment needs at least one target.
   - Refuses `ASSIGNMENT_AUDIENCE_INVALID`: The assignment audience must be EVERYONE or TARGETS.
+  - Refuses `ASSIGNMENT_SUBMITTER_INVALID`: An assignment is submitted by each student or by each section.
   - Refuses `ASSIGNMENT_SCHEDULE_INVALID`: Availability must be on or before the due date, and the due date must be on or before close.
 - `publish(assignment: Assignment, at: Date) : returns (assignment: Assignment, audience: String, targets: Sections, acceptsSubmissions: Flag)`
   - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
@@ -66,7 +68,7 @@ Defined in [Assigning](../design/concepts/Assigning.md), line 1.
 #### Queries
 
 - `_getDetail(assignment: String) : optional (detail: Assignment)`
-- `_getAssignments() : many (assignment: String, author: String, title: String, instructions: String, kind: String, availableAt: String, dueAt: String, closeAt: String | null, acceptsSubmissions: Flag, audience: String, targets: Seq<String>, status: String, createdAt: Date, updatedAt: Date | null)`
+- `_getAssignments() : many (assignment: String, author: String, title: String, instructions: String, kind: String, availableAt: String, dueAt: String, closeAt: String | null, acceptsSubmissions: Flag, audience: String, targets: Seq<String>, submittedBy: String, status: String, createdAt: Date, updatedAt: Date | null)`
 - `_getAssigned(assignee: String) : many (assignment: String, release: String, dueOverride: String | null, status: String)`
 - `_getAssignees(assignment: String) : many (assignee: String)`
 - `_isAssigned(assignment: String, assignee: String) : one (assigned: Flag)`
@@ -1809,23 +1811,23 @@ Concrete types:
 
 ## Computations
 
-- `addressingPeople(user: String, holders: Strings) : Strings` — [Commons application](../design/application.md), line 521.
+- `addressingPeople(user: String, holders: Strings) : Strings` — [Commons application](../design/application.md), line 524.
 - `allChosenAdmitted(chosen: Strings, admitted: Strings) : Bool` — [Commons application](../design/application.md), line 482.
 - `answerKind(value: Json, answer: String) : String` — [The wall](../design/compositions/live/walls.md), line 186.
 - `answerReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 147.
-- `assignmentNotificationMailHtml(kind: String, title: String, url: String, author: String, due: String) : String` — [Commons application](../design/application.md), line 602.
-- `assignmentNotificationMailText(kind: String, title: String, url: String, author: String, due: String) : String` — [Commons application](../design/application.md), line 599.
-- `assignmentNotificationUrl(assignment: String) : String` — [Commons application](../design/application.md), line 575.
-- `audienceLabel(kind: String, identity: String, name: Any) : String` — [Commons application](../design/application.md), line 527.
+- `assignmentNotificationMailHtml(kind: String, title: String, url: String, author: String, due: String) : String` — [Commons application](../design/application.md), line 605.
+- `assignmentNotificationMailText(kind: String, title: String, url: String, author: String, due: String) : String` — [Commons application](../design/application.md), line 602.
+- `assignmentNotificationUrl(assignment: String) : String` — [Commons application](../design/application.md), line 578.
+- `audienceLabel(kind: String, identity: String, name: Any) : String` — [Commons application](../design/application.md), line 530.
 - `boardQuestions(value: LiveRunSnapshot, values: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 143.
 - `briefStanding(request: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 32.
-- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 608.
+- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 611.
 - `cardGiven(card: String) : String` — [The wall](../design/compositions/live/walls.md), line 147.
 - `cardId(response: String, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 86.
 - `cardStanding(card: String, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 78.
-- `carriesAdminister(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 612.
+- `carriesAdminister(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 615.
 - `carryUses() : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 92.
-- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 726.
+- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 729.
 - `classTimezone(detail: Class) : String` — [Lectures](../design/compositions/live/lectures.md), line 42.
 - `cleanupAdmission(authorized: Json, openRun: Json, unlocked: Json, applied: Json, standing: Json) : String` — [The wall](../design/compositions/live/walls.md), line 40.
 - `cleanupBrief(account: String, candidates: Seq) : String` — [The wall](../design/compositions/live/walls.md), line 43.
@@ -1834,28 +1836,28 @@ Concrete types:
 - `commissionAccount(outcome: String, failure: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 69.
 - `commissionOutcome(reply: String|Null, failure: String|Null, insistence: String|Null, categories: Json, values: Json, removed: Json, successors: Number) : String` — [The wall](../design/compositions/live/walls.md), line 66.
 - `competencyEditionIds(criteria: Json) : Strings` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 136.
-- `completeAddressing(user: String, holders: Strings, admitted: Number) : Bool` — [Commons application](../design/application.md), line 536.
-- `connectAppAccepted(app: String) : Bool` — [Commons application](../design/application.md), line 637.
-- `connectAppHost(app: String) : String` — [Commons application](../design/application.md), line 649.
-- `connectCallback(app: String) : String` — [Commons application](../design/application.md), line 652.
-- `connectChallengeAccepted(challenge?: String, method?: String) : Bool` — [Commons application](../design/application.md), line 644.
-- `connectCode(voucher: String, credential: String) : String` — [Commons application](../design/application.md), line 659.
-- `connectCodeCredential(code: String) : String` — [Commons application](../design/application.md), line 667.
-- `connectCodeExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 656.
-- `connectCodeVoucher(code: String) : String` — [Commons application](../design/application.md), line 663.
-- `connectDisplayName(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 671.
-- `connectVerifierChallenge(verifier?: String) : String|Null` — [Commons application](../design/application.md), line 676.
+- `completeAddressing(user: String, holders: Strings, admitted: Number) : Bool` — [Commons application](../design/application.md), line 539.
+- `connectAppAccepted(app: String) : Bool` — [Commons application](../design/application.md), line 640.
+- `connectAppHost(app: String) : String` — [Commons application](../design/application.md), line 652.
+- `connectCallback(app: String) : String` — [Commons application](../design/application.md), line 655.
+- `connectChallengeAccepted(challenge?: String, method?: String) : Bool` — [Commons application](../design/application.md), line 647.
+- `connectCode(voucher: String, credential: String) : String` — [Commons application](../design/application.md), line 662.
+- `connectCodeCredential(code: String) : String` — [Commons application](../design/application.md), line 670.
+- `connectCodeExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 659.
+- `connectCodeVoucher(code: String) : String` — [Commons application](../design/application.md), line 666.
+- `connectDisplayName(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 674.
+- `connectVerifierChallenge(verifier?: String) : String|Null` — [Commons application](../design/application.md), line 679.
 - `courseGradeInputs(assignments: Seq, releases: Seq, attempts: Seq, ratings: Seq, uses: Seq, unitHours: Number, students: Seq, names: Seq, lectures: Seq, editions: Seq, parts: Seq, participation: Seq, detail: Class, overrides: Seq) : Json` — [Course grades](../design/compositions/course/course-grades.md), line 93.
 - `courseGradesCsv(policy: Json, inputs: Json, sections: Seq, at: Date) : String` — [Course grades](../design/compositions/course/course-grades.md), line 119.
-- `currentAddressing(user: String, holders: Strings, known: Bool, activePeople: Strings, staffPeople: Strings, trashed: Bool, groups: Bool, sections: Bool, ownSection: Any) : Bool` — [Commons application](../design/application.md), line 518.
-- `currentAudienceMembership(user: String, holders: Strings, groupMember: Bool, activeSections: Bool, section: Any, seatStatus: Any, activeStudent: Bool, capabilities: Any) : Bool` — [Commons application](../design/application.md), line 545.
+- `currentAddressing(user: String, holders: Strings, known: Bool, activePeople: Strings, staffPeople: Strings, trashed: Bool, groups: Bool, sections: Bool, ownSection: Any) : Bool` — [Commons application](../design/application.md), line 521.
+- `currentAudienceMembership(user: String, holders: Strings, groupMember: Bool, activeSections: Bool, section: Any, seatStatus: Any, activeStudent: Bool, capabilities: Any) : Bool` — [Commons application](../design/application.md), line 548.
 - `definedSortingPiles(categories: Json, texts: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 241.
 - `draftContext(references: Strings, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 134.
 - `draftReferences(context: String) : Strings` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 137.
 - `draftRequest(request: String, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 140.
-- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 712.
-- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 716.
-- `dueWallTime(dueAt: Any, detail: Any) : String` — [Commons application](../design/application.md), line 596.
+- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 715.
+- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 719.
+- `dueWallTime(dueAt: Any, detail: Any) : String` — [Commons application](../design/application.md), line 599.
 - `editApplied(kind: String, target: String, value: String, title: Json, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Boolean` — [Edits the model proposes](../design/compositions/live/edits.md), line 69.
 - `editCap(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 121.
 - `editChoices(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 124.
@@ -1876,25 +1878,25 @@ Concrete types:
 - `editRoundTakesUse(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 96.
 - `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 103.
 - `editUse(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 130.
-- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 618.
+- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 621.
 - `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 150.
 - `failureStanding(failedAt: Date, at: Date) : String` — [The wall](../design/compositions/live/walls.md), line 73.
 - `forumMailKey(notification: String, recipient: String, post: String) : String` — [Notifications](../design/compositions/forum/notifications.md), line 81.
-- `forumNotificationMailBody(content: String, post: String, opening: Any) : String` — [Commons application](../design/application.md), line 587.
-- `forumNotificationMailHtml(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 593.
-- `forumNotificationMailText(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 590.
-- `forumNotificationUrl(conversation: String, post: String) : String` — [Commons application](../design/application.md), line 572.
+- `forumNotificationMailBody(content: String, post: String, opening: Any) : String` — [Commons application](../design/application.md), line 590.
+- `forumNotificationMailHtml(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 596.
+- `forumNotificationMailText(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 593.
+- `forumNotificationUrl(conversation: String, post: String) : String` — [Commons application](../design/application.md), line 575.
 - `gradingRevisionMatches(left: Number, right: Number) : Bool` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 140.
 - `guideScope(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 173.
 - `guideUse(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 171.
-- `hasStoredPosts(posts: Rows) : Bool` — [Commons application](../design/application.md), line 497.
-- `holderCode(kind: String, identity: String) : String` — [Commons application](../design/application.md), line 539.
-- `holderKind(holder: String) : String` — [Commons application](../design/application.md), line 533.
-- `holderSubject(holder: String) : String` — [Commons application](../design/application.md), line 530.
-- `invitationMailHtml(invitation: String, credential: String, body: String) : String` — [Commons application](../design/application.md), line 563.
-- `invitationMailText(invitation: String, credential: String, body: String) : String` — [Commons application](../design/application.md), line 560.
-- `invitationTemplateBody(body: Any) : String` — [Commons application](../design/application.md), line 557.
-- `invitationTemplateSubject(subject: Any) : String` — [Commons application](../design/application.md), line 554.
+- `hasStoredPosts(posts: Rows) : Bool` — [Commons application](../design/application.md), line 500.
+- `holderCode(kind: String, identity: String) : String` — [Commons application](../design/application.md), line 542.
+- `holderKind(holder: String) : String` — [Commons application](../design/application.md), line 536.
+- `holderSubject(holder: String) : String` — [Commons application](../design/application.md), line 533.
+- `invitationMailHtml(invitation: String, credential: String, body: String) : String` — [Commons application](../design/application.md), line 566.
+- `invitationMailText(invitation: String, credential: String, body: String) : String` — [Commons application](../design/application.md), line 563.
+- `invitationTemplateBody(body: Any) : String` — [Commons application](../design/application.md), line 560.
+- `invitationTemplateSubject(subject: Any) : String` — [Commons application](../design/application.md), line 557.
 - `isSame(left: String, right: String) : Bool` — [The wall](../design/compositions/live/walls.md), line 90.
 - `kindCap(kind: String, cap: Number) : Number` — [Relays and their runs](../design/compositions/live/relays.md), line 88.
 - `kindChoices(kind: String, choices: Strings) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 80.
@@ -1909,30 +1911,30 @@ Concrete types:
 - `liveAccessHolders(requireSignIn: Boolean) : Seq` — [Live runs](../design/compositions/live/runs.md), line 113.
 - `liveAccessMode(holders: Json, retired: Boolean) : String` — [Live runs](../design/compositions/live/runs.md), line 116.
 - `liveRequiresSignIn(mode: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 119.
-- `mailPreviewText(text: String) : String` — [Commons application](../design/application.md), line 566.
+- `mailPreviewText(text: String) : String` — [Commons application](../design/application.md), line 569.
 - `metadataOpeningAuthor(item: String, posts: Seq) : Any` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 38.
 - `modelBegun(responses: Json, subscribers: Seq) : Number` — [The wall](../design/compositions/live/walls.md), line 120.
 - `modelHandedIn(responses: Json, subscribers: Seq) : Number` — [The wall](../design/compositions/live/walls.md), line 123.
-- `noticeRecord(content: String, author: String, by: String, at: Date) : Json` — [Commons application](../design/application.md), line 605.
-- `notificationActorLabel(username: Any, displayName: Any) : String` — [Commons application](../design/application.md), line 584.
-- `notificationAuthorLabel(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 581.
-- `notificationDiscussionTitle(content: Any) : String` — [Commons application](../design/application.md), line 569.
-- `notificationMailSubject(kind: String, title: String) : String` — [Commons application](../design/application.md), line 578.
+- `noticeRecord(content: String, author: String, by: String, at: Date) : Json` — [Commons application](../design/application.md), line 608.
+- `notificationActorLabel(username: Any, displayName: Any) : String` — [Commons application](../design/application.md), line 587.
+- `notificationAuthorLabel(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 584.
+- `notificationDiscussionTitle(content: Any) : String` — [Commons application](../design/application.md), line 572.
+- `notificationMailSubject(kind: String, title: String) : String` — [Commons application](../design/application.md), line 581.
 - `openingGroups(picked: Strings, categories: Json, values: Json, value: Json) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 71.
 - `overrideReplaced(specification: Json, inputs: Json, student: String, at: Date) : String` — [Course grades](../design/compositions/course/course-grades.md), line 105.
 - `ownsTaskScope(user: String, scope: String) : Boolean` — [Tasks](../design/compositions/tasks/tasks.md), line 116.
-- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 736.
-- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 740.
-- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 743.
-- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 747.
-- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 751.
+- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 739.
+- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 743.
+- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 746.
+- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 750.
+- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 754.
 - `participantAnswers(reply: String, value: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 182.
 - `participantPassage(value: Json, participant: String) : String` — [The wall](../design/compositions/live/walls.md), line 175.
 - `participantQuestions(value: LiveRunSnapshot) : Seq` — [Live runs](../design/compositions/live/runs.md), line 139.
-- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 623.
-- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 628.
-- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 634.
-- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 631.
+- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 626.
+- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 631.
+- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 637.
+- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 634.
 - `pickPriority(count: Number) : Number` — [The wall](../design/compositions/live/walls.md), line 82.
 - `pickStanding(picked: Strings, categories: Json) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 67.
 - `pileCards(pile: String, categories: Json, values: Json, value: Json) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 111.
@@ -1942,11 +1944,11 @@ Concrete types:
 - `placingReason(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 162.
 - `placingRepairPassage(value: Json, categories: Json, values: Json, removed: Json, notes: String, offering: String, account: String) : String` — [The wall](../design/compositions/live/walls.md), line 143.
 - `policyIsWellFormed(specification: Json) : Bool` — [Course grades](../design/compositions/course/course-grades.md), line 102.
-- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 759.
-- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 764.
+- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 762.
+- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 767.
 - `postPreview(content: String) : Record` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 40.
-- `previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings` — [Commons application](../design/application.md), line 515.
-- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 768.
+- `previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings` — [Commons application](../design/application.md), line 518.
+- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 771.
 - `relayDraftPassage(request: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json, classDocuments: Json, relayDocuments: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 36.
 - `relayDraftReading(reply: String, passage: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 54.
 - `relayDraftReason(reply: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 59.
@@ -1955,9 +1957,9 @@ Concrete types:
 - `relayGiven(relay: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 143.
 - `releaseSummary(value: CourseGradeRelease) : Json` — [Course grades](../design/compositions/course/course-grades.md), line 116.
 - `releasedPolicy(policy: String, name: String, version: Number, specification: Json) : Json` — [Course grades](../design/compositions/course/course-grades.md), line 108.
-- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 731.
+- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 734.
 - `resolveGradingCriteria(criteria: Json, editions: Json) : Json` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 138.
-- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 721.
+- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 724.
 - `roomBegun(responses: Json) : Number` — [The wall](../design/compositions/live/walls.md), line 114.
 - `roomHandedIn(responses: Json) : Number` — [The wall](../design/compositions/live/walls.md), line 117.
 - `roomSince(at: Date) : Date` — [Relays and their runs](../design/compositions/live/relays.md), line 107.
@@ -1975,49 +1977,50 @@ Concrete types:
 - `samplingResolvedPassage(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 50.
 - `samplingResolvedPreview(resolution: Json) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 60.
 - `samplingResolvedStanding(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 53.
-- `selectedIdentities(holders: Strings, kind: String) : Strings` — [Commons application](../design/application.md), line 524.
-- `selectedSection(section: Any) : Strings` — [Commons application](../design/application.md), line 548.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 681.
+- `selectedIdentities(holders: Strings, kind: String) : Strings` — [Commons application](../design/application.md), line 527.
+- `selectedSection(section: Any) : Strings` — [Commons application](../design/application.md), line 551.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 684.
 - `signedOutJoiners(participants: Seq, accounts: Seq, seats: Seq) : Seq` — [Lectures](../design/compositions/live/lectures.md), line 54.
-- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 684.
+- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 687.
 - `snapshotForm(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 125.
 - `snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 128.
 - `snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 135.
 - `snapshotRequirements(value: Json) : Seq` — [Live runs](../design/compositions/live/runs.md), line 132.
 - `snapshotTitle(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 122.
-- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 755.
+- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 758.
 - `sorterNotes(relay: String, run: String) : String` — [The wall](../design/compositions/live/walls.md), line 126.
 - `sortingAdmission(mode: String, authorized: Boolean|Null, live: Boolean|Null, openRun: Boolean|Null, waiting: Boolean|Null, unlocked: Boolean|Null, answered: Boolean|Null, applied: Boolean|Null, ready: Boolean|Null, value: Json) : String` — [The wall](../design/compositions/live/walls.md), line 60.
 - `sortingBrief(account: String, value: Json, categories: Json, values: Json, removed: Json, notes: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 63.
 - `sortingObservationPresent() : Boolean` — [The wall](../design/compositions/live/walls.md), line 57.
 - `sortingPileSubjects(categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 238.
-- `staffCapabilities(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 542.
+- `staffCapabilities(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 545.
 - `staffQuestion(holders: Seq, nonStaffAuthor: Any) : Boolean` — [Feeds and thread context](../design/compositions/forum/feed.md), line 32.
 - `studentUsers(students: Seq) : Seq` — [Course grades](../design/compositions/course/course-grades.md), line 99.
-- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 690.
+- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 693.
 - `submissionAllowed(detail: Json, section: String, at: Date) : Bool` — [Commons application](../design/application.md), line 491.
+- `submitterFor(submittedBy: String, section: String, student: String) : String` — [Commons application](../design/application.md), line 494.
 - `summaryAdmission(items: Number) : String` — [The wall](../design/compositions/live/walls.md), line 50.
-- `taskListMailHtml(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 700.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 694.
-- `taskListMailText(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 697.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 709.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 703.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 706.
-- `threadLastActivity(posts: Rows) : Any` — [Commons application](../design/application.md), line 509.
-- `threadParticipants(posts: Rows) : Strings` — [Commons application](../design/application.md), line 512.
-- `threadPostIds(nodes: Rows) : Strings` — [Commons application](../design/application.md), line 500.
-- `threadReplyCount(posts: Rows) : Number` — [Commons application](../design/application.md), line 506.
+- `taskListMailHtml(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 703.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 697.
+- `taskListMailText(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 700.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 712.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 706.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 709.
+- `threadLastActivity(posts: Rows) : Any` — [Commons application](../design/application.md), line 512.
+- `threadParticipants(posts: Rows) : Strings` — [Commons application](../design/application.md), line 515.
+- `threadPostIds(nodes: Rows) : Strings` — [Commons application](../design/application.md), line 503.
+- `threadReplyCount(posts: Rows) : Number` — [Commons application](../design/application.md), line 509.
 - `trayHoldsACard(values: Json, categories: Json, removed: Seq) : Bool` — [The wall](../design/compositions/live/walls.md), line 97.
 - `useFit(use: String, kind: String, choices: Strings, parts: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 101.
 - `validDelegationIdentityInput(item: String, learner?: String, grader?: String) : Bool` — [Commons application](../design/application.md), line 488.
 - `validDelegationSpreadInput(item: String, learners: Strings, graders: Strings, replace: Bool) : Bool` — [Commons application](../design/application.md), line 485.
 - `validFeedOrder(order: String) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 34.
 - `validPostControlSelection(posts: Seq) : Boolean` — [Selected post controls](../design/compositions/forum/post-controls.md), line 33.
-- `validProfileSelection(users: Strings) : Bool` — [Commons application](../design/application.md), line 494.
+- `validProfileSelection(users: Strings) : Bool` — [Commons application](../design/application.md), line 497.
 - `validSearchText(text: String) : Boolean` — [Searching discussions](../design/compositions/forum/search.md), line 35.
 - `validThreadSelection(conversations: Seq) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 36.
-- `visibleAnswer(answer: Any) : Bool` — [Commons application](../design/application.md), line 551.
-- `visibleThreadPosts(nodes: Any, posts: Any, trashed: Any) : Rows` — [Commons application](../design/application.md), line 503.
+- `visibleAnswer(answer: Any) : Bool` — [Commons application](../design/application.md), line 554.
+- `visibleThreadPosts(nodes: Any, posts: Any, trashed: Any) : Rows` — [Commons application](../design/application.md), line 506.
 - `voteStanding(kind: String, choices: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 96.
 - `wallCardIds(values: Json, categories: Json) : Seq` — [The wall](../design/compositions/live/walls.md), line 93.
 - `wallCards(values: Json, categories: Json, trashed: Seq, subscribers: Seq, presentation: Json, viewer: String) : Json` — [The wall](../design/compositions/live/walls.md), line 101.
@@ -2123,7 +2126,7 @@ Authored path: `Forum.resolutions.admissibleAnswer`.
 ### (assignment) by (submitter) has submission artifact (artifact)
 
 Authored path: `Course.submissions.submissionHasArtifact`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 15.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 32.
 
 ```view
 (assignment) by (submitter) has submission artifact (artifact) — inputs (assignment, submitter, artifact); outputs (); bindings (artifacts)
@@ -3218,6 +3221,16 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
     Locking._isLocked (target: conversation) has (locked: false)
 ```
 
+### the submitter of (assignment) for (student)
+
+```view
+the submitter of (assignment) for (student) — inputs (assignment, student); outputs (submitter); bindings (submittedBy, section) — answers exactly one (submitter)
+  where
+    whether Assigning._getAssignments () has (assignment, submittedBy)
+    whether Rostering._getSeatByUser (user: student) has (section)
+    submitter is submitterFor (section, student, submittedBy)
+```
+
 ### (user) may grade the work of (learner) on (item)
 
 ```view
@@ -3228,7 +3241,8 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
   where
     view "(user) may grade" with (user)
     view "(user) is an active student" with (user)
-    Delegating._getDelegation (item, subject: learner) has (delegate: user) and not (delegate: learner)
+    Delegating._getDelegation (item, subject: learner) has (delegate: user)
+    view "the submitter of (assignment) for (student)" with (assignment: item, student: user) and not (submitter: learner)
 ```
 
 ### (user) may grade assessment (grade)
@@ -3244,6 +3258,15 @@ Authored path: `Course.grades.mayGradeAssessment`.
   where
     Grading._getGrade (grade) has (item, learner)
     view "(user) may grade the work of (learner) on (item)" with (item, learner, user)
+```
+
+### (user) may grade what stands for (student) on (item)
+
+```view
+(user) may grade what stands for (student) on (item) — inputs (user, student, item); outputs (); bindings (submitter)
+  where
+    view "the submitter of (assignment) for (student)" with (assignment: item, student) has (submitter)
+    view "(user) may grade the work of (learner) on (item)" with (item, learner: submitter, user)
 ```
 
 ### (user) may host live runs
@@ -3383,7 +3406,8 @@ Authored path: `Course.grades.mayGradeAssessment`.
     no Delegating._getDelegation (item, subject: learner) has (delegate: user)
   where
     view "(user) is an active student" with (user)
-    Delegating._getDelegation (item, subject: learner) has (delegate: learner)
+    Delegating._getDelegation (item, subject: learner) has (delegate: user)
+    view "the submitter of (assignment) for (student)" with (assignment: item, student: user) has (submitter: learner)
 ```
 
 ### (user) may not grade assessment (grade)
@@ -3400,6 +3424,15 @@ Authored path: `Course.grades.mayNotGradeAssessment`.
   where
     Grading._getGrade (grade) has (item, learner)
     view "(user) may not grade the work of (learner) on (item)" with (item, learner, user)
+```
+
+### (user) may not grade what stands for (student) on (item)
+
+```view
+(user) may not grade what stands for (student) on (item) — inputs (user, student, item); outputs (); bindings (submitter)
+  where
+    view "the submitter of (assignment) for (student)" with (assignment: item, student) has (submitter)
+    view "(user) may not grade the work of (learner) on (item)" with (item, learner: submitter, user)
 ```
 
 ### (user) may not host live runs
@@ -3476,19 +3509,21 @@ Authored path: `Course.grades.mayNotGradeAssessment`.
   where view "(user) is an active student" with (user)
 ```
 
-### (user) may read (artifact) submitted by (submitter) for (assignment)
+### (user) may read (artifact) that stands for (student) on (assignment)
 
 Authored path: `Course.submissions.mayReadSubmissionArtifact`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 15.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 32.
 
 ```view
-(user) may read (artifact) submitted by (submitter) for (assignment) — inputs (user, artifact, submitter, assignment); outputs (); bindings ()
+(user) may read (artifact) that stands for (student) on (assignment) — inputs (user, artifact, student, assignment); outputs (); bindings (submitter)
   where
     view "(user) is an active student" with (user)
-    view "(assignment) by (submitter) has submission artifact (artifact)" with (artifact, assignment, submitter: user)
+    view "the submitter of (assignment) for (student)" with (assignment, student: user) has (submitter)
+    view "(assignment) by (submitter) has submission artifact (artifact)" with (artifact, assignment, submitter)
   where
-    view "(user) may grade the work of (learner) on (item)" with (item: assignment, learner: submitter, user)
-    view "(user) is an active student" with (user: submitter)
+    view "(user) may grade what stands for (student) on (item)" with (item: assignment, student, user)
+    view "(user) is an active student" with (user: student)
+    view "the submitter of (assignment) for (student)" with (assignment, student) has (submitter)
     view "(assignment) by (submitter) has submission artifact (artifact)" with (artifact, assignment, submitter)
 ```
 
@@ -3523,7 +3558,7 @@ Authored path: `Course.grades.mayReadItem`.
 ### (user) may read learner assignment (assignment)
 
 Authored path: `Course.assignments.mayReadLearnerAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
 
 ```view
 (user) may read learner assignment (assignment) — inputs (user, assignment); outputs (); bindings (status)
@@ -3541,7 +3576,7 @@ Authored path: `Course.assignments.mayReadLearnerAssignment`.
 ### (user) may read staff assignment details
 
 Authored path: `Course.assignments.mayReadStaffAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
 
 ```view
 (user) may read staff assignment details — inputs (user); outputs (); bindings ()
@@ -3580,7 +3615,7 @@ Authored path: `Course.assignments.mayReadStaffAssignment`.
 ### (user) may submit assignment (assignment) at (at)
 
 Authored path: `Course.assignments.maySubmitAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 66.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 75.
 
 ```view
 (user) may submit assignment (assignment) at (at) — inputs (user, assignment, at); outputs (); bindings (detail, section, allowed)
@@ -3878,11 +3913,23 @@ the asks out about (round) — inputs (round); outputs (asksOut); bindings () �
 ### the assignment (assignment)
 
 Authored path: `Course.assignments.theAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 38.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 41.
 
 ```view
 the assignment (assignment) — inputs (assignment); outputs (detail); bindings () — answers at most one (detail)
   where Assigning._getDetail (assignment) has (detail)
+```
+
+### the attempts of (assignment) that stand for (student)
+
+Authored path: `Course.submissions.theStandingAttempts`.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 19.
+
+```view
+the attempts of (assignment) that stand for (student) — inputs (assignment, student); outputs (submission, artifacts, submittedAt, number, status); bindings (submitter) — answers any number of (submission, artifacts, submittedAt, number, status)
+  where
+    view "the submitter of (assignment) for (student)" with (assignment, student) has (submitter)
+    Submitting._getAttempts (assignment, submitter) has (artifacts, number, status, submission, submittedAt)
 ```
 
 ### the audience reader of (session)
@@ -4133,14 +4180,16 @@ the label of (run) — inputs (run); outputs (title, kind, openedAt); bindings (
     kind is runKind (quizForm, relayTitle)
 ```
 
-### the latest submission for (assignment) by (submitter)
+### the latest submission of (assignment) for (student)
 
 Authored path: `Course.submissions.theLatestSubmission`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 3.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 14.
 
 ```view
-the latest submission for (assignment) by (submitter) — inputs (assignment, submitter); outputs (latest); bindings () — answers at most one (latest)
-  where Submitting._getLatest (assignment, submitter) has (latest)
+the latest submission of (assignment) for (student) — inputs (assignment, student); outputs (latest); bindings (submitter) — answers at most one (latest)
+  where
+    view "the submitter of (assignment) for (student)" with (assignment, student) has (submitter)
+    Submitting._getLatest (assignment, submitter) has (latest)
 ```
 
 ### the list title behind (subject) of kind (kind) for (reader) at (at)
@@ -4495,6 +4544,22 @@ the subject of background document (document) — inputs (document); outputs (su
     use is among ["drafting"]
 ```
 
+### the submissions that stand for (student)
+
+Authored path: `Course.submissions.theStandingSubmissions`.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 36.
+
+```view
+the submissions that stand for (student) — inputs (student); outputs (assignment, submission, submittedAt, number, status); bindings (section) — answers any number of (assignment, submission, submittedAt, number, status)
+  where
+    Submitting._getSubmissionsForSubmitter (submitter: student) has (assignment, number, status, submission, submittedAt)
+    view "the submitter of (assignment) for (student)" with (assignment, student) has (submitter: student)
+  where
+    Rostering._getSeatByUser (user: student) has (section)
+    Submitting._getSubmissionsForSubmitter (submitter: section) has (assignment, number, status, submission, submittedAt)
+    view "the submitter of (assignment) for (student)" with (assignment, student) has (submitter: section)
+```
+
 ### the task behind (subject) for (reader) at (at)
 
 ```view
@@ -4717,15 +4782,15 @@ Former "the answers outcome of (response)" — inputs (response); bindings (run,
     score
 ```
 
-### the artifact (artifact) of (assignment) by (submitter) for (user)
+### the artifact (artifact) of (assignment) standing for (student), for (user)
 
 Authored path: `Course.submissions.theArtifactPost`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 37.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 55.
 
 ```former
-Former "the artifact (artifact) of (assignment) by (submitter) for (user)" — inputs (artifact, assignment, submitter, user); bindings (author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
+Former "the artifact (artifact) of (assignment) standing for (student), for (user)" — inputs (artifact, assignment, student, user); bindings (author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
   a record of
-    where view "(user) may read (artifact) submitted by (submitter) for (assignment)" with (artifact, assignment, submitter, user)
+    where view "(user) may read (artifact) that stands for (student) on (assignment)" with (artifact, assignment, student, user)
     where Posting._getPost (post: artifact) has (author, content, createdAt, editedAt)
     where Formatting._getRendered (target: artifact) has (rendered)
     author
@@ -4880,12 +4945,13 @@ Former "the assessments on (item) that (user) may grade" — inputs (item, user)
 ### the assigned population for (assignment) that (user) may grade
 
 Authored path: `Course.submissions.theAssignedPopulationForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 21.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 39.
 
 ```former
-Former "the assigned population for (assignment) that (user) may grade" — inputs (assignment, user); bindings (assignee, displayName, username, email, section, enrolment, release, dueOverride, releaseStatus); promises exactly one record — forms:
+Former "the assigned population for (assignment) that (user) may grade" — inputs (assignment, user); bindings (assignee, displayName, username, email, section, enrolment, submitter, release, dueOverride, releaseStatus); promises exactly one record — forms:
   each Assigning._getAssignees (assignment) has (assignee)
-    where view "(user) may grade the work of (learner) on (item)" with (item: assignment, learner: assignee, user)
+    where view "(user) may grade what stands for (student) on (item)" with (item: assignment, student: assignee, user)
+    where view "the submitter of (assignment) for (student)" with (assignment, student: assignee) has (submitter)
     where whether Profiling._getProfileFields (user: assignee) has (displayName)
     where whether Authenticating._getById (user: assignee) has (username)
     where whether Rostering._getSeatByUser (user: assignee) has (email, section, status: enrolment)
@@ -4899,6 +4965,7 @@ Former "the assigned population for (assignment) that (user) may grade" — inpu
       release
       section
       status: releaseStatus
+      submitter
       username
 ```
 
@@ -4918,7 +4985,7 @@ Former "the assignment notification presentation of (assignment) for (user)" —
 ### the assignments of (student)
 
 Authored path: `Course.assignments.theAssignmentsOf`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 34.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 37.
 
 ```former
 Former "the assignments of (student)" — inputs (student); bindings (assignment, release, dueOverride, releaseStatus, title, kind, dueAt, closeAt, acceptsSubmissions); promises exactly one record — forms:
@@ -4936,14 +5003,14 @@ Former "the assignments of (student)" — inputs (student); bindings (assignment
       title
 ```
 
-### the attempts for (assignment) by (submitter)
+### the attempts of (assignment) for (student)
 
 Authored path: `Course.submissions.theAttempts`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 7.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 18.
 
 ```former
-Former "the attempts for (assignment) by (submitter)" — inputs (assignment, submitter); bindings (submission, artifacts, submittedAt, number, status); promises exactly one record — forms:
-  each Submitting._getAttempts (assignment, submitter) has (artifacts, number, status, submission, submittedAt)
+Former "the attempts of (assignment) for (student)" — inputs (assignment, student); bindings (submission, artifacts, submittedAt, number, status); promises exactly one record — forms:
+  each view "the attempts of (assignment) that stand for (student)" with (assignment, student) has (artifacts, number, status, submission, submittedAt)
     form a record of
       artifacts
       number
@@ -6895,7 +6962,7 @@ Former "the selected summary of (conversation) for (reader)" — inputs (convers
 ### the staff assignments ()
 
 Authored path: `Course.assignments.theStaffAssignments`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 41.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 44.
 
 ```former
 Former "the staff assignments ()" — inputs (); bindings (assignment, author, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, status, createdAt, updatedAt); promises exactly one record — forms:
@@ -7021,43 +7088,10 @@ Former "the stored thread (conversation) for (reader)" — inputs (conversation,
       trashed
 ```
 
-### the submissions by (submitter)
-
-Authored path: `Course.submissions.theSubmissionsBy`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 18.
-
-```former
-Former "the submissions by (submitter)" — inputs (submitter); bindings (assignment, submission, submittedAt, number, status); promises exactly one record — forms:
-  each Submitting._getSubmissionsForSubmitter (submitter) has (assignment, number, status, submission, submittedAt)
-    form a record of
-      assignment
-      number
-      status
-      submission
-      submittedAt
-```
-
-### the submissions by (submitter) that (user) may grade
-
-Authored path: `Course.submissions.theGradableSubmissionsBy`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 19.
-
-```former
-Former "the submissions by (submitter) that (user) may grade" — inputs (submitter, user); bindings (assignment, submission, submittedAt, number, status); promises exactly one record — forms:
-  each Submitting._getSubmissionsForSubmitter (submitter) has (assignment, number, status, submission, submittedAt)
-    where view "(user) may grade the work of (learner) on (item)" with (item: assignment, learner: submitter, user)
-    form a record of
-      assignment
-      number
-      status
-      submission
-      submittedAt
-```
-
 ### the submissions for (assignment) that (user) may grade
 
 Authored path: `Course.submissions.theSubmissionsForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 22.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 40.
 
 ```former
 Former "the submissions for (assignment) that (user) may grade" — inputs (assignment, user); bindings (submitter, submitterName, submission, artifacts, submittedAt, number, status); promises exactly one record — forms:
@@ -7072,6 +7106,39 @@ Former "the submissions for (assignment) that (user) may grade" — inputs (assi
       submittedAt
       submitter
       submitterName
+```
+
+### the submissions for (student)
+
+Authored path: `Course.submissions.theSubmissionsBy`.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 35.
+
+```former
+Former "the submissions for (student)" — inputs (student); bindings (assignment, submission, submittedAt, number, status); promises exactly one record — forms:
+  each view "the submissions that stand for (student)" with (student) has (assignment, number, status, submission, submittedAt)
+    form a record of
+      assignment
+      number
+      status
+      submission
+      submittedAt
+```
+
+### the submissions for (student) that (user) may grade
+
+Authored path: `Course.submissions.theGradableSubmissionsBy`.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 37.
+
+```former
+Former "the submissions for (student) that (user) may grade" — inputs (student, user); bindings (assignment, submission, submittedAt, number, status); promises exactly one record — forms:
+  each view "the submissions that stand for (student)" with (student) has (assignment, number, status, submission, submittedAt)
+    where view "(user) may grade what stands for (student) on (item)" with (item: assignment, student, user)
+    form a record of
+      assignment
+      number
+      status
+      submission
+      submittedAt
 ```
 
 ### the subscribers of (target) for (reader)
@@ -9623,8 +9690,8 @@ then
 ### Course.assignments.Archive:forbidden
 
 Authored path: `Course.assignments.Archive`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 7.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 10.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 58.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/archive", requestId, session)
@@ -9638,8 +9705,8 @@ then
 ### Course.assignments.Archive:success
 
 Authored path: `Course.assignments.Archive`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 7.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 10.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 58.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/archive", requestId, session)
@@ -9654,8 +9721,8 @@ then
 ### Course.assignments.Archive:success#2
 
 Authored path: `Course.assignments.Archive`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 7.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 10.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 58.
 
 ```reaction
 when Assigning.archive (assignment, at, result.assignment: archived), asked by Course.assignments.Archive:success
@@ -9668,7 +9735,7 @@ then
 ### Course.assignments.AssignmentReleaseNotifiesStudent
 
 Authored path: `Course.assignments.AssignmentReleaseNotifiesStudent`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 63.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 72.
 
 ```reaction
 when Assigning.assign (assignee, assignment, at)
@@ -9682,7 +9749,7 @@ then
 ### Course.assignments.ClaimedStudentSeatReceivesPublished
 
 Authored path: `Course.assignments.ClaimedStudentSeatReceivesPublished`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 25.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 28.
 
 ```reaction
 when Rostering.claimSeat (kind: "STUDENT", section, user)
@@ -9697,8 +9764,8 @@ then
 ### Course.assignments.ClearDueOverride:forbidden
 
 Authored path: `Course.assignments.ClearDueOverride`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 10.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 51.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 13.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 59.
 
 ```reaction
 when RequestBoundary.request (assignee, assignment, path: "/assignments/clear-due-override", requestId, session)
@@ -9712,8 +9779,8 @@ then
 ### Course.assignments.ClearDueOverride:success
 
 Authored path: `Course.assignments.ClearDueOverride`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 10.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 51.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 13.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 59.
 
 ```reaction
 when RequestBoundary.request (assignee, assignment, path: "/assignments/clear-due-override", requestId, session)
@@ -9727,8 +9794,8 @@ then
 ### Course.assignments.ClearDueOverride:success#2
 
 Authored path: `Course.assignments.ClearDueOverride`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 10.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 51.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 13.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 59.
 
 ```reaction
 when Assigning.clearDueOverride (assignee, assignment, release), asked by Course.assignments.ClearDueOverride:success
@@ -9742,10 +9809,10 @@ then
 
 Authored path: `Course.assignments.CreateDraft`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 4.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 52.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 60.
 
 ```reaction
-when RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, targets, title)
+when RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, submittedBy, targets, title)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not manage the course" with (user)
@@ -9757,28 +9824,28 @@ then
 
 Authored path: `Course.assignments.CreateDraft`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 4.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 52.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 60.
 
 ```reaction
-when RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, targets, title)
+when RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, submittedBy, targets, title)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage the course" with (user)
 then
-  Assigning.createDraft (acceptsSubmissions, at, audience, author: user, availableAt, closeAt, dueAt, instructions, kind, targets, title)
+  Assigning.createDraft (acceptsSubmissions, at, audience, author: user, availableAt, closeAt, dueAt, instructions, kind, submittedBy, targets, title)
 ```
 
 ### Course.assignments.CreateDraft:success#2
 
 Authored path: `Course.assignments.CreateDraft`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 4.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 52.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 60.
 
 ```reaction
-when Assigning.createDraft (acceptsSubmissions, at, audience, author: user, availableAt, closeAt, dueAt, instructions, kind, targets, title, assignment), asked by Course.assignments.CreateDraft:success
+when Assigning.createDraft (acceptsSubmissions, at, audience, author: user, availableAt, closeAt, dueAt, instructions, kind, submittedBy, targets, title, assignment), asked by Course.assignments.CreateDraft:success
 where
-  earlier, RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, targets, title)
+  earlier, RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, submittedBy, targets, title)
 then
   RequestBoundary.respond (assignment, requestId)
 ```
@@ -9786,8 +9853,8 @@ then
 ### Course.assignments.ForMe:forbidden
 
 Authored path: `Course.assignments.ForMe`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 35.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 53.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 38.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 61.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/for-me", requestId, session)
@@ -9801,8 +9868,8 @@ then
 ### Course.assignments.ForMe:success
 
 Authored path: `Course.assignments.ForMe`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 35.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 53.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 38.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 61.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/for-me", requestId, session)
@@ -9816,8 +9883,8 @@ then
 ### Course.assignments.GetAssignment:forbidden
 
 Authored path: `Course.assignments.GetAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 39.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 54.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 42.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 62.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
@@ -9831,8 +9898,8 @@ then
 ### Course.assignments.GetAssignment:found
 
 Authored path: `Course.assignments.GetAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 39.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 54.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 42.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 62.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
@@ -9850,8 +9917,8 @@ then
 ### Course.assignments.GetAssignment:unavailable
 
 Authored path: `Course.assignments.GetAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 39.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 54.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 42.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 62.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
@@ -9866,8 +9933,8 @@ then
 ### Course.assignments.Publish:forbidden
 
 Authored path: `Course.assignments.Publish`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 6.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 55.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 9.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 63.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/publish", requestId, session)
@@ -9881,8 +9948,8 @@ then
 ### Course.assignments.Publish:success
 
 Authored path: `Course.assignments.Publish`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 6.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 55.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 9.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 63.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/publish", requestId, session)
@@ -9897,8 +9964,8 @@ then
 ### Course.assignments.Publish:success#2
 
 Authored path: `Course.assignments.Publish`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 6.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 55.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 9.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 63.
 
 ```reaction
 when Assigning.publish (assignment, at, result.assignment: published), asked by Course.assignments.Publish:success
@@ -9911,7 +9978,7 @@ then
 ### Course.assignments.PublishedAssignmentAssignsAudienceStudents:everyone
 
 Authored path: `Course.assignments.PublishedAssignmentAssignsAudienceStudents`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 16.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 19.
 
 ```reaction
 when Assigning.publish (at, assignment, audience, targets)
@@ -9925,7 +9992,7 @@ then
 ### Course.assignments.PublishedAssignmentAssignsAudienceStudents:targets
 
 Authored path: `Course.assignments.PublishedAssignmentAssignsAudienceStudents`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 16.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 19.
 
 ```reaction
 when Assigning.publish (at, assignment, audience, targets)
@@ -9940,7 +10007,7 @@ then
 ### Course.assignments.ReinstatedStudentSeatReceivesPublished
 
 Authored path: `Course.assignments.ReinstatedStudentSeatReceivesPublished`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 28.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 31.
 
 ```reaction
 when Rostering.reinstateSeat (kind: "STUDENT", section, user)
@@ -9956,10 +10023,10 @@ then
 
 Authored path: `Course.assignments.Revise`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 5.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 56.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 64.
 
 ```reaction
-when RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, targets, title)
+when RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, submittedBy, targets, title)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not manage the course" with (user)
@@ -9971,28 +10038,28 @@ then
 
 Authored path: `Course.assignments.Revise`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 5.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 56.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 64.
 
 ```reaction
-when RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, targets, title)
+when RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, submittedBy, targets, title)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage the course" with (user)
 then
-  Assigning.revise (acceptsSubmissions, assignment, at, audience, availableAt, closeAt, dueAt, instructions, kind, targets, title)
+  Assigning.revise (acceptsSubmissions, assignment, at, audience, availableAt, closeAt, dueAt, instructions, kind, submittedBy, targets, title)
 ```
 
 ### Course.assignments.Revise:success#2
 
 Authored path: `Course.assignments.Revise`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 5.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 56.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 64.
 
 ```reaction
-when Assigning.revise (acceptsSubmissions, assignment, at, audience, availableAt, closeAt, dueAt, instructions, kind, targets, title, result.assignment: revised), asked by Course.assignments.Revise:success
+when Assigning.revise (acceptsSubmissions, assignment, at, audience, availableAt, closeAt, dueAt, instructions, kind, submittedBy, targets, title, result.assignment: revised), asked by Course.assignments.Revise:success
 where
-  earlier, RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, targets, title)
+  earlier, RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, submittedBy, targets, title)
 then
   RequestBoundary.respond (assignment: revised, requestId)
 ```
@@ -10000,7 +10067,7 @@ then
 ### Course.assignments.RevisedAssignmentAssignsNewAudienceStudents:everyone
 
 Authored path: `Course.assignments.RevisedAssignmentAssignsNewAudienceStudents`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 20.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 23.
 
 ```reaction
 when Assigning.revise (at, assignment, audience, status, targets)
@@ -10016,7 +10083,7 @@ then
 ### Course.assignments.RevisedAssignmentAssignsNewAudienceStudents:targets
 
 Authored path: `Course.assignments.RevisedAssignmentAssignsNewAudienceStudents`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 20.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 23.
 
 ```reaction
 when Assigning.revise (at, assignment, audience, status, targets)
@@ -10033,8 +10100,8 @@ then
 ### Course.assignments.SetDueOverride:forbidden
 
 Authored path: `Course.assignments.SetDueOverride`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 9.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 57.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 12.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 65.
 
 ```reaction
 when RequestBoundary.request (assignee, assignment, dueAt, path: "/assignments/set-due-override", requestId, session)
@@ -10048,8 +10115,8 @@ then
 ### Course.assignments.SetDueOverride:success
 
 Authored path: `Course.assignments.SetDueOverride`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 9.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 57.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 12.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 65.
 
 ```reaction
 when RequestBoundary.request (assignee, assignment, dueAt, path: "/assignments/set-due-override", requestId, session)
@@ -10063,8 +10130,8 @@ then
 ### Course.assignments.SetDueOverride:success#2
 
 Authored path: `Course.assignments.SetDueOverride`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 9.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 57.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 12.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 65.
 
 ```reaction
 when Assigning.setDueOverride (assignee, assignment, dueAt, release), asked by Course.assignments.SetDueOverride:success
@@ -10077,8 +10144,8 @@ then
 ### Course.assignments.StaffList:forbidden
 
 Authored path: `Course.assignments.StaffList`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 58.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 66.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/staff-list", requestId, session)
@@ -10092,8 +10159,8 @@ then
 ### Course.assignments.StaffList:success
 
 Authored path: `Course.assignments.StaffList`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 58.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 66.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/staff-list", requestId, session)
@@ -10107,8 +10174,8 @@ then
 ### Course.assignments.StaffSummary:forbidden
 
 Authored path: `Course.assignments.StaffSummary`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 59.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 67.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
@@ -10123,8 +10190,8 @@ then
 ### Course.assignments.StaffSummary:found
 
 Authored path: `Course.assignments.StaffSummary`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 59.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 67.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
@@ -10139,8 +10206,8 @@ then
 ### Course.assignments.StaffSummary:missing
 
 Authored path: `Course.assignments.StaffSummary`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 59.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 67.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
@@ -10155,8 +10222,8 @@ then
 ### Course.assignments.Submit:success
 
 Authored path: `Course.assignments.Submit`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 60.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 46.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 68.
 
 ```reaction
 when RequestBoundary.request (assignment, content, path: "/assignments/submit", requestId, session)
@@ -10164,6 +10231,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may submit assignment (assignment) at (at)" with (assignment, at, user)
+  view "the submitter of (assignment) for (student)" with (assignment, student: user) has (submitter: user)
 then
   Posting.create (at, author: user, content)
 ```
@@ -10171,8 +10239,8 @@ then
 ### Course.assignments.Submit:success#2
 
 Authored path: `Course.assignments.Submit`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 60.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 46.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 68.
 
 ```reaction
 when Posting.create (at, author: user, content, post), asked by Course.assignments.Submit:success
@@ -10185,8 +10253,8 @@ then
 ### Course.assignments.Submit:success#3
 
 Authored path: `Course.assignments.Submit`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 60.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 46.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 68.
 
 ```reaction
 when Submitting.submit (artifact: post, assignment, at, submitter: user, submission), asked by Course.assignments.Submit:success#2
@@ -10199,8 +10267,8 @@ then
 ### Course.assignments.Submit:unavailable
 
 Authored path: `Course.assignments.Submit`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 60.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 46.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 68.
 
 ```reaction
 when RequestBoundary.request (assignment, content, path: "/assignments/submit", requestId, session)
@@ -10210,6 +10278,53 @@ where
   no view "(user) may submit assignment (assignment) at (at)" with (assignment, at, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.assignments.SubmitForSection
+
+Authored path: `Course.assignments.SubmitForSection`.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 49.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 69.
+
+```reaction
+when RequestBoundary.request (assignment, content, path: "/assignments/submit", requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may submit assignment (assignment) at (at)" with (assignment, at, user)
+  view "the submitter of (assignment) for (student)" with (assignment, student: user) and not (submitter: user)
+then
+  Posting.create (at, author: user, content)
+```
+
+### Course.assignments.SubmitForSection#2
+
+Authored path: `Course.assignments.SubmitForSection`.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 49.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 69.
+
+```reaction
+when Posting.create (at, author: user, content, post), asked by Course.assignments.SubmitForSection
+at the flow's settlement frontier
+where
+  earlier, RequestBoundary.request (assignment, content, path: "/assignments/submit", requestId, session)
+  view "the submitter of (assignment) for (student)" with (assignment, student: user) has (submitter)
+then
+  Submitting.submit (artifact: post, assignment, at, submitter)
+```
+
+### Course.assignments.SubmitForSection#3
+
+Authored path: `Course.assignments.SubmitForSection`.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 49.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 69.
+
+```reaction
+when Submitting.submit (artifact: post, assignment, at, submitter, submission), asked by Course.assignments.SubmitForSection#2
+where
+  earlier, RequestBoundary.request (assignment, content, path: "/assignments/submit", requestId, session)
+then
+  RequestBoundary.respond (requestId, submission)
 ```
 
 ### Course.calendar.CalendarMe:forbidden
@@ -14297,14 +14412,14 @@ then
 ### Course.submissions.Artifact:hidden
 
 Authored path: `Course.submissions.Artifact`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 15.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 31.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 32.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 49.
 
 ```reaction
 when RequestBoundary.request (artifact, assignment, path: "/submissions/artifact", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user)
-  no view "(user) may read (artifact) submitted by (submitter) for (assignment)" with (artifact, assignment, submitter, user)
+  no view "(user) may read (artifact) that stands for (student) on (assignment)" with (artifact, assignment, student: submitter, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -14312,23 +14427,23 @@ then
 ### Course.submissions.Artifact:success
 
 Authored path: `Course.submissions.Artifact`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 15.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 31.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 32.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 49.
 
 ```reaction
 when RequestBoundary.request (artifact, assignment, path: "/submissions/artifact", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may read (artifact) submitted by (submitter) for (assignment)" with (artifact, assignment, submitter, user)
+  view "(user) may read (artifact) that stands for (student) on (assignment)" with (artifact, assignment, student: submitter, user)
 then
-  RequestBoundary.respond (post: former "the artifact (artifact) of (assignment) by (submitter) for (user)" with (artifact, assignment, submitter, user), requestId)
+  RequestBoundary.respond (post: former "the artifact (artifact) of (assignment) standing for (student), for (user)" with (artifact, assignment, student: submitter, user), requestId)
 ```
 
 ### Course.submissions.Attempts:attempts
 
 Authored path: `Course.submissions.Attempts`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 48.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -14336,20 +14451,20 @@ where
   view "the active user of (session)" with (session) has (user: submitter)
   view "(user) is an active student" with (user: submitter)
 then
-  RequestBoundary.respond (attempts: former "the attempts for (assignment) by (submitter)" with (assignment, submitter), requestId)
+  RequestBoundary.respond (attempts: former "the attempts of (assignment) for (student)" with (assignment, student: submitter), requestId)
 ```
 
 ### Course.submissions.Attempts:attempts-hidden
 
 Authored path: `Course.submissions.Attempts`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 48.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user) and not (user: submitter)
-  view "(user) may not grade the work of (learner) on (item)" with (item: assignment, learner: submitter, user)
+  view "(user) may not grade what stands for (student) on (item)" with (item: assignment, student: submitter, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -14357,8 +14472,8 @@ then
 ### Course.submissions.Attempts:attempts-missing
 
 Authored path: `Course.submissions.Attempts`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 48.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -14372,24 +14487,24 @@ then
 ### Course.submissions.Attempts:staff-attempts
 
 Authored path: `Course.submissions.Attempts`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 48.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user) and not (user: submitter)
-  view "(user) may grade the work of (learner) on (item)" with (item: assignment, learner: submitter, user)
+  view "(user) may grade what stands for (student) on (item)" with (item: assignment, student: submitter, user)
   view "(user) is an active student" with (user: submitter)
 then
-  RequestBoundary.respond (attempts: former "the attempts for (assignment) by (submitter)" with (assignment, submitter), requestId)
+  RequestBoundary.respond (attempts: former "the attempts of (assignment) for (student)" with (assignment, student: submitter), requestId)
 ```
 
 ### Course.submissions.ForAssignment:forbidden
 
 Authored path: `Course.submissions.ForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 20.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 32.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 38.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 50.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/for-assignment", requestId, session)
@@ -14403,8 +14518,8 @@ then
 ### Course.submissions.ForAssignment:success
 
 Authored path: `Course.submissions.ForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 20.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 32.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 38.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 50.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/for-assignment", requestId, session)
@@ -14418,8 +14533,8 @@ then
 ### Course.submissions.ForStudent:for-student
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 33.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 51.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -14427,14 +14542,14 @@ where
   view "the active user of (session)" with (session) has (user: submitter)
   view "(user) is an active student" with (user: submitter)
 then
-  RequestBoundary.respond (requestId, submissions: former "the submissions by (submitter)" with (submitter))
+  RequestBoundary.respond (requestId, submissions: former "the submissions for (student)" with (student: submitter))
 ```
 
 ### Course.submissions.ForStudent:for-student-hidden
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 33.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 51.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -14448,8 +14563,8 @@ then
 ### Course.submissions.ForStudent:for-student-missing
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 33.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 51.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -14463,8 +14578,8 @@ then
 ### Course.submissions.ForStudent:staff-for-student
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 33.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 51.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -14473,20 +14588,20 @@ where
   view "(user) may grade" with (user)
   view "(user) is an active student" with (user: submitter)
 then
-  RequestBoundary.respond (requestId, submissions: former "the submissions by (submitter) that (user) may grade" with (submitter, user))
+  RequestBoundary.respond (requestId, submissions: former "the submissions for (student) that (user) may grade" with (student: submitter, user))
 ```
 
 ### Course.submissions.Latest:latest-hidden
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 52.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user) and not (user: submitter)
-  view "(user) may not grade the work of (learner) on (item)" with (item: assignment, learner: submitter, user)
+  view "(user) may not grade what stands for (student) on (item)" with (item: assignment, student: submitter, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -14494,8 +14609,8 @@ then
 ### Course.submissions.Latest:latest-missing
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 52.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -14509,15 +14624,15 @@ then
 ### Course.submissions.Latest:self-found
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 52.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user: submitter)
   view "(user) is an active student" with (user: submitter)
-  view "the latest submission for (assignment) by (submitter)" with (assignment, submitter) has (latest)
+  view "the latest submission of (assignment) for (student)" with (assignment, student: submitter) has (latest)
 then
   RequestBoundary.respond (requestId, submission: latest)
 ```
@@ -14525,15 +14640,15 @@ then
 ### Course.submissions.Latest:self-missing
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 52.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user: submitter)
   view "(user) is an active student" with (user: submitter)
-  no view "the latest submission for (assignment) by (submitter)" with (assignment, submitter)
+  no view "the latest submission of (assignment) for (student)" with (assignment, student: submitter)
 then
   RequestBoundary.respond (requestId, submission: null)
 ```
@@ -14541,16 +14656,16 @@ then
 ### Course.submissions.Latest:staff-found
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 52.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user) and not (user: submitter)
-  view "(user) may grade the work of (learner) on (item)" with (item: assignment, learner: submitter, user)
+  view "(user) may grade what stands for (student) on (item)" with (item: assignment, student: submitter, user)
   view "(user) is an active student" with (user: submitter)
-  view "the latest submission for (assignment) by (submitter)" with (assignment, submitter) has (latest)
+  view "the latest submission of (assignment) for (student)" with (assignment, student: submitter) has (latest)
 then
   RequestBoundary.respond (requestId, submission: latest)
 ```
@@ -14558,16 +14673,16 @@ then
 ### Course.submissions.Latest:staff-missing
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 52.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user) and not (user: submitter)
-  view "(user) may grade the work of (learner) on (item)" with (item: assignment, learner: submitter, user)
+  view "(user) may grade what stands for (student) on (item)" with (item: assignment, student: submitter, user)
   view "(user) is an active student" with (user: submitter)
-  no view "the latest submission for (assignment) by (submitter)" with (assignment, submitter)
+  no view "the latest submission of (assignment) for (student)" with (assignment, student: submitter)
 then
   RequestBoundary.respond (requestId, submission: null)
 ```
@@ -32060,11 +32175,11 @@ not listed here have no explicit input contract.
 
 - `/assignments/archive` — requires `assignment`, `session`
 - `/assignments/clear-due-override` — requires `assignee`, `assignment`, `session`
-- `/assignments/create-draft` — requires `session`, `title`, `instructions`, `kind`, `availableAt`, `dueAt`, `acceptsSubmissions`, `audience`; fills `closeAt` with null when absent; fills `targets` with [] when absent
+- `/assignments/create-draft` — requires `session`, `title`, `instructions`, `kind`, `availableAt`, `dueAt`, `acceptsSubmissions`, `audience`; fills `closeAt` with null when absent; fills `submittedBy` with "STUDENT" when absent; fills `targets` with [] when absent
 - `/assignments/for-me` — requires `session`
 - `/assignments/get` — requires `assignment`, `session`
 - `/assignments/publish` — requires `assignment`, `session`
-- `/assignments/revise` — requires `session`, `assignment`, `title`, `instructions`, `kind`, `availableAt`, `dueAt`, `acceptsSubmissions`, `audience`; fills `closeAt` with null when absent; fills `targets` with [] when absent
+- `/assignments/revise` — requires `session`, `assignment`, `title`, `instructions`, `kind`, `availableAt`, `dueAt`, `acceptsSubmissions`, `audience`, `submittedBy`; fills `closeAt` with null when absent; fills `targets` with [] when absent
 - `/assignments/set-due-override` — requires `assignee`, `assignment`, `dueAt`, `session`
 - `/assignments/staff-list` — requires `session`
 - `/assignments/staff-summary` — requires `assignment`, `session`

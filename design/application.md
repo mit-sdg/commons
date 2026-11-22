@@ -491,6 +491,9 @@ validDelegationIdentityInput(item: String, learner?: String, grader?: String) : 
 submissionAllowed(detail: Json, section: String, at: Date) : Bool
   Answers whether the published accepting assignment currently targets the learner section and is within its availability and hard close boundaries. Due overrides and late-day use do not extend the hard close.
 
+submitterFor(submittedBy: String, section: String, student: String) : String
+  Answers whose work a student's is on an assignment: their section's when the assignment is submitted by each section and their seat has one, otherwise their own.
+
 validProfileSelection(users: Strings) : Bool
   Accepts at most 64 nonempty account identifiers, each at most 256 characters.
 

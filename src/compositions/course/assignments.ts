@@ -19,6 +19,7 @@ import {
   mayNotGrade,
   mayManageCourse,
   mayNotManageCourse,
+  theSubmitterFor,
 } from "../access/policy.ts";
 import { concepts, computations as c } from "../../concepts.ts";
 
@@ -205,6 +206,7 @@ export const CreateDraft = endpoint(
     acceptsSubmissions,
     audience,
     targets,
+    submittedBy,
     user,
     at,
     assignment,
@@ -220,6 +222,7 @@ export const CreateDraft = endpoint(
       acceptsSubmissions,
       audience,
       targets,
+      submittedBy,
     }).then(
       where(now(at), activeUser({ session }).is({ user }), mayManageCourse({ user }))
         .then(
@@ -234,6 +237,7 @@ export const CreateDraft = endpoint(
             acceptsSubmissions,
             audience,
             targets,
+            submittedBy,
             at,
           }).responds({ assignment }),
         )
@@ -255,7 +259,7 @@ export const CreateDraft = endpoint(
         "acceptsSubmissions",
         "audience",
       ],
-      defaults: { closeAt: null, targets: [] },
+      defaults: { closeAt: null, targets: [], submittedBy: "STUDENT" },
     },
   },
 );
@@ -274,6 +278,7 @@ export const Revise = endpoint(
     acceptsSubmissions,
     audience,
     targets,
+    submittedBy,
     user,
     at,
     revised,
@@ -290,6 +295,7 @@ export const Revise = endpoint(
       acceptsSubmissions,
       audience,
       targets,
+      submittedBy,
     }).then(
       where(now(at), activeUser({ session }).is({ user }), mayManageCourse({ user }))
         .then(
@@ -304,6 +310,7 @@ export const Revise = endpoint(
             acceptsSubmissions,
             audience,
             targets,
+            submittedBy,
             at,
           }).responds({ assignment: revised }),
         )
@@ -325,6 +332,7 @@ export const Revise = endpoint(
         "dueAt",
         "acceptsSubmissions",
         "audience",
+        "submittedBy",
       ],
       defaults: { closeAt: null, targets: [] },
     },
@@ -507,6 +515,7 @@ export const Submit = endpoint(
         now(at),
         activeUser({ session }).is({ user }),
         maySubmitAssignment({ user, assignment, at }),
+        theSubmitterFor({ assignment, student: user }).is({ submitter: user }),
       )
         .then(Posting.create({ author: user, content, at }).responds({ post }))
         .then(
@@ -524,6 +533,29 @@ export const Submit = endpoint(
         .then(respond({ error: "NOT_FOUND" }))
         .named("unavailable"),
     ),
+);
+
+/**
+ * A member submits for their section. A name bound by a read in one stage is
+ * not bound in the next, so the section is read again once the artifact exists.
+ */
+export const SubmitForSection = endpoint(
+  "/assignments/submit",
+  ({ session, assignment, content, user, at, post, submitter, submission }) =>
+    receive({ session, assignment, content })
+      .where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        maySubmitAssignment({ user, assignment, at }),
+        theSubmitterFor({ assignment, student: user }).is.not({ submitter: user }),
+      )
+      .then(Posting.create({ author: user, content, at }).responds({ post }))
+      .afterFlowSettles()
+      .where(theSubmitterFor({ assignment, student: user }).is({ submitter }))
+      .then(
+        Submitting.submit({ assignment, submitter, artifact: post, at }).responds({ submission }),
+      )
+      .then(respond({ submission })),
 );
 
 /** Notify each actual release, including targeted publication and later enrolment. */

@@ -146,6 +146,7 @@ describe("course grades", () => {
       acceptsSubmissions: true,
       audience: "EVERYONE",
       targets: [],
+      submittedBy: "STUDENT",
       at,
     }));
     await concepts.Assigning.publish({ assignment: exercise, at });

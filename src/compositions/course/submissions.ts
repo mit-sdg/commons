@@ -5,21 +5,77 @@ import {
   isActiveStudent,
   isNotActiveStudent,
   mayGrade,
+  mayGradeStudentWork,
   mayGradeWork,
   mayNotGrade,
-  mayNotGradeWork,
+  mayNotGradeStudentWork,
+  theSubmitterFor,
 } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
 
 const { Assigning, Authenticating, Formatting, Posting, Profiling, Rostering, Submitting } =
   concepts;
 
-/** What is this learner's latest submission for this assignment? */
+/** What is the latest submission standing for this student on this assignment? */
 export const theLatestSubmission = view(
-  "the latest submission for (assignment) by (submitter)",
-  ({ assignment, submitter }, { latest }, _bindings) =>
-    where(Submitting._getLatest({ assignment, submitter }).is({ latest })),
+  "the latest submission of (assignment) for (student)",
+  ({ assignment, student }, { latest }, { submitter }) =>
+    where(
+      theSubmitterFor({ assignment, student }).is({ submitter }),
+      Submitting._getLatest({ assignment, submitter }).is({ latest }),
+    ),
 ).optional();
+
+/** Which attempts stand for this student on this assignment: their section's, or their own? */
+export const theStandingAttempts = view(
+  "the attempts of (assignment) that stand for (student)",
+  (
+    { assignment, student },
+    { submission, artifacts, submittedAt, number, status },
+    { submitter },
+  ) =>
+    where(
+      theSubmitterFor({ assignment, student }).is({ submitter }),
+      Submitting._getAttempts({ assignment, submitter }).is({
+        submission,
+        artifacts,
+        submittedAt,
+        number,
+        status,
+      }),
+    ),
+);
+
+/**
+ * Which attempts stand for this student across assignments: their own where
+ * they submit, and their section's where the section does.
+ */
+export const theStandingSubmissions = view(
+  "the submissions that stand for (student)",
+  ({ student }, { assignment, submission, submittedAt, number, status }, { section }) => [
+    where(
+      Submitting._getSubmissionsForSubmitter({ submitter: student }).is({
+        assignment,
+        submission,
+        submittedAt,
+        number,
+        status,
+      }),
+      theSubmitterFor({ assignment, student }).is({ submitter: student }),
+    ),
+    where(
+      Rostering._getSeatByUser({ user: student }).is({ section }),
+      Submitting._getSubmissionsForSubmitter({ submitter: section }).is({
+        assignment,
+        submission,
+        submittedAt,
+        number,
+        status,
+      }),
+      theSubmitterFor({ assignment, student }).is({ submitter: section }),
+    ),
+  ],
+);
 
 export const submissionHasArtifact = view(
   "(assignment) by (submitter) has submission artifact (artifact)",
@@ -31,26 +87,28 @@ export const submissionHasArtifact = view(
 ).holds();
 
 export const mayReadSubmissionArtifact = view(
-  "(user) may read (artifact) submitted by (submitter) for (assignment)",
-  ({ user, artifact, submitter, assignment }, _outputs, _bindings) => [
+  "(user) may read (artifact) that stands for (student) on (assignment)",
+  ({ user, artifact, student, assignment }, _outputs, { submitter }) => [
     where(
       isActiveStudent({ user }),
-      submissionHasArtifact({ assignment, submitter: user, artifact }),
+      theSubmitterFor({ assignment, student: user }).is({ submitter }),
+      submissionHasArtifact({ assignment, submitter, artifact }),
     ),
     where(
-      mayGradeWork({ user, learner: submitter, item: assignment }),
-      isActiveStudent({ user: submitter }),
+      mayGradeStudentWork({ user, student, item: assignment }),
+      isActiveStudent({ user: student }),
+      theSubmitterFor({ assignment, student }).is({ submitter }),
       submissionHasArtifact({ assignment, submitter, artifact }),
     ),
   ],
 ).holds();
 
-/** Which attempts has this learner made for this assignment? */
+/** Which attempts stand for this student on this assignment? */
 export const theAttempts = former(
-  "the attempts for (assignment) by (submitter)",
-  ({ assignment, submitter }, { submission, artifacts, submittedAt, number, status }) =>
+  "the attempts of (assignment) for (student)",
+  ({ assignment, student }, { submission, artifacts, submittedAt, number, status }) =>
     each(
-      Submitting._getAttempts({ assignment, submitter }).is({
+      theStandingAttempts({ assignment, student }).is({
         submission,
         artifacts,
         submittedAt,
@@ -94,7 +152,7 @@ export const theSubmissionsForAssignment = former(
       }),
 );
 
-/** Which of this assignment's assignees may this caller grade, with their seat's standing and the identity fields a staff export needs? */
+/** Which of this assignment's assignees may this caller grade, with who submits for each, their seat's standing, and the identity fields a staff export needs? */
 export const theAssignedPopulationForAssignment = former(
   "the assigned population for (assignment) that (user) may grade",
   (
@@ -106,6 +164,7 @@ export const theAssignedPopulationForAssignment = former(
       email,
       section,
       enrolment,
+      submitter,
       release,
       dueOverride,
       releaseStatus,
@@ -113,7 +172,8 @@ export const theAssignedPopulationForAssignment = former(
   ) =>
     each(Assigning._getAssignees({ assignment }).is({ assignee }))
       .where(
-        mayGradeWork({ user, learner: assignee, item: assignment }),
+        mayGradeStudentWork({ user, student: assignee, item: assignment }),
+        theSubmitterFor({ assignment, student: assignee }).is({ submitter }),
         whether(Profiling._getProfileFields({ user: assignee }).is({ displayName })),
         whether(Authenticating._getById({ user: assignee }).is({ username })),
         whether(
@@ -133,18 +193,19 @@ export const theAssignedPopulationForAssignment = former(
         email,
         section,
         enrolment,
+        submitter,
         release,
         dueOverride,
         status: releaseStatus,
       }),
 );
 
-/** Which submissions belong to this learner? */
+/** Which submissions stand for this student? */
 export const theSubmissionsBy = former(
-  "the submissions by (submitter)",
-  ({ submitter }, { assignment, submission, submittedAt, number, status }) =>
+  "the submissions for (student)",
+  ({ student }, { assignment, submission, submittedAt, number, status }) =>
     each(
-      Submitting._getSubmissionsForSubmitter({ submitter }).is({
+      theStandingSubmissions({ student }).is({
         assignment,
         submission,
         submittedAt,
@@ -154,12 +215,12 @@ export const theSubmissionsBy = former(
     ).form({ assignment, submission, submittedAt, number, status }),
 );
 
-/** Which of this learner's submissions may this caller grade? */
+/** Which of the submissions standing for this student may this caller grade? */
 export const theGradableSubmissionsBy = former(
-  "the submissions by (submitter) that (user) may grade",
-  ({ submitter, user }, { assignment, submission, submittedAt, number, status }) =>
+  "the submissions for (student) that (user) may grade",
+  ({ student, user }, { assignment, submission, submittedAt, number, status }) =>
     each(
-      Submitting._getSubmissionsForSubmitter({ submitter }).is({
+      theStandingSubmissions({ student }).is({
         assignment,
         submission,
         submittedAt,
@@ -167,7 +228,7 @@ export const theGradableSubmissionsBy = former(
         status,
       }),
     )
-      .where(mayGradeWork({ user, learner: submitter, item: assignment }))
+      .where(mayGradeStudentWork({ user, student, item: assignment }))
       .form({ assignment, submission, submittedAt, number, status }),
 );
 
@@ -178,36 +239,36 @@ export const Latest = endpoint(
       where(
         activeUser({ session }).is({ user: submitter }),
         isActiveStudent({ user: submitter }),
-        theLatestSubmission({ assignment, submitter }).is({ latest }),
+        theLatestSubmission({ assignment, student: submitter }).is({ latest }),
       )
         .then(respond({ submission: latest }))
         .named("self-found"),
       where(
         activeUser({ session }).is({ user: submitter }),
         isActiveStudent({ user: submitter }),
-        no(theLatestSubmission({ assignment, submitter })),
+        no(theLatestSubmission({ assignment, student: submitter })),
       )
         .then(respond({ submission: null }))
         .named("self-missing"),
       where(
         activeUser({ session }).is({ user }).is.not({ user: submitter }),
-        mayGradeWork({ user, learner: submitter, item: assignment }),
+        mayGradeStudentWork({ user, student: submitter, item: assignment }),
         isActiveStudent({ user: submitter }),
-        theLatestSubmission({ assignment, submitter }).is({ latest }),
+        theLatestSubmission({ assignment, student: submitter }).is({ latest }),
       )
         .then(respond({ submission: latest }))
         .named("staff-found"),
       where(
         activeUser({ session }).is({ user }).is.not({ user: submitter }),
-        mayGradeWork({ user, learner: submitter, item: assignment }),
+        mayGradeStudentWork({ user, student: submitter, item: assignment }),
         isActiveStudent({ user: submitter }),
-        no(theLatestSubmission({ assignment, submitter })),
+        no(theLatestSubmission({ assignment, student: submitter })),
       )
         .then(respond({ submission: null }))
         .named("staff-missing"),
       where(
         activeUser({ session }).is({ user }).is.not({ user: submitter }),
-        mayNotGradeWork({ user, learner: submitter, item: assignment }),
+        mayNotGradeStudentWork({ user, student: submitter, item: assignment }),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("latest-hidden"),
@@ -222,18 +283,18 @@ export const Attempts = endpoint(
   ({ session, assignment, submitter, user }) =>
     receive({ session, assignment, submitter }).then(
       where(activeUser({ session }).is({ user: submitter }), isActiveStudent({ user: submitter }))
-        .then(respond({ attempts: theAttempts({ assignment, submitter }) }))
+        .then(respond({ attempts: theAttempts({ assignment, student: submitter }) }))
         .named("attempts"),
       where(
         activeUser({ session }).is({ user }).is.not({ user: submitter }),
-        mayGradeWork({ user, learner: submitter, item: assignment }),
+        mayGradeStudentWork({ user, student: submitter, item: assignment }),
         isActiveStudent({ user: submitter }),
       )
-        .then(respond({ attempts: theAttempts({ assignment, submitter }) }))
+        .then(respond({ attempts: theAttempts({ assignment, student: submitter }) }))
         .named("staff-attempts"),
       where(
         activeUser({ session }).is({ user }).is.not({ user: submitter }),
-        mayNotGradeWork({ user, learner: submitter, item: assignment }),
+        mayNotGradeStudentWork({ user, student: submitter, item: assignment }),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("attempts-hidden"),
@@ -245,10 +306,10 @@ export const Attempts = endpoint(
 
 /** What submission artifact may this account inspect? */
 export const theArtifactPost = former(
-  "the artifact (artifact) of (assignment) by (submitter) for (user)",
-  ({ artifact, assignment, submitter, user }, { author, content, createdAt, editedAt, rendered }) =>
+  "the artifact (artifact) of (assignment) standing for (student), for (user)",
+  ({ artifact, assignment, student, user }, { author, content, createdAt, editedAt, rendered }) =>
     where(
-      mayReadSubmissionArtifact({ user, assignment, submitter, artifact }),
+      mayReadSubmissionArtifact({ user, assignment, student, artifact }),
       Posting._getPost({ post: artifact }).is({ author, content, createdAt, editedAt }),
       Formatting._getRendered({ target: artifact }).is({ rendered }),
     ).form({ author, content, createdAt, editedAt, rendered }),
@@ -260,13 +321,15 @@ export const Artifact = endpoint(
     receive({ session, assignment, submitter, artifact }).then(
       where(
         activeUser({ session }).is({ user }),
-        mayReadSubmissionArtifact({ user, assignment, submitter, artifact }),
+        mayReadSubmissionArtifact({ user, assignment, student: submitter, artifact }),
       )
-        .then(respond({ post: theArtifactPost({ artifact, assignment, submitter, user }) }))
+        .then(
+          respond({ post: theArtifactPost({ artifact, assignment, student: submitter, user }) }),
+        )
         .named("success"),
       where(
         activeUser({ session }).is({ user }),
-        no(mayReadSubmissionArtifact({ user, assignment, submitter, artifact })),
+        no(mayReadSubmissionArtifact({ user, assignment, student: submitter, artifact })),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("hidden"),
@@ -295,14 +358,14 @@ export const ForAssignment = endpoint(
 export const ForStudent = endpoint("/submissions/for-student", ({ session, submitter, user }) =>
   receive({ session, submitter }).then(
     where(activeUser({ session }).is({ user: submitter }), isActiveStudent({ user: submitter }))
-      .then(respond({ submissions: theSubmissionsBy({ submitter }) }))
+      .then(respond({ submissions: theSubmissionsBy({ student: submitter }) }))
       .named("for-student"),
     where(
       activeUser({ session }).is({ user }).is.not({ user: submitter }),
       mayGrade({ user }),
       isActiveStudent({ user: submitter }),
     )
-      .then(respond({ submissions: theGradableSubmissionsBy({ submitter, user }) }))
+      .then(respond({ submissions: theGradableSubmissionsBy({ student: submitter, user }) }))
       .named("staff-for-student"),
     where(activeUser({ session }).is({ user }).is.not({ user: submitter }), mayNotGrade({ user }))
       .then(respond({ error: "NOT_FOUND" }))

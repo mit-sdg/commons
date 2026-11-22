@@ -107,6 +107,7 @@ async function buildFixture() {
     acceptsSubmissions: true,
     audience: "EVERYONE",
     targets: [],
+    submittedBy: "STUDENT",
     at,
   });
   await concepts.Assigning.publish({ assignment: item, at });

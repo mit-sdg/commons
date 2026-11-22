@@ -130,6 +130,7 @@ describe("class-wide reads for course grades", () => {
       acceptsSubmissions: true,
       audience: "EVERYONE" as const,
       targets: [] as string[],
+      submittedBy: "STUDENT" as const,
       at,
     };
     const { assignment } = await c.createDraft({ ...draft, title: "Exercise 1" });
@@ -146,6 +147,7 @@ describe("class-wide reads for course grades", () => {
           dueAt: "2026-09-15T04:00:00.000Z",
           status: "PUBLISHED",
           acceptsSubmissions: true,
+          submittedBy: "STUDENT",
         },
       ],
     });

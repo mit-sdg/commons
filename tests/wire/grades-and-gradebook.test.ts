@@ -53,6 +53,7 @@ async function setup() {
     acceptsSubmissions: true,
     audience: "EVERYONE",
     targets: [],
+    submittedBy: "STUDENT",
     at,
   });
   await app.concepts.Assigning.publish({ ...draft, at });
@@ -280,6 +281,7 @@ test("draft setup is staff-only, survives publication, and is retained when a dr
     acceptsSubmissions: true,
     audience: "EVERYONE" as const,
     targets: [],
+    submittedBy: "STUDENT" as const,
   };
   const draft = await call("/assignments/create-draft", { session: staff.session, ...fields });
   if ("error" in draft) throw new Error(String(draft.error));
