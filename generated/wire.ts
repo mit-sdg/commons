@@ -4409,7 +4409,7 @@ export type CommonsWire = {
   };
   "/submissions/for-assignment": {
     input: {
-      "assignment": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignees"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getAttempts"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForAssignment"]>[0], ["assignment"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssigned"]>>>, ["assignment"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignments"]>>>, ["assignment"]>]>>;
+      "assignment": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignees"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForAssignment"]>[0], ["assignment"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssigned"]>>>, ["assignment"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignments"]>>>, ["assignment"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["_getUser"]>[0], ["session"]>>;
     };
     output: {
@@ -4435,7 +4435,7 @@ export type CommonsWire = {
         "submitterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
       })[];
       "unmoved": {
-        "section": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["submitterFor"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getAttempts"]>[0], ["submitter"]>]>>;
+        "section": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["submitterFor"]["fn"]>>, []>>;
         "student": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["submitterFor"]["fn"]>[0], ["student"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["submitter"]>]>>;
         "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["submission"]>>;
       }[];
@@ -9454,7 +9454,7 @@ export type CommonsWireHttp = {
   };
   "/submissions/for-assignment": {
     input: {
-      "assignment": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignees"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getAttempts"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForAssignment"]>[0], ["assignment"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssigned"]>>>, ["assignment"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignments"]>>>, ["assignment"]>]>>;
+      "assignment": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignees"]>[0], ["assignment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForAssignment"]>[0], ["assignment"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssigned"]>>>, ["assignment"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Assigning"]["_getAssignments"]>>>, ["assignment"]>]>>;
     };
     output: {
       "assigned": ({
@@ -9479,7 +9479,7 @@ export type CommonsWireHttp = {
         "submitterName": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Profiling"]["_getProfileFields"]>>>, ["displayName"]>> | null;
       })[];
       "unmoved": {
-        "section": Jsonify<AllOf<[AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["submitterFor"]["fn"]>>, []>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getAttempts"]>[0], ["submitter"]>]>>;
+        "section": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["submitterFor"]["fn"]>>, []>>;
         "student": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["submitterFor"]["fn"]>[0], ["student"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_getSeatByUser"]>[0], ["user"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Rostering"]["_isActiveStudent"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["submitter"]>]>>;
         "submission": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Submitting"]["_getSubmissionsForAssignment"]>>>, ["submission"]>>;
       }[];

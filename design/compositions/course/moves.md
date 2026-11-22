@@ -15,7 +15,10 @@ stored with their history.
 
 [The attempts not yet moved](view:Course.moves.theUnmovedAttempts) are the
 submitted attempts of active students whose submitter is their section, for
-which the section has no attempt holding the same artifact.
+which [no other submitter has an attempt holding the same artifact](view:Course.moves.heldByAnother). An attempt is moved
+once. Ben's pitch is moved to his section, and Ben is later moved to another
+section: the copy stays where it is, and his pitch is not offered to the new
+section, where it would become that section's latest attempt.
 The staff read of one assignment's submissions, `Course.submissions.ForAssignment`,
 lists [those the caller may grade](former:Course.moves.theUnmovedSubmissions),
 so a page can offer the move while any remain and say how many attempts and

@@ -12,9 +12,21 @@ import { activeUser } from "../access/session.ts";
 
 const { Assigning, Grading, Submitting } = concepts;
 
+/** Whether an attempt of someone other than this student holds these artifacts: a copy made by a move. */
+export const heldByAnother = view(
+  "(artifacts) on (assignment) are held by an attempt not of (student)",
+  ({ assignment, artifacts, student }, _outputs, _bindings) =>
+    where(
+      Submitting._getSubmissionsForAssignment({ assignment })
+        .is({ artifacts })
+        .is.not({ submitter: student }),
+    ),
+).holds();
+
 /**
- * Which submitted attempts of a section's current members has the section no
- * attempt for? An attempt and its copy hold the same artifact.
+ * Which submitted attempts of a section's current members has no section an
+ * attempt for? An attempt and its copy hold the same artifact, and an attempt
+ * is moved once: a member who later changes sections leaves the copy behind.
  */
 export const theUnmovedAttempts = view(
   "the attempts on (assignment) not yet moved to a section",
@@ -32,7 +44,7 @@ export const theUnmovedAttempts = view(
       theSubmitterFor({ assignment, student })
         .is({ submitter: section })
         .is.not({ submitter: student }),
-      no(Submitting._getAttempts({ assignment, submitter: section }).is({ artifacts })),
+      no(heldByAnother({ assignment, artifacts, student })),
     ),
 );
 

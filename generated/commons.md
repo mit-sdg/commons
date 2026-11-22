@@ -2127,6 +2127,16 @@ Authored path: `Forum.resolutions.admissibleAnswer`.
     Conversing._getConversation (node: answerNode) has (conversation)
 ```
 
+### (artifacts) on (assignment) are held by an attempt not of (student)
+
+Authored path: `Course.moves.heldByAnother`.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 18.
+
+```view
+(artifacts) on (assignment) are held by an attempt not of (student) — inputs (assignment, artifacts, student); outputs (); bindings ()
+  where Submitting._getSubmissionsForAssignment (assignment) has (artifacts) and not (submitter: student)
+```
+
 ### (assignment) by (submitter) has submission artifact (artifact)
 
 Authored path: `Course.submissions.submissionHasArtifact`.
@@ -3933,7 +3943,7 @@ the asks out about (round) — inputs (round); outputs (asksOut); bindings () �
 ### the assessments on (assignment) not yet copied to a section's attempt
 
 Authored path: `Course.moves.theUncopiedGrades`.
-- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 32.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 35.
 
 ```view
 the assessments on (assignment) not yet copied to a section's attempt — inputs (assignment); outputs (section, moved, grader, method, setupRevision, criteria, judgments, feedback); bindings (student, original, artifacts, status) — answers any number of (section, moved, grader, method, setupRevision, criteria, judgments, feedback)
@@ -4007,7 +4017,7 @@ the attempts on (assignment) not yet moved to a section — inputs (assignment);
     Submitting._getSubmissionsForAssignment (assignment) has (artifacts, status: "SUBMITTED", submission, submittedAt, submitter: student)
     view "(user) is an active student" with (user: student)
     view "the submitter of (assignment) for (student)" with (assignment, student) has (submitter: section) and not (submitter: student)
-    no Submitting._getAttempts (assignment, submitter: section) has (artifacts)
+    no view "(artifacts) on (assignment) are held by an attempt not of (student)" with (artifacts, assignment, student)
 ```
 
 ### the audience reader of (session)
@@ -7267,7 +7277,7 @@ Former "the submissions for (student) that (user) may grade" — inputs (student
 ### the submissions to (assignment) not yet moved that (user) may grade
 
 Authored path: `Course.moves.theUnmovedSubmissions`.
-- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 20.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 23.
 
 ```former
 Former "the submissions to (assignment) not yet moved that (user) may grade" — inputs (assignment, user); bindings (student, section, submission); promises exactly one record — forms:
@@ -13392,8 +13402,8 @@ then
 ### Course.moves.MoveAnswers
 
 Authored path: `Course.moves.MoveAnswers`.
-- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 41.
-- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 54.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 44.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 57.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/move-to-sections", requestId, session)
@@ -13411,8 +13421,8 @@ then
 ### Course.moves.MoveCopiesGrades
 
 Authored path: `Course.moves.MoveCopiesGrades`.
-- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 31.
-- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 55.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 34.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 58.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/move-to-sections", requestId, session)
@@ -13429,8 +13439,8 @@ then
 ### Course.moves.MoveCopiesGrades#2
 
 Authored path: `Course.moves.MoveCopiesGrades`.
-- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 31.
-- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 55.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 34.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 58.
 
 ```reaction
 when Grading.record (at, criteria, evidence: moved, grader, item: assignment, learner: section, method, setupRevision, grade, version: 1), asked by Course.moves.MoveCopiesGrades
@@ -13444,8 +13454,8 @@ then
 ### Course.moves.MoveRefusals:forbidden
 
 Authored path: `Course.moves.MoveRefusals`.
-- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 43.
-- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 56.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 46.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 59.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/move-to-sections", requestId, session)
@@ -13459,8 +13469,8 @@ then
 ### Course.moves.MoveRefusals:missing
 
 Authored path: `Course.moves.MoveRefusals`.
-- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 43.
-- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 56.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 46.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 59.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/move-to-sections", requestId, session)
@@ -13475,8 +13485,8 @@ then
 ### Course.moves.MoveToSections
 
 Authored path: `Course.moves.MoveToSections`.
-- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 24.
-- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 57.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 27.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 60.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/move-to-sections", requestId, session)

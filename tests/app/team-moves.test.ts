@@ -320,6 +320,29 @@ describe("moving earlier submissions to sections", () => {
     }
   });
 
+  test("an attempt is moved once: a member who later changes sections leaves the copy behind", async () => {
+    const room = await classroom();
+    const { edge, dana, sam, ben, first, exercise } = room;
+    await room.submit(exercise, sam, "Sam's");
+    await room.submit(exercise, ben, "Ben's");
+    await toEachSection(room);
+    await move(room);
+    const tidepool = await attemptsOf(room, sam);
+    expect(tidepool).toHaveLength(1);
+
+    await post(
+      edge,
+      "/roster/move-section",
+      { seat: await room.seatOf(ben.user), section: first },
+      dana.cookie,
+    );
+    await edge.application.whenIdle();
+
+    expect((await page(room)).unmoved).toEqual([]);
+    expect(await move(room)).toMatchObject({ status: 200 });
+    expect(await attemptsOf(room, ben)).toEqual(tidepool);
+  });
+
   test("only course managers move, and an assignment each student submits has nothing to move", async () => {
     const room = await classroom();
     const { edge, dana, noah, sam, exercise } = room;
