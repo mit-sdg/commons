@@ -14,6 +14,7 @@ import {
 } from "@/components/lms/assignment-reading";
 import { LateDayControls } from "@/components/lms/late-day-controls";
 import { StatusBadge } from "@/components/lms/status-badge";
+import { TeamCard } from "@/components/lms/team-card";
 import { PageContainer } from "@/components/page";
 import { PageTitle } from "@/components/page-title";
 import { ErrorState, LoadingState } from "@/components/states";
@@ -35,9 +36,11 @@ import {
   loadGradesForMe,
   loadLateDayBalance,
   loadLateDaysList,
+  loadSections,
   loadSubmissionAttempts,
   loadSubmissionLatest,
 } from "@/lib/lms";
+import { submittedByTeam, submitterOf, teamName } from "@/lib/teams";
 import { cn } from "@/lib/utils";
 
 export default function AssignmentDetailPage({
@@ -79,15 +82,7 @@ export default function AssignmentDetailPage({
     [assignment, me, asgnData],
   );
 
-  const { data: attemptsData, refetch: refetchAttempts } = useQuery<{
-    attempts: {
-      submission: string;
-      artifacts: string[];
-      submittedAt: string;
-      number: number;
-      status: string;
-    }[];
-  }>(
+  const { data: attemptsData, refetch: refetchAttempts } = useQuery(
     me && asgnData && !("error" in asgnData)
       ? () => loadSubmissionAttempts(assignment, String(me.user))
       : null,
@@ -143,6 +138,12 @@ export default function AssignmentDetailPage({
 
   const detail =
     asgnData?.assignment && !("error" in asgnData) ? asgnData.assignment : null;
+  const team = (asgnData && "team" in asgnData && asgnData.team) || null;
+  const byTeam = detail ? submittedByTeam(detail) : false;
+  const { data: teamsData } = useQuery(team ? () => loadSections() : null, [
+    team?.section,
+  ]);
+  const teamTitle = team ? teamName(teamsData?.sections, team.section) : null;
   const latest = subData?.submission;
   const balance = lateBalance?.balance ?? null;
 
@@ -199,7 +200,9 @@ export default function AssignmentDetailPage({
       (release) => release.assignment === assignment,
     )?.dueOverride ?? detail.dueAt;
   const unitHours = lateUseData?.unitHours ?? 24;
-  const extensionMs = (appliedLateUse?.days ?? 0) * unitHours * 3600000;
+  const extensionMs = byTeam
+    ? 0
+    : (appliedLateUse?.days ?? 0) * unitHours * 3600000;
   const due = new Date(new Date(baseDue).getTime() + extensionMs).toISOString();
   const effectiveClose = detail.closeAt;
   const now = new Date();
@@ -210,14 +213,17 @@ export default function AssignmentDetailPage({
     !isPastClose &&
     new Date(detail.availableAt) <= now;
   const assessments = (gradesData?.grades ?? []) as Assessment[];
-  const latestEvidence = [...attempts]
-    .filter((attempt) => attempt.status === "SUBMITTED")
-    .sort((left, right) => left.number - right.number)
-    .at(-1)?.submission;
+  const latestAttempt =
+    [...attempts]
+      .filter((attempt) => attempt.status === "SUBMITTED")
+      .sort((left, right) => left.number - right.number)
+      .at(-1) ?? null;
+  const latestEvidence = latestAttempt?.submission;
+  const submitter = me ? submitterOf(String(me.user), team) : "";
   const selectedAssessment = me
     ? assessmentForEvidence(
         assessments,
-        String(me.user),
+        submitter,
         assignment,
         latestEvidence ?? "",
       )
@@ -225,7 +231,7 @@ export default function AssignmentDetailPage({
   const previousAssessments = assessments.filter(
     (assessment) =>
       assessment.item === assignment &&
-      assessment.learner === String(me?.user ?? "") &&
+      assessment.learner === submitter &&
       assessment.grade !== selectedAssessment?.grade,
   );
   const currentSetup =
@@ -263,7 +269,7 @@ export default function AssignmentDetailPage({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           {detail.instructions && (
             <AssignmentInstructions instructions={detail.instructions} />
           )}
@@ -276,9 +282,13 @@ export default function AssignmentDetailPage({
             <Card density="compact">
               <CardHeader>
                 <CardTitle className="text-base">
-                  {latest
-                    ? `Resubmit (Attempt #${latest.number + 1})`
-                    : "Submit"}
+                  {[
+                    latest ? "Resubmit" : "Submit",
+                    teamTitle && `for ${teamTitle}`,
+                    latest && `(Attempt #${latest.number + 1})`,
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -299,11 +309,15 @@ export default function AssignmentDetailPage({
                     {submitting ? "Submitting…" : "Submit"}
                   </Button>
                   {latest && (
-                    <Fact.When
-                      verb="Last submitted"
-                      at={latest.submittedAt}
-                      className="text-xs"
-                    />
+                    <span className="text-xs text-muted-foreground">
+                      <Fact.When
+                        verb="Last submitted"
+                        at={latest.submittedAt}
+                      />
+                      {team && latestAttempt?.authorName
+                        ? ` by ${latestAttempt.authorName}`
+                        : null}
+                    </span>
                   )}
                 </div>
               </CardContent>
@@ -329,11 +343,14 @@ export default function AssignmentDetailPage({
                       {/* Its own chevron, because `justify-between` would
                           otherwise push the label to the middle of the row. */}
                       <summary className="group flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
-                        <span className="inline-flex items-center gap-1.5">
+                        <span className="inline-flex flex-wrap items-center gap-x-1.5">
                           <ChevronRight className="size-3.5 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
                           <span className="font-medium">
                             Attempt #{attempt.number}
                           </span>
+                          {team && attempt.authorName && (
+                            <span className="ml-2">{attempt.authorName}</span>
+                          )}
                           <Fact.When
                             form="absolute"
                             at={attempt.submittedAt}
@@ -396,7 +413,19 @@ export default function AssignmentDetailPage({
           )}
         </div>
 
-        <aside className="space-y-5">
+        <aside
+          className={cn("space-y-5", byTeam && "order-first lg:order-none")}
+        >
+          {byTeam && me && (
+            <TeamCard
+              team={team}
+              name={teamTitle}
+              me={String(me.user)}
+              latest={latestAttempt}
+              grade={selectedAssessment ?? null}
+              overdue={isOverdue}
+            />
+          )}
           <AssignmentDates
             availableAt={detail.availableAt}
             dueAt={due}
@@ -404,7 +433,7 @@ export default function AssignmentDetailPage({
             overdue={isOverdue}
           />
 
-          {detail.status === "PUBLISHED" && (
+          {detail.status === "PUBLISHED" && !byTeam && (
             <LateDayControls
               assignment={assignment}
               balance={balance}
