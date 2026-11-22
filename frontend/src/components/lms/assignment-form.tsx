@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { ConfirmAction } from "@/components/confirm-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,15 +15,127 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@/hooks/use-query";
-import type { Input as ApiInput } from "@/lib/api";
+import type { Input as ApiInput, Output } from "@/lib/api";
 import { api, publicErrorMessage } from "@/lib/api";
 import { ASSIGNMENT_TYPES } from "@/lib/assignment-types";
 import { useAuth } from "@/lib/auth";
 import { useCourse } from "@/lib/course";
 import { fromZonedInput, toZonedInput } from "@/lib/format";
 import type { SetupCriterionInput } from "@/lib/grading";
-import { loadSections } from "@/lib/lms";
+import {
+  loadGradesForItem,
+  loadSections,
+  loadSubmissionsForAssignment,
+} from "@/lib/lms";
+import { submittedByTeam } from "@/lib/teams";
 import { CreationSkills } from "./grade-setup";
+
+type SubmittedBy = "STUDENT" | "SECTION";
+
+/** Students on teams who submitted on their own, on an assignment each student submits. */
+export interface OwnWorkOnTeams {
+  students: number;
+  teams: number;
+  /** How many of those students hold an assessment; null when grades could not be read. */
+  graded: number | null;
+}
+
+/** Which students on teams have a submitted attempt of their own, and on how many teams. */
+export function ownWorkOnTeams(
+  work: Output<"/submissions/for-assignment">,
+  grades: Output<"/grades/for-item">["grades"] | null,
+): OwnWorkOnTeams {
+  const submitters = new Set(
+    work.submissions
+      .filter((attempt) => attempt.status === "SUBMITTED")
+      .map((attempt) => String(attempt.submitter)),
+  );
+  const students = new Set<string>();
+  const teams = new Set<string>();
+  for (const row of work.assigned) {
+    const student = String(row.assignee);
+    if (row.section == null || !submitters.has(student)) continue;
+    students.add(student);
+    teams.add(String(row.section));
+  }
+  const graded = grades
+    ? new Set(
+        grades
+          .filter(
+            (grade) =>
+              grade.status !== "EXCUSED" && students.has(String(grade.learner)),
+          )
+          .map((grade) => String(grade.learner)),
+      ).size
+    : null;
+  return { students: students.size, teams: teams.size, graded };
+}
+
+/** How many teams have a submitted attempt, on an assignment each team submits. */
+export function teamsWithWork(
+  work: Output<"/submissions/for-assignment">,
+): number {
+  const teams = new Set(
+    work.assigned
+      .filter((row) => String(row.submitter) !== String(row.assignee))
+      .map((row) => String(row.submitter)),
+  );
+  return new Set(
+    work.submissions
+      .filter(
+        (attempt) =>
+          attempt.status === "SUBMITTED" &&
+          teams.has(String(attempt.submitter)),
+      )
+      .map((attempt) => String(attempt.submitter)),
+  ).size;
+}
+
+function counted(count: number, one: string, many: string): string {
+  return `${count} ${count === 1 ? one : many}`;
+}
+
+/** What changing to each team hides; null when nothing is hidden, and no numbers when the work could not be read. */
+export function toTeamsNotice(work: OwnWorkOnTeams | null): string | null {
+  if (!work)
+    return "Students on teams who already submitted on their own stop seeing that submission until it is moved to their team.";
+  if (work.students === 0) return null;
+  const one = work.students === 1;
+  const graded = !work.graded
+    ? ""
+    : one
+      ? ", and that submission is graded"
+      : `, and ${work.graded} of those submissions ${work.graded === 1 ? "is" : "are"} graded`;
+  return `${counted(work.students, "student", "students")} on ${counted(work.teams, "team", "teams")} ${one ? "has" : "have"} already submitted on their own${graded}. ${one ? "The student stops" : "Students stop"} seeing their own submission until it is moved to their team.`;
+}
+
+/** What changing to each student hides; null when nothing is hidden, and no numbers when the work could not be read. */
+export function toStudentsNotice(teams: number | null): string | null {
+  if (teams === null)
+    return "Students on teams stop seeing their team's submissions.";
+  if (teams === 0) return null;
+  return `${counted(teams, "team", "teams")} ${teams === 1 ? "has" : "have"} submitted. Students stop seeing their team's submissions.`;
+}
+
+/** Reads the assignment's work at save time and words what the change would hide. */
+async function hiddenWorkNotice(
+  assignment: string,
+  to: SubmittedBy,
+): Promise<string | null> {
+  let work: Output<"/submissions/for-assignment">;
+  try {
+    work = await loadSubmissionsForAssignment(assignment);
+  } catch {
+    return to === "SECTION" ? toTeamsNotice(null) : toStudentsNotice(null);
+  }
+  if (to === "STUDENT") return toStudentsNotice(teamsWithWork(work));
+  if (ownWorkOnTeams(work, []).students === 0) return null;
+  const grades = await loadGradesForItem(assignment).then(
+    (result) => result.grades,
+    () => null,
+  );
+  return toTeamsNotice(ownWorkOnTeams(work, grades));
+}
 
 interface AssignmentFormProps {
   onSaved: (assignment: string) => void;
@@ -79,6 +192,15 @@ export function AssignmentForm({
   const [targets, setTargets] = useState<string[]>(
     () => existing?.targets?.map(String) ?? [],
   );
+  const storedSubmittedBy: SubmittedBy = submittedByTeam({
+    submittedBy: existing?.submittedBy,
+  })
+    ? "SECTION"
+    : "STUDENT";
+  const [submittedBy, setSubmittedBy] =
+    useState<SubmittedBy>(storedSubmittedBy);
+  const [notice, setNotice] = useState("");
+  const [asking, setAsking] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [gradingMethod, setGradingMethod] = useState<"COMPETENCY" | "POINTS">(
     "COMPETENCY",
@@ -122,6 +244,21 @@ export function AssignmentForm({
 
   async function save() {
     if (!session || !scheduleValid || !maximumValid) return;
+    if (existing?.status === "PUBLISHED" && submittedBy !== storedSubmittedBy) {
+      setLoading(true);
+      const hidden = await hiddenWorkNotice(existing.assignment, submittedBy);
+      if (hidden) {
+        setLoading(false);
+        setNotice(hidden);
+        setAsking(true);
+        return;
+      }
+    }
+    await commit();
+  }
+
+  async function commit() {
+    if (!session) return;
     setLoading(true);
     try {
       const rawPayload = {
@@ -135,6 +272,7 @@ export function AssignmentForm({
         acceptsSubmissions,
         audience,
         targets: audience === "TARGETS" ? targets : [],
+        submittedBy,
       };
 
       const existingGradeItem = existing
@@ -151,7 +289,7 @@ export function AssignmentForm({
             acceptsSubmissions: rawPayload.acceptsSubmissions,
             audience: rawPayload.audience,
             targets: rawPayload.targets,
-            submittedBy: existing.submittedBy ?? "STUDENT",
+            submittedBy: rawPayload.submittedBy,
             assignment: existing.assignment,
           })
         : await api.assignments["create-draft"](rawPayload);
@@ -250,7 +388,7 @@ export function AssignmentForm({
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-2">
           <Label htmlFor="asgn-kind">Assignment type</Label>
           <Select value={kind} onValueChange={setKind} disabled={loading}>
@@ -282,7 +420,27 @@ export function AssignmentForm({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="EVERYONE">All students</SelectItem>
-              <SelectItem value="TARGETS">Selected sections</SelectItem>
+              <SelectItem value="TARGETS">Selected teams</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="asgn-submitted-by">Submitted by</Label>
+          <Select
+            value={submittedBy}
+            onValueChange={(value) => {
+              if (value === "STUDENT" || value === "SECTION")
+                setSubmittedBy(value);
+            }}
+            disabled={loading}
+          >
+            <SelectTrigger id="asgn-submitted-by" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="STUDENT">Each student</SelectItem>
+              <SelectItem value="SECTION">Each team</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -290,15 +448,11 @@ export function AssignmentForm({
 
       {audience === "TARGETS" ? (
         <fieldset className="space-y-2 rounded-lg border border-border bg-muted/25 p-4">
-          <legend className="px-1 text-sm font-medium">
-            Assigned sections
-          </legend>
+          <legend className="px-1 text-sm font-medium">Assigned teams</legend>
           {sectionsLoading ? (
-            <p className="text-sm text-muted-foreground">Loading sections…</p>
+            <p className="text-sm text-muted-foreground">Loading teams…</p>
           ) : sections.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Create a course section before targeting an assignment.
-            </p>
+            <p className="text-sm text-muted-foreground">No teams yet.</p>
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
               {sections.map((section) => {
@@ -333,8 +487,8 @@ export function AssignmentForm({
           )}
           {existing?.status === "PUBLISHED" ? (
             <p className="text-xs text-muted-foreground">
-              Adding sections grants access to newly included learners. Removing
-              a section does not revoke access already granted.
+              Students on an added team get access. Students on a removed team
+              keep the access they have.
             </p>
           ) : null}
         </fieldset>
@@ -522,6 +676,23 @@ export function AssignmentForm({
           </Button>
         )}
       </div>
+
+      <ConfirmAction
+        open={asking}
+        onOpenChange={setAsking}
+        title={
+          submittedBy === "SECTION"
+            ? "Change to each team?"
+            : "Change to each student?"
+        }
+        description={notice}
+        confirmLabel={
+          submittedBy === "SECTION"
+            ? "Change to each team"
+            : "Change to each student"
+        }
+        onConfirm={commit}
+      />
     </div>
   );
 }
