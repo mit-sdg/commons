@@ -18,7 +18,12 @@ submitted attempts of active students whose submitter is their section, for
 which [no other submitter has an attempt holding the same artifact](view:Course.moves.heldByAnother). An attempt is moved
 once. Ben's pitch is moved to his section, and Ben is later moved to another
 section: the copy stays where it is, and his pitch is not offered to the new
-section, where it would become that section's latest attempt.
+section, where it would become that section's latest attempt. An attempt is
+also left where it is when [its section already holds a later one](view:Course.moves.hasLaterAttempt):
+Maya submits for the section before Dana presses the move, so Sam's older pitch
+is not offered, because its copy would take the next number and stand as the
+section's latest. The same holds for a student placed in a section after it
+has submitted.
 The staff read of one assignment's submissions, `Course.submissions.ForAssignment`,
 lists [those the caller may grade](former:Course.moves.theUnmovedSubmissions),
 so a page can offer the move while any remain and say how many attempts and

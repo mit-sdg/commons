@@ -23,10 +23,22 @@ export const heldByAnother = view(
     ),
 ).holds();
 
+/** Whether the section holds an attempt handed in after this time. */
+export const hasLaterAttempt = view(
+  "(section) holds an attempt on (assignment) handed in after (submittedAt)",
+  ({ assignment, section, submittedAt }, _outputs, { later }) =>
+    where(
+      Submitting._getAttempts({ assignment, submitter: section }).is({ submittedAt: later }),
+      is.gt(later, submittedAt),
+    ),
+).holds();
+
 /**
  * Which submitted attempts of a section's current members has no section an
  * attempt for? An attempt and its copy hold the same artifact, and an attempt
  * is moved once: a member who later changes sections leaves the copy behind.
+ * An attempt older than one the section already holds is not offered, since
+ * its copy would take the next number and stand as the section's latest.
  */
 export const theUnmovedAttempts = view(
   "the attempts on (assignment) not yet moved to a section",
@@ -45,6 +57,7 @@ export const theUnmovedAttempts = view(
         .is({ submitter: section })
         .is.not({ submitter: student }),
       no(heldByAnother({ assignment, artifacts, student })),
+      no(hasLaterAttempt({ assignment, section, submittedAt })),
     ),
 );
 

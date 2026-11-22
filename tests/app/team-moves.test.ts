@@ -343,6 +343,31 @@ describe("moving earlier submissions to sections", () => {
     expect(await attemptsOf(room, ben)).toEqual(tidepool);
   });
 
+  test("an attempt older than one its section already holds is not moved", async () => {
+    const room = await classroom();
+    const { edge, dana, sam, maya, leo, first, exercise } = room;
+    await room.submit(exercise, sam, "Sam's, on his own");
+    await room.submit(exercise, leo, "Leo's, on no team");
+    await toEachSection(room);
+    const mayas = await room.submit(exercise, maya, "Maya's, for the section");
+
+    expect((await page(room)).unmoved).toEqual([]);
+    expect(await move(room)).toMatchObject({ status: 200 });
+    expect((await attemptsOf(room, sam)).map((attempt) => attempt.submission)).toEqual([mayas]);
+
+    await post(
+      edge,
+      "/roster/move-section",
+      { seat: await room.seatOf(leo.user), section: first },
+      dana.cookie,
+    );
+    await edge.application.whenIdle();
+
+    expect((await page(room)).unmoved).toEqual([]);
+    expect(await move(room)).toMatchObject({ status: 200 });
+    expect((await attemptsOf(room, leo)).map((attempt) => attempt.submission)).toEqual([mayas]);
+  });
+
   test("only course managers move, and an assignment each student submits has nothing to move", async () => {
     const room = await classroom();
     const { edge, dana, noah, sam, exercise } = room;
