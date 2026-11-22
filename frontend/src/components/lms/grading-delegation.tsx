@@ -543,7 +543,8 @@ export function GradingDelegationToolbar({
       ) : (
         <Facts className="text-sm text-muted-foreground">
           <Fact.Count>
-            {visibleLearners.length} of {allLearners.length} {words.many} shown
+            {visibleLearners.length} of {allLearners.length}
+            {teams ? "" : ` ${words.many}`} shown
           </Fact.Count>
           <Fact.Count
             n={visibleSubmitted}
