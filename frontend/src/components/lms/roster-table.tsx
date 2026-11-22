@@ -104,7 +104,7 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
     });
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
-      toast.success("Section updated");
+      toast.success("Team updated");
       setMoveSeat(null);
       setTargetSection("");
       onUpdate();
@@ -115,7 +115,7 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
     <>
       <div className="relative">
         <p className="mb-2 text-xs text-muted-foreground sm:hidden">
-          Scroll rows sideways to see section, status, and actions →
+          Scroll rows sideways to see team, status, and actions →
         </p>
         <div className="overflow-x-auto rounded-lg border border-border">
           <Table className="min-w-[48rem]">
@@ -124,7 +124,7 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Kind</TableHead>
-                <TableHead>Section</TableHead>
+                <TableHead>Team</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="sticky right-0 w-12 bg-card" />
               </TableRow>
@@ -192,7 +192,7 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
                                 });
                               }}
                             >
-                              <ArrowLeftRight className="size-4" /> Move Section
+                              <ArrowLeftRight className="size-4" /> Move team
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               variant="destructive"
@@ -252,14 +252,14 @@ export function RosterTable({ members, sections, onUpdate }: RosterTableProps) {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Move {moveSeat?.name} to another section</DialogTitle>
+            <DialogTitle>Move {moveSeat?.name} to another team</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Target section</Label>
+              <Label>Target team</Label>
               <Select value={targetSection} onValueChange={setTargetSection}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select section" />
+                  <SelectValue placeholder="Select team" />
                 </SelectTrigger>
                 <SelectContent>
                   {sections

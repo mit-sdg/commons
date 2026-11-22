@@ -1023,7 +1023,7 @@ export function overrideReplaced({
   return studentGrade(specification, inputs, student, at, at).policyGrade ?? "";
 }
 
-const CSV_HEADER_START = ["Student name", "Email", "Section"];
+const CSV_HEADER_START = ["Student name", "Email", "Team"];
 const CSV_HEADER_END = [
   "Average",
   "Grade",

@@ -449,7 +449,7 @@ export function ByStudentTable({
                 undefined,
                 cn(STICKY_NAME, "z-30 bg-muted"),
               )}
-              {showSection ? sortHead("section", "Section") : null}
+              {showSection ? sortHead("section", "Team") : null}
               {columns.map((column) =>
                 sortHead(column.key, columnLabel(column), column),
               )}

@@ -74,7 +74,7 @@ export function addedPersonMessage(
   const reading = accountReading(outcome.account, email);
   if (outcome.created) return reading;
   const standing = `Updated the pending seat for ${email}.`;
-  const kept = keptSettings ? " Its existing kind and section were kept." : "";
+  const kept = keptSettings ? " Its existing kind and team were kept." : "";
   return `${standing} ${reading}${kept}`;
 }
 
@@ -98,7 +98,7 @@ export function addPersonRefusal(
     return `A seat already exists for ${email}. Check Active or Dropped.`;
   }
   if (error === "NOT_FOUND" && section)
-    return "That section no longer exists. Choose another or leave it blank.";
+    return "That team no longer exists. Choose another or leave it blank.";
   if (error === "INVALID_REQUEST") return "Enter a valid email address.";
   return publicErrorMessage(error);
 }

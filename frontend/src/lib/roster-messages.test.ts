@@ -82,7 +82,7 @@ describe("adding one person", () => {
   test("a standing seat keeps the kind and section it was created with", () => {
     expect(
       addedPersonMessage({ created: false, account: "LIVE" }, email, true),
-    ).toContain("Its existing kind and section were kept.");
+    ).toContain("Its existing kind and team were kept.");
   });
 
   test("nothing is said about kind and section when they matched", () => {
@@ -128,7 +128,7 @@ describe("adding one person is refused", () => {
   test("a missing section is about the section that was chosen", () => {
     expect(
       addPersonRefusal("NOT_FOUND", { email, standing: "NONE", section: true }),
-    ).toBe("That section no longer exists. Choose another or leave it blank.");
+    ).toBe("That team no longer exists. Choose another or leave it blank.");
   });
 
   test("an address Commons cannot invite says so", () => {

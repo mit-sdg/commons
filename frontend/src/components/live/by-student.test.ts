@@ -245,7 +245,7 @@ describe("the CSV", () => {
 
   test("names the columns, then each question", () => {
     expect(lines[0]).toBe(
-      "Name,Email,Section,Status,Named by,Are you answering for a team?,Teammate's MIT email,Anything else?",
+      "Name,Email,Team,Status,Named by,Are you answering for a team?,Teammate's MIT email,Anything else?",
     );
   });
 

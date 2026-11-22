@@ -328,7 +328,7 @@ export function studentCsv(
   const header = [
     "Name",
     "Email",
-    "Section",
+    "Team",
     "Status",
     "Named by",
     ...table.columns.map(columnLabel),

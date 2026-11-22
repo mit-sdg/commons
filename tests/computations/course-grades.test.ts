@@ -444,7 +444,7 @@ describe("the download and the policy's shape", () => {
     });
     const [header, row] = csv.trim().split("\r\n");
     expect(header).toBe(
-      "Student name,Email,Section,Personal,Personal (2),Average,Grade,Policy grade,Reason,Lectures attended,Lectures,Policy,Version,As of",
+      "Student name,Email,Team,Personal,Personal (2),Average,Grade,Policy grade,Reason,Lectures attended,Lectures,Policy,Version,As of",
     );
     expect(row).toContain('Ana Ruiz,ana@example.edu,,2.75,2.75,2.75,C,C,,0,0,"Guide, v2",2,');
   });

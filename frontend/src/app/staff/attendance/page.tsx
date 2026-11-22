@@ -269,11 +269,11 @@ function AttendanceContent() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           {showSection ? (
             <Select value={chosen ?? ALL} onValueChange={setSection}>
-              <SelectTrigger aria-label="Section" className="min-w-40">
+              <SelectTrigger aria-label="Team" className="min-w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ALL}>All sections</SelectItem>
+                <SelectItem value={ALL}>All teams</SelectItem>
                 {sections.map(([id, name]) => (
                   <SelectItem key={id} value={id}>
                     {name}

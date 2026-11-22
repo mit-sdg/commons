@@ -27,7 +27,7 @@ export function audiencePresentation(
       : option.kind === "group"
         ? "Group"
         : option.kind === "section"
-          ? "Section"
+          ? "Team"
           : "Course audience";
   const label = option.label;
   const collisions = options.filter(
@@ -135,7 +135,7 @@ export function AudienceChips({
           holder.startsWith("group:") || holder.startsWith("section:"),
       ) ? (
         <InlineHelp label="Who can see this discussion?">
-          Current group and section members can read this discussion. People who
+          Current group and team members can read this discussion. People who
           join later can read earlier posts too.
         </InlineHelp>
       ) : null}
@@ -200,8 +200,8 @@ function RecipientSearch({
     <>
       <Input
         autoFocus
-        aria-label="Find people, groups, or sections"
-        placeholder="Find people, groups, or sections…"
+        aria-label="Find people, groups, or teams"
+        placeholder="Find people, groups, or teams…"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         onKeyDown={(event) => {

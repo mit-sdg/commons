@@ -57,7 +57,7 @@ test("people dropdown scrolls and selects by keyboard; group discussion preserve
   await page.locator("textarea").fill("A discussion for this group.");
   await page.getByRole("button", { name: "Who can see this discussion?" }).click();
   await expect(
-    page.getByText("Current group and section members can read this discussion.", { exact: false }),
+    page.getByText("Current group and team members can read this discussion.", { exact: false }),
   ).toBeVisible();
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Post discussion", exact: true }).click();
