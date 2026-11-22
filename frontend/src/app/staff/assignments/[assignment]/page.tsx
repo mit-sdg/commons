@@ -21,6 +21,7 @@ import {
   AssignmentInstructions,
   AssignmentSkills,
 } from "@/components/lms/assignment-reading";
+import { EarlierSubmissionsBar } from "@/components/lms/earlier-submissions-bar";
 import { AssessmentInput } from "@/components/lms/grade-input";
 import { GradeSetup } from "@/components/lms/grade-setup";
 import { GradesTab, type GradesView } from "@/components/lms/grades/tab";
@@ -63,7 +64,7 @@ import {
   ALL_GRADERS,
   learnerMatchesGraderFilter,
 } from "@/lib/delegation-filter";
-import { dueTime, fromZonedInput, toZonedInput } from "@/lib/format";
+import { count, dueTime, fromZonedInput, toZonedInput } from "@/lib/format";
 import { analyzeGrades, learnerState } from "@/lib/grade-analysis";
 import type { Assessment, GradingSetup } from "@/lib/grading";
 import {
@@ -72,16 +73,59 @@ import {
   loadGradesForItem,
   loadLateDaysForAssignment,
   loadSections,
+  loadSubmissionAttempts,
   loadSubmissionsForAssignment,
 } from "@/lib/lms";
 import {
   downloadSubmissionsCsv,
+  type ItemAssessment,
   selectExportAssessment,
   selectSubmissionAttempt,
 } from "@/lib/submissions-export";
+import {
+  draftsThatDiffer,
+  earlierSubmissions,
+  releaseReach,
+  type SubmitterRow,
+  submitterRows,
+} from "@/lib/submitter-rows";
+import { submittedByTeam } from "@/lib/teams";
 
 /** The evidence menu needs a value for "no attempt"; a submission id never looks like this. */
 const EXCUSAL = "excusal";
+
+const listed = new Intl.ListFormat("en", { type: "conjunction" });
+
+function gradeSaid(grade: ItemAssessment): string | null {
+  return grade.method === "POINTS" && grade.scored
+    ? `${grade.score} / ${grade.outOf}`
+    : null;
+}
+
+/** Two or more drafts on one row that disagree, with their scores where they have them. */
+function differingSaid(drafts: readonly ItemAssessment[]): string {
+  const scores = drafts.map(gradeSaid);
+  return scores.every((score) => score !== null)
+    ? `Draft grades differ: ${listed.format(scores as string[])}`
+    : "Draft grades differ";
+}
+
+/** What releasing every draft reaches on an assignment each team submits. */
+function teamReleaseSaid(
+  rows: readonly SubmitterRow[],
+  grades: readonly ItemAssessment[],
+): string {
+  const reach = releaseReach(rows, grades);
+  const differing = rows
+    .map((row) => draftsThatDiffer(grades, String(row.assignee)).length)
+    .filter((drafts) => drafts > 0);
+  const reached = `${count(reach.drafts, "draft")}${reach.teams > 0 ? ` on ${count(reach.teams, "team")}` : ""} ${reach.drafts === 1 ? "becomes" : "become"} visible to ${count(reach.students, "student")}.`;
+  const differ =
+    reach.differing.length === 0
+      ? ""
+      : ` ${listed.format(reach.differing)} ${reach.differing.length === 1 ? "has" : "have"} draft grades that differ, and ${differing.length === 1 && differing[0] === 2 ? "both" : "all"} would be released.`;
+  return `${reached}${differ} Incomplete or concurrently changed drafts are skipped and reported.`;
+}
 
 /**
  * Submissions holds one card per learner, so it mounts the first time it is
@@ -106,13 +150,16 @@ function DueDateOverride({
   assignment,
   assignee,
   learnerName,
+  team = false,
   courseDueAt,
   currentDueAt,
   onUpdate,
 }: {
   assignment: string;
+  /** The student the request names; on a team, any member sets the team's date. */
   assignee: string;
   learnerName: string;
+  team?: boolean;
   courseDueAt: string;
   currentDueAt: string | null;
   onUpdate: () => void;
@@ -160,7 +207,7 @@ function DueDateOverride({
           htmlFor={`due-override-${assignee}`}
           className="text-xs text-muted-foreground"
         >
-          Individual due date ({timezone})
+          {team ? "Team due date" : "Individual due date"} ({timezone})
         </Label>
         <Input
           id={`due-override-${assignee}`}
@@ -249,6 +296,68 @@ function StaffAssignmentDetailPageContent({
   );
 
   const submissions = subsData?.submissions ?? [];
+  const byTeam = asgnData?.summary ? submittedByTeam(asgnData.summary) : false;
+  const { data: sectionsData } = useQuery(
+    session && byTeam ? () => loadSections() : null,
+    [session, byTeam],
+    { retainOnTransportError: true },
+  );
+  const teamNames = useMemo(
+    () =>
+      new Map(
+        (sectionsData?.sections ?? []).map(
+          (section) => [String(section.section), String(section.name)] as const,
+        ),
+      ),
+    [sectionsData],
+  );
+  /** One row per team on an assignment each team submits, else one per student. */
+  const rows = useMemo(
+    () => submitterRows(subsData?.assigned ?? [], teamNames, byTeam),
+    [subsData, teamNames, byTeam],
+  );
+  const throughOf = new Map(
+    rows.map((row) => [String(row.assignee), row.through] as const),
+  );
+  const teamWork = rows.filter(
+    (row) =>
+      row.team &&
+      submissions.some(
+        (submission) => String(submission.submitter) === String(row.assignee),
+      ),
+  );
+  const { data: authorData } = useQuery<Record<string, string>>(
+    teamWork.length > 0
+      ? async () => {
+          const lists = await Promise.all(
+            teamWork.map((row) =>
+              loadSubmissionAttempts(assignment, row.through).then(
+                (read) => read.attempts,
+                () => [],
+              ),
+            ),
+          );
+          return Object.fromEntries(
+            lists
+              .flat()
+              .flatMap((attempt) =>
+                attempt.authorName
+                  ? [[String(attempt.submission), attempt.authorName] as const]
+                  : [],
+              ),
+          );
+        }
+      : null,
+    [assignment],
+    {
+      refreshOn: [
+        teamWork
+          .map((row) => `${String(row.assignee)}:${row.through}`)
+          .join(" "),
+        byTeam ? submissions.map((row) => row.submission).join(" ") : "",
+      ],
+    },
+  );
   const artifactKey = submissions
     .flatMap((submission) => submission.artifacts)
     .join(" ");
@@ -258,7 +367,9 @@ function StaffAssignmentDetailPageContent({
           const artifacts = submissions.flatMap((submission) =>
             submission.artifacts.map((artifact) => ({
               artifact,
-              submitter: submission.submitter,
+              submitter:
+                throughOf.get(String(submission.submitter)) ??
+                String(submission.submitter),
             })),
           );
           const entries = await Promise.all(
@@ -318,8 +429,8 @@ function StaffAssignmentDetailPageContent({
     { retainOnTransportError: true },
   );
   const detail = asgnData?.summary;
-  const assigned = subsData?.assigned ?? [];
-  const grades = (gradesQuery.data?.grades ?? []) as Assessment[];
+  const itemGrades = gradesQuery.data?.grades ?? [];
+  const grades = itemGrades as Assessment[];
   const currentSetup = gradingSetup.data as GradingSetup | null;
   const gradingDataReady = Boolean(currentSetup && gradesQuery.data);
   const gradingDataLoading = gradingSetup.loading || gradesQuery.loading;
@@ -335,7 +446,9 @@ function StaffAssignmentDetailPageContent({
     Boolean(submissionsError);
   const lateUsers = lateData?.users ?? [];
   const draftCount = gradingDataReady
-    ? grades.filter((record) => record.status === "DRAFT").length
+    ? byTeam
+      ? releaseReach(rows, itemGrades).drafts
+      : grades.filter((record) => record.status === "DRAFT").length
     : 0;
 
   function refetchGradingData() {
@@ -412,7 +525,7 @@ function StaffAssignmentDetailPageContent({
   const submittedIds = new Set(
     submissions
       .filter((submission) => submission.status === "SUBMITTED")
-      .map((submission) => submission.submitter),
+      .map((submission) => String(submission.submitter)),
   );
 
   const lateMap = new Map(lateUsers.map((u) => [u.learner, u.days]));
@@ -427,8 +540,8 @@ function StaffAssignmentDetailPageContent({
       (row) => [String(row.learner), String(row.grader)] as const,
     ),
   );
-  const learnerIds = assigned.map((learner) => String(learner.assignee));
-  const visibleAssigned = assigned.filter(
+  const learnerIds = rows.map((learner) => String(learner.assignee));
+  const visibleAssigned = rows.filter(
     (learner) =>
       (!fromGrades || fromGrades.learners.has(String(learner.assignee))) &&
       learnerMatchesGraderFilter(
@@ -444,7 +557,7 @@ function StaffAssignmentDetailPageContent({
   const visibleLearnerSet = new Set(visibleLearnerIds);
   // Keep the open editor mounted even if a filter or grader reassignment hides it.
   // Its draft stays in memory, and refusals still clear the workspace below.
-  const workspaceAssigned = assigned.filter(
+  const workspaceAssigned = rows.filter(
     (learner) =>
       visibleLearnerSet.has(String(learner.assignee)) ||
       String(learner.assignee) === gradingUser,
@@ -551,6 +664,10 @@ function StaffAssignmentDetailPageContent({
         );
         return;
       }
+      const freshByTeam = submittedByTeam(freshAssignment.summary);
+      /** A student's row in scope is their team's on an assignment each team submits. */
+      const rowOf = (learner: { assignee: unknown; submitter: unknown }) =>
+        String(freshByTeam ? learner.submitter : learner.assignee);
       const freshByLearner = new Map(
         freshDelegations.delegations.map(
           (row) => [String(row.learner), String(row.grader)] as const,
@@ -558,9 +675,9 @@ function StaffAssignmentDetailPageContent({
       );
       const scopedLearners = freshSubmissions.assigned.filter(
         (learner) =>
-          (!fromGrades || fromGrades.learners.has(String(learner.assignee))) &&
+          (!fromGrades || fromGrades.learners.has(rowOf(learner))) &&
           learnerMatchesGraderFilter(
-            String(learner.assignee),
+            rowOf(learner),
             graderFilter,
             freshByLearner,
             me.user,
@@ -575,7 +692,7 @@ function StaffAssignmentDetailPageContent({
 
       const [freshSections, freshLateDays, latePolicy, freshGrades] =
         await Promise.all([
-          canManage ? loadSections() : Promise.resolve(null),
+          canManage || freshByTeam ? loadSections() : Promise.resolve(null),
           canReadStudentRecords
             ? loadLateDaysForAssignment(assignment)
             : Promise.resolve(null),
@@ -597,6 +714,7 @@ function StaffAssignmentDetailPageContent({
         assignment,
         title: freshAssignment.summary.title,
         dueAt: freshAssignment.summary.dueAt,
+        submittedBy: freshAssignment.summary.submittedBy,
         assigned: scopedLearners,
         submissions: freshSubmissions.submissions,
         grades: freshGrades.grades,
@@ -680,7 +798,7 @@ function StaffAssignmentDetailPageContent({
     () =>
       gradesOnScreen && subsData && gradesQuery.data && delegationQuery.data
         ? analyzeGrades({
-            assigned: subsData.assigned,
+            assigned: rows,
             submissions: subsData.submissions,
             grades: gradesQuery.data.grades,
             delegations: delegationQuery.data.delegations,
@@ -690,6 +808,7 @@ function StaffAssignmentDetailPageContent({
     [
       gradesOnScreen,
       subsData,
+      rows,
       gradesQuery.data,
       delegationQuery.data,
       gradersQuery.data,
@@ -732,9 +851,14 @@ function StaffAssignmentDetailPageContent({
       at === null ? oldest : oldest === null ? at : Math.min(oldest, at),
     null,
   );
-  const totalAssigned = assigned.length;
-  const totalSubmitted = submittedIds.size;
+  const totalAssigned = rows.length;
+  const totalSubmitted = byTeam
+    ? rows.filter((row) => submittedIds.has(String(row.assignee))).length
+    : submittedIds.size;
   const totalMissing = Math.max(0, totalAssigned - totalSubmitted);
+  const teamCount = rows.filter((row) => row.team).length;
+  const noTeamCount = rows.filter((row) => row.noTeam).length;
+  const earlierOf = earlierSubmissions(subsData?.unmoved ?? []).ofTeam;
 
   if (editing && canManage)
     return (
@@ -783,6 +907,7 @@ function StaffAssignmentDetailPageContent({
           <Facts className="text-muted-foreground text-sm">
             <Fact.Kind>{assignmentTypeLabel(detail.kind)}</Fact.Kind>
             <Fact.Due verb="Due" at={detail.dueAt} />
+            {byTeam ? <span>submitted by each team</span> : null}
           </Facts>
         </div>
         {canManage && (
@@ -806,7 +931,7 @@ function StaffAssignmentDetailPageContent({
             {detail.status === "DRAFT" && (
               <ConfirmAction
                 title="Publish this assignment?"
-                description={`${detail.audience === "EVERYONE" ? "All active students" : `${detail.targets.length} targeted section${detail.targets.length === 1 ? "" : "s"}`} will receive this assignment. It is available ${dueTime(detail.availableAt)}, due ${dueTime(detail.dueAt)}${detail.closeAt ? `, and closes ${dueTime(detail.closeAt)}` : ""}.`}
+                description={`${detail.audience === "EVERYONE" ? "All active students" : `${detail.targets.length} targeted team${detail.targets.length === 1 ? "" : "s"}`} will receive this assignment. It is available ${dueTime(detail.availableAt)}, due ${dueTime(detail.dueAt)}${detail.closeAt ? `, and closes ${dueTime(detail.closeAt)}` : ""}.`}
                 confirmLabel="Publish assignment"
                 onConfirm={publish}
                 trigger={
@@ -904,7 +1029,7 @@ function StaffAssignmentDetailPageContent({
                 <dd>
                   {detail.audience === "EVERYONE"
                     ? "all students"
-                    : `${detail.targets.length} selected sections`}
+                    : `${detail.targets.length} selected teams`}
                 </dd>
               </div>
             </dl>
@@ -1045,11 +1170,24 @@ function StaffAssignmentDetailPageContent({
               shown={tab === "submissions" || pendingAttemptHash !== null}
             >
               <Facts className="text-sm">
-                <Fact.Count
-                  n={totalAssigned}
-                  noun="assigned"
-                  plural="assigned"
-                />
+                {byTeam ? (
+                  <>
+                    <Fact.Count n={teamCount} noun="team" />
+                    {noTeamCount > 0 ? (
+                      <Fact.Count
+                        n={noTeamCount}
+                        noun="on no team"
+                        plural="on no team"
+                      />
+                    ) : null}
+                  </>
+                ) : (
+                  <Fact.Count
+                    n={totalAssigned}
+                    noun="assigned"
+                    plural="assigned"
+                  />
+                )}
                 <Fact.Count
                   n={totalSubmitted}
                   noun="submitted"
@@ -1057,6 +1195,18 @@ function StaffAssignmentDetailPageContent({
                 />
                 <Fact.Count n={totalMissing} noun="missing" plural="missing" />
               </Facts>
+              {byTeam && canManage ? (
+                <EarlierSubmissionsBar
+                  assignment={assignment}
+                  unmoved={subsData?.unmoved ?? []}
+                  submissions={submissions}
+                  onMoved={() => {
+                    refetchSubmissions();
+                    refetchGrades();
+                    delegationQuery.refetch();
+                  }}
+                />
+              ) : null}
               {fromGrades ? (
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full border border-border bg-muted px-3 py-1 text-sm tabular-nums">
@@ -1082,6 +1232,8 @@ function StaffAssignmentDetailPageContent({
                 visibleLearners={visibleLearnerIds}
                 visibleSubmitted={visibleSubmitted}
                 byLearner={byLearner}
+                through={byTeam ? throughOf : undefined}
+                teams={byTeam}
                 loading={delegationLoading}
                 error={delegationError}
                 refreshing={refreshing}
@@ -1099,12 +1251,18 @@ function StaffAssignmentDetailPageContent({
                   <CardHeader className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <CardTitle className="text-base">
-                        Learner work and grades
+                        {byTeam
+                          ? "Team work and grades"
+                          : "Learner work and grades"}
                       </CardTitle>
                     </div>
                     <ConfirmAction
                       title="Release all complete assessment drafts for this assignment?"
-                      description={`This applies across the full assignment, not only the current grader scope.${hiddenDraftCount > 0 ? ` ${hiddenDraftCount} draft${hiddenDraftCount === 1 ? " is" : "s are"} outside the current scope.` : ""} Complete assessment drafts become visible to learners; incomplete or concurrently changed drafts are skipped and reported.`}
+                      description={
+                        byTeam
+                          ? teamReleaseSaid(rows, itemGrades)
+                          : `This applies across the full assignment, not only the current grader scope.${hiddenDraftCount > 0 ? ` ${hiddenDraftCount} draft${hiddenDraftCount === 1 ? " is" : "s are"} outside the current scope.` : ""} Complete assessment drafts become visible to learners; incomplete or concurrently changed drafts are skipped and reported.`
+                      }
                       confirmLabel="Release all assignment drafts"
                       confirmDisabled={
                         gradingDataUnavailable || draftCount === 0
@@ -1144,7 +1302,7 @@ function StaffAssignmentDetailPageContent({
                           onRetry={refetchGradingData}
                         />
                       )
-                    ) : assigned.length === 0 ? (
+                    ) : rows.length === 0 ? (
                       <p className="text-sm text-muted-foreground">
                         No learners are assigned yet.
                       </p>
@@ -1175,7 +1333,9 @@ function StaffAssignmentDetailPageContent({
                         {visibleAssigned.length === 0 ? (
                           <div className="space-y-3 py-6 text-center">
                             <p className="text-sm text-muted-foreground">
-                              No learners match.
+                              {byTeam
+                                ? "No teams match."
+                                : "No learners match."}
                             </p>
                             <Button
                               size="sm"
@@ -1185,7 +1345,7 @@ function StaffAssignmentDetailPageContent({
                                 setGraderFilter(ALL_GRADERS);
                               }}
                             >
-                              Show all learners
+                              {byTeam ? "Show all teams" : "Show all learners"}
                             </Button>
                           </div>
                         ) : null}
@@ -1220,7 +1380,15 @@ function StaffAssignmentDetailPageContent({
                           const newAttemptNeedsReview =
                             learnerState(attempts, learnerGrades)?.state ===
                             "new-attempt";
-                          const lateDays = lateMap.get(learnerId) ?? 0;
+                          const lateDays = byTeam
+                            ? 0
+                            : (lateMap.get(learnerId) ?? 0);
+                          const differing = byTeam
+                            ? draftsThatDiffer(itemGrades, learnerId)
+                            : [];
+                          const earlier = learner.team
+                            ? (earlierOf.get(learnerId) ?? 0)
+                            : 0;
                           const isGrading = gradingUser === learnerId;
                           const selectedAssessment = learnerGrades.find(
                             (grade) =>
@@ -1237,10 +1405,33 @@ function StaffAssignmentDetailPageContent({
                                 <div>
                                   <p className="flex items-center gap-2 font-medium">
                                     {learnerLabel}
-                                    {learner.enrolment === "DROPPED" ? (
+                                    {learner.noTeam ? (
+                                      <Fact.Kind>No team</Fact.Kind>
+                                    ) : null}
+                                    {!learner.team &&
+                                    learner.enrolment === "DROPPED" ? (
                                       <StatusBadge status="DROPPED" />
                                     ) : null}
                                   </p>
+                                  {learner.team ? (
+                                    <p className="text-sm">
+                                      {learner.members.map((member, index) => (
+                                        <span key={String(member.assignee)}>
+                                          {index > 0 ? ", " : null}
+                                          {member.displayName ??
+                                            member.username ??
+                                            member.email ??
+                                            String(member.assignee)}
+                                          {member.enrolment === "DROPPED" ? (
+                                            <StatusBadge
+                                              status="DROPPED"
+                                              className="ml-1.5"
+                                            />
+                                          ) : null}
+                                        </span>
+                                      ))}
+                                    </p>
+                                  ) : null}
                                   <Facts className="text-muted-foreground text-xs">
                                     {latest ? (
                                       <Fact.Count
@@ -1259,6 +1450,19 @@ function StaffAssignmentDetailPageContent({
                                         noun="late day"
                                       />
                                     ) : null}
+                                    {learner.team && learner.dueOverride ? (
+                                      <Fact.Due
+                                        verb="Due"
+                                        at={learner.dueOverride}
+                                      />
+                                    ) : null}
+                                    {earlier > 0 ? (
+                                      <Fact.Count
+                                        n={earlier}
+                                        noun="earlier submission"
+                                        className="font-medium text-amber-700 dark:text-amber-400"
+                                      />
+                                    ) : null}
                                     {latest ? (
                                       <Fact.When
                                         verb="Latest"
@@ -1268,81 +1472,111 @@ function StaffAssignmentDetailPageContent({
                                   </Facts>
                                   {attempts.length > 0 ? (
                                     <div className="mt-2 space-y-2">
-                                      {attempts.map((attempt) => (
-                                        <details
-                                          key={attempt.submission}
-                                          id={`attempt-${attempt.submission}`}
-                                          className="rounded-md border border-border px-2 py-1.5 text-xs"
-                                        >
-                                          <summary className="cursor-pointer font-medium">
-                                            <Facts
-                                              as="span"
-                                              className="inline-flex"
-                                            >
-                                              <span>
-                                                Attempt #{attempt.number}
-                                              </span>
-                                              <Fact.When
-                                                form="absolute"
-                                                at={attempt.submittedAt}
-                                              />
-                                              <Fact.Status
-                                                status={attempt.status.toUpperCase()}
-                                              />
-                                            </Facts>
-                                          </summary>
-                                          <div className="mt-2 space-y-2 border-t border-border pt-2 text-sm">
-                                            {attempt.artifacts.map(
-                                              (artifact) =>
-                                                artifactData?.[artifact] ? (
-                                                  <RenderedMarkdown
-                                                    key={artifact}
-                                                    html={
-                                                      artifactData[artifact]
-                                                    }
-                                                  />
-                                                ) : (
-                                                  <p
-                                                    key={artifact}
-                                                    className="text-muted-foreground"
-                                                  >
-                                                    Submission content is
-                                                    unavailable.
-                                                  </p>
-                                                ),
-                                            )}
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              disabled={
-                                                gradingDataUnavailable ||
-                                                (attempt.status !==
-                                                  "SUBMITTED" &&
-                                                  !learnerGrades.some(
-                                                    (g) =>
-                                                      g.evidence ===
-                                                      attempt.submission,
-                                                  ))
-                                              }
-                                              onClick={() =>
-                                                openAssessment(
-                                                  learnerId,
+                                      {attempts.map((attempt) => {
+                                        const author = !byTeam
+                                          ? null
+                                          : learner.team
+                                            ? (authorData?.[
+                                                attempt.submission
+                                              ] ?? null)
+                                            : attempt.submitterName;
+                                        const draft = byTeam
+                                          ? itemGrades.find(
+                                              (grade) =>
+                                                grade.status === "DRAFT" &&
+                                                grade.evidence ===
                                                   attempt.submission,
-                                                )
-                                              }
-                                            >
-                                              Assess this attempt
-                                            </Button>
-                                          </div>
-                                        </details>
-                                      ))}
+                                            )
+                                          : undefined;
+                                        const draftScore = draft
+                                          ? gradeSaid(draft)
+                                          : null;
+                                        return (
+                                          <details
+                                            key={attempt.submission}
+                                            id={`attempt-${attempt.submission}`}
+                                            className="rounded-md border border-border px-2 py-1.5 text-xs"
+                                          >
+                                            <summary className="cursor-pointer font-medium">
+                                              <Facts
+                                                as="span"
+                                                className="inline-flex"
+                                              >
+                                                <span>
+                                                  Attempt #{attempt.number}
+                                                </span>
+                                                {author ? (
+                                                  <span>{author}</span>
+                                                ) : null}
+                                                <Fact.When
+                                                  form="absolute"
+                                                  at={attempt.submittedAt}
+                                                />
+                                                {draft ? (
+                                                  <span className="font-normal text-muted-foreground tabular-nums">
+                                                    {draftScore
+                                                      ? `Draft ${draftScore}`
+                                                      : "Draft"}
+                                                  </span>
+                                                ) : null}
+                                                <Fact.Status
+                                                  status={attempt.status.toUpperCase()}
+                                                />
+                                              </Facts>
+                                            </summary>
+                                            <div className="mt-2 space-y-2 border-t border-border pt-2 text-sm">
+                                              {attempt.artifacts.map(
+                                                (artifact) =>
+                                                  artifactData?.[artifact] ? (
+                                                    <RenderedMarkdown
+                                                      key={artifact}
+                                                      html={
+                                                        artifactData[artifact]
+                                                      }
+                                                    />
+                                                  ) : (
+                                                    <p
+                                                      key={artifact}
+                                                      className="text-muted-foreground"
+                                                    >
+                                                      Submission content is
+                                                      unavailable.
+                                                    </p>
+                                                  ),
+                                              )}
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                disabled={
+                                                  gradingDataUnavailable ||
+                                                  (attempt.status !==
+                                                    "SUBMITTED" &&
+                                                    !learnerGrades.some(
+                                                      (g) =>
+                                                        g.evidence ===
+                                                        attempt.submission,
+                                                    ))
+                                                }
+                                                onClick={() =>
+                                                  openAssessment(
+                                                    learnerId,
+                                                    attempt.submission,
+                                                  )
+                                                }
+                                              >
+                                                Assess this attempt
+                                              </Button>
+                                            </div>
+                                          </details>
+                                        );
+                                      })}
                                     </div>
                                   ) : null}
                                 </div>
                                 <div className="flex flex-wrap items-end gap-4">
                                   <GraderSelect
                                     item={assignment}
-                                    learner={learnerId}
+                                    learner={learner.through}
                                     learnerLabel={learnerLabel}
                                     graders={graders}
                                     current={
@@ -1387,6 +1621,11 @@ function StaffAssignmentDetailPageContent({
                                         New attempt needs review
                                       </p>
                                     ) : null}
+                                    {differing.length > 0 ? (
+                                      <p className="text-xs font-medium text-amber-700 dark:text-amber-400 tabular-nums">
+                                        {differingSaid(differing)}
+                                      </p>
+                                    ) : null}
                                   </div>
                                 </div>
                               </div>
@@ -1399,7 +1638,8 @@ function StaffAssignmentDetailPageContent({
                                   <div className="pt-3">
                                     <DueDateOverride
                                       assignment={assignment}
-                                      assignee={learnerId}
+                                      assignee={learner.through}
+                                      team={learner.team}
                                       learnerName={
                                         learner.displayName ?? learner.assignee
                                       }
@@ -1462,6 +1702,7 @@ function StaffAssignmentDetailPageContent({
                                 <AssessmentInput
                                   key={`${learnerId}-${gradingEvidence ?? "assignment"}`}
                                   learner={learnerId}
+                                  through={learner.through}
                                   learnerLabel={
                                     learner.displayName ?? learner.assignee
                                   }

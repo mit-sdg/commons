@@ -38,7 +38,10 @@ import {
 import { GradingDataNotice } from "./grading-data-notice";
 
 interface Props {
+  /** Whose assessment this is: the student, or the team that submits for them. */
   learner: string;
+  /** The student a request names; the route answers for whoever submits for them. */
+  through?: string;
   item: string;
   evidence?: string;
   learnerLabel?: string;
@@ -51,6 +54,7 @@ interface Props {
 }
 export function AssessmentInput({
   learner,
+  through = learner,
   item,
   evidence = "",
   learnerLabel,
@@ -92,7 +96,7 @@ export function AssessmentInput({
     setBusy(true);
     try {
       const result = await api.grades.record({
-        learner,
+        learner: through,
         item,
         evidence,
         revision: currentSetup.revision,

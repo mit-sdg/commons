@@ -36,6 +36,13 @@ import type { AvailableGrader, DelegationRow } from "@/lib/submissions-export";
 /** A select needs a value for nobody; account identities cannot be empty. */
 const NOBODY = "__unassigned__";
 
+/** What a row of the page is: a learner, or a team on an assignment each team submits. */
+const ROWS = {
+  learners: { one: "learner", many: "learners", Many: "Learners", who: "who" },
+  teams: { one: "team", many: "teams", Many: "Teams", who: "that" },
+} as const;
+type RowWords = (typeof ROWS)[keyof typeof ROWS];
+
 export function graderLabel(
   grader: Pick<AvailableGrader, "displayName" | "username">,
 ): string {
@@ -159,6 +166,8 @@ function SpreadGradersDialog({
   allLearners,
   visibleLearners,
   byLearner,
+  through,
+  words,
   disabled,
   onChanged,
 }: {
@@ -167,6 +176,8 @@ function SpreadGradersDialog({
   allLearners: readonly string[];
   visibleLearners: readonly string[];
   byLearner: ReadonlyMap<string, string>;
+  through?: ReadonlyMap<string, string>;
+  words: RowWords;
   disabled?: boolean;
   onChanged: () => void;
 }) {
@@ -192,7 +203,7 @@ function SpreadGradersDialog({
     try {
       const result = await api.delegation.spread({
         item,
-        learners: [...targets],
+        learners: targets.map((learner) => through?.get(learner) ?? learner),
         graders: [...chosen],
         replace,
       });
@@ -204,8 +215,8 @@ function SpreadGradersDialog({
       const kept = targets.length - changed;
       toast.success(
         replace
-          ? `${changed} ${changed === 1 ? "learner" : "learners"} redistributed`
-          : `${changed} ${changed === 1 ? "learner" : "learners"} assigned; ${kept} kept their current grader`,
+          ? `${changed} ${changed === 1 ? words.one : words.many} redistributed`
+          : `${changed} ${changed === 1 ? words.one : words.many} assigned; ${kept} kept their current grader`,
       );
       setOpen(false);
       onChanged();
@@ -240,7 +251,7 @@ function SpreadGradersDialog({
         <DialogHeader>
           <DialogTitle>Assign graders</DialogTitle>
           <DialogDescription>
-            Balance learners across the selected graders and their current
+            Balance {words.many} across the selected graders and their current
             assignment load.
           </DialogDescription>
         </DialogHeader>
@@ -283,7 +294,7 @@ function SpreadGradersDialog({
         </fieldset>
 
         <fieldset className="space-y-2">
-          <legend className="text-sm font-medium">Choose learners</legend>
+          <legend className="text-sm font-medium">Choose {words.many}</legend>
           <label className="flex cursor-pointer items-start gap-3 text-sm">
             <input
               className="mt-0.5"
@@ -294,7 +305,7 @@ function SpreadGradersDialog({
               onChange={() => setScope("visible")}
             />
             <span>
-              Learners shown ({visibleLearners.length})
+              {words.Many} shown ({visibleLearners.length})
               <span className="block text-xs text-muted-foreground">
                 Includes missing work.
               </span>
@@ -309,7 +320,9 @@ function SpreadGradersDialog({
               disabled={busy}
               onChange={() => setScope("all")}
             />
-            <span>All learners ({allLearners.length})</span>
+            <span>
+              All {words.many} ({allLearners.length})
+            </span>
           </label>
         </fieldset>
 
@@ -322,7 +335,7 @@ function SpreadGradersDialog({
             onChange={(event) => setReplace(event.target.checked)}
           />
           <span>
-            Reassign learners who already have a grader
+            Reassign {words.many} {words.who} already have a grader
             <span className="block text-xs text-muted-foreground">
               Leave off to keep existing assignments, including concurrent
               changes.
@@ -334,10 +347,10 @@ function SpreadGradersDialog({
           {chosen.length === 0
             ? "Choose at least one grader."
             : targets.length === 0
-              ? "No learners are in this scope."
+              ? `No ${words.many} are in this scope.`
               : replace
-                ? `${targets.length} ${targets.length === 1 ? "learner" : "learners"} will be reassigned.`
-                : `${currentlyUnassigned} unassigned ${currentlyUnassigned === 1 ? "learner" : "learners"} will be assigned. Existing assignments stay unchanged.`}
+                ? `${targets.length} ${targets.length === 1 ? words.one : words.many} will be reassigned.`
+                : `${currentlyUnassigned} unassigned ${currentlyUnassigned === 1 ? words.one : words.many} will be assigned. Existing assignments stay unchanged.`}
         </p>
 
         <DialogFooter>
@@ -355,7 +368,7 @@ function SpreadGradersDialog({
             {busy
               ? "Assigning…"
               : replace
-                ? "Reassign learners"
+                ? `Reassign ${words.many}`
                 : "Assign unassigned"}
           </Button>
         </DialogFooter>
@@ -391,6 +404,8 @@ export function GradingDelegationToolbar({
   visibleLearners,
   visibleSubmitted,
   byLearner,
+  through,
+  teams = false,
   loading,
   error,
   refreshing,
@@ -409,6 +424,10 @@ export function GradingDelegationToolbar({
   visibleLearners: readonly string[];
   visibleSubmitted: number;
   byLearner: ReadonlyMap<string, string>;
+  /** The member a request names for each row, where a row is a team. */
+  through?: ReadonlyMap<string, string>;
+  /** Rows are teams: the assignment is submitted by each team. */
+  teams?: boolean;
   loading: boolean;
   error: string | null;
   refreshing: boolean;
@@ -428,6 +447,7 @@ export function GradingDelegationToolbar({
   const unassigned = visibleLearners.filter(
     (learner) => !byLearner.has(learner),
   ).length;
+  const words = teams ? ROWS.teams : ROWS.learners;
 
   return (
     <div className="space-y-4 rounded-lg border border-border bg-muted/20 p-4">
@@ -437,7 +457,7 @@ export function GradingDelegationToolbar({
             htmlFor="grader-filter"
             className="text-xs text-muted-foreground"
           >
-            Show learners
+            Show {words.many}
           </Label>
           <Select
             value={filter}
@@ -448,7 +468,7 @@ export function GradingDelegationToolbar({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL_GRADERS}>All learners</SelectItem>
+              <SelectItem value={ALL_GRADERS}>All {words.many}</SelectItem>
               <SelectItem value={MY_GRADING}>Assigned to me</SelectItem>
               <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>
               {graders.map((grader) => (
@@ -477,6 +497,8 @@ export function GradingDelegationToolbar({
             allLearners={allLearners}
             visibleLearners={visibleLearners}
             byLearner={byLearner}
+            through={through}
+            words={words}
             disabled={loading || Boolean(error)}
             onChanged={onChanged}
           />
@@ -521,7 +543,7 @@ export function GradingDelegationToolbar({
       ) : (
         <Facts className="text-sm text-muted-foreground">
           <Fact.Count>
-            {visibleLearners.length} of {allLearners.length} learners shown
+            {visibleLearners.length} of {allLearners.length} {words.many} shown
           </Fact.Count>
           <Fact.Count
             n={visibleSubmitted}
