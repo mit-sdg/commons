@@ -143,6 +143,10 @@ concrete Categorizable
   What is sorted into a category: a forum post, or a card on a round's wall —
   the wall's identity for one handed-in answer, minted from its response and
   item so the card names neither.
+
+concrete WorkSubmitter
+  Whoever submits an assignment and is assessed on it: a student's account, or
+  a Rostering section when the assignment is submitted by each section.
 ```
 
 ## Instances
@@ -213,7 +217,7 @@ instantiate Conversing with
 
 instantiate Delegating with
   Item is Assigning.Assignment
-  Subject is Authenticating.User
+  Subject is WorkSubmitter
   Delegate is Authenticating.User
 
 instantiate Drafting with
@@ -233,7 +237,7 @@ instantiate Formatting with
 
 instantiate Grading with
   Grader is Authenticating.User
-  Learner is Authenticating.User
+  Learner is WorkSubmitter
   Item is Assigning.Assignment
   Evidence is Submitting.Submission
 
@@ -358,7 +362,7 @@ instantiate Suggesting with
   Subject is LiveSubject
 
 instantiate Submitting with
-  Submitter is Authenticating.User
+  Submitter is WorkSubmitter
   Assignment is Assigning.Assignment
   Artifact is Posting.Post
 
@@ -402,7 +406,9 @@ keeps as opaque text.
 Assigning owns assignment identities. Grade items, grades, late-day uses, and
 submissions refer to an assignment rather than creating another copy of it.
 Rostering owns section identities; an assignment's target list contains those
-sections. A grade may cite a Submitting submission as evidence, and a submission
+sections. An assignment is submitted by each student or by each section, so a
+submission's submitter, a grade's learner, and a grading delegation's subject
+are a `WorkSubmitter`: the student, or the student's section. A grade may cite a Submitting submission as evidence, and a submission
 uses a Posting post as its artifact. Invitation, notification, and password-reset workflows supply the concrete `MailKey` used to deduplicate queued email messages. The generic Vouching concept has two registered instances, each named for its errand. PasswordResetVouching binds its subject to the account identity, so one of its vouchers entitles its bearer to set that one account's password once. ConnectVouching binds its subject to a Connecting connection, so one of its vouchers entitles the app that connection names to learn, once, who the person is; because issuing discards only the subject's earlier vouchers, a new sign-in code for one app retires that app's older code and no other. Naming each instance for its errand keeps the password-reset mail from following a sign-in code. Wording holds only the words an administrator put in a `MailPlace`; the words Commons falls back to when a place stands empty are the application's, kept in its computations rather than seeded into the concept.
 
 Posting owns post identities. Forum features attach their own state to a post
@@ -482,6 +488,9 @@ rendered message, even if a code fence was cut.
 allChosenAdmitted(chosen: Strings, admitted: Strings) : Bool
   Answers whether the chosen names are a non-repeating selection of at least one identity, every one of which the current-state read admitted.
 
+delegationSubjects(submittedBy: String, students: Rows, learners: Strings) : Strings
+  Answers whose work is delegated when the chosen students are spread over graders on one assignment: each student's submitter, named once, in the order first chosen.
+
 validDelegationSpreadInput(item: String, learners: Strings, graders: Strings, replace: Bool) : Bool
   Answers whether item is a nonempty string, learners and graders are non-empty sequences of distinct nonempty strings, and replace is strictly boolean, before those values reach state queries.
 
@@ -491,8 +500,14 @@ validDelegationIdentityInput(item: String, learner?: String, grader?: String) : 
 submissionAllowed(detail: Json, section: String, at: Date) : Bool
   Answers whether the published accepting assignment currently targets the learner section and is within its availability and hard close boundaries. Due overrides and late-day use do not extend the hard close.
 
+soleArtifact(artifacts: Strings) : String
+  Answers the artifact an attempt was submitted with; an attempt holds exactly one.
+
 submitterFor(submittedBy: String, section: String, student: String) : String
   Answers whose work a student's is on an assignment: their section's when the assignment is submitted by each section and their seat has one, otherwise their own.
+
+sectionDueOverride(assignment: String, section: String, students: Rows, releases: Rows) : Any
+  Answers a section's due date before late days on an assignment: the latest due override among the section's current members, or null when none has one.
 
 validProfileSelection(users: Strings) : Bool
   Accepts at most 64 nonempty account identifiers, each at most 256 characters.

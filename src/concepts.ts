@@ -4,7 +4,7 @@ import {
   liveRequiresSignIn,
 } from "./computations/live-access.ts";
 import { submissionAllowed } from "./computations/assessment-eligibility.ts";
-import { submitterFor } from "./computations/coursework.ts";
+import { sectionDueOverride, soleArtifact, submitterFor } from "./computations/coursework.ts";
 import {
   competencyEditionIds,
   gradingRevisionMatches,
@@ -143,6 +143,7 @@ import {
 } from "./computations/connect.ts";
 import {
   allChosenAdmitted,
+  delegationSubjects,
   validDelegationIdentityInput,
   validDelegationSpreadInput,
 } from "./computations/delegation.ts";
@@ -376,12 +377,15 @@ const registrations = {
 
 export const learningConcepts = conceptSet(registrations, {
   allChosenAdmitted,
+  delegationSubjects,
   validDelegationIdentityInput,
   validDelegationSpreadInput,
   liveAccessHolders,
   liveAccessMode,
   liveRequiresSignIn,
   submissionAllowed,
+  sectionDueOverride,
+  soleArtifact,
   submitterFor,
   competencyEditionIds,
   gradingRevisionMatches,

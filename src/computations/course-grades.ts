@@ -9,7 +9,9 @@ import {
   effectiveDue,
   handedInAttempt,
   handedInLate,
+  sectionDueOverride,
   selectAttemptAssessment,
+  submitterFor,
 } from "./coursework.ts";
 import { lectureAttendance } from "./lectures.ts";
 
@@ -79,6 +81,8 @@ export interface AssignmentInput {
   kind: string;
   dueAt: string | Date;
   acceptsSubmissions: boolean;
+  /** `STUDENT` or `SECTION`; absent reads as `STUDENT`. */
+  submittedBy?: string;
 }
 export interface ReleaseInput {
   assignment: string;
@@ -263,9 +267,10 @@ function workFor(
   const release = index.releases.get(`${assignment.assignment}:${student}`);
   if (!release) return result("notAssigned");
   if (time(assignment.dueAt) > dueBy.getTime()) return result("notDue");
-  const attempts = index.attempts.get(`${assignment.assignment}:${student}`) ?? [];
+  const submitter = index.submitter(assignment, student);
+  const attempts = index.attempts.get(`${assignment.assignment}:${submitter}`) ?? [];
   const handedIn = handedInAttempt(attempts);
-  const records = index.assessments.get(`${assignment.assignment}:${student}`) ?? [];
+  const records = index.assessments.get(`${assignment.assignment}:${submitter}`) ?? [];
   const { record } = selectAttemptAssessment(records, handedIn);
   if (record?.status === "EXCUSED") return result("excused");
   const lateDays = index.uses.get(`${assignment.assignment}:${student}`) ?? 0;
@@ -274,6 +279,7 @@ function workFor(
     dueOverride: release.dueOverride,
     lateDays,
     unitHours: inputs.unitHours,
+    submittedBy: assignment.submittedBy ?? null,
   };
   if (!handedIn) {
     return effectiveDue(due) < at.getTime() ? result("missing", policy.missing) : result("notDue");
@@ -326,7 +332,21 @@ function lecturesBy(inputs: CourseGradeInputs, dueBy: Date): Lectures {
   return { total: lectures.length, attended };
 }
 
+/** Whose attempts and grades stand for a student on an assignment, by the student's current section. */
+function submitters(inputs: {
+  students: readonly { user: string; section: string | null }[];
+}): (assignment: Pick<AssignmentInput, "submittedBy">, student: string) => string {
+  const sectionOf = new Map(inputs.students.map((row) => [row.user, row.section]));
+  return (assignment, student) =>
+    submitterFor({
+      submittedBy: assignment.submittedBy ?? null,
+      section: sectionOf.get(student) ?? null,
+      student,
+    });
+}
+
 interface Indexes {
+  submitter: (assignment: AssignmentInput, student: string) => string;
   releases: Map<string, ReleaseInput>;
   attempts: Map<string, AttemptInput[]>;
   assessments: Map<string, AssessmentInput[]>;
@@ -341,6 +361,7 @@ function indexes(inputs: CourseGradeInputs): Indexes {
     return map;
   };
   return {
+    submitter: submitters(inputs),
     releases: new Map(inputs.releases.map((row) => [`${row.assignment}:${row.assignee}`, row])),
     attempts: group(inputs.attempts, (row) => `${row.assignment}:${row.submitter}`),
     assessments: group(inputs.assessments, (row) => `${row.item}:${row.learner}`),
@@ -548,7 +569,9 @@ export function holdReasons(policy: CoursePolicy, grade: StudentGrade): string[]
 
 /**
  * The calculation's inputs from the class-wide reads. A lecture run's
- * participants are those who responded to it or to one of its rounds.
+ * participants are those who responded to it or to one of its rounds. On an
+ * assignment submitted by each section, a member's release carries the
+ * section's due override.
  */
 export function courseGradeInputs({
   assignments,
@@ -582,6 +605,22 @@ export function courseGradeInputs({
   overrides: OverrideInput[];
 }): CourseGradeInputs {
   const nameOf = new Map(names.map((entry) => [entry.user, entry.displayName]));
+  const assignmentOf = new Map(assignments.map((entry) => [entry.assignment, entry]));
+  const submitterOf = submitters({ students });
+  const standing = (release: ReleaseInput): ReleaseInput => {
+    const submitter = submitterOf(assignmentOf.get(release.assignment) ?? {}, release.assignee);
+    return submitter === release.assignee
+      ? release
+      : {
+          ...release,
+          dueOverride: sectionDueOverride({
+            assignment: release.assignment,
+            section: submitter,
+            students,
+            releases,
+          }),
+        };
+  };
   const runOf = new Map<string, string>();
   for (const run of lectures) runOf.set(run, run);
   for (const part of parts) runOf.set(part.edition, part.whole);
@@ -593,7 +632,7 @@ export function courseGradeInputs({
   }
   return {
     assignments,
-    releases,
+    releases: releases.map(standing),
     attempts,
     assessments: ratings,
     uses,
@@ -763,7 +802,7 @@ export interface ReleasedCourse {
   timezone: string | null;
 }
 
-/** One student's rows of the inputs, and the lecture runs they joined. */
+/** The rows of the inputs that stand for one student, and the lecture runs they joined. */
 export interface StudentRecord {
   student: StudentInput;
   releases: ReleaseInput[];
@@ -815,6 +854,10 @@ function releasedCourse(inputs: CourseGradeInputs): ReleasedCourse {
 }
 
 function studentRecord(inputs: CourseGradeInputs, student: string): StudentRecord {
+  const submitter = submitters(inputs);
+  const assignmentOf = new Map(inputs.assignments.map((entry) => [entry.assignment, entry]));
+  const submitterOn = (assignment: string) =>
+    submitter(assignmentOf.get(assignment) ?? {}, student);
   return {
     student: inputs.students.find((entry) => entry.user === student) ?? {
       user: student,
@@ -823,8 +866,8 @@ function studentRecord(inputs: CourseGradeInputs, student: string): StudentRecor
       name: "",
     },
     releases: inputs.releases.filter((entry) => entry.assignee === student),
-    attempts: inputs.attempts.filter((entry) => entry.submitter === student),
-    assessments: inputs.assessments.filter((entry) => entry.learner === student),
+    attempts: inputs.attempts.filter((entry) => entry.submitter === submitterOn(entry.assignment)),
+    assessments: inputs.assessments.filter((entry) => entry.learner === submitterOn(entry.item)),
     uses: inputs.uses.filter((entry) => entry.learner === student),
     lectures: inputs.lectureRuns
       .filter((run) => run.joined.includes(student))

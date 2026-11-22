@@ -7,6 +7,11 @@
 
 const HOUR = 3_600_000;
 
+/** The artifact an attempt was submitted with; an attempt holds exactly one. */
+export function soleArtifact({ artifacts }: { artifacts: string[] }): string {
+  return String(artifacts[0]);
+}
+
 /**
  * Whose work a student's is on an assignment: their section's when the
  * assignment is submitted by each section and their seat has one, otherwise
@@ -99,19 +104,53 @@ export function studentDue(dueAt: string | Date, dueOverride: string | Date | nu
   return time(dueOverride ?? dueAt);
 }
 
+/**
+ * The latest due override among a section's current members on an
+ * assignment: the section's due date before late days.
+ */
+export function sectionDueOverride<T extends string | Date>({
+  assignment,
+  section,
+  students,
+  releases,
+}: {
+  assignment: string;
+  section: string;
+  students: readonly { user: string; section: string | null }[];
+  releases: readonly { assignment: string; assignee: string; dueOverride: T | null }[];
+}): T | null {
+  const members = new Set(
+    students.filter((student) => student.section === section).map((student) => student.user),
+  );
+  let latest: T | null = null;
+  for (const release of releases) {
+    if (release.assignment !== assignment || !members.has(release.assignee)) continue;
+    if (release.dueOverride === null) continue;
+    if (latest === null || time(release.dueOverride) > time(latest)) latest = release.dueOverride;
+  }
+  return latest;
+}
+
+/** No late days count on an assignment submitted by each section: there is no one student to charge. */
+function countedLateDays(submittedBy: string | null, lateDays: number): number {
+  return submittedBy === "SECTION" ? 0 : lateDays;
+}
+
 /** The student's due date after late days, in milliseconds; NaN when a date is unreadable. */
 export function effectiveDue({
   dueAt,
   dueOverride,
   lateDays,
   unitHours,
+  submittedBy,
 }: {
   dueAt: string | Date;
   dueOverride: string | Date | null;
   lateDays: number;
   unitHours: number;
+  submittedBy: string | null;
 }): number {
-  return studentDue(dueAt, dueOverride) + lateDays * unitHours * HOUR;
+  return studentDue(dueAt, dueOverride) + countedLateDays(submittedBy, lateDays) * unitHours * HOUR;
 }
 
 /**
@@ -140,14 +179,16 @@ export function handedInLate({
   dueOverride,
   lateDays,
   unitHours,
+  submittedBy,
 }: {
   submittedAt: string | Date;
   dueAt: string | Date;
   dueOverride: string | Date | null;
   lateDays: number;
   unitHours: number;
+  submittedBy: string | null;
 }): boolean {
-  return time(submittedAt) > effectiveDue({ dueAt, dueOverride, lateDays, unitHours });
+  return time(submittedAt) > effectiveDue({ dueAt, dueOverride, lateDays, unitHours, submittedBy });
 }
 
 /** Whether nothing is handed in and the student's due date, with late days, has passed. */
@@ -157,6 +198,7 @@ export function overdue({
   dueOverride,
   lateDays,
   unitHours,
+  submittedBy,
   at,
 }: {
   handedIn: boolean;
@@ -164,9 +206,13 @@ export function overdue({
   dueOverride: string | Date | null;
   lateDays: number;
   unitHours: number;
+  submittedBy: string | null;
   at: Date;
 }): boolean {
-  return !handedIn && at.getTime() > effectiveDue({ dueAt, dueOverride, lateDays, unitHours });
+  return (
+    !handedIn &&
+    at.getTime() > effectiveDue({ dueAt, dueOverride, lateDays, unitHours, submittedBy })
+  );
 }
 
 /**

@@ -75,6 +75,7 @@ describe("an assignment submitted by each section", () => {
       maya.cookie,
     );
     expect(paper.body.post).toMatchObject({ author: sam.user, content: "Our first draft" });
+    expect(attempts[0]).toMatchObject({ author: sam.user, authorName: "Sam Okafor" });
 
     expect(
       await post(
@@ -84,6 +85,24 @@ describe("an assignment submitted by each section", () => {
         ben.cookie,
       ),
     ).toMatchObject({ status: 404, body: { error: "NOT_FOUND" } });
+  });
+
+  test("a member reads their section and its members by name; a student in none reads no section", async () => {
+    const room = await classroom();
+    const { edge, sam, maya, ada, leo, first, project, exercise } = room;
+    const teamOf = async (assignment: string, student: { cookie: string }) =>
+      (await post(edge, "/assignments/get", { assignment }, student.cookie)).body.team;
+
+    expect(await teamOf(project, maya)).toEqual({
+      section: first,
+      members: [
+        { user: sam.user, displayName: "Sam Okafor" },
+        { user: maya.user, displayName: "Maya Lindqvist" },
+        { user: ada.user, displayName: "Ada Ferreira" },
+      ],
+    });
+    expect(await teamOf(project, leo)).toBeNull();
+    expect(await teamOf(exercise, maya)).toBeNull();
   });
 
   test("a student in no section submits alone", async () => {

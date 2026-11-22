@@ -108,11 +108,27 @@ export const Apply = endpoint(
         activeUser({ session }).is({ user }),
         isActiveStudent({ user }),
         Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: true }),
-        Assigning._getAssignments({}).is({ assignment, status: "PUBLISHED" }),
+        Assigning._getAssignments({}).is({
+          assignment,
+          status: "PUBLISHED",
+          submittedBy: "STUDENT",
+        }),
       )
         .then(Banking.apply({ learner: user, item: assignment, days, at }).responds({ use }))
         .then(respond({ use }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        isActiveStudent({ user }),
+        Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: true }),
+        Assigning._getAssignments({}).is({
+          assignment,
+          status: "PUBLISHED",
+          submittedBy: "SECTION",
+        }),
+      )
+        .then(respond({ error: "CONFLICT" }))
+        .named("section"),
       where(
         activeUser({ session }).is({ user }),
         isActiveStudent({ user }),
@@ -143,11 +159,27 @@ export const Change = endpoint(
         activeUser({ session }).is({ user }),
         isActiveStudent({ user }),
         Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: true }),
-        Assigning._getAssignments({}).is({ assignment, status: "PUBLISHED" }),
+        Assigning._getAssignments({}).is({
+          assignment,
+          status: "PUBLISHED",
+          submittedBy: "STUDENT",
+        }),
       )
         .then(Banking.change({ learner: user, item: assignment, days }).responds({ use }))
         .then(respond({ use }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        isActiveStudent({ user }),
+        Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: true }),
+        Assigning._getAssignments({}).is({
+          assignment,
+          status: "PUBLISHED",
+          submittedBy: "SECTION",
+        }),
+      )
+        .then(respond({ error: "CONFLICT" }))
+        .named("section"),
       where(
         activeUser({ session }).is({ user }),
         isActiveStudent({ user }),
@@ -245,10 +277,19 @@ export const StaffChange = endpoint(
         activeUser({ session }).is({ user }),
         mayManageStudentRecords({ user }),
         isActiveStudent({ user: learner }),
+        no(Assigning._getAssignments({}).is({ assignment, submittedBy: "SECTION" })),
       )
         .then(Banking.change({ learner, item: assignment, days }).responds({ use }))
         .then(respond({ use }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayManageStudentRecords({ user }),
+        isActiveStudent({ user: learner }),
+        Assigning._getAssignments({}).is({ assignment, submittedBy: "SECTION" }),
+      )
+        .then(respond({ error: "CONFLICT" }))
+        .named("section"),
       where(activeUser({ session }), isNotActiveStudent({ user: learner }))
         .then(respond({ error: "NOT_FOUND" }))
         .named("hidden"),

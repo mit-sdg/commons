@@ -16,11 +16,15 @@ import {
   isActiveStudent,
   isNotActiveStudent,
   mayGrade,
+  mayGradeStudentWork,
   mayGradeWork,
   mayNotGrade,
+  mayNotGradeStudentWork,
   mayNotGradeWork,
   mayNotReadClassGrades,
   mayReadClassGrades,
+  submitsOn,
+  theSubmitterFor,
 } from "../access/policy.ts";
 import { activeUser } from "../access/session.ts";
 
@@ -63,48 +67,121 @@ export const mayNotGradeAssessment = view(
   ],
 ).holds();
 
+/** A student reads a released or excused assessment of whoever submits the item for them. */
 export const mayReadAssessment = view(
   "(user) may read assessment (grade)",
-  ({ user, grade }, _outputs, { status }) => [
+  ({ user, grade }, _outputs, { learner, item, status }) => [
     where(mayGradeAssessment({ user, grade })),
     where(
       isActiveStudent({ user }),
-      Grading._getGrade({ grade }).is({ learner: user, status }),
+      Grading._getGrade({ grade }).is({ learner, item, status }),
       is.among(status, ["RELEASED", "EXCUSED"]),
+      theSubmitterFor({ assignment: item, student: user }).is({ submitter: learner }),
     ),
   ],
 ).holds();
 
+/**
+ * An assessment starts for an assigned active student on a submitted attempt
+ * of whoever submits the item for them, or on no attempt at all.
+ */
 export const mayStartAssessment = view(
-  "(learner) may start assessment on (item) using (evidence)",
-  ({ learner, item, evidence }, _outputs, _bindings) => [
+  "an assessment of (student) may start on (item) using (evidence)",
+  ({ student, item, evidence }, _outputs, { submitter }) => [
     where(
-      isActiveStudent({ user: learner }),
+      isActiveStudent({ user: student }),
       Itemizing._getItem({ item }).is({ status: "ACTIVE" }),
       Assigning._getAssignments({}).is({
         assignment: item,
         status: "PUBLISHED",
         acceptsSubmissions: true,
       }),
-      Assigning._isAssigned({ assignment: item, assignee: learner }).is({ assigned: true }),
-      Submitting._getAttempts({ assignment: item, submitter: learner }).is({
+      Assigning._isAssigned({ assignment: item, assignee: student }).is({ assigned: true }),
+      theSubmitterFor({ assignment: item, student }).is({ submitter }),
+      Submitting._getAttempts({ assignment: item, submitter }).is({
         submission: evidence,
         status: "SUBMITTED",
       }),
     ),
     where(
-      isActiveStudent({ user: learner }),
+      isActiveStudent({ user: student }),
       Itemizing._getItem({ item }).is({ status: "ACTIVE" }),
       Assigning._getAssignments({}).is({
         assignment: item,
         status: "PUBLISHED",
         acceptsSubmissions: true,
       }),
-      Assigning._isAssigned({ assignment: item, assignee: learner }).is({ assigned: true }),
+      Assigning._isAssigned({ assignment: item, assignee: student }).is({ assigned: true }),
       is.among(evidence, [""]),
     ),
   ],
 ).holds();
+
+/**
+ * Which assessments stand for this student: their own on an item they submit,
+ * and their section's on an item the section submits.
+ */
+export const theStandingGrades = view(
+  "the assessments that stand for (student)",
+  (
+    { student },
+    {
+      grade,
+      learner,
+      item,
+      evidence,
+      grader,
+      method,
+      setupRevision,
+      criteria,
+      judgments,
+      feedback,
+      status,
+      version,
+      score,
+      outOf,
+      scored,
+      createdAt,
+      updatedAt,
+      releasedAt,
+      history,
+    },
+    { section },
+  ) => {
+    const row = {
+      grade,
+      learner,
+      item,
+      evidence,
+      grader,
+      method,
+      setupRevision,
+      criteria,
+      judgments,
+      feedback,
+      status,
+      version,
+      score,
+      outOf,
+      scored,
+      createdAt,
+      updatedAt,
+      releasedAt,
+      history,
+    };
+    return [
+      where(
+        Grading._getGradesForLearner({ learner: student }).is(row),
+        theSubmitterFor({ assignment: item, student }).is({ submitter: student }),
+      ),
+      where(
+        Rostering._getSeatByUser({ user: student }).is({ section }),
+        Grading._getGradesForLearner({ learner: section }).is(row),
+        theSubmitterFor({ assignment: item, student }).is({ submitter: section }),
+      ),
+    ];
+  },
+);
 
 export const theSetupOf = former(
   "the resolved grading setup of (item)",
@@ -128,11 +205,12 @@ export const theSetupOf = former(
 );
 
 export const theReleasedGradesOf = former(
-  "the released assessments of (learner)",
+  "the released assessments that stand for (student)",
   (
-    { learner },
+    { student },
     {
       grade,
+      learner,
       item,
       evidence,
       grader,
@@ -156,7 +234,7 @@ export const theReleasedGradesOf = former(
     },
   ) =>
     each(
-      Grading._getGradesForLearner({ learner }).is({
+      theStandingGrades({ student }).is({
         grade,
         learner,
         item,
@@ -216,11 +294,12 @@ export const theReleasedGradesOf = former(
 );
 
 export const theGradesOf = former(
-  "the assessments of (learner)",
+  "the gradebook assessments of (student)",
   (
-    { learner },
+    { student },
     {
       grade,
+      learner,
       item,
       evidence,
       grader,
@@ -244,7 +323,7 @@ export const theGradesOf = former(
     },
   ) =>
     each(
-      Grading._getGradesForLearner({ learner }).is({
+      theStandingGrades({ student }).is({
         grade,
         learner,
         item,
@@ -303,11 +382,12 @@ export const theGradesOf = former(
 );
 
 export const theGradableGradesOf = former(
-  "the assessments of (learner) that (user) may grade",
+  "the assessments standing for (student) that (user) may grade",
   (
-    { learner, user },
+    { student, user },
     {
       grade,
+      learner,
       item,
       evidence,
       grader,
@@ -331,7 +411,7 @@ export const theGradableGradesOf = former(
     },
   ) =>
     each(
-      Grading._getGradesForLearner({ learner }).is({
+      theStandingGrades({ student }).is({
         grade,
         learner,
         item,
@@ -442,6 +522,7 @@ export const theGradesOn = former(
       }),
     )
       .where(
+        submitsOn({ submitter: learner, assignment: item }),
         mayGradeWork({ user, learner, item }),
         whether(Profiling._getProfileFields({ user: learner }).is({ displayName })),
         whether(
@@ -576,7 +657,7 @@ export const theGradebookLearners = former(
         section,
         email,
         displayName,
-        grades: theGradesOf({ learner: user }),
+        grades: theGradesOf({ student: user }),
       }),
 );
 
@@ -1090,6 +1171,7 @@ export const GradesRecord = endpoint(
     revision,
     user,
     at,
+    submitter,
     grade,
     version,
     method,
@@ -1103,17 +1185,23 @@ export const GradesRecord = endpoint(
       where(
         now(at),
         activeUser({ session }).is({ user }),
-        mayGradeWork({ user, learner, item }),
-        Grading._getAssessment({ learner, item, evidence }).is({ grade, version, method }),
+        mayGradeStudentWork({ user, student: learner, item }),
+        theSubmitterFor({ assignment: item, student: learner }).is({ submitter }),
+        Grading._getAssessment({ learner: submitter, item, evidence }).is({
+          grade,
+          version,
+          method,
+        }),
       )
         .then(respond({ grade, version, method }))
         .named("existing"),
       where(
         now(at),
         activeUser({ session }).is({ user }),
-        mayGradeWork({ user, learner, item }),
-        no(Grading._getAssessment({ learner, item, evidence })),
-        mayStartAssessment({ learner, item, evidence }),
+        mayGradeStudentWork({ user, student: learner, item }),
+        theSubmitterFor({ assignment: item, student: learner }).is({ submitter }),
+        no(Grading._getAssessment({ learner: submitter, item, evidence })),
+        mayStartAssessment({ student: learner, item, evidence }),
         Itemizing._getSetup({ item }).is({
           method,
           revision: currentRevision,
@@ -1130,7 +1218,7 @@ export const GradesRecord = endpoint(
       )
         .then(
           Grading.record({
-            learner,
+            learner: submitter,
             item,
             evidence,
             grader: user,
@@ -1144,9 +1232,10 @@ export const GradesRecord = endpoint(
         .named("created"),
       where(
         activeUser({ session }).is({ user }),
-        mayGradeWork({ user, learner, item }),
-        no(Grading._getAssessment({ learner, item, evidence })),
-        mayStartAssessment({ learner, item, evidence }),
+        mayGradeStudentWork({ user, student: learner, item }),
+        theSubmitterFor({ assignment: item, student: learner }).is({ submitter }),
+        no(Grading._getAssessment({ learner: submitter, item, evidence })),
+        mayStartAssessment({ student: learner, item, evidence }),
         Itemizing._getSetup({ item }).is({ revision: currentRevision }),
         compute(
           c.gradingRevisionMatches,
@@ -1159,16 +1248,17 @@ export const GradesRecord = endpoint(
         .named("stale-setup"),
       where(
         activeUser({ session }).is({ user }),
-        mayGradeWork({ user, learner, item }),
-        no(Grading._getAssessment({ learner, item, evidence })),
-        no(mayStartAssessment({ learner, item, evidence })),
+        mayGradeStudentWork({ user, student: learner, item }),
+        theSubmitterFor({ assignment: item, student: learner }).is({ submitter }),
+        no(Grading._getAssessment({ learner: submitter, item, evidence })),
+        no(mayStartAssessment({ student: learner, item, evidence })),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("invalid-evidence"),
       where(
         activeUser({ session }).is({ user }),
         mayGrade({ user }),
-        mayNotGradeWork({ user, learner, item }),
+        mayNotGradeStudentWork({ user, student: learner, item }),
       )
         .then(respond({ error: "NOT_FOUND" }))
         .named("hidden"),
@@ -1181,7 +1271,7 @@ export const GradesRecord = endpoint(
 export const GradesForMe = endpoint("/grades/for-me", ({ session, user }) =>
   receive({ session }).then(
     where(activeUser({ session }).is({ user }), isActiveStudent({ user }))
-      .then(respond({ grades: theReleasedGradesOf({ learner: user }) }))
+      .then(respond({ grades: theReleasedGradesOf({ student: user }) }))
       .named("success"),
     where(activeUser({ session }).is({ user }), isNotActiveStudent({ user }))
       .then(respond({ error: "FORBIDDEN" }))
@@ -1203,7 +1293,7 @@ export const GradesStandards = endpoint("/grades/standards", ({ session, user })
 export const GradesForStudent = endpoint("/grades/for-student", ({ session, user, learner }) =>
   receive({ session, learner }).then(
     where(activeUser({ session }).is({ user }), mayGrade({ user }))
-      .then(respond({ grades: theGradableGradesOf({ learner, user }) }))
+      .then(respond({ grades: theGradableGradesOf({ student: learner, user }) }))
       .named("success"),
     where(activeUser({ session }).is({ user }), mayNotGrade({ user }))
       .then(respond({ error: "FORBIDDEN" }))

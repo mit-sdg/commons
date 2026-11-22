@@ -1,3 +1,25 @@
+import { submitterFor } from "./coursework.ts";
+
+/** Whose work is delegated when these students are chosen on one assignment: each one's submitter, named once, in the order first chosen. */
+export function delegationSubjects({
+  submittedBy,
+  students,
+  learners,
+}: {
+  submittedBy: string | null;
+  students: { user: string; section: string | null }[];
+  learners: string[];
+}): string[] {
+  const sectionOf = new Map(students.map((entry) => [entry.user, entry.section]));
+  return [
+    ...new Set(
+      learners.map((student) =>
+        submitterFor({ submittedBy, section: sectionOf.get(student) ?? null, student }),
+      ),
+    ),
+  ];
+}
+
 /** Whether a distinct, non-empty selection is entirely present in a current-state answer. */
 export function allChosenAdmitted({
   chosen,

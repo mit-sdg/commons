@@ -9,9 +9,11 @@ import {
   mayNotGrade,
   mayNotReadClassGrades,
   mayReadClassGrades,
+  submitsOn,
+  theSubmitterFor,
 } from "../access/policy.ts";
 
-const { Archiving, Assigning, Authenticating, Delegating, Profiling, Roling } = concepts;
+const { Archiving, Assigning, Authenticating, Delegating, Profiling, Roling, Rostering } = concepts;
 const GRADE = "grade";
 
 export const theGraders = former(
@@ -41,6 +43,7 @@ export const theDelegationsOn = former(
   ({ item, user }, { learner, grader, graderName, graderUsername }) =>
     each(Delegating._getDelegations({ item }).is({ subject: learner, delegate: grader }))
       .where(
+        submitsOn({ submitter: learner, assignment: item }),
         mayGradeWork({ user, learner, item }),
         whether(Profiling._getProfileFields({ user: grader }).is({ displayName: graderName })),
         whether(Authenticating._getById({ user: grader }).is({ username: graderUsername })),
@@ -122,7 +125,7 @@ export const DelegationForItem = endpoint(
 
 export const DelegationSet = endpoint(
   "/delegation/set",
-  ({ session, item, learner, grader, user, delegation, valid }) =>
+  ({ session, item, learner, grader, user, subject, delegation, valid }) =>
     receive({ session, item, learner, grader }).then(
       where(
         activeUser({ session }).is({ user }),
@@ -132,12 +135,9 @@ export const DelegationSet = endpoint(
         Assigning._getAssignments({}).is({ assignment: item }),
         Assigning._isAssigned({ assignment: item, assignee: learner }).is({ assigned: true }),
         availableGrader({ grader }),
+        theSubmitterFor({ assignment: item, student: learner }).is({ submitter: subject }),
       )
-        .then(
-          Delegating.delegate({ item, subject: learner, delegate: grader }).responds({
-            delegation,
-          }),
-        )
+        .then(Delegating.delegate({ item, subject, delegate: grader }).responds({ delegation }))
         .then(respond({ delegation }))
         .named("success"),
       where(
@@ -187,7 +187,7 @@ export const DelegationSet = endpoint(
 
 export const DelegationClear = endpoint(
   "/delegation/clear",
-  ({ session, item, learner, user, delegation, valid }) =>
+  ({ session, item, learner, user, subject, delegation, valid }) =>
     receive({ session, item, learner }).then(
       where(
         activeUser({ session }).is({ user }),
@@ -196,8 +196,9 @@ export const DelegationClear = endpoint(
         is.among(valid, [true]),
         Assigning._getAssignments({}).is({ assignment: item }),
         Assigning._isAssigned({ assignment: item, assignee: learner }).is({ assigned: true }),
+        theSubmitterFor({ assignment: item, student: learner }).is({ submitter: subject }),
       )
-        .then(Delegating.withdraw({ item, subject: learner }).responds({ delegation }))
+        .then(Delegating.withdraw({ item, subject }).responds({ delegation }))
         .then(respond({ delegation }))
         .named("success"),
       where(
@@ -236,7 +237,19 @@ export const DelegationClear = endpoint(
 
 export const DelegationSpread = endpoint(
   "/delegation/spread",
-  ({ session, item, learners, graders, replace, user, assigned, valid }) =>
+  ({
+    session,
+    item,
+    learners,
+    graders,
+    replace,
+    user,
+    submittedBy,
+    students,
+    subjects,
+    assigned,
+    valid,
+  }) =>
     receive({ session, item, learners, graders, replace }).then(
       where(
         activeUser({ session }).is({ user }),
@@ -249,11 +262,14 @@ export const DelegationSpread = endpoint(
         is.among(valid, [true]),
         everyGraderIsAvailable({ graders }),
         everyLearnerIsAssigned({ item, learners }),
+        Assigning._getAssignments({}).is({ assignment: item, submittedBy }),
+        Rostering._activeStudentList({}).is({ students }),
+        compute(computations.delegationSubjects, { submittedBy, students, learners }, subjects),
       )
         .then(
           Delegating.spread({
             item,
-            subjects: learners,
+            subjects,
             delegates: graders,
             replace,
           }).responds({ assigned }),

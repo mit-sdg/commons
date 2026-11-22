@@ -10,6 +10,7 @@ import {
   mayViewStaffCalendar,
 } from "../access/policy.ts";
 import { concepts } from "../../concepts.ts";
+import { theDueOverrideFor } from "./assignments.ts";
 
 const { Assigning, Banking, Itemizing, Profiling, Rostering } = concepts;
 /** Which calendar entries fall between these moments? */
@@ -37,15 +38,10 @@ export const theCalendarOf = former(
     { student, start, end },
     { assignment, release, dueOverride, title, kind, availableAt, dueAt, closeAt, status },
   ) =>
-    each(
-      Assigning._getAssigned({ assignee: student }).is({
-        assignment,
-        release,
-        dueOverride,
-      }),
-    )
+    each(Assigning._getAssigned({ assignee: student }).is({ assignment, release }))
       .where(
         Assigning._getPublishedInWindow({ start, end }).is({ assignment }),
+        theDueOverrideFor({ assignment, student }).is({ dueOverride }),
         Assigning._getAssignments({}).is({
           assignment,
           title,

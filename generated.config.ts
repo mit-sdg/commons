@@ -37,6 +37,7 @@ export default {
       new URL("./design/compositions/course/grade-items.md", import.meta.url),
       new URL("./design/compositions/course/grades.md", import.meta.url),
       new URL("./design/compositions/course/late-days.md", import.meta.url),
+      new URL("./design/compositions/course/moves.md", import.meta.url),
       new URL("./design/compositions/course/notes.md", import.meta.url),
       new URL("./design/compositions/course/roster.md", import.meta.url),
       new URL("./design/compositions/course/submissions.md", import.meta.url),

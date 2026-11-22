@@ -17,7 +17,9 @@ highest-numbered submitted attempt for one assignment and student. For an active
 [Course.submissions.Attempts](reaction:Course.submissions.Attempts) forms
 [every numbered attempt](former:Course.submissions.theAttempts) of
 [the submitter](view:Course.submissions.theStandingAttempts), including withdrawn ones
-with their permanent numbers. A caller who may grade that student's work on the
+with their permanent numbers. Each attempt names the author of its artifact, the
+person who handed it in, with their profile name, so a section's members read
+who submitted each attempt and when. A caller who may grade that student's work on the
 assignment can make the same reads for another active student. Other callers and
 inactive targets are hidden as `NOT_FOUND`.
 
@@ -35,9 +37,9 @@ The [submissionHasArtifact view](view:Course.submissions.submissionHasArtifact) 
 [attempts across assignments](former:Course.submissions.theSubmissionsBy) for that student from
 [their own attempts where they submit and their section's where the section does](view:Course.submissions.theStandingSubmissions), and for a caller holding `grade`
 [only the attempts on assignments they may grade that student on](former:Course.submissions.theGradableSubmissionsBy).
-[Course.submissions.ForAssignment](reaction:Course.submissions.ForAssignment) requires `grade` and places two current lists side by side, each keeping only the learners the caller may grade:
+[Course.submissions.ForAssignment](reaction:Course.submissions.ForAssignment) requires `grade` and places two current lists side by side, with [the attempts not yet moved to a section](moves.md), each keeping only the learners the caller may grade:
 [everyone holding an assignment release](former:Course.submissions.theAssignedPopulationForAssignment), including who submits for each, due overrides, the learner's seat standing so a dropped learner can be told apart, and the learner's profile name, username, roster email, and section for staff exports,
-and [every recorded attempt beside its submitter's profile display name](former:Course.submissions.theSubmissionsForAssignment), including the artifact identities needed to open its evidence. The profile is where a student's name comes from now that a seat records none; an attempt submitted by a section has no profile name, and the first list names the section's members. The second list does not collapse attempts or infer that each submitter was assigned, so a reader pairs an attempt with the students whose submitter it names.
+and [every recorded attempt of a current submitter beside its submitter's profile display name](former:Course.submissions.theSubmissionsForAssignment), including the artifact identities needed to open its evidence. The profile is where a student's name comes from now that a seat records none; an attempt submitted by a section has no profile name, and the first list names the section's members. The second list does not collapse attempts or infer that each submitter was assigned, so a reader pairs an attempt with the students whose submitter it names.
 
 Attempt creation belongs to assignment behavior. Submitting treats assignment
 and artifact identities as opaque, so these reads report retained attempt state

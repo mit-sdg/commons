@@ -23,6 +23,8 @@ export interface SubmissionsExportSource {
   assignment: string;
   title: string;
   dueAt: string;
+  /** `STUDENT` or `SECTION`; absent reads as `STUDENT`. */
+  submittedBy?: string;
   /** Only the freshly selected scope, including learners without submissions. */
   assigned: readonly AssignedLearner[];
   submissions: readonly LearnerAttempt[];
@@ -106,6 +108,7 @@ function effectiveDueIso(
   override: string | null,
   lateDays: number | null,
   unitHours: number | null,
+  submittedBy: string | null,
 ): string {
   if (lateDays === null || unitHours === null) return "";
   const due = effectiveDue({
@@ -113,6 +116,7 @@ function effectiveDueIso(
     dueOverride: override,
     lateDays,
     unitHours,
+    submittedBy,
   });
   return Number.isNaN(due) ? "" : new Date(due).toISOString();
 }
@@ -173,6 +177,7 @@ export function submissionsCsv(source: SubmissionsExportSource): {
       learner.dueOverride,
       source.lateDays === null ? null : days,
       source.lateDayUnitHours,
+      source.submittedBy ?? null,
     );
     const lateStatus = active
       ? effective === ""

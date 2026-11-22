@@ -1,5 +1,5 @@
 import { activeUser } from "../access/session.ts";
-import { each, former, is, no, view, where, whether } from "@mit-sdg/sync-engine/language";
+import { compute, each, former, is, no, view, where, whether } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import {
   isActiveStudent,
@@ -9,9 +9,12 @@ import {
   mayGradeWork,
   mayNotGrade,
   mayNotGradeStudentWork,
+  submitsOn,
   theSubmitterFor,
 } from "../access/policy.ts";
-import { concepts } from "../../concepts.ts";
+import { computations as c, concepts } from "../../concepts.ts";
+import { theDueOverrideFor } from "./assignments.ts";
+import { theUnmovedSubmissions } from "./moves.ts";
 
 const { Assigning, Authenticating, Formatting, Posting, Profiling, Rostering, Submitting } =
   concepts;
@@ -103,10 +106,13 @@ export const mayReadSubmissionArtifact = view(
   ],
 ).holds();
 
-/** Which attempts stand for this student on this assignment? */
+/** Which attempts stand for this student on this assignment, and who handed each in? */
 export const theAttempts = former(
   "the attempts of (assignment) for (student)",
-  ({ assignment, student }, { submission, artifacts, submittedAt, number, status }) =>
+  (
+    { assignment, student },
+    { submission, artifacts, submittedAt, number, status, artifact, author, authorName },
+  ) =>
     each(
       theStandingAttempts({ assignment, student }).is({
         submission,
@@ -115,7 +121,13 @@ export const theAttempts = former(
         number,
         status,
       }),
-    ).form({ submission, artifacts, submittedAt, number, status }),
+    )
+      .where(
+        compute(c.soleArtifact, { artifacts }, artifact),
+        whether(Posting._getPost({ post: artifact }).is({ author })),
+        whether(Profiling._getProfileFields({ user: author }).is({ displayName: authorName })),
+      )
+      .form({ submission, artifacts, submittedAt, number, status, author, authorName }),
 );
 
 /** Which submissions to this assignment may this caller grade? */
@@ -136,6 +148,7 @@ export const theSubmissionsForAssignment = former(
       }),
     )
       .where(
+        submitsOn({ submitter, assignment }),
         mayGradeWork({ user, learner: submitter, item: assignment }),
         whether(
           Profiling._getProfileFields({ user: submitter }).is({ displayName: submitterName }),
@@ -179,12 +192,8 @@ export const theAssignedPopulationForAssignment = former(
         whether(
           Rostering._getSeatByUser({ user: assignee }).is({ email, section, status: enrolment }),
         ),
-        Assigning._getAssigned({ assignee }).is({
-          assignment,
-          release,
-          dueOverride,
-          status: releaseStatus,
-        }),
+        Assigning._getAssigned({ assignee }).is({ assignment, release, status: releaseStatus }),
+        theDueOverrideFor({ assignment, student: assignee }).is({ dueOverride }),
       )
       .form({
         assignee,
@@ -346,6 +355,7 @@ export const ForAssignment = endpoint(
           respond({
             assigned: theAssignedPopulationForAssignment({ assignment, user }),
             submissions: theSubmissionsForAssignment({ assignment, user }),
+            unmoved: theUnmovedSubmissions({ assignment, user }),
           }),
         )
         .named("success"),

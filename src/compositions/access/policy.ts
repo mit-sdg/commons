@@ -373,6 +373,27 @@ export const mayNotReadClassGrades = view(
 ).holds();
 
 /**
+ * Whether work recorded under a submitter is work an assignment's staff lists
+ * show: on an assignment submitted by each section, a section's work and that
+ * of a student in no section; on one submitted by each student, a student's.
+ * Work recorded before the choice changed stays stored and is left out.
+ */
+export const submitsOn = view(
+  "(submitter) submits (assignment)",
+  ({ submitter, assignment }, _outputs, _bindings) => [
+    where(
+      Assigning._getAssignments({}).is({ assignment, submittedBy: "SECTION" }),
+      theSubmitterFor({ assignment, student: submitter }).is({ submitter }),
+    ),
+    where(
+      Assigning._getAssignments({}).is({ assignment, submittedBy: "STUDENT" }),
+      no(Rostering._getSections({}).is({ section: submitter })),
+    ),
+    where(no(Assigning._getAssignments({}).is({ assignment }))),
+  ],
+).holds();
+
+/**
  * A grader who is also an active student sees and grades work on an item only
  * when Delegating names them its grader there, and never work that is their
  * own: on an assignment submitted by each section, their section's. The

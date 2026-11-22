@@ -2,7 +2,9 @@ import { describe, expect, test } from "vite-plus/test";
 import {
   type CourseGradeInputs,
   type CoursePolicy,
+  copyInputs,
   courseGradeCard,
+  courseGradeInputs,
   courseGrades,
   courseGradesCsv,
   holdReasons,
@@ -479,5 +481,146 @@ describe("the download and the policy's shape", () => {
     } as never);
     expect(policyIsWellFormed({ specification: p })).toBe(false);
     expect(policyIsWellFormed({ specification: null as never })).toBe(false);
+  });
+});
+
+describe("work submitted by each section", () => {
+  /**
+   * Exercise 2 is submitted by each section. Ana and Bea are in t1, Cal in
+   * t2, and Dee in none. t1's attempt is rated Expert and t2's Deficient; Dee
+   * handed in her own and was rated Competent. Bea's own earlier attempt on
+   * the exercise was rated Deficient.
+   */
+  function sectionInputs(): CourseGradeInputs {
+    const i = inputs();
+    i.assignments[1]!.submittedBy = "SECTION";
+    const template = i.assessments[1]!;
+    const rated = (learner: string, evidence: string, rating: string) => ({
+      ...template,
+      learner,
+      evidence,
+      judgments: [{ ...template.judgments[0]!, rating }],
+    });
+    const attempt = (submitter: string, submission: string) => ({
+      ...i.attempts[1]!,
+      submitter,
+      submission,
+    });
+    i.students.push(
+      { user: "bea", section: "t1", email: "bea@example.edu", name: "Bea" },
+      { user: "cal", section: "t2", email: "cal@example.edu", name: "Cal" },
+      { user: "dee", section: null, email: "dee@example.edu", name: "Dee" },
+    );
+    i.students[0]!.section = "t1";
+    for (const student of ["bea", "cal", "dee"])
+      i.releases.push({ assignment: "e2", assignee: student, dueOverride: null });
+    i.attempts.splice(1, 1, attempt("t1", "st1"), attempt("t2", "st2"), attempt("dee", "sd"));
+    i.attempts.push(attempt("bea", "sb"));
+    i.assessments.splice(
+      1,
+      1,
+      rated("t1", "st1", "EXPERT"),
+      rated("t2", "st2", "DEFICIENT"),
+      rated("dee", "sd", "COMPETENT"),
+      rated("bea", "sb", "DEFICIENT"),
+    );
+    return i;
+  }
+  const onE2 = (i: CourseGradeInputs, student: string) =>
+    studentGrade(policy(), i, student, DUE_BY, AT).work.e2!;
+
+  test("a student's work is their section's, and a student in no section is graded on their own", () => {
+    const i = sectionInputs();
+    expect(onE2(i, "ana")).toMatchObject({ status: "rated", value: 4 });
+    expect(onE2(i, "bea")).toMatchObject({ status: "rated", value: 4 });
+    expect(onE2(i, "cal")).toMatchObject({ status: "rated", value: 1 });
+    expect(onE2(i, "dee")).toMatchObject({ status: "rated", value: 3 });
+  });
+
+  test("a student moved to another section is graded on that section's work", () => {
+    const i = sectionInputs();
+    i.students.find((student) => student.user === "bea")!.section = "t2";
+    expect(onE2(i, "bea")).toMatchObject({ status: "rated", value: 1 });
+  });
+
+  test("late days standing on the assignment are ignored", () => {
+    const i = sectionInputs();
+    for (const row of i.attempts) if (row.assignment === "e2") row.submittedAt = day(21);
+    i.uses.push({ learner: "ana", item: "e2", days: 2 }, { learner: "dee", item: "e2", days: 2 });
+    expect(onE2(i, "ana").status).toBe("late");
+    i.assignments[1]!.submittedBy = "STUDENT";
+    expect(onE2(i, "dee").status).toBe("rated");
+  });
+
+  test("a member's due date is the latest override among the section's current members", () => {
+    const raw = sectionInputs();
+    for (const row of raw.attempts) if (row.assignment === "e2") row.submittedAt = day(21);
+    const override = (student: string, at: string) => {
+      raw.releases.find(
+        (release) => release.assignment === "e2" && release.assignee === student,
+      )!.dueOverride = at;
+    };
+    override("ana", day(22));
+    override("cal", day(20));
+    const built = courseGradeInputs({
+      assignments: raw.assignments,
+      releases: raw.releases,
+      attempts: raw.attempts,
+      ratings: raw.assessments,
+      uses: raw.uses,
+      unitHours: raw.unitHours,
+      students: raw.students,
+      names: [],
+      lectures: [],
+      editions: [],
+      parts: [],
+      participation: [],
+      detail: null,
+      overrides: [],
+    });
+    const dueOf = (student: string) =>
+      built.releases.find((release) => release.assignment === "e2" && release.assignee === student)!
+        .dueOverride;
+    expect([dueOf("ana"), dueOf("bea"), dueOf("cal"), dueOf("dee")]).toEqual([
+      day(22),
+      day(22),
+      day(20),
+      null,
+    ]);
+    expect(onE2(built, "bea").status).toBe("rated");
+    expect(onE2(built, "cal").status).toBe("late");
+  });
+
+  test("a release keeps the rows that stand for each student and gives back their card", () => {
+    const i = sectionInputs();
+    const settings = {
+      dueBy: DUE_BY.toISOString(),
+      breakdown: true,
+      letter: true,
+      includeOverrides: false,
+    };
+    const value = releaseValue({
+      policy: { policy: "p", name: "Course guide", version: 1, specification: policy() },
+      inputs: i,
+      settings,
+      release: [],
+      by: "dj",
+      at: AT,
+    });
+    const record = value.students.bea!.record;
+    expect(record.attempts.map((row) => row.submission)).toEqual(["st1"]);
+    expect(record.assessments.map((row) => row.learner)).toEqual(["t1"]);
+    for (const copy of Object.values(value.students)) {
+      const again = courseGrades(policy(), copyInputs(value.course, copy.record), DUE_BY, AT)[0]!;
+      expect(
+        courseGradeCard(
+          policy(),
+          copyInputs(value.course, copy.record),
+          again,
+          settings,
+          copy.held !== null,
+        ),
+      ).toEqual(copy.card);
+    }
   });
 });
