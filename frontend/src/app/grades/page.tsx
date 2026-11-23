@@ -5,10 +5,18 @@ import { ErrorState, LoadingState } from "@/components/states";
 import { useQuery } from "@/hooks/use-query";
 import { useAuth } from "@/lib/auth";
 import type { Assessment } from "@/lib/grading";
-import { loadGradesForMe } from "@/lib/lms";
+import { loadGradesForMe, loadSections } from "@/lib/lms";
+import { teamNamesOf } from "@/lib/teams";
 export default function GradesPage() {
-  const { session } = useAuth();
+  const { session, me } = useAuth();
   const grades = useQuery(session ? () => loadGradesForMe() : null, [session]);
+  // A team's grade names the team as its learner.
+  const onTeam = me
+    ? (grades.data?.grades ?? []).some(
+        (grade) => String(grade.learner) !== String(me.user),
+      )
+    : false;
+  const teams = useQuery(onTeam ? () => loadSections() : null, [onTeam]);
   const loading = grades.loading;
   const error = grades.error;
   return (
@@ -29,6 +37,7 @@ export default function GradesPage() {
       ) : (
         <AssessmentHistory
           assessments={(grades.data?.grades ?? []) as Assessment[]}
+          teamNames={teamNamesOf(teams.data?.sections)}
         />
       )}
     </PageContainer>

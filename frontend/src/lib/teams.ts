@@ -26,3 +26,12 @@ export function teamName(
   const found = teams?.find((entry) => String(entry.section) === String(team));
   return found ? String(found.name) : null;
 }
+
+/** Teams by id, for naming the team a grade belongs to. */
+export function teamNamesOf(
+  teams: readonly { section: unknown; name: unknown }[] | undefined,
+): ReadonlyMap<string, string> {
+  return new Map(
+    (teams ?? []).map((team) => [String(team.section), String(team.name)]),
+  );
+}

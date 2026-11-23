@@ -399,10 +399,16 @@ test("a grader grades a team's row once and every member reads the grade", async
       const card = teamCard(memberPage.page);
       await expect(card.getByText(RELEASED)).toBeVisible();
       await expect(card).toContainText("Grade 8 / 10");
+      await expect(memberPage.page.getByText("with Driftline", { exact: true })).toBeVisible();
       await memberPage.page.goto("/assignments");
       await expect(memberPage.page.getByRole("link").filter({ hasText: title })).toContainText(
         "Grade 8 / 10",
       );
+      // The Grades page says whose grade it is.
+      await memberPage.page.goto("/grades");
+      await expect(
+        memberPage.page.locator('[data-slot="card"]').filter({ hasText: title }),
+      ).toContainText("with Driftline");
     }
   } finally {
     await Promise.all(opened.map((context) => context.close()));
@@ -492,12 +498,30 @@ test("staff move earlier submissions to teams and read what the move did", async
     await expect(halfmoonAttempt).toContainText("Draft 6 / 10");
     await expect(halfmoonRow.getByText(/^Draft grades differ/)).toHaveCount(0);
 
-    await page.getByRole("button", { name: "Release all drafts (3)" }).click();
+    // Releasing every draft waits while Paperboat's two drafts differ.
+    await expect(page.getByRole("button", { name: "Release all drafts (3)" })).toBeDisabled();
+    await expect(page.getByText("Draft grades differ on Paperboat", { exact: true })).toBeVisible();
+
+    // One assessment is still released from its own row.
+    await halfmoonRow.getByRole("button", { name: "Review assessments" }).click();
+    await halfmoonRow.getByRole("button", { name: "Review release" }).click();
+    await halfmoonRow.getByRole("button", { name: "Confirm release to Halfmoon" }).click();
+    await expect(halfmoonRow.getByRole("button", { name: "Retract to correct" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Release all drafts (2)" })).toBeDisabled();
+
+    // Discarding one of the two drafts lets the rest go out together.
+    await first.click();
+    await paperboatRow.getByRole("button", { name: "Assess this attempt" }).first().click();
+    await paperboatRow.getByRole("button", { name: "Discard draft" }).click();
+    await paperboatRow.getByRole("button", { name: "Confirm discard" }).click();
+    await expect(paperboatRow.getByText(/^Draft grades differ/)).toHaveCount(0);
+    await expect(page.getByText(/^Draft grades differ on/)).toHaveCount(0);
+    await page.getByRole("button", { name: "Release all drafts (1)" }).click();
     const release = page.getByRole("dialog", {
       name: "Release all complete assessment drafts for this assignment?",
     });
     await expect(release).toContainText(
-      "3 drafts on 2 teams become visible to 5 students. Paperboat has draft grades that differ, and both would be released. Incomplete or concurrently changed drafts are skipped and reported.",
+      "1 draft on 1 team becomes visible to 3 students. Incomplete or concurrently changed drafts are skipped and reported.",
     );
     await release.getByRole("button", { name: "Cancel" }).click();
     await expect(release).toBeHidden();

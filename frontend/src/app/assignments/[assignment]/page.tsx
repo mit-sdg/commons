@@ -40,7 +40,12 @@ import {
   loadSubmissionAttempts,
   loadSubmissionLatest,
 } from "@/lib/lms";
-import { submittedByTeam, submitterOf, teamName } from "@/lib/teams";
+import {
+  submittedByTeam,
+  submitterOf,
+  teamName,
+  teamNamesOf,
+} from "@/lib/teams";
 import { cn } from "@/lib/utils";
 
 export default function AssignmentDetailPage({
@@ -144,6 +149,7 @@ export default function AssignmentDetailPage({
     team?.section,
   ]);
   const teamTitle = team ? teamName(teamsData?.sections, team.section) : null;
+  const teamNames = teamNamesOf(teamsData?.sections);
   const latest = subData?.submission;
   const balance = lateBalance?.balance ?? null;
 
@@ -389,6 +395,7 @@ export default function AssignmentDetailPage({
               <AssessmentHistory
                 assessments={[selectedAssessment]}
                 toggle={false}
+                teamNames={teamNames}
               />
             ) : (
               <p className="text-sm text-muted-foreground">
@@ -411,6 +418,7 @@ export default function AssignmentDetailPage({
               <AssessmentHistory
                 assessments={previousAssessments}
                 toggle={false}
+                teamNames={teamNames}
               />
             </section>
           )}
