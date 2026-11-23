@@ -9,6 +9,7 @@ import {
   view,
   when,
   where,
+  whether,
   now,
 } from "@mit-sdg/sync-engine/language";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
@@ -19,10 +20,36 @@ import {
   mayNotGrade,
   mayManageCourse,
   mayNotManageCourse,
+  theSubmitterFor,
 } from "../access/policy.ts";
 import { concepts, computations as c } from "../../concepts.ts";
 
-const { Assigning, Grading, Notifying, Posting, Rostering, Submitting } = concepts;
+const { Assigning, Grading, Notifying, Posting, Profiling, Rostering, Submitting } = concepts;
+
+/**
+ * The due override that stands for a student on an assignment: their own, or
+ * on an assignment submitted by each section, the section's.
+ */
+export const theDueOverrideFor = view(
+  "the due override for (student) on (assignment)",
+  ({ assignment, student }, { dueOverride }, { submitter, students, releases }) => [
+    where(
+      theSubmitterFor({ assignment, student }).is({ submitter: student }),
+      whether(Assigning._getAssigned({ assignee: student }).is({ assignment, dueOverride })),
+    ),
+    where(
+      theSubmitterFor({ assignment, student }).is({ submitter }).is.not({ submitter: student }),
+      Rostering._activeStudentList({}).is({ students }),
+      Assigning._courseReleases({}).is({ releases }),
+      compute(
+        c.sectionDueOverride,
+        { assignment, section: submitter, students, releases },
+        dueOverride,
+      ),
+    ),
+  ],
+).one();
+
 /** Which assignments belong to this learner? */
 export const theAssignmentsOf = former(
   "the assignments of (student)",
@@ -44,7 +71,6 @@ export const theAssignmentsOf = former(
       Assigning._getAssigned({ assignee: student }).is({
         assignment,
         release,
-        dueOverride,
         status: releaseStatus,
       }),
     )
@@ -58,6 +84,7 @@ export const theAssignmentsOf = former(
           closeAt,
           acceptsSubmissions,
         }),
+        theDueOverrideFor({ assignment, student }).is({ dueOverride }),
       )
       .form({
         assignment,
@@ -205,6 +232,7 @@ export const CreateDraft = endpoint(
     acceptsSubmissions,
     audience,
     targets,
+    submittedBy,
     user,
     at,
     assignment,
@@ -220,6 +248,7 @@ export const CreateDraft = endpoint(
       acceptsSubmissions,
       audience,
       targets,
+      submittedBy,
     }).then(
       where(now(at), activeUser({ session }).is({ user }), mayManageCourse({ user }))
         .then(
@@ -234,6 +263,7 @@ export const CreateDraft = endpoint(
             acceptsSubmissions,
             audience,
             targets,
+            submittedBy,
             at,
           }).responds({ assignment }),
         )
@@ -255,7 +285,7 @@ export const CreateDraft = endpoint(
         "acceptsSubmissions",
         "audience",
       ],
-      defaults: { closeAt: null, targets: [] },
+      defaults: { closeAt: null, targets: [], submittedBy: "STUDENT" },
     },
   },
 );
@@ -274,6 +304,7 @@ export const Revise = endpoint(
     acceptsSubmissions,
     audience,
     targets,
+    submittedBy,
     user,
     at,
     revised,
@@ -290,6 +321,7 @@ export const Revise = endpoint(
       acceptsSubmissions,
       audience,
       targets,
+      submittedBy,
     }).then(
       where(now(at), activeUser({ session }).is({ user }), mayManageCourse({ user }))
         .then(
@@ -304,6 +336,7 @@ export const Revise = endpoint(
             acceptsSubmissions,
             audience,
             targets,
+            submittedBy,
             at,
           }).responds({ assignment: revised }),
         )
@@ -325,6 +358,7 @@ export const Revise = endpoint(
         "dueAt",
         "acceptsSubmissions",
         "audience",
+        "submittedBy",
       ],
       defaults: { closeAt: null, targets: [] },
     },
@@ -372,7 +406,7 @@ export const ForMe = endpoint("/assignments/for-me", ({ session, user }) =>
 
 export const mayReadLearnerAssignment = view(
   "(user) may read learner assignment (assignment)",
-  ({ user, assignment }, _outputs, { status }) => [
+  ({ user, assignment }, _outputs, { submitter, status }) => [
     where(
       isActiveStudent({ user }),
       Assigning._isAssigned({ assignment, assignee: user }).is({ assigned: true }),
@@ -381,7 +415,8 @@ export const mayReadLearnerAssignment = view(
     where(
       isActiveStudent({ user }),
       Assigning._getAssignments({}).is({ assignment, status: "ARCHIVED" }),
-      Grading._getGradesForLearner({ learner: user }).is({ item: assignment, status }),
+      theSubmitterFor({ assignment, student: user }).is({ submitter }),
+      Grading._getGradesForLearner({ learner: submitter }).is({ item: assignment, status }),
       is.among(status, ["RELEASED", "EXCUSED"]),
     ),
   ],
@@ -391,6 +426,22 @@ export const mayReadStaffAssignment = view(
   "(user) may read staff assignment details",
   ({ user }, _outputs, _bindings) => [where(mayManageCourse({ user })), where(mayGrade({ user }))],
 ).holds();
+
+/** Which section submits this assignment for this student, and who are its current members? */
+export const theTeamOf = former(
+  "the section that submits (assignment) for (student)",
+  ({ assignment, student }, { section, member, displayName }) =>
+    where(
+      theSubmitterFor({ assignment, student })
+        .is({ submitter: section })
+        .is.not({ submitter: student }),
+    ).form({
+      section,
+      members: each(Rostering._getActiveStudents({}).is({ user: member, section }))
+        .where(whether(Profiling._getProfileFields({ user: member }).is({ displayName })))
+        .form({ user: member, displayName }),
+    }),
+);
 
 export const GetAssignment = endpoint(
   "/assignments/get",
@@ -403,9 +454,33 @@ export const GetAssignment = endpoint(
         Rostering._getSeatByUser({ user }).is({ section }),
         now(at),
         compute(c.submissionAllowed, { detail, section, at }, canSubmit),
+        theSubmitterFor({ assignment, student: user }).is({ submitter: user }),
       )
-        .then(respond({ assignment: detail, canSubmit }))
+        .then(
+          respond({
+            assignment: detail,
+            canSubmit,
+            team: null,
+          }),
+        )
         .named("found"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayReadLearnerAssignment({ user, assignment }),
+        theAssignment({ assignment }).is({ detail }),
+        Rostering._getSeatByUser({ user }).is({ section }),
+        now(at),
+        compute(c.submissionAllowed, { detail, section, at }, canSubmit),
+        theSubmitterFor({ assignment, student: user }).is.not({ submitter: user }),
+      )
+        .then(
+          respond({
+            assignment: detail,
+            canSubmit,
+            team: theTeamOf({ assignment, student: user }),
+          }),
+        )
+        .named("found-in-section"),
       where(
         activeUser({ session }).is({ user }),
         isActiveStudent({ user }),
@@ -460,12 +535,26 @@ export const StaffList = endpoint("/assignments/staff-list", ({ session, user })
 
 export const SetDueOverride = endpoint(
   "/assignments/set-due-override",
-  ({ session, assignment, assignee, dueAt, user, release }) =>
+  ({ session, assignment, assignee, dueAt, user, release, submitter, member }) =>
     receive({ session, assignment, assignee, dueAt }).then(
       where(activeUser({ session }).is({ user }), mayManageCourse({ user }))
         .then(Assigning.setDueOverride({ assignment, assignee, dueAt }).responds({ release }))
         .then(respond({ release }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayManageCourse({ user }),
+        Assigning._isAssigned({ assignment, assignee }).is({ assigned: true }),
+        theSubmitterFor({ assignment, student: assignee })
+          .is({ submitter })
+          .is.not({ submitter: assignee }),
+        Rostering._getActiveStudents({})
+          .is({ user: member, section: submitter })
+          .is.not({ user: assignee }),
+        Assigning._isAssigned({ assignment, assignee: member }).is({ assigned: true }),
+      )
+        .then(Assigning.setDueOverride({ assignment, assignee: member, dueAt }))
+        .named("teammates"),
       where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -474,12 +563,26 @@ export const SetDueOverride = endpoint(
 
 export const ClearDueOverride = endpoint(
   "/assignments/clear-due-override",
-  ({ session, assignment, assignee, user, release }) =>
+  ({ session, assignment, assignee, user, release, submitter, member }) =>
     receive({ session, assignment, assignee }).then(
       where(activeUser({ session }).is({ user }), mayManageCourse({ user }))
         .then(Assigning.clearDueOverride({ assignment, assignee }).responds({ release }))
         .then(respond({ release }))
         .named("success"),
+      where(
+        activeUser({ session }).is({ user }),
+        mayManageCourse({ user }),
+        Assigning._isAssigned({ assignment, assignee }).is({ assigned: true }),
+        theSubmitterFor({ assignment, student: assignee })
+          .is({ submitter })
+          .is.not({ submitter: assignee }),
+        Rostering._getActiveStudents({})
+          .is({ user: member, section: submitter })
+          .is.not({ user: assignee }),
+        Assigning._isAssigned({ assignment, assignee: member }).is({ assigned: true }),
+      )
+        .then(Assigning.clearDueOverride({ assignment, assignee: member }))
+        .named("teammates"),
       where(activeUser({ session }).is({ user }), mayNotManageCourse({ user }))
         .then(respond({ error: "FORBIDDEN" }))
         .named("forbidden"),
@@ -507,6 +610,7 @@ export const Submit = endpoint(
         now(at),
         activeUser({ session }).is({ user }),
         maySubmitAssignment({ user, assignment, at }),
+        theSubmitterFor({ assignment, student: user }).is({ submitter: user }),
       )
         .then(Posting.create({ author: user, content, at }).responds({ post }))
         .then(
@@ -524,6 +628,29 @@ export const Submit = endpoint(
         .then(respond({ error: "NOT_FOUND" }))
         .named("unavailable"),
     ),
+);
+
+/**
+ * A member submits for their section. A name bound by a read in one stage is
+ * not bound in the next, so the section is read again once the artifact exists.
+ */
+export const SubmitForSection = endpoint(
+  "/assignments/submit",
+  ({ session, assignment, content, user, at, post, submitter, submission }) =>
+    receive({ session, assignment, content })
+      .where(
+        now(at),
+        activeUser({ session }).is({ user }),
+        maySubmitAssignment({ user, assignment, at }),
+        theSubmitterFor({ assignment, student: user }).is.not({ submitter: user }),
+      )
+      .then(Posting.create({ author: user, content, at }).responds({ post }))
+      .afterFlowSettles()
+      .where(theSubmitterFor({ assignment, student: user }).is({ submitter }))
+      .then(
+        Submitting.submit({ assignment, submitter, artifact: post, at }).responds({ submission }),
+      )
+      .then(respond({ submission })),
 );
 
 /** Notify each actual release, including targeted publication and later enrolment. */

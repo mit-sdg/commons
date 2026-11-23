@@ -289,14 +289,14 @@ export function ClassPane({
           </div>
           {sections.length > 0 && (
             <select
-              aria-label="Section"
+              aria-label="Team"
               className="h-9 max-w-full rounded-md border border-input bg-card px-2 text-sm"
               value={filters.section}
               onChange={(event) =>
                 setFilters({ ...filters, section: event.target.value })
               }
             >
-              <option value="">All sections</option>
+              <option value="">All teams</option>
               {sections.map((entry) => (
                 <option key={entry.section} value={entry.section}>
                   {entry.name}

@@ -38,7 +38,10 @@ import {
 import { GradingDataNotice } from "./grading-data-notice";
 
 interface Props {
+  /** Whose assessment this is: the student, or the team that submits for them. */
   learner: string;
+  /** The student a request names; the route answers for whoever submits for them. */
+  through?: string;
   item: string;
   evidence?: string;
   learnerLabel?: string;
@@ -51,6 +54,7 @@ interface Props {
 }
 export function AssessmentInput({
   learner,
+  through = learner,
   item,
   evidence = "",
   learnerLabel,
@@ -62,6 +66,7 @@ export function AssessmentInput({
   onDirtyChange,
 }: Props) {
   const { session } = useAuth();
+  const team = through !== learner && learnerLabel ? learnerLabel : null;
   const query = useQuery(
     session ? async () => unwrap(await api.grades["for-item"]({ item })) : null,
     [session, learner, item, evidence],
@@ -92,7 +97,7 @@ export function AssessmentInput({
     setBusy(true);
     try {
       const result = await api.grades.record({
-        learner,
+        learner: through,
         item,
         evidence,
         revision: currentSetup.revision,
@@ -173,6 +178,7 @@ export function AssessmentInput({
           key={`${assessment.grade}-${assessment.version}`}
           assessment={assessment}
           currentMethod={currentSetup?.method}
+          team={team}
           disabled={unavailable}
           onDirtyChange={onDirtyChange}
           onSaved={() => {
@@ -202,12 +208,15 @@ const METHOD_LABELS = { COMPETENCY: "competency", POINTS: "points" } as const;
 function AssessmentEditor({
   assessment: a,
   currentMethod,
+  team,
   onSaved,
   disabled,
   onDirtyChange,
 }: {
   assessment: Assessment;
   currentMethod?: Assessment["method"];
+  /** The team's name when the assessment is a team's, which every member reads. */
+  team: string | null;
   onSaved: () => void;
   disabled: boolean;
   onDirtyChange?: (dirty: boolean) => void;
@@ -600,8 +609,8 @@ function AssessmentEditor({
         <div className="space-y-3 border-t border-border pt-4">
           <p className="font-medium">
             {preview === "excuse"
-              ? "The learner will see this excusal and explanation."
-              : "The learner will see this assessment and feedback."}
+              ? `${team ? `${team}'s members` : "The learner"} will see this excusal and explanation.`
+              : `${team ? `${team}'s members` : "The learner"} will see this assessment and feedback.`}
           </p>
           <AssessmentCard
             assessment={{
@@ -624,8 +633,8 @@ function AssessmentEditor({
           />
           <Button disabled={busy || disabled} onClick={() => action(preview)}>
             {preview === "excuse"
-              ? "Confirm excusal to learner"
-              : "Confirm release to learner"}
+              ? `Confirm excusal to ${team ?? "learner"}`
+              : `Confirm release to ${team ?? "learner"}`}
           </Button>
         </div>
       )}

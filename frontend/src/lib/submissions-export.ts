@@ -23,6 +23,8 @@ export interface SubmissionsExportSource {
   assignment: string;
   title: string;
   dueAt: string;
+  /** `STUDENT` or `SECTION`; absent reads as `STUDENT`. */
+  submittedBy?: string;
   /** Only the freshly selected scope, including learners without submissions. */
   assigned: readonly AssignedLearner[];
   submissions: readonly LearnerAttempt[];
@@ -42,8 +44,8 @@ export const SUBMISSIONS_CSV_COLUMNS = [
   "Username",
   "Email",
   "Student ID",
-  "Section ID",
-  "Section name",
+  "Team ID",
+  "Team name",
   "Assignment title",
   "Assignment ID",
   "Course due at",
@@ -106,6 +108,7 @@ function effectiveDueIso(
   override: string | null,
   lateDays: number | null,
   unitHours: number | null,
+  submittedBy: string | null,
 ): string {
   if (lateDays === null || unitHours === null) return "";
   const due = effectiveDue({
@@ -113,6 +116,7 @@ function effectiveDueIso(
     dueOverride: override,
     lateDays,
     unitHours,
+    submittedBy,
   });
   return Number.isNaN(due) ? "" : new Date(due).toISOString();
 }
@@ -120,7 +124,9 @@ function effectiveDueIso(
 /**
  * Build one row per learner. Submission columns use the latest active
  * (SUBMITTED) attempt; when every attempt is withdrawn, the latest withdrawn
- * record remains linked so that the withdrawal is inspectable.
+ * record remains linked so that the withdrawal is inspectable. On an
+ * assignment each team submits, a student's row carries their team's attempt,
+ * grade, grader, and due date, and no late days.
  */
 export function submissionsCsv(source: SubmissionsExportSource): {
   filename: string;
@@ -133,10 +139,13 @@ export function submissionsCsv(source: SubmissionsExportSource): {
     source.graders.map((grader) => [String(grader.grader), grader]),
   );
 
+  const byTeam = source.submittedBy === "SECTION";
+
   const rows = source.assigned.map((learner) => {
     const learnerId = String(learner.assignee);
+    const submitter = byTeam ? String(learner.submitter) : learnerId;
     const attempts = source.submissions.filter(
-      (attempt) => String(attempt.submitter) === learnerId,
+      (attempt) => String(attempt.submitter) === submitter,
     );
     const attempt = selectSubmissionAttempt(attempts);
     const active = attempt?.status === "SUBMITTED" ? attempt : undefined;
@@ -146,7 +155,7 @@ export function submissionsCsv(source: SubmissionsExportSource): {
         ? "Withdrawn"
         : "Missing";
     const selected = selectExportAssessment(
-      source.grades.filter((grade) => String(grade.learner) === learnerId),
+      source.grades.filter((grade) => String(grade.learner) === submitter),
       attempt,
     );
     const grade = selected.record;
@@ -156,7 +165,7 @@ export function submissionsCsv(source: SubmissionsExportSource): {
         ? grade.score
         : "";
     const maximum = isPoints ? (grade?.outOf ?? source.grading.maxPoints) : "";
-    const delegation = delegationByLearner.get(learnerId);
+    const delegation = delegationByLearner.get(submitter);
     const grader = delegation
       ? availableById.get(String(delegation.grader))
       : undefined;
@@ -167,13 +176,19 @@ export function submissionsCsv(source: SubmissionsExportSource): {
         delegation.graderUsername ??
         String(delegation.grader))
       : "";
-    const days = source.lateDays?.get(learnerId) ?? 0;
-    const effective = effectiveDueIso(
-      source.dueAt,
-      learner.dueOverride,
-      source.lateDays === null ? null : days,
-      source.lateDayUnitHours,
-    );
+    const days =
+      byTeam || source.lateDays === null
+        ? null
+        : (source.lateDays.get(learnerId) ?? 0);
+    const effective = byTeam
+      ? effectiveDueIso(source.dueAt, learner.dueOverride, 0, 0, "SECTION")
+      : effectiveDueIso(
+          source.dueAt,
+          learner.dueOverride,
+          days,
+          source.lateDayUnitHours,
+          source.submittedBy ?? null,
+        );
     const lateStatus = active
       ? effective === ""
         ? "Unavailable"
@@ -198,7 +213,7 @@ export function submissionsCsv(source: SubmissionsExportSource): {
       source.assignment,
       iso(source.dueAt),
       iso(learner.dueOverride),
-      source.lateDays === null ? "" : days,
+      days ?? "",
       effective,
       submissionStatus,
       attempt ? String(attempt.submission) : "",

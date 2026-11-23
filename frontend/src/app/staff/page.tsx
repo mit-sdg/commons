@@ -160,7 +160,7 @@ function StaffDashboardPageContent() {
               href="/staff/roster"
               className="flex items-center gap-2 text-sm hover:text-primary"
             >
-              <Users className="size-4" /> Manage the roster and sections
+              <Users className="size-4" /> Manage the roster and teams
             </Link>
             <Link
               href="/staff/gradebook/assessments"

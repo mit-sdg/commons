@@ -488,7 +488,8 @@
         "closeAt": "2090-02-01T00:00:00.000Z",
         "acceptsSubmissions": true,
         "audience": "EVERYONE",
-        "targets": []
+        "targets": [],
+        "submittedBy": "STUDENT"
       },
       "response": {
         "assignment": "uuid#17"
@@ -510,7 +511,8 @@
         "closeAt": "2090-02-01T00:00:00.000Z",
         "acceptsSubmissions": true,
         "audience": "EVERYONE",
-        "targets": []
+        "targets": [],
+        "submittedBy": "STUDENT"
       },
       "response": {
         "error": "ASSIGNMENT_NOT_FOUND"
@@ -619,6 +621,7 @@
           "acceptsSubmissions": true,
           "audience": "EVERYONE",
           "targets": [],
+          "submittedBy": "STUDENT",
           "status": "PUBLISHED",
           "createdAt": "<date>",
           "updatedAt": "<date>"
@@ -647,11 +650,13 @@
           "acceptsSubmissions": true,
           "audience": "EVERYONE",
           "targets": [],
+          "submittedBy": "STUDENT",
           "status": "PUBLISHED",
           "createdAt": "<date>",
           "updatedAt": "<date>"
         },
-        "canSubmit": true
+        "canSubmit": true,
+        "team": null
       }
     },
     {
@@ -738,7 +743,8 @@
         "closeAt": "2090-02-01T00:00:00.000Z",
         "acceptsSubmissions": false,
         "audience": "TARGETS",
-        "targets": ["$secA.section._id", "$secB.section._id"]
+        "targets": ["$secA.section._id", "$secB.section._id"],
+        "submittedBy": "STUDENT"
       },
       "response": {
         "assignment": "uuid#20"
@@ -1085,6 +1091,7 @@
             "email": "alice@example.com",
             "section": "uuid#5",
             "enrolment": "ACTIVE",
+            "submitter": "uuid#11",
             "release": "uuid#19",
             "dueOverride": null,
             "status": "ASSIGNED"
@@ -1096,6 +1103,7 @@
             "email": "bob@example.com",
             "section": "uuid#6",
             "enrolment": "ACTIVE",
+            "submitter": "uuid#13",
             "release": "uuid#21",
             "dueOverride": null,
             "status": "ASSIGNED"
@@ -1107,6 +1115,7 @@
             "email": "eve@example.com",
             "section": "uuid#5",
             "enrolment": "ACTIVE",
+            "submitter": "uuid#15",
             "release": "uuid#25",
             "dueOverride": null,
             "status": "ASSIGNED"
@@ -1131,7 +1140,8 @@
             "number": 2,
             "status": "SUBMITTED"
           }
-        ]
+        ],
+        "unmoved": []
       }
     },
     {

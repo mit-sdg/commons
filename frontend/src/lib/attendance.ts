@@ -81,7 +81,7 @@ export function attendanceCsv(
   const header = [
     "Student name",
     "Email",
-    "Section",
+    "Team",
     ...grid.lectures.map((lecture) => lecture.date),
     "Lectures attended",
     "Lectures",

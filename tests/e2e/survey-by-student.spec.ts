@@ -214,7 +214,7 @@ test("a sign-in survey reads by student: filtered from a bar, names for emails, 
   const path = await download.path();
   if (!path) throw new Error("The CSV download has no local path");
   const lines = (await readFile(path, "utf8")).split("\r\n");
-  expect(lines[0]).toBe("Name,Email,Section,Status,Named by,Pick a color,Who did you work with?");
+  expect(lines[0]).toBe("Name,Email,Team,Status,Named by,Pick a color,Who did you work with?");
   expect(lines).toContain(`Wren Calloway,${wren.email},,Named by a classmate,Noah Patel,,`);
   expect(lines).toContain("Rosa Quill,,,Answered but not on the roster,,Red,stranger@nowhere.test");
 });

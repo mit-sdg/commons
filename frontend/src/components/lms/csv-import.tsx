@@ -82,13 +82,13 @@ export function CsvImport({ onComplete }: CsvImportProps) {
         </p>
         <pre className="overflow-x-auto rounded-md border border-border bg-muted/40 px-3 py-2 text-xs font-mono leading-relaxed text-muted-foreground">
           {
-            "email,kind,section,displayName\njdoe@school.edu,STUDENT,Section 01,Jamie Doe"
+            "email,kind,section,displayName\njdoe@school.edu,STUDENT,Team 01,Jamie Doe"
           }
         </pre>
         <a
           className="inline-block text-sm font-medium text-primary underline-offset-4 hover:underline"
           download="commons-roster-template.csv"
-          href="data:text/csv;charset=utf-8,email%2Ckind%2Csection%2CdisplayName%0Astudent%40school.edu%2CSTUDENT%2CSection%2001%2CJamie%20Doe"
+          href="data:text/csv;charset=utf-8,email%2Ckind%2Csection%2CdisplayName%0Astudent%40school.edu%2CSTUDENT%2CTeam%2001%2CJamie%20Doe"
         >
           Download CSV template
         </a>
@@ -123,7 +123,7 @@ export function CsvImport({ onComplete }: CsvImportProps) {
             </p>
             {hasSectionErrors ? (
               <p className="text-sm text-destructive">
-                Fix unknown or ambiguous section names, then preview again.
+                Fix unknown or ambiguous team names, then preview again.
               </p>
             ) : null}
             <Button

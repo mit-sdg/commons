@@ -133,7 +133,7 @@ describe("attendanceCsv", () => {
     const { filename, csv } = attendanceCsv(grid, sections, "6.1040");
     expect(filename).toBe("6-1040-attendance.csv");
     expect(csv).toBe(
-      "Student name,Email,Section,2026-10-07,2026-10-09,Lectures attended,Lectures,Percent\r\n" +
+      "Student name,Email,Team,2026-10-07,2026-10-09,Lectures attended,Lectures,Percent\r\n" +
         "Ada Lovelace,ada@example.edu,Section 1,1,1,2,2,100\r\n" +
         "ben@example.edu,ben@example.edu,Section 2,0,1,1,2,50\r\n",
     );
@@ -147,7 +147,7 @@ describe("attendanceCsv", () => {
     );
     expect(filename).toBe("6-1040-section-2-attendance.csv");
     expect(csv).toBe(
-      "Student name,Email,Section,2026-10-07,2026-10-09,Lectures attended,Lectures,Percent\r\n" +
+      "Student name,Email,Team,2026-10-07,2026-10-09,Lectures attended,Lectures,Percent\r\n" +
         "ben@example.edu,ben@example.edu,Section 2,0,1,1,2,50\r\n",
     );
     expect(gridForSection(grid, null).rows).toHaveLength(2);

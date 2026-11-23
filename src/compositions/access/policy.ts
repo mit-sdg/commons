@@ -1,9 +1,18 @@
-import { no, view, where } from "@mit-sdg/sync-engine/language";
-import { concepts } from "../../concepts.ts";
+import { compute, no, view, where, whether } from "@mit-sdg/sync-engine/language";
+import { computations, concepts } from "../../concepts.ts";
 import { ADMINISTER, COMMONS } from "./capabilities.ts";
 
-const { Archiving, Conversing, Delegating, Locking, Posting, Roling, Rostering, Trashing } =
-  concepts;
+const {
+  Archiving,
+  Assigning,
+  Conversing,
+  Delegating,
+  Locking,
+  Posting,
+  Roling,
+  Rostering,
+  Trashing,
+} = concepts;
 
 /**
  * Every capability check passes for a holder of `administer`, so each `may…`
@@ -228,6 +237,23 @@ export const isNotActiveStudent = view(
     where(Rostering._isActiveStudent({ user }).is({ active: false })),
 ).holds();
 
+/**
+ * Whose work a student's is on an assignment: their section's when the
+ * assignment is submitted by each section and their seat has one, otherwise
+ * their own. A student's attempts, grades, and grader on an assignment are all
+ * read under this submitter, so a student moved to another section reads that
+ * section's work.
+ */
+export const theSubmitterFor = view(
+  "the submitter of (assignment) for (student)",
+  ({ assignment, student }, { submitter }, { submittedBy, section }) =>
+    where(
+      whether(Assigning._getAssignments({}).is({ assignment, submittedBy })),
+      whether(Rostering._getSeatByUser({ user: student }).is({ section })),
+      compute(computations.submitterFor, { submittedBy, section, student }, submitter),
+    ),
+).one();
+
 export const authored = view("(user) authored (post)", ({ user, post }, _outputs, _bindings) =>
   where(Posting._getPost({ post }).is({ author: user })),
 ).holds();
@@ -347,9 +373,31 @@ export const mayNotReadClassGrades = view(
 ).holds();
 
 /**
- * A grader who is also an active student sees and grades a classmate's work on
- * an item only when Delegating names them that classmate's grader there, and
- * never their own work.
+ * Whether work recorded under a submitter is work an assignment's staff lists
+ * show: on an assignment submitted by each section, a section's work and that
+ * of a student in no section; on one submitted by each student, a student's.
+ * Work recorded before the choice changed stays stored and is left out.
+ */
+export const submitsOn = view(
+  "(submitter) submits (assignment)",
+  ({ submitter, assignment }, _outputs, _bindings) => [
+    where(
+      Assigning._getAssignments({}).is({ assignment, submittedBy: "SECTION" }),
+      theSubmitterFor({ assignment, student: submitter }).is({ submitter }),
+    ),
+    where(
+      Assigning._getAssignments({}).is({ assignment, submittedBy: "STUDENT" }),
+      no(Rostering._getSections({}).is({ section: submitter })),
+    ),
+    where(no(Assigning._getAssignments({}).is({ assignment }))),
+  ],
+).holds();
+
+/**
+ * A grader who is also an active student sees and grades work on an item only
+ * when Delegating names them its grader there, and never work that is their
+ * own: on an assignment submitted by each section, their section's. The
+ * learner is whoever the work belongs to, a student or a section.
  */
 export const mayGradeWork = view(
   "(user) may grade the work of (learner) on (item)",
@@ -358,9 +406,8 @@ export const mayGradeWork = view(
     where(
       mayGrade({ user }),
       isActiveStudent({ user }),
-      Delegating._getDelegation({ item, subject: learner })
-        .is({ delegate: user })
-        .is.not({ delegate: learner }),
+      Delegating._getDelegation({ item, subject: learner }).is({ delegate: user }),
+      theSubmitterFor({ assignment: item, student: user }).is.not({ submitter: learner }),
     ),
   ],
 ).holds();
@@ -375,11 +422,29 @@ export const mayNotGradeWork = view(
     ),
     where(
       isActiveStudent({ user }),
-      Delegating._getDelegation({ item, subject: learner })
-        .is({ delegate: user })
-        .is({ delegate: learner }),
+      Delegating._getDelegation({ item, subject: learner }).is({ delegate: user }),
+      theSubmitterFor({ assignment: item, student: user }).is({ submitter: learner }),
     ),
   ],
+).holds();
+
+/** The same decision for a request that names a student: the learner is whoever submits for them. */
+export const mayGradeStudentWork = view(
+  "(user) may grade what stands for (student) on (item)",
+  ({ user, student, item }, _outputs, { submitter }) =>
+    where(
+      theSubmitterFor({ assignment: item, student }).is({ submitter }),
+      mayGradeWork({ user, learner: submitter, item }),
+    ),
+).holds();
+
+export const mayNotGradeStudentWork = view(
+  "(user) may not grade what stands for (student) on (item)",
+  ({ user, student, item }, _outputs, { submitter }) =>
+    where(
+      theSubmitterFor({ assignment: item, student }).is({ submitter }),
+      mayNotGradeWork({ user, learner: submitter, item }),
+    ),
 ).holds();
 
 /**

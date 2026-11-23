@@ -118,7 +118,7 @@ function StaffCalendarPageContent() {
         eyebrow="Staff"
         title="Calendar"
         tab={["Calendar", "Staff"]}
-        description="Assignment due and close dates across all sections."
+        description="Assignment due and close dates across all teams."
       />
 
       <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">

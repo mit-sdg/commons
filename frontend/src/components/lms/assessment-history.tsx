@@ -154,11 +154,14 @@ export function AssessmentCard({
   staff = false,
   skill,
   preview = false,
+  team,
 }: {
   assessment: Assessment;
   staff?: boolean;
   skill?: string;
   preview?: boolean;
+  /** The team whose grade this is, by name, when it is not the student's alone. */
+  team?: string | null;
 }) {
   const criteria = competencyCriteria(a.criteria).filter(
     (criterion) => !skill || criterion.standard === skill,
@@ -185,6 +188,11 @@ export function AssessmentCard({
               >
                 Attempt {a.attempt}
               </Link>
+            )}
+            {team && (
+              <Fact.Where preposition="with" className="text-xs">
+                {team}
+              </Fact.Where>
             )}
           </Facts>
           <Facts as="div" className="text-xs">
@@ -428,10 +436,13 @@ export function AssessmentHistory({
   assessments,
   staff = false,
   toggle = true,
+  teamNames,
 }: {
   assessments: Assessment[];
   staff?: boolean;
   toggle?: boolean;
+  /** Teams by id; an assessment whose learner is one of them shows that team. */
+  teamNames?: ReadonlyMap<string, string>;
 }) {
   const [view, setView] = useState("assignment");
   const sorted = [...assessments].sort(
@@ -486,7 +497,12 @@ export function AssessmentHistory({
       ) : effectiveView === "assignment" || !toggle ? (
         <div className="space-y-4">
           {sorted.map((a) => (
-            <AssessmentCard key={a.grade} assessment={a} staff={staff} />
+            <AssessmentCard
+              key={a.grade}
+              assessment={a}
+              staff={staff}
+              team={teamNames?.get(String(a.learner))}
+            />
           ))}
         </div>
       ) : (
@@ -508,6 +524,7 @@ export function AssessmentHistory({
                     assessment={a}
                     staff={staff}
                     skill={id}
+                    team={teamNames?.get(String(a.learner))}
                   />
                 ))}
             </section>

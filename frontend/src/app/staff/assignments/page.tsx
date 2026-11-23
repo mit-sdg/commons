@@ -137,7 +137,7 @@ function StaffAssignmentsPageContent() {
                       : a.targets
                           .map(
                             (target) =>
-                              sectionNames.get(target) ?? "Unknown section",
+                              sectionNames.get(target) ?? "Unknown team",
                           )
                           .join(", ")}
                   </Fact.Where>

@@ -57,6 +57,7 @@ function learner(name: string): AssignedLearner {
     email: null,
     section: null,
     enrolment: "ACTIVE",
+    submitter: name.toLowerCase(),
     release: `release-${name.toLowerCase()}`,
     dueOverride: null,
     status: "ASSIGNED",

@@ -19,25 +19,33 @@ through `administer`.
 
 [The course-grade inputs](view:Course.courseGrades.theCourseGradeInputs)
 gather the class in one row, each from a read that answers a whole list:
-published and archived assignments, every release with its due override, every
-attempt, every grade without rubric text or feedback (judgments only for
-released grades), standing late days and the hours per day, the active
+published and archived assignments with who submits each, every release with
+its due override, every attempt, every grade without rubric text or feedback
+(judgments only for released grades), standing late days and the hours per day, the active
 students with their names, the runs held as lectures with everyone who joined
 them or their rounds, the class time zone, and the standing overrides.
 [courseGradeInputs](computation:courseGradeInputs) shapes them for the
-calculation. The page returns these inputs to the browser, which runs the same
-calculation the server runs for overrides and the download.
+calculation; on an assignment submitted by each section, a member's release
+carries [the section's due override](computation:sectionDueOverride), the
+latest among its current members. The page returns these inputs to the
+browser, which runs the same calculation the server runs for overrides and the
+download.
 
 ## The calculation
 
-A student's work on an assignment counts through the attempt the submissions
-export chooses, the latest submitted one, and that attempt's grade only when
-it is released. Work not yet due, excused, a draft (including a grade
+A student's work on an assignment is their own, or on an assignment submitted
+by each section, their current section's: Submitting's submitter and Grading's
+learner hold the section for that work, so one released grade counts for every
+current member, a student moved to another section is graded on that section's
+work, and a student in no section is graded on their own. It counts through
+the attempt the submissions export chooses, the latest submitted one, and that
+attempt's grade only when it is released. Work not yet due, excused, a draft (including a grade
 retracted for correction), a submitted attempt not graded yet, and an
 assignment the student wasn't assigned are left out, and the remaining weights
 scale up. Work past the student's own due date, with their due override and
-late days, with nothing handed in counts as the policy's Missing value; work
-handed in after that date counts as Missing or as graded, by the policy's rule.
+late days (none count on an assignment submitted by each section), with
+nothing handed in counts as the policy's Missing value; work handed in after
+that date counts as Missing or as graded, by the policy's rule.
 A competency assignment averages its skills by the policy's skill weights,
 leaving out `NOT_ASSESSED`; a points assignment counts its share of the rating
 range. A skill row follows one skill across the term by its latest, best, or
@@ -91,7 +99,7 @@ for an override or attendance cap, lectures, and the policy's name and version.
 
 ```computations
 courseGradeInputs(assignments: Seq, releases: Seq, attempts: Seq, ratings: Seq, uses: Seq, unitHours: Number, students: Seq, names: Seq, lectures: Seq, editions: Seq, parts: Seq, participation: Seq, detail: Class, overrides: Seq) : Json
-  Shapes the class-wide reads into the calculation's inputs, joining each lecture run to everyone who responded to it or its rounds.
+  Shapes the class-wide reads into the calculation's inputs, joining each lecture run to everyone who responded to it or its rounds and giving each member's release on an assignment submitted by each section the section's due override.
 
 lectureSubjectList(lectures: Seq, parts: Seq) : Seq
   Lists the lecture runs and their rounds, the subjects whose participants count.

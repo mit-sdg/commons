@@ -26,9 +26,9 @@ Defined in [Accessing](../design/concepts/Accessing.md), line 1.
 
 #### Instances
 
-- `Accessing` — instance of `Accessing` — [Commons application](../design/application.md), line 153.
-  - `Holder` is `AudienceHolder` — [Commons application](../design/application.md), line 155.
-  - `Resource` is `Conversing.Conversation` — [Commons application](../design/application.md), line 154.
+- `Accessing` — instance of `Accessing` — [Commons application](../design/application.md), line 157.
+  - `Holder` is `AudienceHolder` — [Commons application](../design/application.md), line 159.
+  - `Resource` is `Conversing.Conversation` — [Commons application](../design/application.md), line 158.
 
 ### Assigning
 
@@ -36,17 +36,19 @@ Defined in [Assigning](../design/concepts/Assigning.md), line 1.
 
 #### Actions
 
-- `createDraft(author: Author, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Flag, audience: String, targets: Sections, at: Date) : returns (assignment: Assignment)`
+- `createDraft(author: Author, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Flag, audience: String, targets: Sections, submittedBy: String, at: Date) : returns (assignment: Assignment)`
   - Refuses `ASSIGNMENT_EVERYONE_NO_TARGETS`: An assignment addressed to everyone cannot list targets.
   - Refuses `ASSIGNMENT_TARGETS_REQUIRED`: A targeted assignment needs at least one target.
   - Refuses `ASSIGNMENT_AUDIENCE_INVALID`: The assignment audience must be EVERYONE or TARGETS.
+  - Refuses `ASSIGNMENT_SUBMITTER_INVALID`: An assignment is submitted by each student or by each section.
   - Refuses `ASSIGNMENT_SCHEDULE_INVALID`: Availability must be on or before the due date, and the due date must be on or before close.
-- `revise(assignment: Assignment, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Flag, audience: String, targets: Sections, at: Date) : returns (assignment: Assignment, status: String, audience: String, targets: Sections, acceptsSubmissions: Flag)`
+- `revise(assignment: Assignment, title: String, instructions: String, kind: String, availableAt: Date, dueAt: Date, closeAt: Date, acceptsSubmissions: Flag, audience: String, targets: Sections, submittedBy: String, at: Date) : returns (assignment: Assignment, status: String, audience: String, targets: Sections, acceptsSubmissions: Flag)`
   - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
   - Refuses `ASSIGNMENT_NOT_REVISABLE`: An archived assignment can no longer be revised.
   - Refuses `ASSIGNMENT_EVERYONE_NO_TARGETS`: An assignment addressed to everyone cannot list targets.
   - Refuses `ASSIGNMENT_TARGETS_REQUIRED`: A targeted assignment needs at least one target.
   - Refuses `ASSIGNMENT_AUDIENCE_INVALID`: The assignment audience must be EVERYONE or TARGETS.
+  - Refuses `ASSIGNMENT_SUBMITTER_INVALID`: An assignment is submitted by each student or by each section.
   - Refuses `ASSIGNMENT_SCHEDULE_INVALID`: Availability must be on or before the due date, and the due date must be on or before close.
 - `publish(assignment: Assignment, at: Date) : returns (assignment: Assignment, audience: String, targets: Sections, acceptsSubmissions: Flag)`
   - Refuses `ASSIGNMENT_NOT_FOUND`: There is no such assignment.
@@ -66,7 +68,7 @@ Defined in [Assigning](../design/concepts/Assigning.md), line 1.
 #### Queries
 
 - `_getDetail(assignment: String) : optional (detail: Assignment)`
-- `_getAssignments() : many (assignment: String, author: String, title: String, instructions: String, kind: String, availableAt: String, dueAt: String, closeAt: String | null, acceptsSubmissions: Flag, audience: String, targets: Seq<String>, status: String, createdAt: Date, updatedAt: Date | null)`
+- `_getAssignments() : many (assignment: String, author: String, title: String, instructions: String, kind: String, availableAt: String, dueAt: String, closeAt: String | null, acceptsSubmissions: Flag, audience: String, targets: Seq<String>, submittedBy: String, status: String, createdAt: Date, updatedAt: Date | null)`
 - `_getAssigned(assignee: String) : many (assignment: String, release: String, dueOverride: String | null, status: String)`
 - `_getAssignees(assignment: String) : many (assignee: String)`
 - `_isAssigned(assignment: String, assignee: String) : one (assigned: Flag)`
@@ -78,10 +80,10 @@ Defined in [Assigning](../design/concepts/Assigning.md), line 1.
 
 #### Instances
 
-- `Assigning` — instance of `Assigning` — [Commons application](../design/application.md), line 181.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 183.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 182.
-  - `Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 184.
+- `Assigning` — instance of `Assigning` — [Commons application](../design/application.md), line 185.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 187.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 186.
+  - `Sections` is `Rostering.Section` — [Commons application](../design/application.md), line 188.
 
 ### Attending
 
@@ -99,9 +101,9 @@ Defined in [Attending](../design/concepts/Attending.md), line 1.
 
 #### Instances
 
-- `Attending` — instance of `Attending` — [Commons application](../design/application.md), line 186.
-  - `Attendee` is `LiveDevice` — [Commons application](../design/application.md), line 188.
-  - `Gathering` is `Publishing.Edition` — [Commons application](../design/application.md), line 187.
+- `Attending` — instance of `Attending` — [Commons application](../design/application.md), line 190.
+  - `Attendee` is `LiveDevice` — [Commons application](../design/application.md), line 192.
+  - `Gathering` is `Publishing.Edition` — [Commons application](../design/application.md), line 191.
 
 ### Authenticating
 
@@ -141,7 +143,7 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 
 #### Instances
 
-- `Authenticating` — instance of `Authenticating` — [Commons application](../design/application.md), line 190.
+- `Authenticating` — instance of `Authenticating` — [Commons application](../design/application.md), line 194.
 
 ### Banking
 
@@ -177,9 +179,9 @@ Defined in [Banking](../design/concepts/Banking.md), line 1.
 
 #### Instances
 
-- `Banking` — instance of `Banking` — [Commons application](../design/application.md), line 192.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 194.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 193.
+- `Banking` — instance of `Banking` — [Commons application](../design/application.md), line 196.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 198.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 197.
 
 ### Bookmarking
 
@@ -200,12 +202,12 @@ Defined in [Bookmarking](../design/concepts/Bookmarking.md), line 1.
 
 #### Instances
 
-- `Bookmarking` — instance of `Bookmarking` — [Commons application](../design/application.md), line 196.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 198.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 197.
-- `Starring` — instance of `Bookmarking` — [Commons application](../design/application.md), line 200.
-  - `Item` is `Conversing.Conversation` — [Commons application](../design/application.md), line 202.
+- `Bookmarking` — instance of `Bookmarking` — [Commons application](../design/application.md), line 200.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 202.
   - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 201.
+- `Starring` — instance of `Bookmarking` — [Commons application](../design/application.md), line 204.
+  - `Item` is `Conversing.Conversation` — [Commons application](../design/application.md), line 206.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 205.
 
 ### Categorizing
 
@@ -248,9 +250,9 @@ Defined in [Categorizing](../design/concepts/Categorizing.md), line 1.
 
 #### Instances
 
-- `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 204.
-  - `Item` is `Categorizable` — [Commons application](../design/application.md), line 206.
-  - `Scope` is `CategoryScope` — [Commons application](../design/application.md), line 205.
+- `Categorizing` — instance of `Categorizing` — [Commons application](../design/application.md), line 208.
+  - `Item` is `Categorizable` — [Commons application](../design/application.md), line 210.
+  - `Scope` is `CategoryScope` — [Commons application](../design/application.md), line 209.
 
 ### Commissioning
 
@@ -278,9 +280,9 @@ Defined in [Commissioning](../design/concepts/Commissioning.md), line 1.
 
 #### Instances
 
-- `Commissioning` — instance of `Commissioning` — [Commons application](../design/application.md), line 173.
-  - `Execution` is `LiveExecution` — [Commons application](../design/application.md), line 175.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 174.
+- `Commissioning` — instance of `Commissioning` — [Commons application](../design/application.md), line 177.
+  - `Execution` is `LiveExecution` — [Commons application](../design/application.md), line 179.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 178.
 
 ### Connecting
 
@@ -300,8 +302,8 @@ Defined in [Connecting](../design/concepts/Connecting.md), line 1.
 
 #### Instances
 
-- `Connecting` — instance of `Connecting` — [Commons application](../design/application.md), line 208.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 209.
+- `Connecting` — instance of `Connecting` — [Commons application](../design/application.md), line 212.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 213.
 
 ### Conversing
 
@@ -337,8 +339,8 @@ Defined in [Conversing](../design/concepts/Conversing.md), line 1.
 
 #### Instances
 
-- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 211.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 212.
+- `Conversing` — instance of `Conversing` — [Commons application](../design/application.md), line 215.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 216.
 
 ### Delegating
 
@@ -360,10 +362,10 @@ Defined in [Delegating](../design/concepts/Delegating.md), line 1.
 
 #### Instances
 
-- `Delegating` — instance of `Delegating` — [Commons application](../design/application.md), line 214.
-  - `Delegate` is `Authenticating.User` — [Commons application](../design/application.md), line 217.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 215.
-  - `Subject` is `Authenticating.User` — [Commons application](../design/application.md), line 216.
+- `Delegating` — instance of `Delegating` — [Commons application](../design/application.md), line 218.
+  - `Delegate` is `Authenticating.User` — [Commons application](../design/application.md), line 221.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 219.
+  - `Subject` is `WorkSubmitter` — [Commons application](../design/application.md), line 220.
 
 ### Drafting
 
@@ -415,9 +417,9 @@ Defined in [Drafting](../design/concepts/Drafting.md), line 1.
 
 #### Instances
 
-- `Drafting` — instance of `Drafting` — [Commons application](../design/application.md), line 219.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 220.
-  - `Origin` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 221.
+- `Drafting` — instance of `Drafting` — [Commons application](../design/application.md), line 223.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 224.
+  - `Origin` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 225.
 
 ### Flagging
 
@@ -439,9 +441,9 @@ Defined in [Flagging](../design/concepts/Flagging.md), line 1.
 
 #### Instances
 
-- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 227.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 229.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 228.
+- `Flagging` — instance of `Flagging` — [Commons application](../design/application.md), line 231.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 233.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 232.
 
 ### Formatting
 
@@ -458,8 +460,8 @@ Defined in [Formatting](../design/concepts/Formatting.md), line 1.
 
 #### Instances
 
-- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 231.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 232.
+- `Formatting` — instance of `Formatting` — [Commons application](../design/application.md), line 235.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 236.
 
 ### Grading
 
@@ -502,11 +504,11 @@ Defined in [Grading](../design/concepts/Grading.md), line 1.
 
 #### Instances
 
-- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 234.
-  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 238.
-  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 235.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 237.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 236.
+- `Grading` — instance of `Grading` — [Commons application](../design/application.md), line 238.
+  - `Evidence` is `Submitting.Submission` — [Commons application](../design/application.md), line 242.
+  - `Grader` is `Authenticating.User` — [Commons application](../design/application.md), line 239.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 241.
+  - `Learner` is `WorkSubmitter` — [Commons application](../design/application.md), line 240.
 
 ### Grouping
 
@@ -543,8 +545,8 @@ Defined in [Grouping](../design/concepts/Grouping.md), line 1.
 
 #### Instances
 
-- `Grouping` — instance of `Grouping` — [Commons application](../design/application.md), line 240.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 241.
+- `Grouping` — instance of `Grouping` — [Commons application](../design/application.md), line 244.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 245.
 
 ### Guiding
 
@@ -585,8 +587,8 @@ Defined in [Guiding](../design/concepts/Guiding.md), line 1.
 
 #### Instances
 
-- `Guiding` — instance of `Guiding` — [Commons application](../design/application.md), line 243.
-  - `Subject` is `GuidanceSubject` — [Commons application](../design/application.md), line 244.
+- `Guiding` — instance of `Guiding` — [Commons application](../design/application.md), line 247.
+  - `Subject` is `GuidanceSubject` — [Commons application](../design/application.md), line 248.
 
 ### Insisting
 
@@ -612,8 +614,8 @@ Defined in [Insisting](../design/concepts/Insisting.md), line 1.
 
 #### Instances
 
-- `Insisting` — instance of `Insisting` — [Commons application](../design/application.md), line 246.
-  - `Aim` is `LiveSubject` — [Commons application](../design/application.md), line 247.
+- `Insisting` — instance of `Insisting` — [Commons application](../design/application.md), line 250.
+  - `Aim` is `LiveSubject` — [Commons application](../design/application.md), line 251.
 
 ### Inviting
 
@@ -639,8 +641,8 @@ Defined in [Inviting](../design/concepts/Inviting.md), line 1.
 
 #### Instances
 
-- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 249.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 250.
+- `Inviting` — instance of `Inviting` — [Commons application](../design/application.md), line 253.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 254.
 
 ### Itemizing
 
@@ -675,9 +677,9 @@ Defined in [Itemizing](../design/concepts/Itemizing.md), line 1.
 
 #### Instances
 
-- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 254.
-  - `Basis` is `StandardSetting.Edition` — [Commons application](../design/application.md), line 256.
-  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 255.
+- `Itemizing` — instance of `Itemizing` — [Commons application](../design/application.md), line 258.
+  - `Basis` is `StandardSetting.Edition` — [Commons application](../design/application.md), line 260.
+  - `Item` is `Assigning.Assignment` — [Commons application](../design/application.md), line 259.
 
 ### Linking
 
@@ -697,12 +699,12 @@ Defined in [Linking](../design/concepts/Linking.md), line 1.
 
 #### Instances
 
-- `AdoptLinking` — instance of `Linking` — [Commons application](../design/application.md), line 262.
-  - `Source` is `Drafting.Brief` — [Commons application](../design/application.md), line 263.
-  - `Target` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 264.
-- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 258.
-  - `Source` is `Linkable` — [Commons application](../design/application.md), line 259.
-  - `Target` is `Linkable` — [Commons application](../design/application.md), line 260.
+- `AdoptLinking` — instance of `Linking` — [Commons application](../design/application.md), line 266.
+  - `Source` is `Drafting.Brief` — [Commons application](../design/application.md), line 267.
+  - `Target` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 268.
+- `Linking` — instance of `Linking` — [Commons application](../design/application.md), line 262.
+  - `Source` is `Linkable` — [Commons application](../design/application.md), line 263.
+  - `Target` is `Linkable` — [Commons application](../design/application.md), line 264.
 
 ### Locating
 
@@ -721,8 +723,8 @@ Defined in [Locating](../design/concepts/Locating.md), line 1.
 
 #### Instances
 
-- `Locating` — instance of `Locating` — [Commons application](../design/application.md), line 269.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 270.
+- `Locating` — instance of `Locating` — [Commons application](../design/application.md), line 273.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 274.
 
 ### Locking
 
@@ -742,8 +744,8 @@ Defined in [Locking](../design/concepts/Locking.md), line 1.
 
 #### Instances
 
-- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 266.
-  - `Target` is `Lockable` — [Commons application](../design/application.md), line 267.
+- `Locking` — instance of `Locking` — [Commons application](../design/application.md), line 270.
+  - `Target` is `Lockable` — [Commons application](../design/application.md), line 271.
 
 ### Mailing
 
@@ -769,8 +771,8 @@ Defined in [Mailing](../design/concepts/Mailing.md), line 1.
 
 #### Instances
 
-- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 272.
-  - `Key` is `MailKey` — [Commons application](../design/application.md), line 273.
+- `Mailing` — instance of `Mailing` — [Commons application](../design/application.md), line 276.
+  - `Key` is `MailKey` — [Commons application](../design/application.md), line 277.
 
 ### Notifying
 
@@ -795,14 +797,14 @@ Defined in [Notifying](../design/concepts/Notifying.md), line 1.
 
 #### Instances
 
-- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 275.
-  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 278.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 276.
-  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 277.
-- `TaskNotifying` — instance of `Notifying` — [Commons application](../design/application.md), line 280.
-  - `Link` is `TaskSubject` — [Commons application](../design/application.md), line 283.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 281.
-  - `Subject` is `TaskSubject` — [Commons application](../design/application.md), line 282.
+- `Notifying` — instance of `Notifying` — [Commons application](../design/application.md), line 279.
+  - `Link` is `Posting.Post` — [Commons application](../design/application.md), line 282.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 280.
+  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 281.
+- `TaskNotifying` — instance of `Notifying` — [Commons application](../design/application.md), line 284.
+  - `Link` is `TaskSubject` — [Commons application](../design/application.md), line 287.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 285.
+  - `Subject` is `TaskSubject` — [Commons application](../design/application.md), line 286.
 
 ### Noting
 
@@ -840,9 +842,9 @@ Defined in [Noting](../design/concepts/Noting.md), line 1.
 
 #### Instances
 
-- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 285.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 286.
-  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 287.
+- `Noting` — instance of `Noting` — [Commons application](../design/application.md), line 289.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 290.
+  - `Learner` is `Authenticating.User` — [Commons application](../design/application.md), line 291.
 
 ### Overriding
 
@@ -862,9 +864,9 @@ Defined in [Overriding](../design/concepts/Overriding.md), line 1.
 
 #### Instances
 
-- `Overriding` — instance of `Overriding` — [Commons application](../design/application.md), line 169.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 171.
-  - `Subject` is `CourseGradeSubject` — [Commons application](../design/application.md), line 170.
+- `Overriding` — instance of `Overriding` — [Commons application](../design/application.md), line 173.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 175.
+  - `Subject` is `CourseGradeSubject` — [Commons application](../design/application.md), line 174.
 
 ### Pinning
 
@@ -887,9 +889,9 @@ Defined in [Pinning](../design/concepts/Pinning.md), line 1.
 
 #### Instances
 
-- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 289.
-  - `Item` is `Pinnable` — [Commons application](../design/application.md), line 290.
-  - `Scope` is `PinScope` — [Commons application](../design/application.md), line 291.
+- `Pinning` — instance of `Pinning` — [Commons application](../design/application.md), line 293.
+  - `Item` is `Pinnable` — [Commons application](../design/application.md), line 294.
+  - `Scope` is `PinScope` — [Commons application](../design/application.md), line 295.
 
 ### Policymaking
 
@@ -922,9 +924,9 @@ Defined in [Policymaking](../design/concepts/Policymaking.md), line 1.
 
 #### Instances
 
-- `Policymaking` — instance of `Policymaking` — [Commons application](../design/application.md), line 165.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 166.
-  - `Specification` is `PolicySpecification` — [Commons application](../design/application.md), line 167.
+- `Policymaking` — instance of `Policymaking` — [Commons application](../design/application.md), line 169.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 170.
+  - `Specification` is `PolicySpecification` — [Commons application](../design/application.md), line 171.
 
 ### Posting
 
@@ -949,8 +951,8 @@ Defined in [Posting](../design/concepts/Posting.md), line 1.
 
 #### Instances
 
-- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 293.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 294.
+- `Posting` — instance of `Posting` — [Commons application](../design/application.md), line 297.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 298.
 
 ### Profiling
 
@@ -976,8 +978,8 @@ Defined in [Profiling](../design/concepts/Profiling.md), line 1.
 
 #### Instances
 
-- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 296.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 297.
+- `Profiling` — instance of `Profiling` — [Commons application](../design/application.md), line 300.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 301.
 
 ### Publishing
 
@@ -1012,12 +1014,12 @@ Defined in [Publishing](../design/concepts/Publishing.md), line 1.
 
 #### Instances
 
-- `CourseGradePublishing` — instance of `Publishing` — [Commons application](../design/application.md), line 157.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 158.
-  - `Material` is `CourseGradeMaterial` — [Commons application](../design/application.md), line 159.
-- `Publishing` — instance of `Publishing` — [Commons application](../design/application.md), line 299.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 300.
-  - `Material` is `LiveMaterial` — [Commons application](../design/application.md), line 301.
+- `CourseGradePublishing` — instance of `Publishing` — [Commons application](../design/application.md), line 161.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 162.
+  - `Material` is `CourseGradeMaterial` — [Commons application](../design/application.md), line 163.
+- `Publishing` — instance of `Publishing` — [Commons application](../design/application.md), line 303.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 304.
+  - `Material` is `LiveMaterial` — [Commons application](../design/application.md), line 305.
 
 ### Questioning
 
@@ -1090,8 +1092,8 @@ Defined in [Questioning](../design/concepts/Questioning.md), line 1.
 
 #### Instances
 
-- `Questioning` — instance of `Questioning` — [Commons application](../design/application.md), line 303.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 304.
+- `Questioning` — instance of `Questioning` — [Commons application](../design/application.md), line 307.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 308.
 
 ### Reacting
 
@@ -1114,9 +1116,9 @@ Defined in [Reacting](../design/concepts/Reacting.md), line 1.
 
 #### Instances
 
-- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 306.
-  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 307.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 308.
+- `Reacting` — instance of `Reacting` — [Commons application](../design/application.md), line 310.
+  - `Person` is `Authenticating.User` — [Commons application](../design/application.md), line 311.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 312.
 
 ### Reasoning
 
@@ -1149,9 +1151,9 @@ Defined in [Reasoning](../design/concepts/Reasoning.md), line 1.
 
 #### Instances
 
-- `Reasoning` — instance of `Reasoning` — [Commons application](../design/application.md), line 310.
-  - `Reasoner` is `LiveReasoner` — [Commons application](../design/application.md), line 311.
-  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 312.
+- `Reasoning` — instance of `Reasoning` — [Commons application](../design/application.md), line 314.
+  - `Reasoner` is `LiveReasoner` — [Commons application](../design/application.md), line 315.
+  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 316.
 
 ### Relaying
 
@@ -1197,9 +1199,9 @@ Defined in [Relaying](../design/concepts/Relaying.md), line 1.
 
 #### Instances
 
-- `Relaying` — instance of `Relaying` — [Commons application](../design/application.md), line 314.
-  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 315.
-  - `Material` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 316.
+- `Relaying` — instance of `Relaying` — [Commons application](../design/application.md), line 318.
+  - `Author` is `Authenticating.User` — [Commons application](../design/application.md), line 319.
+  - `Material` is `Questioning.Questionnaire` — [Commons application](../design/application.md), line 320.
 
 ### Resolving
 
@@ -1219,10 +1221,10 @@ Defined in [Resolving](../design/concepts/Resolving.md), line 1.
 
 #### Instances
 
-- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 323.
-  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 326.
-  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 325.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 324.
+- `Resolving` — instance of `Resolving` — [Commons application](../design/application.md), line 327.
+  - `Answer` is `Posting.Post` — [Commons application](../design/application.md), line 330.
+  - `Question` is `Posting.Post` — [Commons application](../design/application.md), line 329.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 328.
 
 ### Responding
 
@@ -1258,10 +1260,10 @@ Defined in [Responding](../design/concepts/Responding.md), line 1.
 
 #### Instances
 
-- `Responding` — instance of `Responding` — [Commons application](../design/application.md), line 318.
-  - `Item` is `LiveItem` — [Commons application](../design/application.md), line 321.
-  - `Participant` is `LiveParticipant` — [Commons application](../design/application.md), line 320.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 319.
+- `Responding` — instance of `Responding` — [Commons application](../design/application.md), line 322.
+  - `Item` is `LiveItem` — [Commons application](../design/application.md), line 325.
+  - `Participant` is `LiveParticipant` — [Commons application](../design/application.md), line 324.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 323.
 
 ### Revising
 
@@ -1280,8 +1282,8 @@ Defined in [Revising](../design/concepts/Revising.md), line 1.
 
 #### Instances
 
-- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 328.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 329.
+- `Revising` — instance of `Revising` — [Commons application](../design/application.md), line 332.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 333.
 
 ### Roling
 
@@ -1322,9 +1324,9 @@ Defined in [Roling](../design/concepts/Roling.md), line 1.
 
 #### Instances
 
-- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 331.
-  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 333.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 332.
+- `Roling` — instance of `Roling` — [Commons application](../design/application.md), line 335.
+  - `Context` is `Conversing.Conversation` — [Commons application](../design/application.md), line 337.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 336.
 
 ### Rostering
 
@@ -1383,8 +1385,8 @@ Defined in [Rostering](../design/concepts/Rostering.md), line 1.
 
 #### Instances
 
-- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 335.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 336.
+- `Rostering` — instance of `Rostering` — [Commons application](../design/application.md), line 339.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 340.
 
 ### Scoring
 
@@ -1409,10 +1411,10 @@ Defined in [Scoring](../design/concepts/Scoring.md), line 1.
 
 #### Instances
 
-- `Scoring` — instance of `Scoring` — [Commons application](../design/application.md), line 338.
-  - `Item` is `Questioning.Question` — [Commons application](../design/application.md), line 340.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 339.
-  - `Submission` is `Responding.Response` — [Commons application](../design/application.md), line 341.
+- `Scoring` — instance of `Scoring` — [Commons application](../design/application.md), line 342.
+  - `Item` is `Questioning.Question` — [Commons application](../design/application.md), line 344.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 343.
+  - `Submission` is `Responding.Response` — [Commons application](../design/application.md), line 345.
 
 ### Sessioning
 
@@ -1433,8 +1435,8 @@ Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 
 #### Instances
 
-- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 351.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 352.
+- `Sessioning` — instance of `Sessioning` — [Commons application](../design/application.md), line 355.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 356.
 
 ### Sharing
 
@@ -1453,8 +1455,8 @@ Defined in [Sharing](../design/concepts/Sharing.md), line 1.
 
 #### Instances
 
-- `Sharing` — instance of `Sharing` — [Commons application](../design/application.md), line 354.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 355.
+- `Sharing` — instance of `Sharing` — [Commons application](../design/application.md), line 358.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 359.
 
 ### Snapshotting
 
@@ -1471,15 +1473,15 @@ Defined in [Snapshotting](../design/concepts/Snapshotting.md), line 1.
 
 #### Instances
 
-- `CourseGradeSnapshotting` — instance of `Snapshotting` — [Commons application](../design/application.md), line 161.
-  - `Subject` is `CourseGradePublishing.Edition` — [Commons application](../design/application.md), line 162.
-  - `Value` is `CourseGradeRelease` — [Commons application](../design/application.md), line 163.
-- `NoticeSnapshotting` — instance of `Snapshotting` — [Commons application](../design/application.md), line 343.
-  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 344.
-  - `Value` is `ForumNotice` — [Commons application](../design/application.md), line 345.
-- `RunSnapshotting` — instance of `Snapshotting` — [Commons application](../design/application.md), line 347.
-  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 348.
-  - `Value` is `LiveRunSnapshot` — [Commons application](../design/application.md), line 349.
+- `CourseGradeSnapshotting` — instance of `Snapshotting` — [Commons application](../design/application.md), line 165.
+  - `Subject` is `CourseGradePublishing.Edition` — [Commons application](../design/application.md), line 166.
+  - `Value` is `CourseGradeRelease` — [Commons application](../design/application.md), line 167.
+- `NoticeSnapshotting` — instance of `Snapshotting` — [Commons application](../design/application.md), line 347.
+  - `Subject` is `Posting.Post` — [Commons application](../design/application.md), line 348.
+  - `Value` is `ForumNotice` — [Commons application](../design/application.md), line 349.
+- `RunSnapshotting` — instance of `Snapshotting` — [Commons application](../design/application.md), line 351.
+  - `Subject` is `Publishing.Edition` — [Commons application](../design/application.md), line 352.
+  - `Value` is `LiveRunSnapshot` — [Commons application](../design/application.md), line 353.
 
 ### StandardSetting
 
@@ -1504,7 +1506,7 @@ Defined in [StandardSetting](../design/concepts/StandardSetting.md), line 1.
 
 #### Instances
 
-- `StandardSetting` — instance of `StandardSetting` — [Commons application](../design/application.md), line 252.
+- `StandardSetting` — instance of `StandardSetting` — [Commons application](../design/application.md), line 256.
 
 ### Submitting
 
@@ -1530,10 +1532,10 @@ Defined in [Submitting](../design/concepts/Submitting.md), line 1.
 
 #### Instances
 
-- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 360.
-  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 363.
-  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 362.
-  - `Submitter` is `Authenticating.User` — [Commons application](../design/application.md), line 361.
+- `Submitting` — instance of `Submitting` — [Commons application](../design/application.md), line 364.
+  - `Artifact` is `Posting.Post` — [Commons application](../design/application.md), line 367.
+  - `Assignment` is `Assigning.Assignment` — [Commons application](../design/application.md), line 366.
+  - `Submitter` is `WorkSubmitter` — [Commons application](../design/application.md), line 365.
 
 ### Subscribing
 
@@ -1556,9 +1558,9 @@ Defined in [Subscribing](../design/concepts/Subscribing.md), line 1.
 
 #### Instances
 
-- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 365.
-  - `Person` is `Subscriber` — [Commons application](../design/application.md), line 366.
-  - `Target` is `Subscribable` — [Commons application](../design/application.md), line 367.
+- `Subscribing` — instance of `Subscribing` — [Commons application](../design/application.md), line 369.
+  - `Person` is `Subscriber` — [Commons application](../design/application.md), line 370.
+  - `Target` is `Subscribable` — [Commons application](../design/application.md), line 371.
 
 ### Suggesting
 
@@ -1586,8 +1588,8 @@ Defined in [Suggesting](../design/concepts/Suggesting.md), line 1.
 
 #### Instances
 
-- `Suggesting` — instance of `Suggesting` — [Commons application](../design/application.md), line 357.
-  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 358.
+- `Suggesting` — instance of `Suggesting` — [Commons application](../design/application.md), line 361.
+  - `Subject` is `LiveSubject` — [Commons application](../design/application.md), line 362.
 
 ### Tagging
 
@@ -1615,8 +1617,8 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 
 #### Instances
 
-- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 369.
-  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 370.
+- `Tagging` — instance of `Tagging` — [Commons application](../design/application.md), line 373.
+  - `Target` is `Posting.Post` — [Commons application](../design/application.md), line 374.
 
 ### Tasking
 
@@ -1667,9 +1669,9 @@ Defined in [Tasking](../design/concepts/Tasking.md), line 1.
 
 #### Instances
 
-- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 372.
-  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 374.
-  - `Scope` is `Grouping.Group` — [Commons application](../design/application.md), line 373.
+- `Tasking` — instance of `Tasking` — [Commons application](../design/application.md), line 376.
+  - `Assignee` is `Authenticating.User` — [Commons application](../design/application.md), line 378.
+  - `Scope` is `Grouping.Group` — [Commons application](../design/application.md), line 377.
 
 ### Tracking
 
@@ -1694,10 +1696,10 @@ Defined in [Tracking](../design/concepts/Tracking.md), line 1.
 
 #### Instances
 
-- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 376.
-  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 378.
-  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 379.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 377.
+- `Tracking` — instance of `Tracking` — [Commons application](../design/application.md), line 380.
+  - `Item` is `Posting.Post` — [Commons application](../design/application.md), line 382.
+  - `Scope` is `Conversing.Conversation` — [Commons application](../design/application.md), line 383.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 381.
 
 ### Trashing
 
@@ -1722,15 +1724,15 @@ Defined in [Trashing](../design/concepts/Trashing.md), line 1.
 
 #### Instances
 
-- `Archiving` — instance of `Trashing` — [Commons application](../design/application.md), line 177.
-  - `Item` is `Authenticating.User` — [Commons application](../design/application.md), line 179.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 178.
-- `DraftTrashing` — instance of `Trashing` — [Commons application](../design/application.md), line 223.
-  - `Item` is `Drafting.Brief` — [Commons application](../design/application.md), line 225.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 224.
-- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 381.
-  - `Item` is `Trashable` — [Commons application](../design/application.md), line 383.
-  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 382.
+- `Archiving` — instance of `Trashing` — [Commons application](../design/application.md), line 181.
+  - `Item` is `Authenticating.User` — [Commons application](../design/application.md), line 183.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 182.
+- `DraftTrashing` — instance of `Trashing` — [Commons application](../design/application.md), line 227.
+  - `Item` is `Drafting.Brief` — [Commons application](../design/application.md), line 229.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 228.
+- `Trashing` — instance of `Trashing` — [Commons application](../design/application.md), line 385.
+  - `Item` is `Trashable` — [Commons application](../design/application.md), line 387.
+  - `User` is `Authenticating.User` — [Commons application](../design/application.md), line 386.
 
 ### Vouching
 
@@ -1751,10 +1753,10 @@ Defined in [Vouching](../design/concepts/Vouching.md), line 1.
 
 #### Instances
 
-- `ConnectVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 388.
-  - `Subject` is `Connecting.Connection` — [Commons application](../design/application.md), line 389.
-- `PasswordResetVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 385.
-  - `Subject` is `Authenticating.User` — [Commons application](../design/application.md), line 386.
+- `ConnectVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 392.
+  - `Subject` is `Connecting.Connection` — [Commons application](../design/application.md), line 393.
+- `PasswordResetVouching` — instance of `Vouching` — [Commons application](../design/application.md), line 389.
+  - `Subject` is `Authenticating.User` — [Commons application](../design/application.md), line 390.
 
 ### Wording
 
@@ -1772,8 +1774,8 @@ Defined in [Wording](../design/concepts/Wording.md), line 1.
 
 #### Instances
 
-- `Wording` — instance of `Wording` — [Commons application](../design/application.md), line 391.
-  - `Place` is `MailPlace` — [Commons application](../design/application.md), line 392.
+- `Wording` — instance of `Wording` — [Commons application](../design/application.md), line 395.
+  - `Place` is `MailPlace` — [Commons application](../design/application.md), line 396.
 
 ## Application types
 
@@ -1806,26 +1808,27 @@ Concrete types:
 - `Subscriber` — [Commons application](../design/application.md), line 98.
 - `TaskSubject` — [Commons application](../design/application.md), line 35.
 - `Trashable` — [Commons application](../design/application.md), line 109.
+- `WorkSubmitter` — [Commons application](../design/application.md), line 147.
 
 ## Computations
 
-- `addressingPeople(user: String, holders: Strings) : Strings` — [Commons application](../design/application.md), line 521.
-- `allChosenAdmitted(chosen: Strings, admitted: Strings) : Bool` — [Commons application](../design/application.md), line 482.
+- `addressingPeople(user: String, holders: Strings) : Strings` — [Commons application](../design/application.md), line 539.
+- `allChosenAdmitted(chosen: Strings, admitted: Strings) : Bool` — [Commons application](../design/application.md), line 488.
 - `answerKind(value: Json, answer: String) : String` — [The wall](../design/compositions/live/walls.md), line 186.
 - `answerReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 147.
-- `assignmentNotificationMailHtml(kind: String, title: String, url: String, author: String, due: String) : String` — [Commons application](../design/application.md), line 602.
-- `assignmentNotificationMailText(kind: String, title: String, url: String, author: String, due: String) : String` — [Commons application](../design/application.md), line 599.
-- `assignmentNotificationUrl(assignment: String) : String` — [Commons application](../design/application.md), line 575.
-- `audienceLabel(kind: String, identity: String, name: Any) : String` — [Commons application](../design/application.md), line 527.
+- `assignmentNotificationMailHtml(kind: String, title: String, url: String, author: String, due: String) : String` — [Commons application](../design/application.md), line 620.
+- `assignmentNotificationMailText(kind: String, title: String, url: String, author: String, due: String) : String` — [Commons application](../design/application.md), line 617.
+- `assignmentNotificationUrl(assignment: String) : String` — [Commons application](../design/application.md), line 593.
+- `audienceLabel(kind: String, identity: String, name: Any) : String` — [Commons application](../design/application.md), line 545.
 - `boardQuestions(value: LiveRunSnapshot, values: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 143.
 - `briefStanding(request: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 32.
-- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 608.
+- `capabilitiesAreKnown(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 626.
 - `cardGiven(card: String) : String` — [The wall](../design/compositions/live/walls.md), line 147.
 - `cardId(response: String, item: String) : String` — [The wall](../design/compositions/live/walls.md), line 86.
 - `cardStanding(card: String, values: Json) : String` — [The wall](../design/compositions/live/walls.md), line 78.
-- `carriesAdminister(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 612.
+- `carriesAdminister(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 630.
 - `carryUses() : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 92.
-- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 726.
+- `clarifiedPassage(request: String, question: String, answer: String, documents: Json) : String` — [Commons application](../design/application.md), line 744.
 - `classTimezone(detail: Class) : String` — [Lectures](../design/compositions/live/lectures.md), line 42.
 - `cleanupAdmission(authorized: Json, openRun: Json, unlocked: Json, applied: Json, standing: Json) : String` — [The wall](../design/compositions/live/walls.md), line 40.
 - `cleanupBrief(account: String, candidates: Seq) : String` — [The wall](../design/compositions/live/walls.md), line 43.
@@ -1833,29 +1836,30 @@ Concrete types:
 - `clearablePiles(categories: Json, standing?: Json, picked: Seq, reserved: Seq) : Seq` — [The wall](../design/compositions/live/walls.md), line 53.
 - `commissionAccount(outcome: String, failure: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 69.
 - `commissionOutcome(reply: String|Null, failure: String|Null, insistence: String|Null, categories: Json, values: Json, removed: Json, successors: Number) : String` — [The wall](../design/compositions/live/walls.md), line 66.
-- `competencyEditionIds(criteria: Json) : Strings` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 136.
-- `completeAddressing(user: String, holders: Strings, admitted: Number) : Bool` — [Commons application](../design/application.md), line 536.
-- `connectAppAccepted(app: String) : Bool` — [Commons application](../design/application.md), line 637.
-- `connectAppHost(app: String) : String` — [Commons application](../design/application.md), line 649.
-- `connectCallback(app: String) : String` — [Commons application](../design/application.md), line 652.
-- `connectChallengeAccepted(challenge?: String, method?: String) : Bool` — [Commons application](../design/application.md), line 644.
-- `connectCode(voucher: String, credential: String) : String` — [Commons application](../design/application.md), line 659.
-- `connectCodeCredential(code: String) : String` — [Commons application](../design/application.md), line 667.
-- `connectCodeExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 656.
-- `connectCodeVoucher(code: String) : String` — [Commons application](../design/application.md), line 663.
-- `connectDisplayName(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 671.
-- `connectVerifierChallenge(verifier?: String) : String|Null` — [Commons application](../design/application.md), line 676.
-- `courseGradeInputs(assignments: Seq, releases: Seq, attempts: Seq, ratings: Seq, uses: Seq, unitHours: Number, students: Seq, names: Seq, lectures: Seq, editions: Seq, parts: Seq, participation: Seq, detail: Class, overrides: Seq) : Json` — [Course grades](../design/compositions/course/course-grades.md), line 93.
-- `courseGradesCsv(policy: Json, inputs: Json, sections: Seq, at: Date) : String` — [Course grades](../design/compositions/course/course-grades.md), line 119.
-- `currentAddressing(user: String, holders: Strings, known: Bool, activePeople: Strings, staffPeople: Strings, trashed: Bool, groups: Bool, sections: Bool, ownSection: Any) : Bool` — [Commons application](../design/application.md), line 518.
-- `currentAudienceMembership(user: String, holders: Strings, groupMember: Bool, activeSections: Bool, section: Any, seatStatus: Any, activeStudent: Bool, capabilities: Any) : Bool` — [Commons application](../design/application.md), line 545.
+- `competencyEditionIds(criteria: Json) : Strings` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 149.
+- `completeAddressing(user: String, holders: Strings, admitted: Number) : Bool` — [Commons application](../design/application.md), line 554.
+- `connectAppAccepted(app: String) : Bool` — [Commons application](../design/application.md), line 655.
+- `connectAppHost(app: String) : String` — [Commons application](../design/application.md), line 667.
+- `connectCallback(app: String) : String` — [Commons application](../design/application.md), line 670.
+- `connectChallengeAccepted(challenge?: String, method?: String) : Bool` — [Commons application](../design/application.md), line 662.
+- `connectCode(voucher: String, credential: String) : String` — [Commons application](../design/application.md), line 677.
+- `connectCodeCredential(code: String) : String` — [Commons application](../design/application.md), line 685.
+- `connectCodeExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 674.
+- `connectCodeVoucher(code: String) : String` — [Commons application](../design/application.md), line 681.
+- `connectDisplayName(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 689.
+- `connectVerifierChallenge(verifier?: String) : String|Null` — [Commons application](../design/application.md), line 694.
+- `courseGradeInputs(assignments: Seq, releases: Seq, attempts: Seq, ratings: Seq, uses: Seq, unitHours: Number, students: Seq, names: Seq, lectures: Seq, editions: Seq, parts: Seq, participation: Seq, detail: Class, overrides: Seq) : Json` — [Course grades](../design/compositions/course/course-grades.md), line 101.
+- `courseGradesCsv(policy: Json, inputs: Json, sections: Seq, at: Date) : String` — [Course grades](../design/compositions/course/course-grades.md), line 127.
+- `currentAddressing(user: String, holders: Strings, known: Bool, activePeople: Strings, staffPeople: Strings, trashed: Bool, groups: Bool, sections: Bool, ownSection: Any) : Bool` — [Commons application](../design/application.md), line 536.
+- `currentAudienceMembership(user: String, holders: Strings, groupMember: Bool, activeSections: Bool, section: Any, seatStatus: Any, activeStudent: Bool, capabilities: Any) : Bool` — [Commons application](../design/application.md), line 563.
 - `definedSortingPiles(categories: Json, texts: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 241.
+- `delegationSubjects(submittedBy: String, students: Rows, learners: Strings) : Strings` — [Commons application](../design/application.md), line 491.
 - `draftContext(references: Strings, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 134.
 - `draftReferences(context: String) : Strings` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 137.
 - `draftRequest(request: String, kind: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 140.
-- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 712.
-- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 716.
-- `dueWallTime(dueAt: Any, detail: Any) : String` — [Commons application](../design/application.md), line 596.
+- `draftTitle(form: String) : String` — [Commons application](../design/application.md), line 730.
+- `draftingPassage(request: String, documents: Json) : String` — [Commons application](../design/application.md), line 734.
+- `dueWallTime(dueAt: Any, detail: Any) : String` — [Commons application](../design/application.md), line 614.
 - `editApplied(kind: String, target: String, value: String, title: Json, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Boolean` — [Edits the model proposes](../design/compositions/live/edits.md), line 69.
 - `editCap(value: String) : Number` — [Edits the model proposes](../design/compositions/live/edits.md), line 121.
 - `editChoices(value: String) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 124.
@@ -1876,30 +1880,30 @@ Concrete types:
 - `editRoundTakesUse(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 96.
 - `editTitle(round: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 103.
 - `editUse(value: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 130.
-- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 618.
+- `effectiveCapabilities(capabilities: Strings) : Strings` — [Commons application](../design/application.md), line 636.
 - `explanationReceipt(value: LiveRunSnapshot, answers: Seq) : Seq` — [Live runs](../design/compositions/live/runs.md), line 150.
 - `failureStanding(failedAt: Date, at: Date) : String` — [The wall](../design/compositions/live/walls.md), line 73.
 - `forumMailKey(notification: String, recipient: String, post: String) : String` — [Notifications](../design/compositions/forum/notifications.md), line 81.
-- `forumNotificationMailBody(content: String, post: String, opening: Any) : String` — [Commons application](../design/application.md), line 587.
-- `forumNotificationMailHtml(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 593.
-- `forumNotificationMailText(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 590.
-- `forumNotificationUrl(conversation: String, post: String) : String` — [Commons application](../design/application.md), line 572.
-- `gradingRevisionMatches(left: Number, right: Number) : Bool` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 140.
+- `forumNotificationMailBody(content: String, post: String, opening: Any) : String` — [Commons application](../design/application.md), line 605.
+- `forumNotificationMailHtml(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 611.
+- `forumNotificationMailText(kind: String, title: String, url: String, author: String, content: String) : String` — [Commons application](../design/application.md), line 608.
+- `forumNotificationUrl(conversation: String, post: String) : String` — [Commons application](../design/application.md), line 590.
+- `gradingRevisionMatches(left: Number, right: Number) : Bool` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 153.
 - `guideScope(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 173.
 - `guideUse(field: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 171.
-- `hasStoredPosts(posts: Rows) : Bool` — [Commons application](../design/application.md), line 497.
-- `holderCode(kind: String, identity: String) : String` — [Commons application](../design/application.md), line 539.
-- `holderKind(holder: String) : String` — [Commons application](../design/application.md), line 533.
-- `holderSubject(holder: String) : String` — [Commons application](../design/application.md), line 530.
-- `invitationMailHtml(invitation: String, credential: String, body: String) : String` — [Commons application](../design/application.md), line 563.
-- `invitationMailText(invitation: String, credential: String, body: String) : String` — [Commons application](../design/application.md), line 560.
-- `invitationTemplateBody(body: Any) : String` — [Commons application](../design/application.md), line 557.
-- `invitationTemplateSubject(subject: Any) : String` — [Commons application](../design/application.md), line 554.
+- `hasStoredPosts(posts: Rows) : Bool` — [Commons application](../design/application.md), line 515.
+- `holderCode(kind: String, identity: String) : String` — [Commons application](../design/application.md), line 557.
+- `holderKind(holder: String) : String` — [Commons application](../design/application.md), line 551.
+- `holderSubject(holder: String) : String` — [Commons application](../design/application.md), line 548.
+- `invitationMailHtml(invitation: String, credential: String, body: String) : String` — [Commons application](../design/application.md), line 581.
+- `invitationMailText(invitation: String, credential: String, body: String) : String` — [Commons application](../design/application.md), line 578.
+- `invitationTemplateBody(body: Any) : String` — [Commons application](../design/application.md), line 575.
+- `invitationTemplateSubject(subject: Any) : String` — [Commons application](../design/application.md), line 572.
 - `isSame(left: String, right: String) : Bool` — [The wall](../design/compositions/live/walls.md), line 90.
 - `kindCap(kind: String, cap: Number) : Number` — [Relays and their runs](../design/compositions/live/relays.md), line 88.
 - `kindChoices(kind: String, choices: Strings) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 80.
 - `kindParts(kind: String, parts: Strings) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 84.
-- `lectureSubjectList(lectures: Seq, parts: Seq) : Seq` — [Course grades](../design/compositions/course/course-grades.md), line 96.
+- `lectureSubjectList(lectures: Seq, parts: Seq) : Seq` — [Course grades](../design/compositions/course/course-grades.md), line 104.
 - `lectureSubjects(run: String, parts: Seq) : Seq` — [Lectures](../design/compositions/live/lectures.md), line 45.
 - `legIdentities(legs: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 46.
 - `legMaterials(legs: Json) : Strings` — [Edits the model proposes](../design/compositions/live/edits.md), line 43.
@@ -1909,30 +1913,30 @@ Concrete types:
 - `liveAccessHolders(requireSignIn: Boolean) : Seq` — [Live runs](../design/compositions/live/runs.md), line 113.
 - `liveAccessMode(holders: Json, retired: Boolean) : String` — [Live runs](../design/compositions/live/runs.md), line 116.
 - `liveRequiresSignIn(mode: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 119.
-- `mailPreviewText(text: String) : String` — [Commons application](../design/application.md), line 566.
+- `mailPreviewText(text: String) : String` — [Commons application](../design/application.md), line 584.
 - `metadataOpeningAuthor(item: String, posts: Seq) : Any` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 38.
 - `modelBegun(responses: Json, subscribers: Seq) : Number` — [The wall](../design/compositions/live/walls.md), line 120.
 - `modelHandedIn(responses: Json, subscribers: Seq) : Number` — [The wall](../design/compositions/live/walls.md), line 123.
-- `noticeRecord(content: String, author: String, by: String, at: Date) : Json` — [Commons application](../design/application.md), line 605.
-- `notificationActorLabel(username: Any, displayName: Any) : String` — [Commons application](../design/application.md), line 584.
-- `notificationAuthorLabel(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 581.
-- `notificationDiscussionTitle(content: Any) : String` — [Commons application](../design/application.md), line 569.
-- `notificationMailSubject(kind: String, title: String) : String` — [Commons application](../design/application.md), line 578.
+- `noticeRecord(content: String, author: String, by: String, at: Date) : Json` — [Commons application](../design/application.md), line 623.
+- `notificationActorLabel(username: Any, displayName: Any) : String` — [Commons application](../design/application.md), line 602.
+- `notificationAuthorLabel(username: String, displayName: Any) : String` — [Commons application](../design/application.md), line 599.
+- `notificationDiscussionTitle(content: Any) : String` — [Commons application](../design/application.md), line 587.
+- `notificationMailSubject(kind: String, title: String) : String` — [Commons application](../design/application.md), line 596.
 - `openingGroups(picked: Strings, categories: Json, values: Json, value: Json) : Json` — [Relays and their runs](../design/compositions/live/relays.md), line 71.
-- `overrideReplaced(specification: Json, inputs: Json, student: String, at: Date) : String` — [Course grades](../design/compositions/course/course-grades.md), line 105.
+- `overrideReplaced(specification: Json, inputs: Json, student: String, at: Date) : String` — [Course grades](../design/compositions/course/course-grades.md), line 113.
 - `ownsTaskScope(user: String, scope: String) : Boolean` — [Tasks](../design/compositions/tasks/tasks.md), line 116.
-- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 736.
-- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 740.
-- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 743.
-- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 747.
-- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 751.
+- `parseKind(reply: String) : String` — [Commons application](../design/application.md), line 754.
+- `parsedForm(reply: String) : String` — [Commons application](../design/application.md), line 758.
+- `parsedMaterial(reply: String) : Json` — [Commons application](../design/application.md), line 761.
+- `parsedQuestion(reply: String) : String` — [Commons application](../design/application.md), line 765.
+- `parsedReason(reply: String) : String` — [Commons application](../design/application.md), line 769.
 - `participantAnswers(reply: String, value: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 182.
 - `participantPassage(value: Json, participant: String) : String` — [The wall](../design/compositions/live/walls.md), line 175.
 - `participantQuestions(value: LiveRunSnapshot) : Seq` — [Live runs](../design/compositions/live/runs.md), line 139.
-- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 623.
-- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 628.
-- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 634.
-- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 631.
+- `passwordResetCooldownStart(at: Date) : Date` — [Commons application](../design/application.md), line 641.
+- `passwordResetExpiry(at: Date) : Date` — [Commons application](../design/application.md), line 646.
+- `passwordResetMailHtml(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 652.
+- `passwordResetMailText(voucher: String, credential: String, username: String) : String` — [Commons application](../design/application.md), line 649.
 - `pickPriority(count: Number) : Number` — [The wall](../design/compositions/live/walls.md), line 82.
 - `pickStanding(picked: Strings, categories: Json) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 67.
 - `pileCards(pile: String, categories: Json, values: Json, value: Json) : Strings` — [Relays and their runs](../design/compositions/live/relays.md), line 111.
@@ -1941,23 +1945,23 @@ Concrete types:
 - `placingReading(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 151.
 - `placingReason(reply: String, categories: Json, values: Json, removed: Json) : String` — [The wall](../design/compositions/live/walls.md), line 162.
 - `placingRepairPassage(value: Json, categories: Json, values: Json, removed: Json, notes: String, offering: String, account: String) : String` — [The wall](../design/compositions/live/walls.md), line 143.
-- `policyIsWellFormed(specification: Json) : Bool` — [Course grades](../design/compositions/course/course-grades.md), line 102.
-- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 759.
-- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 764.
+- `policyIsWellFormed(specification: Json) : Bool` — [Course grades](../design/compositions/course/course-grades.md), line 110.
+- `positionAfter(position: Number) : Number` — [Commons application](../design/application.md), line 777.
+- `positionBefore(position: Number) : Number` — [Commons application](../design/application.md), line 782.
 - `postPreview(content: String) : Record` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 40.
-- `previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings` — [Commons application](../design/application.md), line 515.
-- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 768.
+- `previewHolders(user: String, selected: Strings, includeSender: Bool) : Strings` — [Commons application](../design/application.md), line 533.
+- `receiptKind(choices: Strings, expected: String) : String` — [Commons application](../design/application.md), line 786.
 - `relayDraftPassage(request: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json, classDocuments: Json, relayDocuments: Json) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 36.
 - `relayDraftReading(reply: String, passage: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 54.
 - `relayDraftReason(reply: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 59.
 - `relayDraftRepairPassage(passage: String, offering: String, account: String) : String` — [Edits the model proposes](../design/compositions/live/edits.md), line 50.
 - `relayEditLines(reply: String, title: String, legs: Json, materials: Json, piles: Json, notes: Json, description?: String, opening?: String, closing?: String, purposes?: Json, facilitations?: Json, selections?: Json) : Json` — [Edits the model proposes](../design/compositions/live/edits.md), line 63.
 - `relayGiven(relay: String) : String` — [Drafting with the reasoner](../design/compositions/live/drafting.md), line 143.
-- `releaseSummary(value: CourseGradeRelease) : Json` — [Course grades](../design/compositions/course/course-grades.md), line 116.
-- `releasedPolicy(policy: String, name: String, version: Number, specification: Json) : Json` — [Course grades](../design/compositions/course/course-grades.md), line 108.
-- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 731.
-- `resolveGradingCriteria(criteria: Json, editions: Json) : Json` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 138.
-- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 721.
+- `releaseSummary(value: CourseGradeRelease) : Json` — [Course grades](../design/compositions/course/course-grades.md), line 124.
+- `releasedPolicy(policy: String, name: String, version: Number, specification: Json) : Json` — [Course grades](../design/compositions/course/course-grades.md), line 116.
+- `repairPassage(request: String, offering: String, account: String, documents: Json) : String` — [Commons application](../design/application.md), line 749.
+- `resolveGradingCriteria(criteria: Json, editions: Json) : Json` — [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 151.
+- `revisionPassage(request: String, form: String, material: Json, documents: Json) : String` — [Commons application](../design/application.md), line 739.
 - `roomBegun(responses: Json) : Number` — [The wall](../design/compositions/live/walls.md), line 114.
 - `roomHandedIn(responses: Json) : Number` — [The wall](../design/compositions/live/walls.md), line 117.
 - `roomSince(at: Date) : Date` — [Relays and their runs](../design/compositions/live/relays.md), line 107.
@@ -1975,49 +1979,52 @@ Concrete types:
 - `samplingResolvedPassage(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 50.
 - `samplingResolvedPreview(resolution: Json) : Json` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 60.
 - `samplingResolvedStanding(resolution: Json) : String` — [What a round carries besides its question](../design/compositions/live/rounds.md), line 53.
-- `selectedIdentities(holders: Strings, kind: String) : Strings` — [Commons application](../design/application.md), line 524.
-- `selectedSection(section: Any) : Strings` — [Commons application](../design/application.md), line 548.
-- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 681.
+- `sectionDueOverride(assignment: String, section: String, students: Rows, releases: Rows) : Any` — [Commons application](../design/application.md), line 509.
+- `selectedIdentities(holders: Strings, kind: String) : Strings` — [Commons application](../design/application.md), line 542.
+- `selectedSection(section: Any) : Strings` — [Commons application](../design/application.md), line 566.
+- `setupSecretMatches(secret: String) : Bool` — [Commons application](../design/application.md), line 699.
 - `signedOutJoiners(participants: Seq, accounts: Seq, seats: Seq) : Seq` — [Lectures](../design/compositions/live/lectures.md), line 54.
-- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 684.
+- `singleImportRow(email: String, kind: String, section: String, displayName: String) : Rows` — [Commons application](../design/application.md), line 702.
 - `snapshotForm(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 125.
 - `snapshotHasQuestion(value: LiveRunSnapshot, question: String) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 128.
 - `snapshotIsWhole(value: LiveRunSnapshot, answers: Seq) : Boolean` — [Live runs](../design/compositions/live/runs.md), line 135.
 - `snapshotRequirements(value: Json) : Seq` — [Live runs](../design/compositions/live/runs.md), line 132.
 - `snapshotTitle(value: LiveRunSnapshot) : String` — [Live runs](../design/compositions/live/runs.md), line 122.
-- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 755.
+- `soleArtifact(artifacts: Strings) : String` — [Commons application](../design/application.md), line 503.
+- `soleTarget(target: String) : Strings` — [Commons application](../design/application.md), line 773.
 - `sorterNotes(relay: String, run: String) : String` — [The wall](../design/compositions/live/walls.md), line 126.
 - `sortingAdmission(mode: String, authorized: Boolean|Null, live: Boolean|Null, openRun: Boolean|Null, waiting: Boolean|Null, unlocked: Boolean|Null, answered: Boolean|Null, applied: Boolean|Null, ready: Boolean|Null, value: Json) : String` — [The wall](../design/compositions/live/walls.md), line 60.
 - `sortingBrief(account: String, value: Json, categories: Json, values: Json, removed: Json, notes: String|Null) : String` — [The wall](../design/compositions/live/walls.md), line 63.
 - `sortingObservationPresent() : Boolean` — [The wall](../design/compositions/live/walls.md), line 57.
 - `sortingPileSubjects(categories: Json) : Json` — [The wall](../design/compositions/live/walls.md), line 238.
-- `staffCapabilities(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 542.
+- `staffCapabilities(capabilities: Strings) : Bool` — [Commons application](../design/application.md), line 560.
 - `staffQuestion(holders: Seq, nonStaffAuthor: Any) : Boolean` — [Feeds and thread context](../design/compositions/forum/feed.md), line 32.
-- `studentUsers(students: Seq) : Seq` — [Course grades](../design/compositions/course/course-grades.md), line 99.
-- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 690.
-- `submissionAllowed(detail: Json, section: String, at: Date) : Bool` — [Commons application](../design/application.md), line 491.
+- `studentUsers(students: Seq) : Seq` — [Course grades](../design/compositions/course/course-grades.md), line 107.
+- `subjectIsAddress(subject: String) : Bool` — [Commons application](../design/application.md), line 708.
+- `submissionAllowed(detail: Json, section: String, at: Date) : Bool` — [Commons application](../design/application.md), line 500.
+- `submitterFor(submittedBy: String, section: String, student: String) : String` — [Commons application](../design/application.md), line 506.
 - `summaryAdmission(items: Number) : String` — [The wall](../design/compositions/live/walls.md), line 50.
-- `taskListMailHtml(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 700.
-- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 694.
-- `taskListMailText(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 697.
-- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 709.
-- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 703.
-- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 706.
-- `threadLastActivity(posts: Rows) : Any` — [Commons application](../design/application.md), line 509.
-- `threadParticipants(posts: Rows) : Strings` — [Commons application](../design/application.md), line 512.
-- `threadPostIds(nodes: Rows) : Strings` — [Commons application](../design/application.md), line 500.
-- `threadReplyCount(posts: Rows) : Number` — [Commons application](../design/application.md), line 506.
+- `taskListMailHtml(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 718.
+- `taskListMailSubject(kind: String, listTitle: String) : String` — [Commons application](../design/application.md), line 712.
+- `taskListMailText(kind: String, listTitle: String, actor: String, list: String, member: Bool) : String` — [Commons application](../design/application.md), line 715.
+- `taskMailHtml(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 727.
+- `taskMailSubject(kind: String, taskTitle: String, listTitle: String) : String` — [Commons application](../design/application.md), line 721.
+- `taskMailText(kind: String, taskTitle: String, listTitle: String, deadline: String, actor: String, details: Any, list: String, task: String) : String` — [Commons application](../design/application.md), line 724.
+- `threadLastActivity(posts: Rows) : Any` — [Commons application](../design/application.md), line 527.
+- `threadParticipants(posts: Rows) : Strings` — [Commons application](../design/application.md), line 530.
+- `threadPostIds(nodes: Rows) : Strings` — [Commons application](../design/application.md), line 518.
+- `threadReplyCount(posts: Rows) : Number` — [Commons application](../design/application.md), line 524.
 - `trayHoldsACard(values: Json, categories: Json, removed: Seq) : Bool` — [The wall](../design/compositions/live/walls.md), line 97.
 - `useFit(use: String, kind: String, choices: Strings, parts: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 101.
-- `validDelegationIdentityInput(item: String, learner?: String, grader?: String) : Bool` — [Commons application](../design/application.md), line 488.
-- `validDelegationSpreadInput(item: String, learners: Strings, graders: Strings, replace: Bool) : Bool` — [Commons application](../design/application.md), line 485.
+- `validDelegationIdentityInput(item: String, learner?: String, grader?: String) : Bool` — [Commons application](../design/application.md), line 497.
+- `validDelegationSpreadInput(item: String, learners: Strings, graders: Strings, replace: Bool) : Bool` — [Commons application](../design/application.md), line 494.
 - `validFeedOrder(order: String) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 34.
 - `validPostControlSelection(posts: Seq) : Boolean` — [Selected post controls](../design/compositions/forum/post-controls.md), line 33.
-- `validProfileSelection(users: Strings) : Bool` — [Commons application](../design/application.md), line 494.
+- `validProfileSelection(users: Strings) : Bool` — [Commons application](../design/application.md), line 512.
 - `validSearchText(text: String) : Boolean` — [Searching discussions](../design/compositions/forum/search.md), line 35.
 - `validThreadSelection(conversations: Seq) : Boolean` — [Paged discussion list](../design/compositions/forum/feed-pages.md), line 36.
-- `visibleAnswer(answer: Any) : Bool` — [Commons application](../design/application.md), line 551.
-- `visibleThreadPosts(nodes: Any, posts: Any, trashed: Any) : Rows` — [Commons application](../design/application.md), line 503.
+- `visibleAnswer(answer: Any) : Bool` — [Commons application](../design/application.md), line 569.
+- `visibleThreadPosts(nodes: Any, posts: Any, trashed: Any) : Rows` — [Commons application](../design/application.md), line 521.
 - `voteStanding(kind: String, choices: Strings) : String` — [Relays and their runs](../design/compositions/live/relays.md), line 96.
 - `wallCardIds(values: Json, categories: Json) : Seq` — [The wall](../design/compositions/live/walls.md), line 93.
 - `wallCards(values: Json, categories: Json, trashed: Seq, subscribers: Seq, presentation: Json, viewer: String) : Json` — [The wall](../design/compositions/live/walls.md), line 101.
@@ -2120,10 +2127,20 @@ Authored path: `Forum.resolutions.admissibleAnswer`.
     Conversing._getConversation (node: answerNode) has (conversation)
 ```
 
+### (artifacts) on (assignment) are held by an attempt not of (student)
+
+Authored path: `Course.moves.heldByAnother`.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 18.
+
+```view
+(artifacts) on (assignment) are held by an attempt not of (student) — inputs (assignment, artifacts, student); outputs (); bindings ()
+  where Submitting._getSubmissionsForAssignment (assignment) has (artifacts) and not (submitter: student)
+```
+
 ### (assignment) by (submitter) has submission artifact (artifact)
 
 Authored path: `Course.submissions.submissionHasArtifact`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 15.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
 
 ```view
 (assignment) by (submitter) has submission artifact (artifact) — inputs (assignment, submitter, artifact); outputs (); bindings (artifacts)
@@ -2273,7 +2290,7 @@ Authored path: `Forum.moderation.unfinishedThreadPurge`.
 ### (grader) is an available grader
 
 Authored path: `Course.delegation.availableGrader`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 25.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 30.
 
 ```view
 (grader) is an available grader — inputs (grader); outputs (); bindings ()
@@ -2320,34 +2337,6 @@ Authored path: `Forum.threads.intact`.
 ```view
 (item) is intact — inputs (item); outputs (); bindings ()
   where Trashing._isTrashed (item) has (trashed: false)
-```
-
-### (user) is an active student
-
-```view
-(user) is an active student — inputs (user); outputs (); bindings ()
-  where Rostering._isActiveStudent (user) has (active: true)
-```
-
-### (learner) may start assessment on (item) using (evidence)
-
-Authored path: `Course.grades.mayStartAssessment`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 55.
-
-```view
-(learner) may start assessment on (item) using (evidence) — inputs (learner, item, evidence); outputs (); bindings ()
-  where
-    view "(user) is an active student" with (user: learner)
-    Itemizing._getItem (item) has (status: "ACTIVE")
-    Assigning._getAssignments () has (acceptsSubmissions: true, assignment: item, status: "PUBLISHED")
-    Assigning._isAssigned (assignee: learner, assignment: item) has (assigned: true)
-    Submitting._getAttempts (assignment: item, submitter: learner) has (status: "SUBMITTED", submission: evidence)
-  where
-    view "(user) is an active student" with (user: learner)
-    Itemizing._getItem (item) has (status: "ACTIVE")
-    Assigning._getAssignments () has (acceptsSubmissions: true, assignment: item, status: "PUBLISHED")
-    Assigning._isAssigned (assignee: learner, assignment: item) has (assigned: true)
-    evidence is among [""]
 ```
 
 ### the round of (material) in (run)
@@ -2964,6 +2953,18 @@ Authored path: `Live.lectures.runStandsAlone`.
   where Publishing._edition (edition: run) has (whole: null)
 ```
 
+### (section) holds an attempt on (assignment) handed in after (submittedAt)
+
+Authored path: `Course.moves.hasLaterAttempt`.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 22.
+
+```view
+(section) holds an attempt on (assignment) handed in after (submittedAt) — inputs (assignment, section, submittedAt); outputs (); bindings (later)
+  where
+    Submitting._getAttempts (assignment, submitter: section) has (submittedAt: later)
+    later is greater than submittedAt
+```
+
 ### (user) is an active course member
 
 ```view
@@ -2993,6 +2994,29 @@ Authored path: `Forum.profiles.profileDisplayReader`.
   where
     view "the active user of (session)" with (session) has (user: reader)
     view "(user) is an active course member" with (user: reader)
+```
+
+### the submitter of (assignment) for (student)
+
+```view
+the submitter of (assignment) for (student) — inputs (assignment, student); outputs (submitter); bindings (submittedBy, section) — answers exactly one (submitter)
+  where
+    whether Assigning._getAssignments () has (assignment, submittedBy)
+    whether Rostering._getSeatByUser (user: student) has (section)
+    submitter is submitterFor (section, student, submittedBy)
+```
+
+### (submitter) submits (assignment)
+
+```view
+(submitter) submits (assignment) — inputs (submitter, assignment); outputs (); bindings ()
+  where
+    Assigning._getAssignments () has (assignment, submittedBy: "SECTION")
+    view "the submitter of (assignment) for (student)" with (assignment, student: submitter) has (submitter)
+  where
+    Assigning._getAssignments () has (assignment, submittedBy: "STUDENT")
+    no Rostering._getSections () has (section: submitter)
+  where no Assigning._getAssignments () has (assignment)
 ```
 
 ### (user) may read forum target (target)
@@ -3053,6 +3077,13 @@ Authored path: `Forum.threads.publicTarget`.
 ```view
 (user) holds no role in (context) — inputs (user, context); outputs (); bindings ()
   where no Roling._getRole (context, user)
+```
+
+### (user) is an active student
+
+```view
+(user) is an active student — inputs (user); outputs (); bindings ()
+  where Rostering._isActiveStudent (user) has (active: true)
 ```
 
 ### (user) is archived
@@ -3228,13 +3259,14 @@ Authored path: `Forum.notifications.isNotYetNotifiedAbout`.
   where
     view "(user) may grade" with (user)
     view "(user) is an active student" with (user)
-    Delegating._getDelegation (item, subject: learner) has (delegate: user) and not (delegate: learner)
+    Delegating._getDelegation (item, subject: learner) has (delegate: user)
+    view "the submitter of (assignment) for (student)" with (assignment: item, student: user) and not (submitter: learner)
 ```
 
 ### (user) may grade assessment (grade)
 
 Authored path: `Course.grades.mayGradeAssessment`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 51.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 62.
 
 ```view
 (user) may grade assessment (grade) — inputs (user, grade); outputs (); bindings (learner, item)
@@ -3244,6 +3276,15 @@ Authored path: `Course.grades.mayGradeAssessment`.
   where
     Grading._getGrade (grade) has (item, learner)
     view "(user) may grade the work of (learner) on (item)" with (item, learner, user)
+```
+
+### (user) may grade what stands for (student) on (item)
+
+```view
+(user) may grade what stands for (student) on (item) — inputs (user, student, item); outputs (); bindings (submitter)
+  where
+    view "the submitter of (assignment) for (student)" with (assignment: item, student) has (submitter)
+    view "(user) may grade the work of (learner) on (item)" with (item, learner: submitter, user)
 ```
 
 ### (user) may host live runs
@@ -3383,13 +3424,14 @@ Authored path: `Course.grades.mayGradeAssessment`.
     no Delegating._getDelegation (item, subject: learner) has (delegate: user)
   where
     view "(user) is an active student" with (user)
-    Delegating._getDelegation (item, subject: learner) has (delegate: learner)
+    Delegating._getDelegation (item, subject: learner) has (delegate: user)
+    view "the submitter of (assignment) for (student)" with (assignment: item, student: user) has (submitter: learner)
 ```
 
 ### (user) may not grade assessment (grade)
 
 Authored path: `Course.grades.mayNotGradeAssessment`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 51.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 62.
 
 ```view
 (user) may not grade assessment (grade) — inputs (user, grade); outputs (); bindings (learner, item)
@@ -3400,6 +3442,15 @@ Authored path: `Course.grades.mayNotGradeAssessment`.
   where
     Grading._getGrade (grade) has (item, learner)
     view "(user) may not grade the work of (learner) on (item)" with (item, learner, user)
+```
+
+### (user) may not grade what stands for (student) on (item)
+
+```view
+(user) may not grade what stands for (student) on (item) — inputs (user, student, item); outputs (); bindings (submitter)
+  where
+    view "the submitter of (assignment) for (student)" with (assignment: item, student) has (submitter)
+    view "(user) may not grade the work of (learner) on (item)" with (item, learner: submitter, user)
 ```
 
 ### (user) may not host live runs
@@ -3476,40 +3527,43 @@ Authored path: `Course.grades.mayNotGradeAssessment`.
   where view "(user) is an active student" with (user)
 ```
 
-### (user) may read (artifact) submitted by (submitter) for (assignment)
+### (user) may read (artifact) that stands for (student) on (assignment)
 
 Authored path: `Course.submissions.mayReadSubmissionArtifact`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 15.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
 
 ```view
-(user) may read (artifact) submitted by (submitter) for (assignment) — inputs (user, artifact, submitter, assignment); outputs (); bindings ()
+(user) may read (artifact) that stands for (student) on (assignment) — inputs (user, artifact, student, assignment); outputs (); bindings (submitter)
   where
     view "(user) is an active student" with (user)
-    view "(assignment) by (submitter) has submission artifact (artifact)" with (artifact, assignment, submitter: user)
+    view "the submitter of (assignment) for (student)" with (assignment, student: user) has (submitter)
+    view "(assignment) by (submitter) has submission artifact (artifact)" with (artifact, assignment, submitter)
   where
-    view "(user) may grade the work of (learner) on (item)" with (item: assignment, learner: submitter, user)
-    view "(user) is an active student" with (user: submitter)
+    view "(user) may grade what stands for (student) on (item)" with (item: assignment, student, user)
+    view "(user) is an active student" with (user: student)
+    view "the submitter of (assignment) for (student)" with (assignment, student) has (submitter)
     view "(assignment) by (submitter) has submission artifact (artifact)" with (artifact, assignment, submitter)
 ```
 
 ### (user) may read assessment (grade)
 
 Authored path: `Course.grades.mayReadAssessment`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 53.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 64.
 
 ```view
-(user) may read assessment (grade) — inputs (user, grade); outputs (); bindings (status)
+(user) may read assessment (grade) — inputs (user, grade); outputs (); bindings (learner, item, status)
   where view "(user) may grade assessment (grade)" with (grade, user)
   where
     view "(user) is an active student" with (user)
-    Grading._getGrade (grade) has (learner: user, status)
+    Grading._getGrade (grade) has (item, learner, status)
     status is among ["RELEASED", "EXCUSED"]
+    view "the submitter of (assignment) for (student)" with (assignment: item, student: user) has (submitter: learner)
 ```
 
 ### (user) may read assessment item (item)
 
 Authored path: `Course.grades.mayReadItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 49.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 60.
 
 ```view
 (user) may read assessment item (item) — inputs (user, item); outputs (); bindings ()
@@ -3523,10 +3577,10 @@ Authored path: `Course.grades.mayReadItem`.
 ### (user) may read learner assignment (assignment)
 
 Authored path: `Course.assignments.mayReadLearnerAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
 
 ```view
-(user) may read learner assignment (assignment) — inputs (user, assignment); outputs (); bindings (status)
+(user) may read learner assignment (assignment) — inputs (user, assignment); outputs (); bindings (submitter, status)
   where
     view "(user) is an active student" with (user)
     Assigning._isAssigned (assignee: user, assignment) has (assigned: true)
@@ -3534,14 +3588,15 @@ Authored path: `Course.assignments.mayReadLearnerAssignment`.
   where
     view "(user) is an active student" with (user)
     Assigning._getAssignments () has (assignment, status: "ARCHIVED")
-    Grading._getGradesForLearner (learner: user) has (item: assignment, status)
+    view "the submitter of (assignment) for (student)" with (assignment, student: user) has (submitter)
+    Grading._getGradesForLearner (learner: submitter) has (item: assignment, status)
     status is among ["RELEASED", "EXCUSED"]
 ```
 
 ### (user) may read staff assignment details
 
 Authored path: `Course.assignments.mayReadStaffAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
 
 ```view
 (user) may read staff assignment details — inputs (user); outputs (); bindings ()
@@ -3580,7 +3635,7 @@ Authored path: `Course.assignments.mayReadStaffAssignment`.
 ### (user) may submit assignment (assignment) at (at)
 
 Authored path: `Course.assignments.maySubmitAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 66.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 82.
 
 ```view
 (user) may submit assignment (assignment) at (at) — inputs (user, assignment, at); outputs (); bindings (detail, section, allowed)
@@ -3620,6 +3675,28 @@ a reply about (round) is applying — inputs (round); outputs (); bindings (aski
 ```view
 a sample of (leg) is still being asked — inputs (leg); outputs (); bindings ()
   where Reasoning._pending () has (about: leg)
+```
+
+### an assessment of (student) may start on (item) using (evidence)
+
+Authored path: `Course.grades.mayStartAssessment`.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 66.
+
+```view
+an assessment of (student) may start on (item) using (evidence) — inputs (student, item, evidence); outputs (); bindings (submitter)
+  where
+    view "(user) is an active student" with (user: student)
+    Itemizing._getItem (item) has (status: "ACTIVE")
+    Assigning._getAssignments () has (acceptsSubmissions: true, assignment: item, status: "PUBLISHED")
+    Assigning._isAssigned (assignee: student, assignment: item) has (assigned: true)
+    view "the submitter of (assignment) for (student)" with (assignment: item, student) has (submitter)
+    Submitting._getAttempts (assignment: item, submitter) has (status: "SUBMITTED", submission: evidence)
+  where
+    view "(user) is an active student" with (user: student)
+    Itemizing._getItem (item) has (status: "ACTIVE")
+    Assigning._getAssignments () has (acceptsSubmissions: true, assignment: item, status: "PUBLISHED")
+    Assigning._isAssigned (assignee: student, assignment: item) has (assigned: true)
+    evidence is among [""]
 ```
 
 ### an offering about (round) still has lines to take
@@ -3718,7 +3795,7 @@ editable reference activity (subject) — inputs (subject); outputs (); bindings
 ### every grader in (graders) is available
 
 Authored path: `Course.delegation.everyGraderIsAvailable`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 29.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 34.
 
 ```view
 every grader in (graders) is available — inputs (graders); outputs (); bindings (capable, complete)
@@ -3733,7 +3810,7 @@ every grader in (graders) is available — inputs (graders); outputs (); binding
 ### every learner in (learners) is assigned (item)
 
 Authored path: `Course.delegation.everyLearnerIsAssigned`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 30.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 35.
 
 ```view
 every learner in (learners) is assigned (item) — inputs (item, learners); outputs (); bindings (assigned, complete)
@@ -3875,14 +3952,85 @@ the asks out about (round) — inputs (round); outputs (asksOut); bindings () �
   where asksOut is the count of Reasoning._pendingAbout (about: round)
 ```
 
+### the assessments on (assignment) not yet copied to a section's attempt
+
+Authored path: `Course.moves.theUncopiedGrades`.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 40.
+
+```view
+the assessments on (assignment) not yet copied to a section's attempt — inputs (assignment); outputs (section, moved, grader, method, setupRevision, criteria, judgments, feedback); bindings (student, original, artifacts, status) — answers any number of (section, moved, grader, method, setupRevision, criteria, judgments, feedback)
+  where
+    Assigning._getAssignments () has (assignment, submittedBy: "SECTION")
+    Grading._getGradesForItem (item: assignment) has (criteria, evidence: original, feedback, grader, judgments, learner: student, method, setupRevision, status)
+    status is among ["DRAFT", "RELEASED"]
+    view "(user) is an active student" with (user: student)
+    view "the submitter of (assignment) for (student)" with (assignment, student) has (submitter: section) and not (submitter: student)
+    Submitting._getAttempts (assignment, submitter: student) has (artifacts, submission: original)
+    Submitting._getAttempts (assignment, submitter: section) has (artifacts, submission: moved)
+    no Grading._getAssessment (evidence: moved, item: assignment, learner: section)
+  where
+    Assigning._getAssignments () has (assignment, submittedBy: "SECTION")
+    Grading._getGradesForItem (item: assignment) has (criteria, evidence: original, feedback, grader, judgments, learner: student, method, setupRevision, status)
+    status is among ["DRAFT", "RELEASED"]
+    view "(user) is an active student" with (user: student)
+    view "the submitter of (assignment) for (student)" with (assignment, student) has (submitter: section) and not (submitter: student)
+    Submitting._getAttempts (assignment, submitter: student) has (artifacts, submission: original)
+    Submitting._getAttempts (assignment, submitter: section) has (artifacts, submission: moved)
+    Grading._getAssessment (evidence: moved, item: assignment, learner: section) has (version: 1)
+```
+
+### the assessments that stand for (student)
+
+Authored path: `Course.grades.theStandingGrades`.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 68.
+
+```view
+the assessments that stand for (student) — inputs (student); outputs (grade, learner, item, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history); bindings (section) — answers any number of (grade, learner, item, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history)
+  where
+    Grading._getGradesForLearner (learner: student) has (createdAt, criteria, evidence, feedback, grade, grader, history, item, judgments, learner, method, outOf, releasedAt, score, scored, setupRevision, status, updatedAt, version)
+    view "the submitter of (assignment) for (student)" with (assignment: item, student) has (submitter: student)
+  where
+    Rostering._getSeatByUser (user: student) has (section)
+    Grading._getGradesForLearner (learner: section) has (createdAt, criteria, evidence, feedback, grade, grader, history, item, judgments, learner, method, outOf, releasedAt, score, scored, setupRevision, status, updatedAt, version)
+    view "the submitter of (assignment) for (student)" with (assignment: item, student) has (submitter: section)
+```
+
 ### the assignment (assignment)
 
 Authored path: `Course.assignments.theAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 38.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 48.
 
 ```view
 the assignment (assignment) — inputs (assignment); outputs (detail); bindings () — answers at most one (detail)
   where Assigning._getDetail (assignment) has (detail)
+```
+
+### the attempts of (assignment) that stand for (student)
+
+Authored path: `Course.submissions.theStandingAttempts`.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 19.
+
+```view
+the attempts of (assignment) that stand for (student) — inputs (assignment, student); outputs (submission, artifacts, submittedAt, number, status); bindings (submitter) — answers any number of (submission, artifacts, submittedAt, number, status)
+  where
+    view "the submitter of (assignment) for (student)" with (assignment, student) has (submitter)
+    Submitting._getAttempts (assignment, submitter) has (artifacts, number, status, submission, submittedAt)
+```
+
+### the attempts on (assignment) not yet moved to a section
+
+Authored path: `Course.moves.theUnmovedAttempts`.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 16.
+
+```view
+the attempts on (assignment) not yet moved to a section — inputs (assignment); outputs (student, section, submission, artifacts, submittedAt); bindings () — answers any number of (student, section, submission, artifacts, submittedAt)
+  where
+    Assigning._getAssignments () has (assignment, submittedBy: "SECTION")
+    Submitting._getSubmissionsForAssignment (assignment) has (artifacts, status: "SUBMITTED", submission, submittedAt, submitter: student)
+    view "(user) is an active student" with (user: student)
+    view "the submitter of (assignment) for (student)" with (assignment, student) has (submitter: section) and not (submitter: student)
+    no view "(artifacts) on (assignment) are held by an attempt not of (student)" with (artifacts, assignment, student)
+    no view "(section) holds an attempt on (assignment) handed in after (submittedAt)" with (assignment, section, submittedAt)
 ```
 
 ### the audience reader of (session)
@@ -4033,6 +4181,23 @@ the discussion context of (post) for (reader) — inputs (post, reader); outputs
     discussionTitle is notificationDiscussionTitle (content)
 ```
 
+### the due override for (student) on (assignment)
+
+Authored path: `Course.assignments.theDueOverrideFor`.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 17.
+
+```view
+the due override for (student) on (assignment) — inputs (assignment, student); outputs (dueOverride); bindings (submitter, students, releases) — answers exactly one (dueOverride)
+  where
+    view "the submitter of (assignment) for (student)" with (assignment, student) has (submitter: student)
+    whether Assigning._getAssigned (assignee: student) has (assignment, dueOverride)
+  where
+    view "the submitter of (assignment) for (student)" with (assignment, student) has (submitter) and not (submitter: student)
+    Rostering._activeStudentList () has (students)
+    Assigning._courseReleases () has (releases)
+    dueOverride is sectionDueOverride (assignment, releases, section: submitter, students)
+```
+
 ### the effective invitation copy ()
 
 Authored path: `Access.mail.invitationCopy`.
@@ -4092,7 +4257,7 @@ the email context of notification subject (subject) of kind (kind) for (user) �
 ### the final course-grade policy
 
 Authored path: `Course.courseGrades.theFinalPolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 88.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 96.
 
 ```view
 the final course-grade policy — inputs (); outputs (final); bindings (policy, name, version, specification) — answers at most one (final)
@@ -4133,14 +4298,16 @@ the label of (run) — inputs (run); outputs (title, kind, openedAt); bindings (
     kind is runKind (quizForm, relayTitle)
 ```
 
-### the latest submission for (assignment) by (submitter)
+### the latest submission of (assignment) for (student)
 
 Authored path: `Course.submissions.theLatestSubmission`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 3.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 14.
 
 ```view
-the latest submission for (assignment) by (submitter) — inputs (assignment, submitter); outputs (latest); bindings () — answers at most one (latest)
-  where Submitting._getLatest (assignment, submitter) has (latest)
+the latest submission of (assignment) for (student) — inputs (assignment, student); outputs (latest); bindings (submitter) — answers at most one (latest)
+  where
+    view "the submitter of (assignment) for (student)" with (assignment, student) has (submitter)
+    Submitting._getLatest (assignment, submitter) has (latest)
 ```
 
 ### the list title behind (subject) of kind (kind) for (reader) at (at)
@@ -4495,6 +4662,22 @@ the subject of background document (document) — inputs (document); outputs (su
     use is among ["drafting"]
 ```
 
+### the submissions that stand for (student)
+
+Authored path: `Course.submissions.theStandingSubmissions`.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 38.
+
+```view
+the submissions that stand for (student) — inputs (student); outputs (assignment, submission, submittedAt, number, status); bindings (section) — answers any number of (assignment, submission, submittedAt, number, status)
+  where
+    Submitting._getSubmissionsForSubmitter (submitter: student) has (assignment, number, status, submission, submittedAt)
+    view "the submitter of (assignment) for (student)" with (assignment, student) has (submitter: student)
+  where
+    Rostering._getSeatByUser (user: student) has (section)
+    Submitting._getSubmissionsForSubmitter (submitter: section) has (assignment, number, status, submission, submittedAt)
+    view "the submitter of (assignment) for (student)" with (assignment, student) has (submitter: section)
+```
+
 ### the task behind (subject) for (reader) at (at)
 
 ```view
@@ -4717,15 +4900,15 @@ Former "the answers outcome of (response)" — inputs (response); bindings (run,
     score
 ```
 
-### the artifact (artifact) of (assignment) by (submitter) for (user)
+### the artifact (artifact) of (assignment) standing for (student), for (user)
 
 Authored path: `Course.submissions.theArtifactPost`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 37.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 57.
 
 ```former
-Former "the artifact (artifact) of (assignment) by (submitter) for (user)" — inputs (artifact, assignment, submitter, user); bindings (author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
+Former "the artifact (artifact) of (assignment) standing for (student), for (user)" — inputs (artifact, assignment, student, user); bindings (author, content, createdAt, editedAt, rendered); promises exactly one record — forms:
   a record of
-    where view "(user) may read (artifact) submitted by (submitter) for (assignment)" with (artifact, assignment, submitter, user)
+    where view "(user) may read (artifact) that stands for (student) on (assignment)" with (artifact, assignment, student, user)
     where Posting._getPost (post: artifact) has (author, content, createdAt, editedAt)
     where Formatting._getRendered (target: artifact) has (rendered)
     author
@@ -4738,7 +4921,7 @@ Former "the artifact (artifact) of (assignment) by (submitter) for (user)" — i
 ### the assessment (grade)
 
 Authored path: `Course.grades.theAssessment`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 67.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 80.
 
 ```former
 Former "the assessment (grade)" — inputs (grade); bindings (learner, item, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
@@ -4770,85 +4953,15 @@ Former "the assessment (grade)" — inputs (grade); bindings (learner, item, evi
       version
 ```
 
-### the assessments of (learner)
-
-Authored path: `Course.grades.theGradesOf`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 61.
-
-```former
-Former "the assessments of (learner)" — inputs (learner); bindings (grade, item, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
-  each Grading._getGradesForLearner (learner) has (createdAt, criteria, evidence, feedback, grade, grader, history, item, judgments, learner, method, outOf, releasedAt, score, scored, setupRevision, status, updatedAt, version)
-    where whether Itemizing._getItem (item) has (label)
-    where whether Submitting._getAttempts (assignment: item, submitter: learner) has (number, submission: evidence, submittedAt)
-    form a record of
-      attempt: number
-      createdAt
-      criteria
-      evidence
-      feedback
-      grade
-      grader
-      history
-      item
-      judgments
-      label
-      learner
-      method
-      outOf
-      releasedAt
-      score
-      scored
-      setupRevision
-      status
-      submittedAt
-      updatedAt
-      version
-```
-
-### the assessments of (learner) that (user) may grade
-
-Authored path: `Course.grades.theGradableGradesOf`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 63.
-
-```former
-Former "the assessments of (learner) that (user) may grade" — inputs (learner, user); bindings (grade, item, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
-  each Grading._getGradesForLearner (learner) has (createdAt, criteria, evidence, feedback, grade, grader, history, item, judgments, learner, method, outOf, releasedAt, score, scored, setupRevision, status, updatedAt, version)
-    where view "(user) may grade the work of (learner) on (item)" with (item, learner, user)
-    where whether Itemizing._getItem (item) has (label)
-    where whether Submitting._getAttempts (assignment: item, submitter: learner) has (number, submission: evidence, submittedAt)
-    form a record of
-      attempt: number
-      createdAt
-      criteria
-      evidence
-      feedback
-      grade
-      grader
-      history
-      item
-      judgments
-      label
-      learner
-      method
-      outOf
-      releasedAt
-      score
-      scored
-      setupRevision
-      status
-      submittedAt
-      updatedAt
-      version
-```
-
 ### the assessments on (item) that (user) may grade
 
 Authored path: `Course.grades.theGradesOn`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 65.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 78.
 
 ```former
 Former "the assessments on (item) that (user) may grade" — inputs (item, user); bindings (grade, learner, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history, displayName, submittedAt, number); promises exactly one record — forms:
   each Grading._getGradesForItem (item) has (createdAt, criteria, evidence, feedback, grade, grader, history, item, judgments, learner, method, outOf, releasedAt, score, scored, setupRevision, status, updatedAt, version)
+    where view "(submitter) submits (assignment)" with (assignment: item, submitter: learner)
     where view "(user) may grade the work of (learner) on (item)" with (item, learner, user)
     where whether Profiling._getProfileFields (user: learner) has (displayName)
     where whether Submitting._getAttempts (assignment: item, submitter: learner) has (number, submission: evidence, submittedAt)
@@ -4877,19 +4990,57 @@ Former "the assessments on (item) that (user) may grade" — inputs (item, user)
       version
 ```
 
+### the assessments standing for (student) that (user) may grade
+
+Authored path: `Course.grades.theGradableGradesOf`.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 76.
+
+```former
+Former "the assessments standing for (student) that (user) may grade" — inputs (student, user); bindings (grade, learner, item, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
+  each view "the assessments that stand for (student)" with (student) has (createdAt, criteria, evidence, feedback, grade, grader, history, item, judgments, learner, method, outOf, releasedAt, score, scored, setupRevision, status, updatedAt, version)
+    where view "(user) may grade the work of (learner) on (item)" with (item, learner, user)
+    where whether Itemizing._getItem (item) has (label)
+    where whether Submitting._getAttempts (assignment: item, submitter: learner) has (number, submission: evidence, submittedAt)
+    form a record of
+      attempt: number
+      createdAt
+      criteria
+      evidence
+      feedback
+      grade
+      grader
+      history
+      item
+      judgments
+      label
+      learner
+      method
+      outOf
+      releasedAt
+      score
+      scored
+      setupRevision
+      status
+      submittedAt
+      updatedAt
+      version
+```
+
 ### the assigned population for (assignment) that (user) may grade
 
 Authored path: `Course.submissions.theAssignedPopulationForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 21.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 41.
 
 ```former
-Former "the assigned population for (assignment) that (user) may grade" — inputs (assignment, user); bindings (assignee, displayName, username, email, section, enrolment, release, dueOverride, releaseStatus); promises exactly one record — forms:
+Former "the assigned population for (assignment) that (user) may grade" — inputs (assignment, user); bindings (assignee, displayName, username, email, section, enrolment, submitter, release, dueOverride, releaseStatus); promises exactly one record — forms:
   each Assigning._getAssignees (assignment) has (assignee)
-    where view "(user) may grade the work of (learner) on (item)" with (item: assignment, learner: assignee, user)
+    where view "(user) may grade what stands for (student) on (item)" with (item: assignment, student: assignee, user)
+    where view "the submitter of (assignment) for (student)" with (assignment, student: assignee) has (submitter)
     where whether Profiling._getProfileFields (user: assignee) has (displayName)
     where whether Authenticating._getById (user: assignee) has (username)
     where whether Rostering._getSeatByUser (user: assignee) has (email, section, status: enrolment)
-    where Assigning._getAssigned (assignee) has (assignment, dueOverride, release, status: releaseStatus)
+    where Assigning._getAssigned (assignee) has (assignment, release, status: releaseStatus)
+    where view "the due override for (student) on (assignment)" with (assignment, student: assignee) has (dueOverride)
     form a record of
       assignee
       displayName
@@ -4899,6 +5050,7 @@ Former "the assigned population for (assignment) that (user) may grade" — inpu
       release
       section
       status: releaseStatus
+      submitter
       username
 ```
 
@@ -4918,12 +5070,13 @@ Former "the assignment notification presentation of (assignment) for (user)" —
 ### the assignments of (student)
 
 Authored path: `Course.assignments.theAssignmentsOf`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 34.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
 
 ```former
 Former "the assignments of (student)" — inputs (student); bindings (assignment, release, dueOverride, releaseStatus, title, kind, dueAt, closeAt, acceptsSubmissions); promises exactly one record — forms:
-  each Assigning._getAssigned (assignee: student) has (assignment, dueOverride, release, status: releaseStatus)
+  each Assigning._getAssigned (assignee: student) has (assignment, release, status: releaseStatus)
     where Assigning._getAssignments () has (acceptsSubmissions, assignment, closeAt, dueAt, kind, status: "PUBLISHED", title)
+    where view "the due override for (student) on (assignment)" with (assignment, student) has (dueOverride)
     form a record of
       acceptsSubmissions
       assignment
@@ -4936,16 +5089,21 @@ Former "the assignments of (student)" — inputs (student); bindings (assignment
       title
 ```
 
-### the attempts for (assignment) by (submitter)
+### the attempts of (assignment) for (student)
 
 Authored path: `Course.submissions.theAttempts`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 7.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 18.
 
 ```former
-Former "the attempts for (assignment) by (submitter)" — inputs (assignment, submitter); bindings (submission, artifacts, submittedAt, number, status); promises exactly one record — forms:
-  each Submitting._getAttempts (assignment, submitter) has (artifacts, number, status, submission, submittedAt)
+Former "the attempts of (assignment) for (student)" — inputs (assignment, student); bindings (submission, artifacts, submittedAt, number, status, artifact, author, authorName); promises exactly one record — forms:
+  each view "the attempts of (assignment) that stand for (student)" with (assignment, student) has (artifacts, number, status, submission, submittedAt)
+    where artifact is soleArtifact (artifacts)
+    where whether Posting._getPost (post: artifact) has (author)
+    where whether Profiling._getProfileFields (user: author) has (displayName: authorName)
     form a record of
       artifacts
+      author
+      authorName
       number
       status
       submission
@@ -4971,7 +5129,7 @@ Former "the attendance roster" — inputs (); bindings (user, section, email, di
 ### the available graders ()
 
 Authored path: `Course.delegation.theGraders`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 10.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 13.
 
 ```former
 Former "the available graders ()" — inputs (); bindings (grader, displayName, username); promises exactly one record — forms:
@@ -5121,8 +5279,9 @@ Authored path: `Course.calendar.theCalendarOf`.
 
 ```former
 Former "the calendar of (student) between (start) and (end)" — inputs (student, start, end); bindings (assignment, release, dueOverride, title, kind, availableAt, dueAt, closeAt, status); promises exactly one record — forms:
-  each Assigning._getAssigned (assignee: student) has (assignment, dueOverride, release)
+  each Assigning._getAssigned (assignee: student) has (assignment, release)
     where Assigning._getPublishedInWindow (end, start) has (assignment)
+    where view "the due override for (student) on (assignment)" with (assignment, student) has (dueOverride)
     where Assigning._getAssignments () has (assignment, availableAt, closeAt, dueAt, kind, status, title)
     form a record of
       assignment
@@ -5232,7 +5391,7 @@ Former "the controls selected by (posts) in (conversation) for (reader)" — inp
 ### the course-grade policies
 
 Authored path: `Course.courseGrades.thePolicies`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 53.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 61.
 
 ```former
 Former "the course-grade policies" — inputs (); bindings (policy, name, version, author, authorName, savedAt, final); promises exactly one record — forms:
@@ -5251,7 +5410,7 @@ Former "the course-grade policies" — inputs (); bindings (policy, name, versio
 ### the course-grade release history
 
 Authored path: `Course.courseGrades.theReleaseHistory`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 54.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 62.
 
 ```former
 Former "the course-grade release history" — inputs (); bindings (edition, open, openedAt, closedAt, author, authorName, value, summary); promises exactly one record — forms:
@@ -5272,7 +5431,7 @@ Former "the course-grade release history" — inputs (); bindings (edition, open
 ### the course-grade student updates
 
 Authored path: `Course.courseGrades.theStudentUpdates`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 55.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 63.
 
 ```former
 Former "the course-grade student updates" — inputs (); bindings (edition, material, openedAt, value, summary); promises exactly one record — forms:
@@ -5289,7 +5448,7 @@ Former "the course-grade student updates" — inputs (); bindings (edition, mate
 ### the course grades page
 
 Authored path: `Course.courseGrades.theCourseGradesPage`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 52.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 60.
 
 ```former
 Former "the course grades page" — inputs (); bindings (inputs, section, name); promises at most one record — forms:
@@ -5346,7 +5505,7 @@ Former "the current mail eligibility of (recipient) for (post) at (queued)" — 
 ### the current standards ()
 
 Authored path: `Course.grades.theStandards`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 73.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 86.
 
 ```former
 Former "the current standards ()" — inputs (); bindings (standard, edition, number, name, description, deficient, emergent, competent, expert, referenceUrl); promises exactly one record — forms:
@@ -5699,10 +5858,45 @@ Former "the forward links of (source) for (reader)" — inputs (source, reader);
       target
 ```
 
+### the gradebook assessments of (student)
+
+Authored path: `Course.grades.theGradesOf`.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 74.
+
+```former
+Former "the gradebook assessments of (student)" — inputs (student); bindings (grade, learner, item, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
+  each view "the assessments that stand for (student)" with (student) has (createdAt, criteria, evidence, feedback, grade, grader, history, item, judgments, learner, method, outOf, releasedAt, score, scored, setupRevision, status, updatedAt, version)
+    where whether Itemizing._getItem (item) has (label)
+    where whether Submitting._getAttempts (assignment: item, submitter: learner) has (number, submission: evidence, submittedAt)
+    form a record of
+      attempt: number
+      createdAt
+      criteria
+      evidence
+      feedback
+      grade
+      grader
+      history
+      item
+      judgments
+      label
+      learner
+      method
+      outOf
+      releasedAt
+      score
+      scored
+      setupRevision
+      status
+      submittedAt
+      updatedAt
+      version
+```
+
 ### the gradebook learners ()
 
 Authored path: `Course.grades.theGradebookLearners`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 69.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 82.
 
 ```former
 Former "the gradebook learners ()" — inputs (); bindings (user, seat, section, email, displayName); promises exactly one record — forms:
@@ -5711,7 +5905,7 @@ Former "the gradebook learners ()" — inputs (); bindings (user, seat, section,
     form a record of
       displayName
       email
-      grades: former "the assessments of (learner)" with (learner: user)
+      grades: former "the gradebook assessments of (student)" with (student: user)
       seat
       section
       user
@@ -5720,7 +5914,7 @@ Former "the gradebook learners ()" — inputs (); bindings (user, seat, section,
 ### the gradebook ()
 
 Authored path: `Course.grades.theGradebook`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 71.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 84.
 
 ```former
 Former "the gradebook ()" — inputs (); bindings (item, label, method, revision, maxPoints); promises exactly one record — forms:
@@ -5738,11 +5932,12 @@ Former "the gradebook ()" — inputs (); bindings (item, label, method, revision
 ### the grading delegations on (item) that (user) may see
 
 Authored path: `Course.delegation.theDelegationsOn`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 15.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 18.
 
 ```former
 Former "the grading delegations on (item) that (user) may see" — inputs (item, user); bindings (learner, grader, graderName, graderUsername); promises exactly one record — forms:
   each Delegating._getDelegations (item) has (delegate: grader, subject: learner)
+    where view "(submitter) submits (assignment)" with (assignment: item, submitter: learner)
     where view "(user) may grade the work of (learner) on (item)" with (item, learner, user)
     where whether Profiling._getProfileFields (user: grader) has (displayName: graderName)
     where whether Authenticating._getById (user: grader) has (username: graderUsername)
@@ -6622,14 +6817,14 @@ Former "the relays" — inputs (); bindings (relay, title, createdAt, leg, mater
       title
 ```
 
-### the released assessments of (learner)
+### the released assessments that stand for (student)
 
 Authored path: `Course.grades.theReleasedGradesOf`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 59.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 72.
 
 ```former
-Former "the released assessments of (learner)" — inputs (learner); bindings (grade, item, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
-  each Grading._getGradesForLearner (learner) has (createdAt, criteria, evidence, feedback, grade, grader, history, item, judgments, learner, method, outOf, releasedAt, score, scored, setupRevision, status, updatedAt, version)
+Former "the released assessments that stand for (student)" — inputs (student); bindings (grade, learner, item, evidence, grader, method, setupRevision, criteria, judgments, feedback, status, version, score, outOf, scored, createdAt, updatedAt, releasedAt, history, label, submittedAt, number); promises exactly one record — forms:
+  each view "the assessments that stand for (student)" with (student) has (createdAt, criteria, evidence, feedback, grade, grader, history, item, judgments, learner, method, outOf, releasedAt, score, scored, setupRevision, status, updatedAt, version)
     where status is among ["RELEASED", "EXCUSED"]
     where whether Itemizing._getItem (item) has (label)
     where whether Submitting._getAttempts (assignment: item, submitter: learner) has (number, submission: evidence, submittedAt)
@@ -6675,7 +6870,7 @@ Former "the resolution of (question) for (reader)" — inputs (question, reader)
 ### the resolved grading setup of (item)
 
 Authored path: `Course.grades.theSetupOf`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 57.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 70.
 
 ```former
 Former "the resolved grading setup of (item)" — inputs (item); bindings (label, status, method, revision, storedCriteria, maxPoints, editions, criteria); promises exactly one record — forms:
@@ -6850,6 +7045,23 @@ Former "the scores of (run)" — inputs (run); bindings (key, disclosure, submis
     run
 ```
 
+### the section that submits (assignment) for (student)
+
+Authored path: `Course.assignments.theTeamOf`.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
+
+```former
+Former "the section that submits (assignment) for (student)" — inputs (assignment, student); bindings (section, member, displayName); promises exactly one record — forms:
+  a record of
+    where view "the submitter of (assignment) for (student)" with (assignment, student) has (submitter: section) and not (submitter: student)
+    members: each Rostering._getActiveStudents () has (section, user: member)
+      where whether Profiling._getProfileFields (user: member) has (displayName)
+      form a record of
+        displayName
+        user: member
+    section
+```
+
 ### the sections ()
 
 Authored path: `Course.roster.theSections`.
@@ -6895,7 +7107,7 @@ Former "the selected summary of (conversation) for (reader)" — inputs (convers
 ### the staff assignments ()
 
 Authored path: `Course.assignments.theStaffAssignments`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 41.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 51.
 
 ```former
 Former "the staff assignments ()" — inputs (); bindings (assignment, author, title, instructions, kind, availableAt, dueAt, closeAt, acceptsSubmissions, audience, targets, status, createdAt, updatedAt); promises exactly one record — forms:
@@ -7021,47 +7233,15 @@ Former "the stored thread (conversation) for (reader)" — inputs (conversation,
       trashed
 ```
 
-### the submissions by (submitter)
-
-Authored path: `Course.submissions.theSubmissionsBy`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 18.
-
-```former
-Former "the submissions by (submitter)" — inputs (submitter); bindings (assignment, submission, submittedAt, number, status); promises exactly one record — forms:
-  each Submitting._getSubmissionsForSubmitter (submitter) has (assignment, number, status, submission, submittedAt)
-    form a record of
-      assignment
-      number
-      status
-      submission
-      submittedAt
-```
-
-### the submissions by (submitter) that (user) may grade
-
-Authored path: `Course.submissions.theGradableSubmissionsBy`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 19.
-
-```former
-Former "the submissions by (submitter) that (user) may grade" — inputs (submitter, user); bindings (assignment, submission, submittedAt, number, status); promises exactly one record — forms:
-  each Submitting._getSubmissionsForSubmitter (submitter) has (assignment, number, status, submission, submittedAt)
-    where view "(user) may grade the work of (learner) on (item)" with (item: assignment, learner: submitter, user)
-    form a record of
-      assignment
-      number
-      status
-      submission
-      submittedAt
-```
-
 ### the submissions for (assignment) that (user) may grade
 
 Authored path: `Course.submissions.theSubmissionsForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 22.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 42.
 
 ```former
 Former "the submissions for (assignment) that (user) may grade" — inputs (assignment, user); bindings (submitter, submitterName, submission, artifacts, submittedAt, number, status); promises exactly one record — forms:
   each Submitting._getSubmissionsForAssignment (assignment) has (artifacts, number, status, submission, submittedAt, submitter)
+    where view "(submitter) submits (assignment)" with (assignment, submitter)
     where view "(user) may grade the work of (learner) on (item)" with (item: assignment, learner: submitter, user)
     where whether Profiling._getProfileFields (user: submitter) has (displayName: submitterName)
     form a record of
@@ -7072,6 +7252,54 @@ Former "the submissions for (assignment) that (user) may grade" — inputs (assi
       submittedAt
       submitter
       submitterName
+```
+
+### the submissions for (student)
+
+Authored path: `Course.submissions.theSubmissionsBy`.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 37.
+
+```former
+Former "the submissions for (student)" — inputs (student); bindings (assignment, submission, submittedAt, number, status); promises exactly one record — forms:
+  each view "the submissions that stand for (student)" with (student) has (assignment, number, status, submission, submittedAt)
+    form a record of
+      assignment
+      number
+      status
+      submission
+      submittedAt
+```
+
+### the submissions for (student) that (user) may grade
+
+Authored path: `Course.submissions.theGradableSubmissionsBy`.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 39.
+
+```former
+Former "the submissions for (student) that (user) may grade" — inputs (student, user); bindings (assignment, submission, submittedAt, number, status); promises exactly one record — forms:
+  each view "the submissions that stand for (student)" with (student) has (assignment, number, status, submission, submittedAt)
+    where view "(user) may grade what stands for (student) on (item)" with (item: assignment, student, user)
+    form a record of
+      assignment
+      number
+      status
+      submission
+      submittedAt
+```
+
+### the submissions to (assignment) not yet moved that (user) may grade
+
+Authored path: `Course.moves.theUnmovedSubmissions`.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 28.
+
+```former
+Former "the submissions to (assignment) not yet moved that (user) may grade" — inputs (assignment, user); bindings (student, section, submission); promises exactly one record — forms:
+  each view "the attempts on (assignment) not yet moved to a section" with (assignment) has (section, student, submission)
+    where view "(user) may grade the work of (learner) on (item)" with (item: assignment, learner: section, user)
+    form a record of
+      section
+      student
+      submission
 ```
 
 ### the subscribers of (target) for (reader)
@@ -9623,8 +9851,8 @@ then
 ### Course.assignments.Archive:forbidden
 
 Authored path: `Course.assignments.Archive`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 7.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 10.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 65.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/archive", requestId, session)
@@ -9638,8 +9866,8 @@ then
 ### Course.assignments.Archive:success
 
 Authored path: `Course.assignments.Archive`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 7.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 10.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 65.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/archive", requestId, session)
@@ -9654,8 +9882,8 @@ then
 ### Course.assignments.Archive:success#2
 
 Authored path: `Course.assignments.Archive`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 7.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 10.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 65.
 
 ```reaction
 when Assigning.archive (assignment, at, result.assignment: archived), asked by Course.assignments.Archive:success
@@ -9668,7 +9896,7 @@ then
 ### Course.assignments.AssignmentReleaseNotifiesStudent
 
 Authored path: `Course.assignments.AssignmentReleaseNotifiesStudent`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 63.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 79.
 
 ```reaction
 when Assigning.assign (assignee, assignment, at)
@@ -9682,7 +9910,7 @@ then
 ### Course.assignments.ClaimedStudentSeatReceivesPublished
 
 Authored path: `Course.assignments.ClaimedStudentSeatReceivesPublished`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 25.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 34.
 
 ```reaction
 when Rostering.claimSeat (kind: "STUDENT", section, user)
@@ -9697,8 +9925,8 @@ then
 ### Course.assignments.ClearDueOverride:forbidden
 
 Authored path: `Course.assignments.ClearDueOverride`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 10.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 51.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 13.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 66.
 
 ```reaction
 when RequestBoundary.request (assignee, assignment, path: "/assignments/clear-due-override", requestId, session)
@@ -9712,8 +9940,8 @@ then
 ### Course.assignments.ClearDueOverride:success
 
 Authored path: `Course.assignments.ClearDueOverride`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 10.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 51.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 13.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 66.
 
 ```reaction
 when RequestBoundary.request (assignee, assignment, path: "/assignments/clear-due-override", requestId, session)
@@ -9727,8 +9955,8 @@ then
 ### Course.assignments.ClearDueOverride:success#2
 
 Authored path: `Course.assignments.ClearDueOverride`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 10.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 51.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 13.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 66.
 
 ```reaction
 when Assigning.clearDueOverride (assignee, assignment, release), asked by Course.assignments.ClearDueOverride:success
@@ -9738,14 +9966,33 @@ then
   RequestBoundary.respond (release, requestId)
 ```
 
+### Course.assignments.ClearDueOverride:teammates
+
+Authored path: `Course.assignments.ClearDueOverride`.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 13.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 66.
+
+```reaction
+when RequestBoundary.request (assignee, assignment, path: "/assignments/clear-due-override", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the course" with (user)
+  Assigning._isAssigned (assignee, assignment) has (assigned: true)
+  view "the submitter of (assignment) for (student)" with (assignment, student: assignee) has (submitter) and not (submitter: assignee)
+  Rostering._getActiveStudents () has (section: submitter, user: member) and not (user: assignee)
+  Assigning._isAssigned (assignee: member, assignment) has (assigned: true)
+then
+  Assigning.clearDueOverride (assignee: member, assignment)
+```
+
 ### Course.assignments.CreateDraft:forbidden
 
 Authored path: `Course.assignments.CreateDraft`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 4.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 52.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 67.
 
 ```reaction
-when RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, targets, title)
+when RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, submittedBy, targets, title)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not manage the course" with (user)
@@ -9757,28 +10004,28 @@ then
 
 Authored path: `Course.assignments.CreateDraft`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 4.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 52.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 67.
 
 ```reaction
-when RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, targets, title)
+when RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, submittedBy, targets, title)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage the course" with (user)
 then
-  Assigning.createDraft (acceptsSubmissions, at, audience, author: user, availableAt, closeAt, dueAt, instructions, kind, targets, title)
+  Assigning.createDraft (acceptsSubmissions, at, audience, author: user, availableAt, closeAt, dueAt, instructions, kind, submittedBy, targets, title)
 ```
 
 ### Course.assignments.CreateDraft:success#2
 
 Authored path: `Course.assignments.CreateDraft`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 4.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 52.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 67.
 
 ```reaction
-when Assigning.createDraft (acceptsSubmissions, at, audience, author: user, availableAt, closeAt, dueAt, instructions, kind, targets, title, assignment), asked by Course.assignments.CreateDraft:success
+when Assigning.createDraft (acceptsSubmissions, at, audience, author: user, availableAt, closeAt, dueAt, instructions, kind, submittedBy, targets, title, assignment), asked by Course.assignments.CreateDraft:success
 where
-  earlier, RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, targets, title)
+  earlier, RequestBoundary.request (acceptsSubmissions, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/create-draft", requestId, session, submittedBy, targets, title)
 then
   RequestBoundary.respond (assignment, requestId)
 ```
@@ -9786,8 +10033,8 @@ then
 ### Course.assignments.ForMe:forbidden
 
 Authored path: `Course.assignments.ForMe`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 35.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 53.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 44.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 68.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/for-me", requestId, session)
@@ -9801,8 +10048,8 @@ then
 ### Course.assignments.ForMe:success
 
 Authored path: `Course.assignments.ForMe`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 35.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 53.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 44.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 68.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/for-me", requestId, session)
@@ -9816,8 +10063,8 @@ then
 ### Course.assignments.GetAssignment:forbidden
 
 Authored path: `Course.assignments.GetAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 39.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 54.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 49.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 69.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
@@ -9831,8 +10078,8 @@ then
 ### Course.assignments.GetAssignment:found
 
 Authored path: `Course.assignments.GetAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 39.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 54.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 49.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 69.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
@@ -9843,15 +10090,36 @@ where
   Rostering._getSeatByUser (user) has (section)
   at is the current flow's instant
   canSubmit is submissionAllowed (at, detail, section)
+  view "the submitter of (assignment) for (student)" with (assignment, student: user) has (submitter: user)
 then
-  RequestBoundary.respond (assignment: detail, canSubmit, requestId)
+  RequestBoundary.respond (assignment: detail, canSubmit, requestId, team: null)
+```
+
+### Course.assignments.GetAssignment:found-in-section
+
+Authored path: `Course.assignments.GetAssignment`.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 49.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 69.
+
+```reaction
+when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may read learner assignment (assignment)" with (assignment, user)
+  view "the assignment (assignment)" with (assignment) has (detail)
+  Rostering._getSeatByUser (user) has (section)
+  at is the current flow's instant
+  canSubmit is submissionAllowed (at, detail, section)
+  view "the submitter of (assignment) for (student)" with (assignment, student: user) and not (submitter: user)
+then
+  RequestBoundary.respond (assignment: detail, canSubmit, requestId, team: former "the section that submits (assignment) for (student)" with (assignment, student: user))
 ```
 
 ### Course.assignments.GetAssignment:unavailable
 
 Authored path: `Course.assignments.GetAssignment`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 39.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 54.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 49.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 69.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/get", requestId, session)
@@ -9866,8 +10134,8 @@ then
 ### Course.assignments.Publish:forbidden
 
 Authored path: `Course.assignments.Publish`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 6.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 55.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 9.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 70.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/publish", requestId, session)
@@ -9881,8 +10149,8 @@ then
 ### Course.assignments.Publish:success
 
 Authored path: `Course.assignments.Publish`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 6.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 55.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 9.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 70.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/publish", requestId, session)
@@ -9897,8 +10165,8 @@ then
 ### Course.assignments.Publish:success#2
 
 Authored path: `Course.assignments.Publish`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 6.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 55.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 9.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 70.
 
 ```reaction
 when Assigning.publish (assignment, at, result.assignment: published), asked by Course.assignments.Publish:success
@@ -9911,7 +10179,7 @@ then
 ### Course.assignments.PublishedAssignmentAssignsAudienceStudents:everyone
 
 Authored path: `Course.assignments.PublishedAssignmentAssignsAudienceStudents`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 16.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 25.
 
 ```reaction
 when Assigning.publish (at, assignment, audience, targets)
@@ -9925,7 +10193,7 @@ then
 ### Course.assignments.PublishedAssignmentAssignsAudienceStudents:targets
 
 Authored path: `Course.assignments.PublishedAssignmentAssignsAudienceStudents`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 16.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 25.
 
 ```reaction
 when Assigning.publish (at, assignment, audience, targets)
@@ -9940,7 +10208,7 @@ then
 ### Course.assignments.ReinstatedStudentSeatReceivesPublished
 
 Authored path: `Course.assignments.ReinstatedStudentSeatReceivesPublished`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 28.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 37.
 
 ```reaction
 when Rostering.reinstateSeat (kind: "STUDENT", section, user)
@@ -9956,10 +10224,10 @@ then
 
 Authored path: `Course.assignments.Revise`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 5.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 56.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 71.
 
 ```reaction
-when RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, targets, title)
+when RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, submittedBy, targets, title)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may not manage the course" with (user)
@@ -9971,28 +10239,28 @@ then
 
 Authored path: `Course.assignments.Revise`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 5.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 56.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 71.
 
 ```reaction
-when RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, targets, title)
+when RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, submittedBy, targets, title)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage the course" with (user)
 then
-  Assigning.revise (acceptsSubmissions, assignment, at, audience, availableAt, closeAt, dueAt, instructions, kind, targets, title)
+  Assigning.revise (acceptsSubmissions, assignment, at, audience, availableAt, closeAt, dueAt, instructions, kind, submittedBy, targets, title)
 ```
 
 ### Course.assignments.Revise:success#2
 
 Authored path: `Course.assignments.Revise`.
 - Covered by [Assignments](../design/compositions/course/assignments.md), line 5.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 56.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 71.
 
 ```reaction
-when Assigning.revise (acceptsSubmissions, assignment, at, audience, availableAt, closeAt, dueAt, instructions, kind, targets, title, result.assignment: revised), asked by Course.assignments.Revise:success
+when Assigning.revise (acceptsSubmissions, assignment, at, audience, availableAt, closeAt, dueAt, instructions, kind, submittedBy, targets, title, result.assignment: revised), asked by Course.assignments.Revise:success
 where
-  earlier, RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, targets, title)
+  earlier, RequestBoundary.request (acceptsSubmissions, assignment, audience, availableAt, closeAt, dueAt, instructions, kind, path: "/assignments/revise", requestId, session, submittedBy, targets, title)
 then
   RequestBoundary.respond (assignment: revised, requestId)
 ```
@@ -10000,7 +10268,7 @@ then
 ### Course.assignments.RevisedAssignmentAssignsNewAudienceStudents:everyone
 
 Authored path: `Course.assignments.RevisedAssignmentAssignsNewAudienceStudents`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 20.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 29.
 
 ```reaction
 when Assigning.revise (at, assignment, audience, status, targets)
@@ -10016,7 +10284,7 @@ then
 ### Course.assignments.RevisedAssignmentAssignsNewAudienceStudents:targets
 
 Authored path: `Course.assignments.RevisedAssignmentAssignsNewAudienceStudents`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 20.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 29.
 
 ```reaction
 when Assigning.revise (at, assignment, audience, status, targets)
@@ -10033,8 +10301,8 @@ then
 ### Course.assignments.SetDueOverride:forbidden
 
 Authored path: `Course.assignments.SetDueOverride`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 9.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 57.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 12.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 72.
 
 ```reaction
 when RequestBoundary.request (assignee, assignment, dueAt, path: "/assignments/set-due-override", requestId, session)
@@ -10048,8 +10316,8 @@ then
 ### Course.assignments.SetDueOverride:success
 
 Authored path: `Course.assignments.SetDueOverride`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 9.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 57.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 12.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 72.
 
 ```reaction
 when RequestBoundary.request (assignee, assignment, dueAt, path: "/assignments/set-due-override", requestId, session)
@@ -10063,8 +10331,8 @@ then
 ### Course.assignments.SetDueOverride:success#2
 
 Authored path: `Course.assignments.SetDueOverride`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 9.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 57.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 12.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 72.
 
 ```reaction
 when Assigning.setDueOverride (assignee, assignment, dueAt, release), asked by Course.assignments.SetDueOverride:success
@@ -10074,11 +10342,30 @@ then
   RequestBoundary.respond (release, requestId)
 ```
 
+### Course.assignments.SetDueOverride:teammates
+
+Authored path: `Course.assignments.SetDueOverride`.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 12.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 72.
+
+```reaction
+when RequestBoundary.request (assignee, assignment, dueAt, path: "/assignments/set-due-override", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the course" with (user)
+  Assigning._isAssigned (assignee, assignment) has (assigned: true)
+  view "the submitter of (assignment) for (student)" with (assignment, student: assignee) has (submitter) and not (submitter: assignee)
+  Rostering._getActiveStudents () has (section: submitter, user: member) and not (user: assignee)
+  Assigning._isAssigned (assignee: member, assignment) has (assigned: true)
+then
+  Assigning.setDueOverride (assignee: member, assignment, dueAt)
+```
+
 ### Course.assignments.StaffList:forbidden
 
 Authored path: `Course.assignments.StaffList`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 58.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 73.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/staff-list", requestId, session)
@@ -10092,8 +10379,8 @@ then
 ### Course.assignments.StaffList:success
 
 Authored path: `Course.assignments.StaffList`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 58.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 73.
 
 ```reaction
 when RequestBoundary.request (path: "/assignments/staff-list", requestId, session)
@@ -10107,8 +10394,8 @@ then
 ### Course.assignments.StaffSummary:forbidden
 
 Authored path: `Course.assignments.StaffSummary`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 59.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 74.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
@@ -10123,8 +10410,8 @@ then
 ### Course.assignments.StaffSummary:found
 
 Authored path: `Course.assignments.StaffSummary`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 59.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 74.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
@@ -10139,8 +10426,8 @@ then
 ### Course.assignments.StaffSummary:missing
 
 Authored path: `Course.assignments.StaffSummary`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 40.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 59.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 50.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 74.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/assignments/staff-summary", requestId, session)
@@ -10155,8 +10442,8 @@ then
 ### Course.assignments.Submit:success
 
 Authored path: `Course.assignments.Submit`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 60.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 53.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 75.
 
 ```reaction
 when RequestBoundary.request (assignment, content, path: "/assignments/submit", requestId, session)
@@ -10164,6 +10451,7 @@ where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
   view "(user) may submit assignment (assignment) at (at)" with (assignment, at, user)
+  view "the submitter of (assignment) for (student)" with (assignment, student: user) has (submitter: user)
 then
   Posting.create (at, author: user, content)
 ```
@@ -10171,8 +10459,8 @@ then
 ### Course.assignments.Submit:success#2
 
 Authored path: `Course.assignments.Submit`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 60.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 53.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 75.
 
 ```reaction
 when Posting.create (at, author: user, content, post), asked by Course.assignments.Submit:success
@@ -10185,8 +10473,8 @@ then
 ### Course.assignments.Submit:success#3
 
 Authored path: `Course.assignments.Submit`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 60.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 53.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 75.
 
 ```reaction
 when Submitting.submit (artifact: post, assignment, at, submitter: user, submission), asked by Course.assignments.Submit:success#2
@@ -10199,8 +10487,8 @@ then
 ### Course.assignments.Submit:unavailable
 
 Authored path: `Course.assignments.Submit`.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 43.
-- Covered by [Assignments](../design/compositions/course/assignments.md), line 60.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 53.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 75.
 
 ```reaction
 when RequestBoundary.request (assignment, content, path: "/assignments/submit", requestId, session)
@@ -10210,6 +10498,53 @@ where
   no view "(user) may submit assignment (assignment) at (at)" with (assignment, at, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.assignments.SubmitForSection
+
+Authored path: `Course.assignments.SubmitForSection`.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 56.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 76.
+
+```reaction
+when RequestBoundary.request (assignment, content, path: "/assignments/submit", requestId, session)
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may submit assignment (assignment) at (at)" with (assignment, at, user)
+  view "the submitter of (assignment) for (student)" with (assignment, student: user) and not (submitter: user)
+then
+  Posting.create (at, author: user, content)
+```
+
+### Course.assignments.SubmitForSection#2
+
+Authored path: `Course.assignments.SubmitForSection`.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 56.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 76.
+
+```reaction
+when Posting.create (at, author: user, content, post), asked by Course.assignments.SubmitForSection
+at the flow's settlement frontier
+where
+  earlier, RequestBoundary.request (assignment, content, path: "/assignments/submit", requestId, session)
+  view "the submitter of (assignment) for (student)" with (assignment, student: user) has (submitter)
+then
+  Submitting.submit (artifact: post, assignment, at, submitter)
+```
+
+### Course.assignments.SubmitForSection#3
+
+Authored path: `Course.assignments.SubmitForSection`.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 56.
+- Covered by [Assignments](../design/compositions/course/assignments.md), line 76.
+
+```reaction
+when Submitting.submit (artifact: post, assignment, at, submitter, submission), asked by Course.assignments.SubmitForSection#2
+where
+  earlier, RequestBoundary.request (assignment, content, path: "/assignments/submit", requestId, session)
+then
+  RequestBoundary.respond (requestId, submission)
 ```
 
 ### Course.calendar.CalendarMe:forbidden
@@ -10335,8 +10670,8 @@ then
 ### Course.courseGrades.ClearOverride:forbidden
 
 Authored path: `Course.courseGrades.ClearOverride`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 76.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 124.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 84.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 132.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/clear-override", requestId, session, student)
@@ -10350,8 +10685,8 @@ then
 ### Course.courseGrades.ClearOverride:success
 
 Authored path: `Course.courseGrades.ClearOverride`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 76.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 124.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 84.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 132.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/clear-override", requestId, session, student)
@@ -10365,8 +10700,8 @@ then
 ### Course.courseGrades.ClearOverride:success#2
 
 Authored path: `Course.courseGrades.ClearOverride`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 76.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 124.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 84.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 132.
 
 ```reaction
 when Overriding.clear (subject: student), asked by Course.courseGrades.ClearOverride:success
@@ -10379,8 +10714,8 @@ then
 ### Course.courseGrades.CreatePolicy:forbidden
 
 Authored path: `Course.courseGrades.CreatePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 61.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 125.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 69.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 133.
 
 ```reaction
 when RequestBoundary.request (name, path: "/course-grades/create", requestId, session, specification)
@@ -10394,8 +10729,8 @@ then
 ### Course.courseGrades.CreatePolicy:invalid
 
 Authored path: `Course.courseGrades.CreatePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 61.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 125.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 69.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 133.
 
 ```reaction
 when RequestBoundary.request (name, path: "/course-grades/create", requestId, session, specification)
@@ -10411,8 +10746,8 @@ then
 ### Course.courseGrades.CreatePolicy:success
 
 Authored path: `Course.courseGrades.CreatePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 61.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 125.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 69.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 133.
 
 ```reaction
 when RequestBoundary.request (name, path: "/course-grades/create", requestId, session, specification)
@@ -10429,8 +10764,8 @@ then
 ### Course.courseGrades.CreatePolicy:success#2
 
 Authored path: `Course.courseGrades.CreatePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 61.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 125.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 69.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 133.
 
 ```reaction
 when Policymaking.create (at, author: user, name, specification, policy, version), asked by Course.courseGrades.CreatePolicy:success
@@ -10443,8 +10778,8 @@ then
 ### Course.courseGrades.Export:forbidden
 
 Authored path: `Course.courseGrades.Export`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 86.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 126.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 94.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 134.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -10458,8 +10793,8 @@ then
 ### Course.courseGrades.Export:no-final
 
 Authored path: `Course.courseGrades.Export`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 86.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 126.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 94.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 134.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -10474,8 +10809,8 @@ then
 ### Course.courseGrades.Export:success
 
 Authored path: `Course.courseGrades.Export`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 86.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 126.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 94.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 134.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/export", requestId, session)
@@ -10494,8 +10829,8 @@ then
 ### Course.courseGrades.MarkFinal:forbidden
 
 Authored path: `Course.courseGrades.MarkFinal`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 69.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 127.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 77.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 135.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/mark-final", policy, requestId, session)
@@ -10509,8 +10844,8 @@ then
 ### Course.courseGrades.MarkFinal:success
 
 Authored path: `Course.courseGrades.MarkFinal`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 69.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 127.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 77.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 135.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/mark-final", policy, requestId, session)
@@ -10524,8 +10859,8 @@ then
 ### Course.courseGrades.MarkFinal:success#2
 
 Authored path: `Course.courseGrades.MarkFinal`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 69.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 127.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 77.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 135.
 
 ```reaction
 when Policymaking.markFinal (policy), asked by Course.courseGrades.MarkFinal:success
@@ -10538,8 +10873,8 @@ then
 ### Course.courseGrades.Read:forbidden
 
 Authored path: `Course.courseGrades.Read`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 51.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 128.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 59.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 136.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/read", requestId, session)
@@ -10553,8 +10888,8 @@ then
 ### Course.courseGrades.Read:success
 
 Authored path: `Course.courseGrades.Read`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 51.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 128.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 59.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 136.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/read", requestId, session)
@@ -10568,8 +10903,8 @@ then
 ### Course.courseGrades.ReadPolicy:forbidden
 
 Authored path: `Course.courseGrades.ReadPolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 56.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 129.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 64.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 137.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/policy", policy, requestId, session)
@@ -10583,8 +10918,8 @@ then
 ### Course.courseGrades.ReadPolicy:missing
 
 Authored path: `Course.courseGrades.ReadPolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 56.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 129.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 64.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 137.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/policy", policy, requestId, session)
@@ -10599,8 +10934,8 @@ then
 ### Course.courseGrades.ReadPolicy:success
 
 Authored path: `Course.courseGrades.ReadPolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 56.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 129.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 64.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 137.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/policy", policy, requestId, session)
@@ -10616,8 +10951,8 @@ then
 ### Course.courseGrades.ReadVersion:forbidden
 
 Authored path: `Course.courseGrades.ReadVersion`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 58.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 130.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 66.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 138.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/version", policy, requestId, session, version)
@@ -10631,8 +10966,8 @@ then
 ### Course.courseGrades.ReadVersion:missing
 
 Authored path: `Course.courseGrades.ReadVersion`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 58.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 130.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 66.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 138.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/version", policy, requestId, session, version)
@@ -10647,8 +10982,8 @@ then
 ### Course.courseGrades.ReadVersion:success
 
 Authored path: `Course.courseGrades.ReadVersion`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 58.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 130.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 66.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 138.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/version", policy, requestId, session, version)
@@ -10663,8 +10998,8 @@ then
 ### Course.courseGrades.RemovePolicy:forbidden
 
 Authored path: `Course.courseGrades.RemovePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 68.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 131.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 76.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 139.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/remove", policy, requestId, session)
@@ -10678,8 +11013,8 @@ then
 ### Course.courseGrades.RemovePolicy:success
 
 Authored path: `Course.courseGrades.RemovePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 68.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 131.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 76.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 139.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/remove", policy, requestId, session)
@@ -10693,8 +11028,8 @@ then
 ### Course.courseGrades.RemovePolicy:success#2
 
 Authored path: `Course.courseGrades.RemovePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 68.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 131.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 76.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 139.
 
 ```reaction
 when Policymaking.remove (policy), asked by Course.courseGrades.RemovePolicy:success
@@ -10707,8 +11042,8 @@ then
 ### Course.courseGrades.RenamePolicy:forbidden
 
 Authored path: `Course.courseGrades.RenamePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 67.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 132.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 75.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 140.
 
 ```reaction
 when RequestBoundary.request (name, path: "/course-grades/rename", policy, requestId, session)
@@ -10722,8 +11057,8 @@ then
 ### Course.courseGrades.RenamePolicy:success
 
 Authored path: `Course.courseGrades.RenamePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 67.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 132.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 75.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 140.
 
 ```reaction
 when RequestBoundary.request (name, path: "/course-grades/rename", policy, requestId, session)
@@ -10737,8 +11072,8 @@ then
 ### Course.courseGrades.RenamePolicy:success#2
 
 Authored path: `Course.courseGrades.RenamePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 67.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 132.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 75.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 140.
 
 ```reaction
 when Policymaking.rename (name, policy), asked by Course.courseGrades.RenamePolicy:success
@@ -10751,8 +11086,8 @@ then
 ### Course.courseGrades.SavePolicy:forbidden
 
 Authored path: `Course.courseGrades.SavePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 62.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 133.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 70.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 141.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/save", policy, requestId, session, specification, version)
@@ -10766,8 +11101,8 @@ then
 ### Course.courseGrades.SavePolicy:invalid
 
 Authored path: `Course.courseGrades.SavePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 62.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 133.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 70.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 141.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/save", policy, requestId, session, specification, version)
@@ -10783,8 +11118,8 @@ then
 ### Course.courseGrades.SavePolicy:success
 
 Authored path: `Course.courseGrades.SavePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 62.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 133.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 70.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 141.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/save", policy, requestId, session, specification, version)
@@ -10801,8 +11136,8 @@ then
 ### Course.courseGrades.SavePolicy:success#2
 
 Authored path: `Course.courseGrades.SavePolicy`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 62.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 133.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 70.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 141.
 
 ```reaction
 when Policymaking.save (at, author: user, policy, specification, version, result.version: saved), asked by Course.courseGrades.SavePolicy:success
@@ -10815,8 +11150,8 @@ then
 ### Course.courseGrades.SetOverride:forbidden
 
 Authored path: `Course.courseGrades.SetOverride`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 72.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 134.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 80.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 142.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/override", policy, reason, requestId, session, student, value)
@@ -10830,8 +11165,8 @@ then
 ### Course.courseGrades.SetOverride:no-policy
 
 Authored path: `Course.courseGrades.SetOverride`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 72.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 134.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 80.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 142.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/override", policy, reason, requestId, session, student, value)
@@ -10847,8 +11182,8 @@ then
 ### Course.courseGrades.SetOverride:not-a-student
 
 Authored path: `Course.courseGrades.SetOverride`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 72.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 134.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 80.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 142.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/override", policy, reason, requestId, session, student, value)
@@ -10863,8 +11198,8 @@ then
 ### Course.courseGrades.SetOverride:success
 
 Authored path: `Course.courseGrades.SetOverride`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 72.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 134.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 80.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 142.
 
 ```reaction
 when RequestBoundary.request (path: "/course-grades/override", policy, reason, requestId, session, student, value)
@@ -10883,8 +11218,8 @@ then
 ### Course.courseGrades.SetOverride:success#2
 
 Authored path: `Course.courseGrades.SetOverride`.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 72.
-- Covered by [Course grades](../design/compositions/course/course-grades.md), line 134.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 80.
+- Covered by [Course grades](../design/compositions/course/course-grades.md), line 142.
 
 ```reaction
 when Overriding.set (at, author: user, reason, replaced, subject: student, value, override), asked by Course.courseGrades.SetOverride:success
@@ -10897,8 +11232,8 @@ then
 ### Course.delegation.DelegationClear:assignment-missing
 
 Authored path: `Course.delegation.DelegationClear`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 21.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 53.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 26.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 60.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/delegation/clear", requestId, session)
@@ -10915,8 +11250,8 @@ then
 ### Course.delegation.DelegationClear:forbidden
 
 Authored path: `Course.delegation.DelegationClear`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 21.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 53.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 26.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 60.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/delegation/clear", requestId, session)
@@ -10930,8 +11265,8 @@ then
 ### Course.delegation.DelegationClear:invalid-input
 
 Authored path: `Course.delegation.DelegationClear`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 21.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 53.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 26.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 60.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/delegation/clear", requestId, session)
@@ -10947,8 +11282,8 @@ then
 ### Course.delegation.DelegationClear:learner-missing
 
 Authored path: `Course.delegation.DelegationClear`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 21.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 53.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 26.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 60.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/delegation/clear", requestId, session)
@@ -10966,8 +11301,8 @@ then
 ### Course.delegation.DelegationClear:success
 
 Authored path: `Course.delegation.DelegationClear`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 21.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 53.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 26.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 60.
 
 ```reaction
 when RequestBoundary.request (item, learner, path: "/delegation/clear", requestId, session)
@@ -10978,18 +11313,19 @@ where
   valid is among [true]
   Assigning._getAssignments () has (assignment: item)
   Assigning._isAssigned (assignee: learner, assignment: item) has (assigned: true)
+  view "the submitter of (assignment) for (student)" with (assignment: item, student: learner) has (submitter: subject)
 then
-  Delegating.withdraw (item, subject: learner)
+  Delegating.withdraw (item, subject)
 ```
 
 ### Course.delegation.DelegationClear:success#2
 
 Authored path: `Course.delegation.DelegationClear`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 21.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 53.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 26.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 60.
 
 ```reaction
-when Delegating.withdraw (item, subject: learner, delegation), asked by Course.delegation.DelegationClear:success
+when Delegating.withdraw (item, subject, delegation), asked by Course.delegation.DelegationClear:success
 where
   earlier, RequestBoundary.request (item, learner, path: "/delegation/clear", requestId, session)
 then
@@ -10999,8 +11335,8 @@ then
 ### Course.delegation.DelegationClearItem:forbidden
 
 Authored path: `Course.delegation.DelegationClearItem`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 44.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 54.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 51.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 61.
 
 ```reaction
 when RequestBoundary.request (item, path: "/delegation/clear-item", requestId, session)
@@ -11014,8 +11350,8 @@ then
 ### Course.delegation.DelegationClearItem:invalid-input
 
 Authored path: `Course.delegation.DelegationClearItem`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 44.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 54.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 51.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 61.
 
 ```reaction
 when RequestBoundary.request (item, path: "/delegation/clear-item", requestId, session)
@@ -11031,8 +11367,8 @@ then
 ### Course.delegation.DelegationClearItem:missing
 
 Authored path: `Course.delegation.DelegationClearItem`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 44.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 54.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 51.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 61.
 
 ```reaction
 when RequestBoundary.request (item, path: "/delegation/clear-item", requestId, session)
@@ -11049,8 +11385,8 @@ then
 ### Course.delegation.DelegationClearItem:success
 
 Authored path: `Course.delegation.DelegationClearItem`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 44.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 54.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 51.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 61.
 
 ```reaction
 when RequestBoundary.request (item, path: "/delegation/clear-item", requestId, session)
@@ -11067,8 +11403,8 @@ then
 ### Course.delegation.DelegationClearItem:success#2
 
 Authored path: `Course.delegation.DelegationClearItem`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 44.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 54.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 51.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 61.
 
 ```reaction
 when Delegating.clearItem (item, cleared), asked by Course.delegation.DelegationClearItem:success
@@ -11081,8 +11417,8 @@ then
 ### Course.delegation.DelegationForItem:forbidden
 
 Authored path: `Course.delegation.DelegationForItem`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 14.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 55.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 17.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 62.
 
 ```reaction
 when RequestBoundary.request (item, path: "/delegation/for-item", requestId, session)
@@ -11096,8 +11432,8 @@ then
 ### Course.delegation.DelegationForItem:invalid-input
 
 Authored path: `Course.delegation.DelegationForItem`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 14.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 55.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 17.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 62.
 
 ```reaction
 when RequestBoundary.request (item, path: "/delegation/for-item", requestId, session)
@@ -11113,8 +11449,8 @@ then
 ### Course.delegation.DelegationForItem:missing
 
 Authored path: `Course.delegation.DelegationForItem`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 14.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 55.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 17.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 62.
 
 ```reaction
 when RequestBoundary.request (item, path: "/delegation/for-item", requestId, session)
@@ -11131,8 +11467,8 @@ then
 ### Course.delegation.DelegationForItem:success
 
 Authored path: `Course.delegation.DelegationForItem`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 14.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 55.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 17.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 62.
 
 ```reaction
 when RequestBoundary.request (item, path: "/delegation/for-item", requestId, session)
@@ -11149,8 +11485,8 @@ then
 ### Course.delegation.DelegationGraders:forbidden
 
 Authored path: `Course.delegation.DelegationGraders`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 9.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 56.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 12.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 63.
 
 ```reaction
 when RequestBoundary.request (path: "/delegation/graders", requestId, session)
@@ -11164,8 +11500,8 @@ then
 ### Course.delegation.DelegationGraders:success
 
 Authored path: `Course.delegation.DelegationGraders`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 9.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 56.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 12.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 63.
 
 ```reaction
 when RequestBoundary.request (path: "/delegation/graders", requestId, session)
@@ -11179,8 +11515,8 @@ then
 ### Course.delegation.DelegationSet:assignment-missing
 
 Authored path: `Course.delegation.DelegationSet`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 20.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 57.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 25.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 64.
 
 ```reaction
 when RequestBoundary.request (grader, item, learner, path: "/delegation/set", requestId, session)
@@ -11197,8 +11533,8 @@ then
 ### Course.delegation.DelegationSet:forbidden
 
 Authored path: `Course.delegation.DelegationSet`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 20.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 57.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 25.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 64.
 
 ```reaction
 when RequestBoundary.request (grader, item, learner, path: "/delegation/set", requestId, session)
@@ -11212,8 +11548,8 @@ then
 ### Course.delegation.DelegationSet:grader-unavailable
 
 Authored path: `Course.delegation.DelegationSet`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 20.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 57.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 25.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 64.
 
 ```reaction
 when RequestBoundary.request (grader, item, learner, path: "/delegation/set", requestId, session)
@@ -11232,8 +11568,8 @@ then
 ### Course.delegation.DelegationSet:invalid-input
 
 Authored path: `Course.delegation.DelegationSet`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 20.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 57.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 25.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 64.
 
 ```reaction
 when RequestBoundary.request (grader, item, learner, path: "/delegation/set", requestId, session)
@@ -11249,8 +11585,8 @@ then
 ### Course.delegation.DelegationSet:learner-missing
 
 Authored path: `Course.delegation.DelegationSet`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 20.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 57.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 25.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 64.
 
 ```reaction
 when RequestBoundary.request (grader, item, learner, path: "/delegation/set", requestId, session)
@@ -11268,8 +11604,8 @@ then
 ### Course.delegation.DelegationSet:success
 
 Authored path: `Course.delegation.DelegationSet`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 20.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 57.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 25.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 64.
 
 ```reaction
 when RequestBoundary.request (grader, item, learner, path: "/delegation/set", requestId, session)
@@ -11281,18 +11617,19 @@ where
   Assigning._getAssignments () has (assignment: item)
   Assigning._isAssigned (assignee: learner, assignment: item) has (assigned: true)
   view "(grader) is an available grader" with (grader)
+  view "the submitter of (assignment) for (student)" with (assignment: item, student: learner) has (submitter: subject)
 then
-  Delegating.delegate (delegate: grader, item, subject: learner)
+  Delegating.delegate (delegate: grader, item, subject)
 ```
 
 ### Course.delegation.DelegationSet:success#2
 
 Authored path: `Course.delegation.DelegationSet`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 20.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 57.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 25.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 64.
 
 ```reaction
-when Delegating.delegate (delegate: grader, item, subject: learner, delegation), asked by Course.delegation.DelegationSet:success
+when Delegating.delegate (delegate: grader, item, subject, delegation), asked by Course.delegation.DelegationSet:success
 where
   earlier, RequestBoundary.request (grader, item, learner, path: "/delegation/set", requestId, session)
 then
@@ -11302,8 +11639,8 @@ then
 ### Course.delegation.DelegationSpread:forbidden
 
 Authored path: `Course.delegation.DelegationSpread`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 28.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 58.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 33.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 65.
 
 ```reaction
 when RequestBoundary.request (graders, item, learners, path: "/delegation/spread", replace, requestId, session)
@@ -11317,8 +11654,8 @@ then
 ### Course.delegation.DelegationSpread:grader-unavailable
 
 Authored path: `Course.delegation.DelegationSpread`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 28.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 58.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 33.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 65.
 
 ```reaction
 when RequestBoundary.request (graders, item, learners, path: "/delegation/spread", replace, requestId, session)
@@ -11335,8 +11672,8 @@ then
 ### Course.delegation.DelegationSpread:invalid-input
 
 Authored path: `Course.delegation.DelegationSpread`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 28.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 58.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 33.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 65.
 
 ```reaction
 when RequestBoundary.request (graders, item, learners, path: "/delegation/spread", replace, requestId, session)
@@ -11352,8 +11689,8 @@ then
 ### Course.delegation.DelegationSpread:learner-unavailable
 
 Authored path: `Course.delegation.DelegationSpread`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 28.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 58.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 33.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 65.
 
 ```reaction
 when RequestBoundary.request (graders, item, learners, path: "/delegation/spread", replace, requestId, session)
@@ -11371,8 +11708,8 @@ then
 ### Course.delegation.DelegationSpread:success
 
 Authored path: `Course.delegation.DelegationSpread`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 28.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 58.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 33.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 65.
 
 ```reaction
 when RequestBoundary.request (graders, item, learners, path: "/delegation/spread", replace, requestId, session)
@@ -11383,18 +11720,21 @@ where
   valid is among [true]
   view "every grader in (graders) is available" with (graders)
   view "every learner in (learners) is assigned (item)" with (item, learners)
+  Assigning._getAssignments () has (assignment: item, submittedBy)
+  Rostering._activeStudentList () has (students)
+  subjects is delegationSubjects (learners, students, submittedBy)
 then
-  Delegating.spread (delegates: graders, item, replace, subjects: learners)
+  Delegating.spread (delegates: graders, item, replace, subjects)
 ```
 
 ### Course.delegation.DelegationSpread:success#2
 
 Authored path: `Course.delegation.DelegationSpread`.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 28.
-- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 58.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 33.
+- Covered by [Grading delegation](../design/compositions/course/delegation.md), line 65.
 
 ```reaction
-when Delegating.spread (delegates: graders, item, replace, subjects: learners, assigned), asked by Course.delegation.DelegationSpread:success
+when Delegating.spread (delegates: graders, item, replace, subjects, assigned), asked by Course.delegation.DelegationSpread:success
 where
   earlier, RequestBoundary.request (graders, item, learners, path: "/delegation/spread", replace, requestId, session)
 then
@@ -11439,8 +11779,8 @@ then
 ### Course.grades.GradesConfigureItem:forbidden
 
 Authored path: `Course.grades.GradesConfigureItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 79.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 116.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 92.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 129.
 
 ```reaction
 when RequestBoundary.request (item, label, path: "/grades/configure-item", requestId, session)
@@ -11454,8 +11794,8 @@ then
 ### Course.grades.GradesConfigureItem:missing
 
 Authored path: `Course.grades.GradesConfigureItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 79.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 116.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 92.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 129.
 
 ```reaction
 when RequestBoundary.request (item, label, path: "/grades/configure-item", requestId, session)
@@ -11470,8 +11810,8 @@ then
 ### Course.grades.GradesConfigureItem:success
 
 Authored path: `Course.grades.GradesConfigureItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 79.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 116.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 92.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 129.
 
 ```reaction
 when RequestBoundary.request (item, label, path: "/grades/configure-item", requestId, session)
@@ -11486,8 +11826,8 @@ then
 ### Course.grades.GradesConfigureItem:success#2
 
 Authored path: `Course.grades.GradesConfigureItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 79.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 116.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 92.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 129.
 
 ```reaction
 when Itemizing.configureItem (item, label, gradeItem), asked by Course.grades.GradesConfigureItem:success
@@ -11500,8 +11840,8 @@ then
 ### Course.grades.GradesConfigureSetup:forbidden
 
 Authored path: `Course.grades.GradesConfigureSetup`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 81.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 117.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 94.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 130.
 
 ```reaction
 when RequestBoundary.request (criteria, item, method, path: "/grades/configure-setup", requestId, revision, session)
@@ -11515,8 +11855,8 @@ then
 ### Course.grades.GradesConfigureSetup:invalid-edition
 
 Authored path: `Course.grades.GradesConfigureSetup`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 81.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 117.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 94.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 130.
 
 ```reaction
 when RequestBoundary.request (criteria, item, method, path: "/grades/configure-setup", requestId, revision, session)
@@ -11533,8 +11873,8 @@ then
 ### Course.grades.GradesConfigureSetup:missing
 
 Authored path: `Course.grades.GradesConfigureSetup`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 81.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 117.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 94.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 130.
 
 ```reaction
 when RequestBoundary.request (criteria, item, method, path: "/grades/configure-setup", requestId, revision, session)
@@ -11549,8 +11889,8 @@ then
 ### Course.grades.GradesConfigureSetup:success
 
 Authored path: `Course.grades.GradesConfigureSetup`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 81.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 117.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 94.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 130.
 
 ```reaction
 when RequestBoundary.request (criteria, item, method, path: "/grades/configure-setup", requestId, revision, session)
@@ -11569,8 +11909,8 @@ then
 ### Course.grades.GradesConfigureSetup:success#2
 
 Authored path: `Course.grades.GradesConfigureSetup`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 81.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 117.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 94.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 130.
 
 ```reaction
 when Itemizing.configureSetup (criteria, item, method, resolvedCriteria, revision, result.criteria: savedCriteria, gradeItem, label, maxPoints, result.method: savedMethod, result.revision: savedRevision, status), asked by Course.grades.GradesConfigureSetup:success
@@ -11583,8 +11923,8 @@ then
 ### Course.grades.GradesDefineStandard:forbidden
 
 Authored path: `Course.grades.GradesDefineStandard`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 75.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 88.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 127.
 
 ```reaction
 when RequestBoundary.request (competent, deficient, description, emergent, expert, name, path: "/grades/define-standard", referenceUrl, requestId, session)
@@ -11598,8 +11938,8 @@ then
 ### Course.grades.GradesDefineStandard:success
 
 Authored path: `Course.grades.GradesDefineStandard`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 75.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 88.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 127.
 
 ```reaction
 when RequestBoundary.request (competent, deficient, description, emergent, expert, name, path: "/grades/define-standard", referenceUrl, requestId, session)
@@ -11614,8 +11954,8 @@ then
 ### Course.grades.GradesDefineStandard:success#2
 
 Authored path: `Course.grades.GradesDefineStandard`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 75.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 88.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 127.
 
 ```reaction
 when StandardSetting.define (competent, deficient, description, emergent, expert, name, referenceUrl, edition, standard), asked by Course.grades.GradesDefineStandard:success
@@ -11628,8 +11968,8 @@ then
 ### Course.grades.GradesDetail:hidden
 
 Authored path: `Course.grades.GradesDetail`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 99.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 126.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 112.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 139.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/detail", requestId, session)
@@ -11643,8 +11983,8 @@ then
 ### Course.grades.GradesDetail:missing
 
 Authored path: `Course.grades.GradesDetail`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 99.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 126.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 112.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 139.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/detail", requestId, session)
@@ -11659,8 +11999,8 @@ then
 ### Course.grades.GradesDetail:success
 
 Authored path: `Course.grades.GradesDetail`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 99.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 126.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 112.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 139.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/detail", requestId, session)
@@ -11675,8 +12015,8 @@ then
 ### Course.grades.GradesDiscard:forbidden
 
 Authored path: `Course.grades.GradesDiscard`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 91.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 122.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 104.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 135.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/discard", requestId, session, version)
@@ -11690,8 +12030,8 @@ then
 ### Course.grades.GradesDiscard:hidden
 
 Authored path: `Course.grades.GradesDiscard`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 91.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 122.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 104.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 135.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/discard", requestId, session, version)
@@ -11706,8 +12046,8 @@ then
 ### Course.grades.GradesDiscard:success
 
 Authored path: `Course.grades.GradesDiscard`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 91.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 122.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 104.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 135.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/discard", requestId, session, version)
@@ -11721,8 +12061,8 @@ then
 ### Course.grades.GradesDiscard:success#2
 
 Authored path: `Course.grades.GradesDiscard`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 91.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 122.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 104.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 135.
 
 ```reaction
 when Grading.discard (grade, version, result.grade: discarded), asked by Course.grades.GradesDiscard:success
@@ -11735,8 +12075,8 @@ then
 ### Course.grades.GradesExcuse:forbidden
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 93.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 123.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 106.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 136.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, path: "/grades/excuse", requestId, session, version)
@@ -11750,8 +12090,8 @@ then
 ### Course.grades.GradesExcuse:hidden
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 93.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 123.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 106.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 136.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, path: "/grades/excuse", requestId, session, version)
@@ -11766,8 +12106,8 @@ then
 ### Course.grades.GradesExcuse:success
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 93.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 123.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 106.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 136.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, path: "/grades/excuse", requestId, session, version)
@@ -11782,8 +12122,8 @@ then
 ### Course.grades.GradesExcuse:success#2
 
 Authored path: `Course.grades.GradesExcuse`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 93.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 123.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 106.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 136.
 
 ```reaction
 when Grading.excuse (at, feedback, grade, grader: user, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesExcuse:success
@@ -11796,8 +12136,8 @@ then
 ### Course.grades.GradesForItem:forbidden
 
 Authored path: `Course.grades.GradesForItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 109.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 131.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 122.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 144.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
@@ -11811,8 +12151,8 @@ then
 ### Course.grades.GradesForItem:success
 
 Authored path: `Course.grades.GradesForItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 109.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 131.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 122.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 144.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/for-item", requestId, session)
@@ -11826,8 +12166,8 @@ then
 ### Course.grades.GradesForMe:not-student
 
 Authored path: `Course.grades.GradesForMe`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 103.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 128.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 116.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 141.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
@@ -11841,8 +12181,8 @@ then
 ### Course.grades.GradesForMe:success
 
 Authored path: `Course.grades.GradesForMe`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 103.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 128.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 116.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 141.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/for-me", requestId, session)
@@ -11850,14 +12190,14 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) is an active student" with (user)
 then
-  RequestBoundary.respond (grades: former "the released assessments of (learner)" with (learner: user), requestId)
+  RequestBoundary.respond (grades: former "the released assessments that stand for (student)" with (student: user), requestId)
 ```
 
 ### Course.grades.GradesForStudent:forbidden
 
 Authored path: `Course.grades.GradesForStudent`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 107.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 130.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 120.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 143.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
@@ -11871,8 +12211,8 @@ then
 ### Course.grades.GradesForStudent:success
 
 Authored path: `Course.grades.GradesForStudent`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 107.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 130.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 120.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 143.
 
 ```reaction
 when RequestBoundary.request (learner, path: "/grades/for-student", requestId, session)
@@ -11880,14 +12220,14 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may grade" with (user)
 then
-  RequestBoundary.respond (grades: former "the assessments of (learner) that (user) may grade" with (learner, user), requestId)
+  RequestBoundary.respond (grades: former "the assessments standing for (student) that (user) may grade" with (student: learner, user), requestId)
 ```
 
 ### Course.grades.GradesGradebook:forbidden
 
 Authored path: `Course.grades.GradesGradebook`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 111.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 132.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 124.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 145.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
@@ -11901,8 +12241,8 @@ then
 ### Course.grades.GradesGradebook:success
 
 Authored path: `Course.grades.GradesGradebook`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 111.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 132.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 124.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 145.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/gradebook", requestId, session)
@@ -11916,8 +12256,8 @@ then
 ### Course.grades.GradesItem:hidden
 
 Authored path: `Course.grades.GradesItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 97.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 125.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 110.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 138.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -11931,8 +12271,8 @@ then
 ### Course.grades.GradesItem:missing
 
 Authored path: `Course.grades.GradesItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 97.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 125.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 110.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 138.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -11947,8 +12287,8 @@ then
 ### Course.grades.GradesItem:success
 
 Authored path: `Course.grades.GradesItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 97.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 125.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 110.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 138.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/item", requestId, session)
@@ -11965,34 +12305,35 @@ then
 ### Course.grades.GradesRecord:created
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 101.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 127.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 140.
 
 ```reaction
 when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may grade the work of (learner) on (item)" with (item, learner, user)
-  no Grading._getAssessment (evidence, item, learner)
-  view "(learner) may start assessment on (item) using (evidence)" with (evidence, item, learner)
+  view "(user) may grade what stands for (student) on (item)" with (item, student: learner, user)
+  view "the submitter of (assignment) for (student)" with (assignment: item, student: learner) has (submitter)
+  no Grading._getAssessment (evidence, item, learner: submitter)
+  view "an assessment of (student) may start on (item) using (evidence)" with (evidence, item, student: learner)
   Itemizing._getSetup (item) has (criteria: storedCriteria, method, revision: currentRevision)
   StandardSetting._getEditionCatalog () has (editions)
   criteria is resolveGradingCriteria (criteria: storedCriteria, editions)
   revisionMatches is gradingRevisionMatches (left: currentRevision, right: revision)
   revisionMatches is among [true]
 then
-  Grading.record (at, criteria, evidence, grader: user, item, learner, method, setupRevision: currentRevision)
+  Grading.record (at, criteria, evidence, grader: user, item, learner: submitter, method, setupRevision: currentRevision)
 ```
 
 ### Course.grades.GradesRecord:created#2
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 101.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 127.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 140.
 
 ```reaction
-when Grading.record (at, criteria, evidence, grader: user, item, learner, method, setupRevision: currentRevision, grade, version), asked by Course.grades.GradesRecord:created
+when Grading.record (at, criteria, evidence, grader: user, item, learner: submitter, method, setupRevision: currentRevision, grade, version), asked by Course.grades.GradesRecord:created
 where
   earlier, RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
 then
@@ -12002,16 +12343,17 @@ then
 ### Course.grades.GradesRecord:existing
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 101.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 127.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 140.
 
 ```reaction
 when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
 where
   at is the current flow's instant
   view "the active user of (session)" with (session) has (user)
-  view "(user) may grade the work of (learner) on (item)" with (item, learner, user)
-  Grading._getAssessment (evidence, item, learner) has (grade, method, version)
+  view "(user) may grade what stands for (student) on (item)" with (item, student: learner, user)
+  view "the submitter of (assignment) for (student)" with (assignment: item, student: learner) has (submitter)
+  Grading._getAssessment (evidence, item, learner: submitter) has (grade, method, version)
 then
   RequestBoundary.respond (grade, method, requestId, version)
 ```
@@ -12019,8 +12361,8 @@ then
 ### Course.grades.GradesRecord:forbidden
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 101.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 127.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 140.
 
 ```reaction
 when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
@@ -12034,15 +12376,15 @@ then
 ### Course.grades.GradesRecord:hidden
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 101.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 127.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 140.
 
 ```reaction
 when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
 where
   view "the active user of (session)" with (session) has (user)
   view "(user) may grade" with (user)
-  view "(user) may not grade the work of (learner) on (item)" with (item, learner, user)
+  view "(user) may not grade what stands for (student) on (item)" with (item, student: learner, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12050,16 +12392,17 @@ then
 ### Course.grades.GradesRecord:invalid-evidence
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 101.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 127.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 140.
 
 ```reaction
 when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may grade the work of (learner) on (item)" with (item, learner, user)
-  no Grading._getAssessment (evidence, item, learner)
-  no view "(learner) may start assessment on (item) using (evidence)" with (evidence, item, learner)
+  view "(user) may grade what stands for (student) on (item)" with (item, student: learner, user)
+  view "the submitter of (assignment) for (student)" with (assignment: item, student: learner) has (submitter)
+  no Grading._getAssessment (evidence, item, learner: submitter)
+  no view "an assessment of (student) may start on (item) using (evidence)" with (evidence, item, student: learner)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -12067,16 +12410,17 @@ then
 ### Course.grades.GradesRecord:stale-setup
 
 Authored path: `Course.grades.GradesRecord`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 101.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 127.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 114.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 140.
 
 ```reaction
 when RequestBoundary.request (evidence, item, learner, path: "/grades/record", requestId, revision, session)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may grade the work of (learner) on (item)" with (item, learner, user)
-  no Grading._getAssessment (evidence, item, learner)
-  view "(learner) may start assessment on (item) using (evidence)" with (evidence, item, learner)
+  view "(user) may grade what stands for (student) on (item)" with (item, student: learner, user)
+  view "the submitter of (assignment) for (student)" with (assignment: item, student: learner) has (submitter)
+  no Grading._getAssessment (evidence, item, learner: submitter)
+  view "an assessment of (student) may start on (item) using (evidence)" with (evidence, item, student: learner)
   Itemizing._getSetup (item) has (revision: currentRevision)
   revisionMatches is gradingRevisionMatches (left: currentRevision, right: revision)
   revisionMatches is among [false]
@@ -12087,8 +12431,8 @@ then
 ### Course.grades.GradesRelease:forbidden
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 85.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 119.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 98.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 132.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/release", requestId, session, version)
@@ -12102,8 +12446,8 @@ then
 ### Course.grades.GradesRelease:hidden
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 85.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 119.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 98.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 132.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/release", requestId, session, version)
@@ -12118,8 +12462,8 @@ then
 ### Course.grades.GradesRelease:success
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 85.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 119.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 98.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 132.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/release", requestId, session, version)
@@ -12134,8 +12478,8 @@ then
 ### Course.grades.GradesRelease:success#2
 
 Authored path: `Course.grades.GradesRelease`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 85.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 119.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 98.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 132.
 
 ```reaction
 when Grading.release (at, grade, grader: user, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesRelease:success
@@ -12148,8 +12492,8 @@ then
 ### Course.grades.GradesReleaseItem:forbidden
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 95.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 124.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 108.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 137.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
@@ -12163,8 +12507,8 @@ then
 ### Course.grades.GradesReleaseItem:success
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 95.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 124.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 108.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 137.
 
 ```reaction
 when RequestBoundary.request (item, path: "/grades/release-item", requestId, session)
@@ -12179,8 +12523,8 @@ then
 ### Course.grades.GradesReleaseItem:success#2
 
 Authored path: `Course.grades.GradesReleaseItem`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 95.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 124.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 108.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 137.
 
 ```reaction
 when Grading.releaseItem (at, grader: user, item, released, skipped, unconfirmed), asked by Course.grades.GradesReleaseItem:success
@@ -12193,8 +12537,8 @@ then
 ### Course.grades.GradesRestoreExcused:forbidden
 
 Authored path: `Course.grades.GradesRestoreExcused`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 89.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 121.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 102.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 134.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/restore-excused", requestId, session, version)
@@ -12208,8 +12552,8 @@ then
 ### Course.grades.GradesRestoreExcused:hidden
 
 Authored path: `Course.grades.GradesRestoreExcused`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 89.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 121.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 102.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 134.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/restore-excused", requestId, session, version)
@@ -12224,8 +12568,8 @@ then
 ### Course.grades.GradesRestoreExcused:success
 
 Authored path: `Course.grades.GradesRestoreExcused`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 89.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 121.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 102.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 134.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/restore-excused", requestId, session, version)
@@ -12240,8 +12584,8 @@ then
 ### Course.grades.GradesRestoreExcused:success#2
 
 Authored path: `Course.grades.GradesRestoreExcused`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 89.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 121.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 102.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 134.
 
 ```reaction
 when Grading.restoreExcused (at, grade, grader: user, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesRestoreExcused:success
@@ -12254,8 +12598,8 @@ then
 ### Course.grades.GradesRetract:forbidden
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 87.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 120.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 100.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 133.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/retract", requestId, session, version)
@@ -12269,8 +12613,8 @@ then
 ### Course.grades.GradesRetract:hidden
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 87.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 120.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 100.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 133.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/retract", requestId, session, version)
@@ -12285,8 +12629,8 @@ then
 ### Course.grades.GradesRetract:success
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 87.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 120.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 100.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 133.
 
 ```reaction
 when RequestBoundary.request (grade, path: "/grades/retract", requestId, session, version)
@@ -12301,8 +12645,8 @@ then
 ### Course.grades.GradesRetract:success#2
 
 Authored path: `Course.grades.GradesRetract`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 87.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 120.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 100.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 133.
 
 ```reaction
 when Grading.retract (at, grade, grader: user, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesRetract:success
@@ -12315,8 +12659,8 @@ then
 ### Course.grades.GradesReviseStandard:forbidden
 
 Authored path: `Course.grades.GradesReviseStandard`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 77.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 115.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 90.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 128.
 
 ```reaction
 when RequestBoundary.request (competent, deficient, description, emergent, expectedEdition, expert, name, path: "/grades/revise-standard", referenceUrl, requestId, session, standard)
@@ -12330,8 +12674,8 @@ then
 ### Course.grades.GradesReviseStandard:success
 
 Authored path: `Course.grades.GradesReviseStandard`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 77.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 115.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 90.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 128.
 
 ```reaction
 when RequestBoundary.request (competent, deficient, description, emergent, expectedEdition, expert, name, path: "/grades/revise-standard", referenceUrl, requestId, session, standard)
@@ -12346,8 +12690,8 @@ then
 ### Course.grades.GradesReviseStandard:success#2
 
 Authored path: `Course.grades.GradesReviseStandard`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 77.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 115.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 90.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 128.
 
 ```reaction
 when StandardSetting.revise (competent, deficient, description, emergent, expectedEdition, expert, name, referenceUrl, standard, edition), asked by Course.grades.GradesReviseStandard:success
@@ -12360,8 +12704,8 @@ then
 ### Course.grades.GradesSave:forbidden
 
 Authored path: `Course.grades.GradesSave`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 83.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 118.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 96.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 131.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, judgments, path: "/grades/save", requestId, session, version)
@@ -12375,8 +12719,8 @@ then
 ### Course.grades.GradesSave:hidden
 
 Authored path: `Course.grades.GradesSave`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 83.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 118.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 96.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 131.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, judgments, path: "/grades/save", requestId, session, version)
@@ -12391,8 +12735,8 @@ then
 ### Course.grades.GradesSave:success
 
 Authored path: `Course.grades.GradesSave`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 83.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 118.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 96.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 131.
 
 ```reaction
 when RequestBoundary.request (feedback, grade, judgments, path: "/grades/save", requestId, session, version)
@@ -12407,8 +12751,8 @@ then
 ### Course.grades.GradesSave:success#2
 
 Authored path: `Course.grades.GradesSave`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 83.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 118.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 96.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 131.
 
 ```reaction
 when Grading.save (at, feedback, grade, grader: user, judgments, version, result.grade: saved, result.version: savedVersion), asked by Course.grades.GradesSave:success
@@ -12421,8 +12765,8 @@ then
 ### Course.grades.GradesStandards:forbidden
 
 Authored path: `Course.grades.GradesStandards`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 105.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 129.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 118.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 142.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/standards", requestId, session)
@@ -12436,8 +12780,8 @@ then
 ### Course.grades.GradesStandards:success
 
 Authored path: `Course.grades.GradesStandards`.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 105.
-- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 129.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 118.
+- Covered by [Grading setup and assessment lifecycle](../design/compositions/course/grades.md), line 142.
 
 ```reaction
 when RequestBoundary.request (path: "/grades/standards", requestId, session)
@@ -12496,6 +12840,23 @@ then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
+### Course.lateDays.Apply:section
+
+Authored path: `Course.lateDays.Apply`.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 9.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 29.
+
+```reaction
+when RequestBoundary.request (assignment, days, path: "/late-days/apply", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment) has (assigned: true)
+  Assigning._getAssignments () has (assignment, status: "PUBLISHED", submittedBy: "SECTION")
+then
+  RequestBoundary.respond (error: "CONFLICT", requestId)
+```
+
 ### Course.lateDays.Apply:success
 
 Authored path: `Course.lateDays.Apply`.
@@ -12509,7 +12870,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) is an active student" with (user)
   Assigning._isAssigned (assignee: user, assignment) has (assigned: true)
-  Assigning._getAssignments () has (assignment, status: "PUBLISHED")
+  Assigning._getAssignments () has (assignment, status: "PUBLISHED", submittedBy: "STUDENT")
 then
   Banking.apply (at, days, item: assignment, learner: user)
 ```
@@ -12682,6 +13043,23 @@ then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
+### Course.lateDays.Change:section
+
+Authored path: `Course.lateDays.Change`.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 10.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 32.
+
+```reaction
+when RequestBoundary.request (assignment, days, path: "/late-days/change", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) is an active student" with (user)
+  Assigning._isAssigned (assignee: user, assignment) has (assigned: true)
+  Assigning._getAssignments () has (assignment, status: "PUBLISHED", submittedBy: "SECTION")
+then
+  RequestBoundary.respond (error: "CONFLICT", requestId)
+```
+
 ### Course.lateDays.Change:success
 
 Authored path: `Course.lateDays.Change`.
@@ -12694,7 +13072,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) is an active student" with (user)
   Assigning._isAssigned (assignee: user, assignment) has (assigned: true)
-  Assigning._getAssignments () has (assignment, status: "PUBLISHED")
+  Assigning._getAssignments () has (assignment, status: "PUBLISHED", submittedBy: "STUDENT")
 then
   Banking.change (days, item: assignment, learner: user)
 ```
@@ -12970,6 +13348,23 @@ then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
+### Course.lateDays.StaffChange:section
+
+Authored path: `Course.lateDays.StaffChange`.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 19.
+- Covered by [Late days](../design/compositions/course/late-days.md), line 39.
+
+```reaction
+when RequestBoundary.request (assignment, days, learner, path: "/late-days/staff-change", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage student records" with (user)
+  view "(user) is an active student" with (user: learner)
+  Assigning._getAssignments () has (assignment, submittedBy: "SECTION")
+then
+  RequestBoundary.respond (error: "CONFLICT", requestId)
+```
+
 ### Course.lateDays.StaffChange:success
 
 Authored path: `Course.lateDays.StaffChange`.
@@ -12982,6 +13377,7 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may manage student records" with (user)
   view "(user) is an active student" with (user: learner)
+  no Assigning._getAssignments () has (assignment, submittedBy: "SECTION")
 then
   Banking.change (days, item: assignment, learner)
 ```
@@ -13014,6 +13410,106 @@ where
   view "(user) is an active student" with (user: learner)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.moves.MoveAnswers
+
+Authored path: `Course.moves.MoveAnswers`.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 49.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 62.
+
+```reaction
+when RequestBoundary.request (assignment, path: "/submissions/move-to-sections", requestId, session)
+at the flow's settlement frontier
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the course" with (user)
+  Assigning._getAssignments () has (assignment)
+  no view "the attempts on (assignment) not yet moved to a section" with (assignment)
+  no view "the assessments on (assignment) not yet copied to a section's attempt" with (assignment)
+then
+  RequestBoundary.respond (assignment, requestId)
+```
+
+### Course.moves.MoveCopiesGrades
+
+Authored path: `Course.moves.MoveCopiesGrades`.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 39.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 63.
+
+```reaction
+when RequestBoundary.request (assignment, path: "/submissions/move-to-sections", requestId, session)
+at the flow's settlement frontier
+where
+  at is the current flow's instant
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the course" with (user)
+  view "the assessments on (assignment) not yet copied to a section's attempt" with (assignment) has (criteria, grader, method, moved, section, setupRevision)
+then
+  Grading.record (at, criteria, evidence: moved, grader, item: assignment, learner: section, method, setupRevision)
+```
+
+### Course.moves.MoveCopiesGrades#2
+
+Authored path: `Course.moves.MoveCopiesGrades`.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 39.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 63.
+
+```reaction
+when Grading.record (at, criteria, evidence: moved, grader, item: assignment, learner: section, method, setupRevision, grade, version: 1), asked by Course.moves.MoveCopiesGrades
+at the flow's settlement frontier
+where
+  view "the assessments on (assignment) not yet copied to a section's attempt" with (assignment) has (feedback, judgments, moved, section)
+then
+  Grading.save (at, feedback, grade, grader, judgments, version: 1)
+```
+
+### Course.moves.MoveRefusals:forbidden
+
+Authored path: `Course.moves.MoveRefusals`.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 51.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 64.
+
+```reaction
+when RequestBoundary.request (assignment, path: "/submissions/move-to-sections", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may not manage the course" with (user)
+then
+  RequestBoundary.respond (error: "FORBIDDEN", requestId)
+```
+
+### Course.moves.MoveRefusals:missing
+
+Authored path: `Course.moves.MoveRefusals`.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 51.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 64.
+
+```reaction
+when RequestBoundary.request (assignment, path: "/submissions/move-to-sections", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the course" with (user)
+  no Assigning._getAssignments () has (assignment)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### Course.moves.MoveToSections
+
+Authored path: `Course.moves.MoveToSections`.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 32.
+- Covered by [Moving earlier submissions to sections](../design/compositions/course/moves.md), line 65.
+
+```reaction
+when RequestBoundary.request (assignment, path: "/submissions/move-to-sections", requestId, session)
+where
+  view "the active user of (session)" with (session) has (user)
+  view "(user) may manage the course" with (user)
+  view "the attempts on (assignment) not yet moved to a section" with (assignment) has (artifacts, section, submittedAt)
+  artifact is soleArtifact (artifacts)
+then
+  Submitting.submit (artifact, assignment, at: submittedAt, submitter: section)
 ```
 
 ### Course.notes.Acknowledge:forbidden
@@ -14297,14 +14793,14 @@ then
 ### Course.submissions.Artifact:hidden
 
 Authored path: `Course.submissions.Artifact`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 15.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 31.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 51.
 
 ```reaction
 when RequestBoundary.request (artifact, assignment, path: "/submissions/artifact", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user)
-  no view "(user) may read (artifact) submitted by (submitter) for (assignment)" with (artifact, assignment, submitter, user)
+  no view "(user) may read (artifact) that stands for (student) on (assignment)" with (artifact, assignment, student: submitter, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -14312,23 +14808,23 @@ then
 ### Course.submissions.Artifact:success
 
 Authored path: `Course.submissions.Artifact`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 15.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 31.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 51.
 
 ```reaction
 when RequestBoundary.request (artifact, assignment, path: "/submissions/artifact", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user)
-  view "(user) may read (artifact) submitted by (submitter) for (assignment)" with (artifact, assignment, submitter, user)
+  view "(user) may read (artifact) that stands for (student) on (assignment)" with (artifact, assignment, student: submitter, user)
 then
-  RequestBoundary.respond (post: former "the artifact (artifact) of (assignment) by (submitter) for (user)" with (artifact, assignment, submitter, user), requestId)
+  RequestBoundary.respond (post: former "the artifact (artifact) of (assignment) standing for (student), for (user)" with (artifact, assignment, student: submitter, user), requestId)
 ```
 
 ### Course.submissions.Attempts:attempts
 
 Authored path: `Course.submissions.Attempts`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 50.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -14336,20 +14832,20 @@ where
   view "the active user of (session)" with (session) has (user: submitter)
   view "(user) is an active student" with (user: submitter)
 then
-  RequestBoundary.respond (attempts: former "the attempts for (assignment) by (submitter)" with (assignment, submitter), requestId)
+  RequestBoundary.respond (attempts: former "the attempts of (assignment) for (student)" with (assignment, student: submitter), requestId)
 ```
 
 ### Course.submissions.Attempts:attempts-hidden
 
 Authored path: `Course.submissions.Attempts`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 50.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user) and not (user: submitter)
-  view "(user) may not grade the work of (learner) on (item)" with (item: assignment, learner: submitter, user)
+  view "(user) may not grade what stands for (student) on (item)" with (item: assignment, student: submitter, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -14357,8 +14853,8 @@ then
 ### Course.submissions.Attempts:attempts-missing
 
 Authored path: `Course.submissions.Attempts`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 50.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
@@ -14372,24 +14868,24 @@ then
 ### Course.submissions.Attempts:staff-attempts
 
 Authored path: `Course.submissions.Attempts`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 6.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 30.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 50.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/attempts", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user) and not (user: submitter)
-  view "(user) may grade the work of (learner) on (item)" with (item: assignment, learner: submitter, user)
+  view "(user) may grade what stands for (student) on (item)" with (item: assignment, student: submitter, user)
   view "(user) is an active student" with (user: submitter)
 then
-  RequestBoundary.respond (attempts: former "the attempts for (assignment) by (submitter)" with (assignment, submitter), requestId)
+  RequestBoundary.respond (attempts: former "the attempts of (assignment) for (student)" with (assignment, student: submitter), requestId)
 ```
 
 ### Course.submissions.ForAssignment:forbidden
 
 Authored path: `Course.submissions.ForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 20.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 32.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 40.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 52.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/for-assignment", requestId, session)
@@ -14403,8 +14899,8 @@ then
 ### Course.submissions.ForAssignment:success
 
 Authored path: `Course.submissions.ForAssignment`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 20.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 32.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 40.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 52.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/for-assignment", requestId, session)
@@ -14412,14 +14908,14 @@ where
   view "the active user of (session)" with (session) has (user)
   view "(user) may grade" with (user)
 then
-  RequestBoundary.respond (assigned: former "the assigned population for (assignment) that (user) may grade" with (assignment, user), requestId, submissions: former "the submissions for (assignment) that (user) may grade" with (assignment, user))
+  RequestBoundary.respond (assigned: former "the assigned population for (assignment) that (user) may grade" with (assignment, user), requestId, submissions: former "the submissions for (assignment) that (user) may grade" with (assignment, user), unmoved: former "the submissions to (assignment) not yet moved that (user) may grade" with (assignment, user))
 ```
 
 ### Course.submissions.ForStudent:for-student
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 33.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 36.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 53.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -14427,14 +14923,14 @@ where
   view "the active user of (session)" with (session) has (user: submitter)
   view "(user) is an active student" with (user: submitter)
 then
-  RequestBoundary.respond (requestId, submissions: former "the submissions by (submitter)" with (submitter))
+  RequestBoundary.respond (requestId, submissions: former "the submissions for (student)" with (student: submitter))
 ```
 
 ### Course.submissions.ForStudent:for-student-hidden
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 33.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 36.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 53.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -14448,8 +14944,8 @@ then
 ### Course.submissions.ForStudent:for-student-missing
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 33.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 36.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 53.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -14463,8 +14959,8 @@ then
 ### Course.submissions.ForStudent:staff-for-student
 
 Authored path: `Course.submissions.ForStudent`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 17.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 33.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 36.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 53.
 
 ```reaction
 when RequestBoundary.request (path: "/submissions/for-student", requestId, session, submitter)
@@ -14473,20 +14969,20 @@ where
   view "(user) may grade" with (user)
   view "(user) is an active student" with (user: submitter)
 then
-  RequestBoundary.respond (requestId, submissions: former "the submissions by (submitter) that (user) may grade" with (submitter, user))
+  RequestBoundary.respond (requestId, submissions: former "the submissions for (student) that (user) may grade" with (student: submitter, user))
 ```
 
 ### Course.submissions.Latest:latest-hidden
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 54.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user) and not (user: submitter)
-  view "(user) may not grade the work of (learner) on (item)" with (item: assignment, learner: submitter, user)
+  view "(user) may not grade what stands for (student) on (item)" with (item: assignment, student: submitter, user)
 then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
@@ -14494,8 +14990,8 @@ then
 ### Course.submissions.Latest:latest-missing
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 54.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
@@ -14509,15 +15005,15 @@ then
 ### Course.submissions.Latest:self-found
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 54.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user: submitter)
   view "(user) is an active student" with (user: submitter)
-  view "the latest submission for (assignment) by (submitter)" with (assignment, submitter) has (latest)
+  view "the latest submission of (assignment) for (student)" with (assignment, student: submitter) has (latest)
 then
   RequestBoundary.respond (requestId, submission: latest)
 ```
@@ -14525,15 +15021,15 @@ then
 ### Course.submissions.Latest:self-missing
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 54.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user: submitter)
   view "(user) is an active student" with (user: submitter)
-  no view "the latest submission for (assignment) by (submitter)" with (assignment, submitter)
+  no view "the latest submission of (assignment) for (student)" with (assignment, student: submitter)
 then
   RequestBoundary.respond (requestId, submission: null)
 ```
@@ -14541,16 +15037,16 @@ then
 ### Course.submissions.Latest:staff-found
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 54.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user) and not (user: submitter)
-  view "(user) may grade the work of (learner) on (item)" with (item: assignment, learner: submitter, user)
+  view "(user) may grade what stands for (student) on (item)" with (item: assignment, student: submitter, user)
   view "(user) is an active student" with (user: submitter)
-  view "the latest submission for (assignment) by (submitter)" with (assignment, submitter) has (latest)
+  view "the latest submission of (assignment) for (student)" with (assignment, student: submitter) has (latest)
 then
   RequestBoundary.respond (requestId, submission: latest)
 ```
@@ -14558,16 +15054,16 @@ then
 ### Course.submissions.Latest:staff-missing
 
 Authored path: `Course.submissions.Latest`.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 5.
-- Covered by [Submission reads](../design/compositions/course/submissions.md), line 34.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 16.
+- Covered by [Submission reads](../design/compositions/course/submissions.md), line 54.
 
 ```reaction
 when RequestBoundary.request (assignment, path: "/submissions/latest", requestId, session, submitter)
 where
   view "the active user of (session)" with (session) has (user) and not (user: submitter)
-  view "(user) may grade the work of (learner) on (item)" with (item: assignment, learner: submitter, user)
+  view "(user) may grade what stands for (student) on (item)" with (item: assignment, student: submitter, user)
   view "(user) is an active student" with (user: submitter)
-  no view "the latest submission for (assignment) by (submitter)" with (assignment, submitter)
+  no view "the latest submission of (assignment) for (student)" with (assignment, student: submitter)
 then
   RequestBoundary.respond (requestId, submission: null)
 ```
@@ -32060,11 +32556,11 @@ not listed here have no explicit input contract.
 
 - `/assignments/archive` — requires `assignment`, `session`
 - `/assignments/clear-due-override` — requires `assignee`, `assignment`, `session`
-- `/assignments/create-draft` — requires `session`, `title`, `instructions`, `kind`, `availableAt`, `dueAt`, `acceptsSubmissions`, `audience`; fills `closeAt` with null when absent; fills `targets` with [] when absent
+- `/assignments/create-draft` — requires `session`, `title`, `instructions`, `kind`, `availableAt`, `dueAt`, `acceptsSubmissions`, `audience`; fills `closeAt` with null when absent; fills `submittedBy` with "STUDENT" when absent; fills `targets` with [] when absent
 - `/assignments/for-me` — requires `session`
 - `/assignments/get` — requires `assignment`, `session`
 - `/assignments/publish` — requires `assignment`, `session`
-- `/assignments/revise` — requires `session`, `assignment`, `title`, `instructions`, `kind`, `availableAt`, `dueAt`, `acceptsSubmissions`, `audience`; fills `closeAt` with null when absent; fills `targets` with [] when absent
+- `/assignments/revise` — requires `session`, `assignment`, `title`, `instructions`, `kind`, `availableAt`, `dueAt`, `acceptsSubmissions`, `audience`, `submittedBy`; fills `closeAt` with null when absent; fills `targets` with [] when absent
 - `/assignments/set-due-override` — requires `assignee`, `assignment`, `dueAt`, `session`
 - `/assignments/staff-list` — requires `session`
 - `/assignments/staff-summary` — requires `assignment`, `session`
@@ -32354,6 +32850,7 @@ not listed here have no explicit input contract.
 - `/submissions/for-assignment` — requires `assignment`, `session`
 - `/submissions/for-student` — requires `session`, `submitter`
 - `/submissions/latest` — requires `assignment`, `session`, `submitter`
+- `/submissions/move-to-sections` — requires `assignment`, `session`
 - `/subscriptions/isSubscribed` — requires `session`, `target`
 - `/subscriptions/mine` — requires `session`
 - `/subscriptions/subscribe` — requires `session`, `target`

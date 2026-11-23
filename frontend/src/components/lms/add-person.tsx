@@ -185,7 +185,7 @@ export function AddPersonForm({
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="add-person-section">Section</Label>
+          <Label htmlFor="add-person-section">Team</Label>
           <Select
             value={section}
             onValueChange={setSection}

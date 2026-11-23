@@ -19,11 +19,24 @@ import {
   loadAssignments,
   loadGradesForMe,
   loadRosterMe,
+  loadSections,
   loadSubmissionLatest,
 } from "@/lib/lms";
+import { submitterOf, type Team, teamName } from "@/lib/teams";
 import { cn } from "@/lib/utils";
 
 type FilterKey = "all" | "upcoming" | "submitted" | "overdue" | "graded";
+
+type Detail = {
+  title: string;
+  kind: string;
+  dueAt: string;
+  closeAt?: string;
+  status: string;
+  availableAt: string;
+  /** The team that submits this assignment for the student, or null. */
+  team: Team | null;
+};
 
 export default function AssignmentsPage() {
   const { session, me } = useAuth();
@@ -83,17 +96,20 @@ export default function AssignmentsPage() {
     [me, asgnData],
   );
 
-  const { data: detailsData } = useQuery<Record<string, unknown>>(
+  const { data: detailsData } = useQuery<Record<string, Detail>>(
     asgnData?.assignments
       ? async () => {
-          const map: Record<string, unknown> = {};
+          const map: Record<string, Detail> = {};
           await Promise.all(
             asgnData.assignments.map(async (a) => {
               const res = await api.assignments.get({
                 assignment: a.assignment,
               });
               if (!("error" in res) && res.assignment)
-                map[a.assignment] = res.assignment;
+                map[a.assignment] = {
+                  ...(res.assignment as Omit<Detail, "team">),
+                  team: ("team" in res && res.team) || null,
+                };
             }),
           );
           return map;
@@ -101,6 +117,10 @@ export default function AssignmentsPage() {
       : null,
     [asgnData],
   );
+  const onTeam = Object.values(detailsData ?? {}).some((detail) => detail.team);
+  const { data: teamsData } = useQuery(onTeam ? () => loadSections() : null, [
+    onTeam,
+  ]);
 
   const filters: { key: FilterKey; label: string }[] = [
     { key: "all", label: "All" },
@@ -111,34 +131,27 @@ export default function AssignmentsPage() {
   ];
 
   const assignments = asgnData?.assignments ?? [];
-  const details = (detailsData ?? {}) as Record<
-    string,
-    {
-      title: string;
-      kind: string;
-      dueAt: string;
-      closeAt?: string;
-      status: string;
-      availableAt: string;
-    }
-  >;
+  const details = detailsData ?? {};
   const submissions = submissionsData?.submissions ?? [];
   const grades = (gradesData?.grades ?? []) as Assessment[];
   const subMap = new Map(submissions.map((s) => [s.assignment, s]));
+  // A team's released grade names the team as its learner.
+  const gradeOf = (assignment: string, submission: string | undefined) =>
+    me
+      ? assessmentForEvidence(
+          grades,
+          submitterOf(String(me.user), details[assignment]?.team),
+          assignment,
+          submission ?? "",
+        )
+      : undefined;
 
   const now = new Date();
 
   const filtered = assignments.filter((a) => {
     const detail = details[a.assignment];
     const sub = subMap.get(a.assignment);
-    const grade = me
-      ? assessmentForEvidence(
-          grades,
-          String(me.user),
-          a.assignment,
-          sub?.submission ?? "",
-        )
-      : undefined;
+    const grade = gradeOf(a.assignment, sub?.submission);
     const dueAt = a.dueOverride ?? detail?.dueAt;
 
     if (search && detail) {
@@ -238,14 +251,10 @@ export default function AssignmentsPage() {
           {filtered.map((a) => {
             const detail = details[a.assignment];
             const sub = subMap.get(a.assignment);
-            const grade = me
-              ? assessmentForEvidence(
-                  grades,
-                  String(me.user),
-                  a.assignment,
-                  sub?.submission ?? "",
-                )
-              : undefined;
+            const grade = gradeOf(a.assignment, sub?.submission);
+            const teamTitle = detail?.team
+              ? teamName(teamsData?.sections, detail.team.section)
+              : null;
             const due = a.dueOverride ?? detail?.dueAt;
             const isOverdue = due && new Date(due) < now && !sub;
             const title = detail?.title ?? a.assignment.slice(0, 8);
@@ -260,8 +269,8 @@ export default function AssignmentsPage() {
                 )}
               >
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium truncate">{title}</p>
+                  <div className="flex flex-wrap items-baseline gap-x-2">
+                    <p className="min-w-0 break-words font-medium">{title}</p>
                     {detail?.kind && (
                       <Fact.Kind>{assignmentTypeLabel(detail.kind)}</Fact.Kind>
                     )}
@@ -284,6 +293,9 @@ export default function AssignmentsPage() {
                       </span>
                     )}
                     {grade?.status === "EXCUSED" && <span>Excused</span>}
+                    {teamTitle && (
+                      <Fact.Where preposition="with">{teamTitle}</Fact.Where>
+                    )}
                   </Facts>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">

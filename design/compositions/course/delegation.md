@@ -2,7 +2,10 @@
 
 Grading delegation belongs to an assignment and learner, not to one submission
 attempt. A later submission therefore keeps the same grader, and changing a
-grader never edits an assessment already underway. For a grader who is not an
+grader never edits an assessment already underway. The learner is whoever
+submits the assignment for a student: on an assignment submitted by each
+section, a section has one grader, and a request that names any member sets or
+clears it. For a grader who is not an
 active student these routes organize work without narrowing `grade`; for one
 who is, the delegation is what lets them grade a classmate at all.
 
@@ -15,7 +18,9 @@ have a roster seat. Archived accounts are omitted.
 answers [the stored owner beside each learner](former:Course.delegation.theDelegationsOn).
 A former grader is still shown after losing access so staff can see and replace
 the stale ownership, but is absent from the choices. A grader who is also an
-active student is shown only the classmates delegated to them.
+active student is shown only the work delegated to them, and never their own
+section's. A delegation stored for a student before the assignment was changed
+to each section is left out while that student has a section.
 
 [Course.delegation.DelegationSet](reaction:Course.delegation.DelegationSet) and
 [Course.delegation.DelegationClear](reaction:Course.delegation.DelegationClear)
@@ -28,7 +33,9 @@ Invalid identities answer `NOT_FOUND`.
 [Course.delegation.DelegationSpread](reaction:Course.delegation.DelegationSpread)
 validates [the entire distinct grader selection](view:Course.delegation.everyGraderIsAvailable)
 and [learner selection](view:Course.delegation.everyLearnerIsAssigned) against current state before
-it makes any change. [allChosenAdmitted](computation:allChosenAdmitted) answers true exactly when
+it makes any change. [delegationSubjects](computation:delegationSubjects) then names each chosen
+student's submitter once, so choosing a whole class spreads each section once and
+each student in no section alone. [allChosenAdmitted](computation:allChosenAdmitted) answers true exactly when
 one requested selection is non-empty and distinct and every requested identity appears in the
 current-state answer. [validDelegationSpreadInput](computation:validDelegationSpreadInput) answers
 whether the untrusted item is a non-empty string, learners and graders are non-empty distinct

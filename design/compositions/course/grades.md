@@ -46,13 +46,26 @@ first. Only when none exists may an empty-evidence `EXCUSED` assessment serve as
 the assignment-wide fallback; an attempt-specific excusal never applies to other
 attempts.
 
+An assessment's learner is whoever submits the item for a student: the
+student, or their section when the assignment is submitted by each section
+(see [submission reads](submissions.md)). A section's attempt therefore has one
+assessment, and one release reaches every current member. A request that names
+a learner names a student, and the assessment is opened or started for that
+student's submitter, so a grader reaches a section's assessment through any
+member. A student moved to another section reads that section's assessments and
+no longer the old section's. An assessment recorded for a student before the
+assignment was changed to each section stays stored; while the student has a
+section it is left out of their history and of the item's list.
+
 [Authorize current item setup through staff authority or assigned published work](view:Course.grades.mayReadItem).
 
 [Authorize grading one assessment through its learner and item](view:Course.grades.mayGradeAssessment), or [refuse it](view:Course.grades.mayNotGradeAssessment).
 
-[Authorize one assessment through grading authority or learner ownership and public status](view:Course.grades.mayReadAssessment).
+[Authorize one assessment through grading authority, or through public status when its learner submits the item for the reading student](view:Course.grades.mayReadAssessment).
 
-[Authorize first creation through active enrollment, assigned published work, and matching submitted evidence or the empty excusal marker](view:Course.grades.mayStartAssessment).
+[Authorize first creation through active enrollment, assigned published work, and a submitted attempt of the student's submitter or the empty excusal marker](view:Course.grades.mayStartAssessment).
+
+[Select the assessments that stand for one student: their own on an item they submit, their section's on an item the section submits](view:Course.grades.theStandingGrades).
 
 [Resolve one coherent Itemizing setup into complete criterion definitions](former:Course.grades.theSetupOf).
 
@@ -62,7 +75,7 @@ attempts.
 
 [Form the assessments of one learner that the caller may grade](former:Course.grades.theGradableGradesOf).
 
-[Form every assessment on one item that the caller may grade](former:Course.grades.theGradesOn).
+[Form every assessment on one item that the caller may grade, for learners who currently submit it](former:Course.grades.theGradesOn).
 
 [Form one assessment with supporting-work metadata](former:Course.grades.theAssessment).
 

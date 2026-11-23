@@ -57,149 +57,85 @@ function SectionManager({
   const { session } = useAuth();
 
   const [name, setName] = useState("");
-  const [location, setLocation] = useState("");
-  const [meetingPattern, setMeetingPattern] = useState("");
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [editLocation, setEditLocation] = useState("");
-  const [editMeetingPattern, setEditMeetingPattern] = useState("");
+
+  const sections = data?.sections ?? [];
+  const activeSections = sections.filter((s) => s.status === "ACTIVE");
 
   async function create() {
     if (!session || !name.trim()) return;
     setLoading(true);
     const result = await api.roster["sections/create"]({
       name: name.trim(),
-      location,
-      meetingPattern,
+      location: "",
+      meetingPattern: "",
     });
     setLoading(false);
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
-      toast.success("Section created");
+      toast.success("Team created");
       setName("");
-      setLocation("");
-      setMeetingPattern("");
       onUpdate();
     }
   }
 
   async function update() {
     if (!session || !editing || !editName.trim()) return;
+    // A team keeps the location and meeting pattern it was stored with.
+    const current = sections.find((section) => section.section === editing);
     setLoading(true);
     const result = await api.roster["sections/update"]({
       section: editing,
       name: editName.trim(),
-      location: editLocation.trim(),
-      meetingPattern: editMeetingPattern.trim(),
+      location: current?.location ?? "",
+      meetingPattern: current?.meetingPattern ?? "",
     });
     setLoading(false);
     if ("error" in result) toast.error(publicErrorMessage(result.error));
     else {
-      toast.success("Section updated");
+      toast.success("Team updated");
       setEditing(null);
       onUpdate();
     }
   }
 
-  function beginEditing(section: {
-    section: string;
-    name: string;
-    location?: string;
-    meetingPattern?: string;
-  }) {
-    setEditing(section.section);
-    setEditName(section.name);
-    setEditLocation(section.location ?? "");
-    setEditMeetingPattern(section.meetingPattern ?? "");
-  }
-
-  const sections = data?.sections ?? [];
-  const activeSections = sections.filter((s) => s.status === "ACTIVE");
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Sections</CardTitle>
+        <CardTitle className="text-base">Teams</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="section-name">Name</Label>
-            <Input
-              id="section-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Section 01"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="section-location">Location (optional)</Label>
-            <Input
-              id="section-location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Room 101"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="section-meeting">Meeting pattern (optional)</Label>
-            <Input
-              id="section-meeting"
-              value={meetingPattern}
-              onChange={(e) => setMeetingPattern(e.target.value)}
-              placeholder="MWF 10:00-10:50"
-            />
-          </div>
+        <div className="space-y-2 sm:max-w-xs">
+          <Label htmlFor="section-name">Name</Label>
+          <Input
+            id="section-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Team 01"
+          />
         </div>
         <Button size="sm" onClick={create} disabled={loading || !name.trim()}>
-          <Plus className="size-4 mr-1" /> Create section
+          <Plus className="size-4 mr-1" /> Create team
         </Button>
 
         {activeSections.length > 0 && (
           <div className="mt-3 space-y-2">
-            <p className="text-sm text-muted-foreground">Active sections</p>
+            <p className="text-sm text-muted-foreground">Active teams</p>
             {activeSections.map((section) =>
               editing === section.section ? (
                 <div
                   key={section.section}
                   className="space-y-3 rounded-lg border border-primary/30 bg-muted/25 p-3"
                 >
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor={`edit-name-${section.section}`}>
-                        Name
-                      </Label>
-                      <Input
-                        id={`edit-name-${section.section}`}
-                        value={editName}
-                        onChange={(event) => setEditName(event.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor={`edit-location-${section.section}`}>
-                        Location
-                      </Label>
-                      <Input
-                        id={`edit-location-${section.section}`}
-                        value={editLocation}
-                        onChange={(event) =>
-                          setEditLocation(event.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor={`edit-meeting-${section.section}`}>
-                        Meeting pattern
-                      </Label>
-                      <Input
-                        id={`edit-meeting-${section.section}`}
-                        value={editMeetingPattern}
-                        onChange={(event) =>
-                          setEditMeetingPattern(event.target.value)
-                        }
-                      />
-                    </div>
+                  <div className="space-y-1.5 sm:max-w-xs">
+                    <Label htmlFor={`edit-name-${section.section}`}>Name</Label>
+                    <Input
+                      id={`edit-name-${section.section}`}
+                      value={editName}
+                      onChange={(event) => setEditName(event.target.value)}
+                    />
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -207,7 +143,7 @@ function SectionManager({
                       onClick={update}
                       disabled={loading || !editName.trim()}
                     >
-                      Save section
+                      Save team
                     </Button>
                     <Button
                       size="sm"
@@ -223,23 +159,14 @@ function SectionManager({
                   key={section.section}
                   className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm"
                 >
-                  <div>
-                    <span className="font-medium">{section.name}</span>
-                    {section.location ? (
-                      <span className="ml-2 text-muted-foreground">
-                        {section.location}
-                      </span>
-                    ) : null}
-                    {section.meetingPattern ? (
-                      <span className="mt-0.5 block text-xs text-muted-foreground">
-                        {section.meetingPattern}
-                      </span>
-                    ) : null}
-                  </div>
+                  <span className="font-medium">{section.name}</span>
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => beginEditing(section)}
+                    onClick={() => {
+                      setEditing(section.section);
+                      setEditName(section.name);
+                    }}
                   >
                     <Pencil className="size-3.5" /> Edit
                   </Button>
@@ -551,7 +478,7 @@ function RosterPageContent() {
       <PageHeader
         eyebrow="Staff"
         title="Roster management"
-        description="Manage sections and enrolment, and maintain member access."
+        description="Manage teams and enrolment, and maintain member access."
       />
 
       <Tabs value={tab} onValueChange={setTab}>
@@ -559,7 +486,7 @@ function RosterPageContent() {
             edge it continues past rather than saying so in a sentence. */}
         <div className="overflow-x-auto pb-1 [mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] sm:[mask-image:none]">
           <TabsList className="w-max min-w-full">
-            <TabsTrigger value="sections">Sections</TabsTrigger>
+            <TabsTrigger value="sections">Teams</TabsTrigger>
             <TabsTrigger value="active">
               Active ({activeMembers.length})
             </TabsTrigger>

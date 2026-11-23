@@ -680,8 +680,8 @@ describe("submission export", () => {
       "Maximum points": "",
     });
     expect(row("iris")).toMatchObject({
-      "Section ID": "section-unreadable",
-      "Section name": "",
+      "Team ID": "section-unreadable",
+      "Team name": "",
       "Submission ID": "after-excusal-attempt",
       "Grade scope": "Assignment excusal",
       "Grade status": "EXCUSED",
@@ -690,5 +690,105 @@ describe("submission export", () => {
       "Maximum points": "10",
     });
     expect(csv).not.toContain("old-released-grade");
+  });
+
+  test("an assignment each team submits writes one row per student with the team's work and no late days", () => {
+    const member = (
+      assignee: string,
+      username: string,
+      submitter: string,
+      dueOverride: string | null = null,
+    ) => ({
+      assignee,
+      submitter,
+      displayName: username,
+      username,
+      email: `${username}@example.edu`,
+      section: submitter === assignee ? null : submitter,
+      release: `release-${assignee}`,
+      dueOverride,
+      status: "ASSIGNED",
+    });
+    const { csv } = submissionsCsv({
+      ...source,
+      title: "Team lab",
+      submittedBy: "SECTION",
+      sectionNames: new Map([["team-1", "Tidepool"]]),
+      assigned: [
+        member("sam", "sam", "team-1", "2026-09-12T12:00:00Z"),
+        member("maya", "maya", "team-1", "2026-09-12T12:00:00Z"),
+        member("leo", "leo", "leo"),
+      ],
+      submissions: [
+        {
+          submitter: "team-1",
+          submitterName: null,
+          submission: "team-attempt",
+          artifacts: [],
+          submittedAt: "2026-09-11T13:00:00Z",
+          number: 1,
+          status: "SUBMITTED",
+        },
+      ],
+      grades: [
+        {
+          grade: "team-grade",
+          learner: "team-1",
+          evidence: "team-attempt",
+          method: "POINTS",
+          score: 9,
+          scored: true,
+          outOf: 10,
+          status: "DRAFT",
+          createdAt: "2026-09-11T00:00:00Z",
+          updatedAt: "2026-09-11T01:00:00Z",
+        },
+      ],
+      delegations: [
+        {
+          learner: "team-1",
+          grader: "grader-1",
+          graderName: "Noah Brandt",
+          graderUsername: "noah",
+        },
+      ],
+      lateDays: new Map([
+        ["sam", 2],
+        ["leo", 1],
+      ]),
+    } as unknown as SubmissionsExportSource);
+    const [header, ...lines] = csv.trimEnd().split("\r\n");
+    const columns = header?.split(",") ?? [];
+    const row = (username: string) => {
+      const values = lines
+        .find((line) => line.split(",")[1] === username)
+        ?.split(",");
+      expect(values).toBeDefined();
+      return Object.fromEntries(
+        columns.map((column, index) => [column, values?.[index] ?? ""]),
+      );
+    };
+
+    expect(lines).toHaveLength(3);
+    for (const username of ["sam", "maya"])
+      expect(row(username)).toMatchObject({
+        "Team ID": "team-1",
+        "Team name": "Tidepool",
+        "Due override": "2026-09-12T12:00:00.000Z",
+        "Late days applied": "",
+        "Effective due at": "2026-09-12T12:00:00.000Z",
+        "Submission ID": "team-attempt",
+        "Late status": "On time",
+        "Assigned grader": "Noah Brandt",
+        "Grade ID": "team-grade",
+        Score: "9",
+      });
+    expect(row("leo")).toMatchObject({
+      "Team ID": "",
+      "Late days applied": "",
+      "Submission status": "Missing",
+      "Assigned grader": "",
+      "Grade ID": "",
+    });
   });
 });

@@ -100,6 +100,7 @@ describe("a grader enrolled as a student", () => {
       acceptsSubmissions: true,
       audience: "EVERYONE",
       targets: [],
+      submittedBy: "STUDENT",
       at,
     }));
     await concepts.Assigning.publish({ assignment: exercise, at });

@@ -6,6 +6,7 @@ import {
   lateDayCap,
   lateness,
   overdue,
+  sectionDueOverride,
   selectAttemptAssessment,
   selectSubmissionAttempt,
 } from "../../src/computations/coursework.ts";
@@ -29,6 +30,7 @@ test("a late attempt needs the late days that cover the time past the due date",
       dueOverride: null,
       lateDays: 1,
       unitHours: 24,
+      submittedBy: "STUDENT",
     }),
   ).toBe(true);
   expect(
@@ -38,6 +40,7 @@ test("a late attempt needs the late days that cover the time past the due date",
       dueOverride: null,
       lateDays: 2,
       unitHours: 24,
+      submittedBy: "STUDENT",
     }),
   ).toBe(false);
 });
@@ -91,9 +94,15 @@ test("a per-student due override replaces the due date", () => {
     lateMs: 2 * 3_600_000,
     daysNeeded: 1,
   });
-  expect(effectiveDue({ dueAt: due, dueOverride: override, lateDays: 1, unitHours: 24 })).toBe(
-    Date.parse(hours(72)),
-  );
+  expect(
+    effectiveDue({
+      dueAt: due,
+      dueOverride: override,
+      lateDays: 1,
+      unitHours: 24,
+      submittedBy: "STUDENT",
+    }),
+  ).toBe(Date.parse(hours(72)));
 });
 
 test("a late day covers the configured hours", () => {
@@ -103,22 +112,91 @@ test("a late day covers the configured hours", () => {
   expect(
     lateness({ submittedAt: hours(49), dueAt: due, dueOverride: null, unitHours: 48 }).daysNeeded,
   ).toBe(2);
-  expect(effectiveDue({ dueAt: due, dueOverride: null, lateDays: 2, unitHours: 48 })).toBe(
-    Date.parse(hours(96)),
-  );
+  expect(
+    effectiveDue({
+      dueAt: due,
+      dueOverride: null,
+      lateDays: 2,
+      unitHours: 48,
+      submittedBy: "STUDENT",
+    }),
+  ).toBe(Date.parse(hours(96)));
 });
 
 test("work is overdue once nothing is handed in past the due date with late days", () => {
   const at = new Date(hours(30));
   expect(
-    overdue({ handedIn: false, dueAt: due, dueOverride: null, lateDays: 0, unitHours: 24, at }),
+    overdue({
+      handedIn: false,
+      dueAt: due,
+      dueOverride: null,
+      lateDays: 0,
+      unitHours: 24,
+      submittedBy: "STUDENT",
+      at,
+    }),
   ).toBe(true);
   expect(
-    overdue({ handedIn: false, dueAt: due, dueOverride: null, lateDays: 2, unitHours: 24, at }),
+    overdue({
+      handedIn: false,
+      dueAt: due,
+      dueOverride: null,
+      lateDays: 2,
+      unitHours: 24,
+      submittedBy: "STUDENT",
+      at,
+    }),
   ).toBe(false);
   expect(
-    overdue({ handedIn: true, dueAt: due, dueOverride: null, lateDays: 0, unitHours: 24, at }),
+    overdue({
+      handedIn: true,
+      dueAt: due,
+      dueOverride: null,
+      lateDays: 0,
+      unitHours: 24,
+      submittedBy: "STUDENT",
+      at,
+    }),
   ).toBe(false);
+});
+
+test("late days standing on an assignment submitted by each section count for nothing", () => {
+  const section = { dueAt: due, dueOverride: null, lateDays: 2, unitHours: 24 };
+  expect(effectiveDue({ ...section, submittedBy: "SECTION" })).toBe(Date.parse(due));
+  expect(handedInLate({ ...section, submittedAt: hours(27), submittedBy: "SECTION" })).toBe(true);
+  expect(handedInLate({ ...section, submittedAt: hours(27), submittedBy: "STUDENT" })).toBe(false);
+  expect(
+    overdue({ ...section, handedIn: false, submittedBy: "SECTION", at: new Date(hours(30)) }),
+  ).toBe(true);
+});
+
+test("a section's due override is the latest among its current members", () => {
+  const students = [
+    { user: "sam", section: "t1" },
+    { user: "maya", section: "t1" },
+    { user: "ben", section: "t2" },
+  ];
+  const releases = [
+    { assignment: "p", assignee: "sam", dueOverride: hours(24) },
+    { assignment: "p", assignee: "maya", dueOverride: hours(48) },
+    { assignment: "p", assignee: "ben", dueOverride: hours(96) },
+    { assignment: "p", assignee: "gone", dueOverride: hours(120) },
+    { assignment: "q", assignee: "sam", dueOverride: hours(72) },
+  ];
+  expect(sectionDueOverride({ assignment: "p", section: "t1", students, releases })).toBe(
+    hours(48),
+  );
+  expect(sectionDueOverride({ assignment: "p", section: "t2", students, releases })).toBe(
+    hours(96),
+  );
+  expect(
+    sectionDueOverride({
+      assignment: "p",
+      section: "t1",
+      students,
+      releases: releases.map((release) => ({ ...release, dueOverride: null })),
+    }),
+  ).toBeNull();
 });
 
 test("an assignment holds at most the per-assignment limit or what the balance covers", () => {

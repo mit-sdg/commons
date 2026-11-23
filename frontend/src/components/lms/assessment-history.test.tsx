@@ -362,3 +362,16 @@ test("skill grouping names the assignment without repeating the section skill", 
   expect(html).not.toContain("Reasoning");
   expect(html).not.toContain("Feedback available");
 });
+
+test("a team's grade names the team, and a student's own grade names none", () => {
+  const html = renderToStaticMarkup(
+    <AssessmentHistory
+      assessments={[
+        { ...assessment, grade: "team", learner: "tidepool" },
+        { ...assessment, grade: "own", label: "Reflection" },
+      ]}
+      teamNames={new Map([["tidepool", "Tidepool"]])}
+    />,
+  );
+  expect(html.match(/with (<!-- -->)?Tidepool/g)).toHaveLength(1);
+});

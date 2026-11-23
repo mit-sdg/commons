@@ -146,6 +146,7 @@ describe("course grades", () => {
       acceptsSubmissions: true,
       audience: "EVERYONE",
       targets: [],
+      submittedBy: "STUDENT",
       at,
     }));
     await concepts.Assigning.publish({ assignment: exercise, at });
@@ -270,7 +271,7 @@ describe("course grades", () => {
     ).toEqual({ error: "INVALID_REQUEST" });
     const csv = (await call("manager", "/grades/export")).csv as string;
     expect(csv.split("\r\n")[0]).toBe(
-      "Student name,Email,Section,Personal,Average,Grade,Policy grade,Reason,Lectures attended,Lectures,Policy,Version,As of",
+      "Student name,Email,Team,Personal,Average,Grade,Policy grade,Reason,Lectures attended,Lectures,Policy,Version,As of",
     );
     expect(csv).toContain("ben,ben@example.edu,,1,1,C,F,Strong late work,0,0,Course guide,1,");
     await call("manager", "/course-grades/clear-override", { student: users.ben });
